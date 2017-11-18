@@ -1,0 +1,841 @@
+List of revisions:
+
+04-Nov-2017
+- Bugfix "DPI Aware" in the StatusBar control. (Panel.MinWidth)
+  Also the StatusBar control does not crash anymore in the VBA environment.
+
+27-Oct-2017
+- Again minor tweaks to run better in the VBA environment. (meaningful for OCX only)
+- Included 'ToolTipText' parameter in the .ListSubItems.Add method in the ListView control.
+
+22-Oct-2017
+- Included the 'Exists' function in the class collections.
+  The function returns True if the specified index or key exists in a collection.
+
+20-Oct-2017
+- Minor tweaks to run better in the VBA environment. (meaningful for OCX only)
+
+06-Oct-2017
+- GDI leak fixed in the ImageList control.
+
+03-Oct-2017
+- Bugfix in the VerticalGripper property in the CoolBar control.
+- Bugfix that the HideCaption property of a Band was not written to the property bag in the CoolBar control.
+- The ForeColor property is not anymore ignored when visual styles are applied in the CoolBar control.
+  This improvement works only on Vista+ (minimum comctl32.dll 6.1).
+  Also a glitch on a vertical orientation CoolBar with VerticalGripper property set to True got fixed. (even in Windows XP)
+  These enhancements can be switched off by the conditional compilation constant 'ImplementThemedReBarFix'.
+
+02-Oct-2017
+- Included the DoubleBuffer property in the CoolBar control.
+- Some other minor internal improvements.
+
+29-Sep-2017
+- Performance improvement in the ToolBar control. This was done internally at some points by invalidating instead of refreshing.
+
+28-Sep-2017
+- Bugfix in the SelFontName property in the RichTextBox control.
+
+23-Sep-2017
+- The FrameW control supports now the WM_PRINTCLIENT message.
+  This is necessary so a WM_PRINT message with PRF_CLIENT can be sent to the FrameW control via SendMessage.
+
+22-Sep-2017
+- Included the DoubleBuffer property in the StatusBar control that reduces flicker significantly.
+- Improved the DoubleBuffer property in the ToolBar control.
+  The BackColor and Transparent property will work now even if double-buffering is used.
+
+21-Sep-2017
+- Included the Change event in the ProgressBar control.
+- Included DataBinding to the ProgressBar control. (Value property)
+- Included the ShowInTaskBar property in the ProgressBar control.
+  Functions 'SetTaskBarProgressState', 'SetTaskBarProgressValue' and enum 'PrbTaskBarStateConstants' therefore has been removed.
+- Some other minor internal improvements.
+
+20-Sep-2017
+- Renamed enum constant 'PrbStateInProgress' to 'PrbStateNormal' (State property) in the ProgressBar control.
+- Removed the Marquee property as it got replaced by the new enum constant 'PrbScrollingMarquee' (Scrolling property) in the ProgressBar control.
+
+16-Sep-2017
+- Major internal improvement in the ListView control. Like the MS ListView the texts are now set with LPSTR_TEXTCALLBACK.
+  So the strings are saved only in the Class and not also in the ListView itself.
+  The memory usage is now much less, at the expense of slightly slower display time. (Negligible)
+
+14-Sep-2017
+- Less flickering in the ToolBar control and some minor internal improvements in the ListView control.
+- Internal improvement in the CommonDialog class. (meaningful for the ActiveX Version)
+
+13-Sep-2017
+- Included the ResetForeColors method in the ListView and TreeView control.
+
+10-Sep-2017
+- Tiny bugfix that the ListSubItems now display the default ForeColor of the ListView when not set explicitly.
+
+09-Sep-2017
+- Graphical style CommandButtonW, CheckBoxW and OptionButtonW controls will not be drawn themed anymore when the VisualStyles property is set to False.
+  Therefore VisualStyles.bas got improved to draw themed only when the GetWindowTheme API returned <> 0.
+
+06-Sep-2017
+- Bugfix that UserControl_ReadProperties crashes in the LabelW control. (related to 02-Sep-2017 update)
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the IPAddress control.
+
+05-Sep-2017
+- Included the FindSubItem function in the ListView control.
+
+02-Sep-2017
+- The Font properties are not written to the property bags anymore when it equals to Ambient.Font.
+  Included new function OLEFontIsEqual in Common.bas.
+
+30-Aug-2017
+- Renamed the Border property to 'BorderStyle' in the CoolBar control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the CoolBar control.
+- Included the BandMouseEnter/BandMouseLeave event in the CoolBar control.
+  This enables more specific handling of a single band instead of the global MouseEnter/MouseLeave event.
+
+29-Aug-2017
+- Bugfix that the Alignment property of a ColumnHeader returned always 0 in the ListView control.
+  This happened because LVCFMT_LEFT is defined as &H0 and was checked first. Now the check order is reversed and begins with LVCFMT_CENTER.
+- The PictureAlignment property will be adjusted now when changing the RightToLeft property in the FrameW control. (like the Alignment property)
+
+28-Aug-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the SpinBox control.
+
+27-Aug-2017
+- Included the PictureAlignment property in the FrameW control.
+
+26-Aug-2017
+- Alpha (32bpp) icons now drawn correctly per DrawIconEx instead of Picture.Render.
+  Affected are the FrameW (Picture), StatusBar (Picture of Panel) and ImageList (Images Property Page) control.
+
+25-Aug-2017
+- Included the Picture property in the FrameW control.
+
+23-Aug-2017
+- Bugfix in the Font property in the FrameW control. (related to 03-Jul-2017 update)
+- Internal improvement in the ToolBar and CoolBar control.
+- Some other minor internal improvements.
+
+22-Aug-2017
+- Included the Scroll event in the ComboBoxW and ImageCombo control.
+  Like in the ListBoxW control it will be fired whenever the TopIndex have been changed, either by code or by user action.
+
+21-Aug-2017
+- Included the EndLabelEdit method in the TreeView and ListView control.
+- Included the UseShortestDayNames property in the MonthView control.
+- Included the CalendarUseShortestDayNames property in the DTPicker control.
+
+20-Aug-2017
+- Internal improvement in the LinkLabel control.
+
+16-Aug-2017
+- Some minor internal improvements related to 15-Aug-2017 update.
+
+15-Aug-2017
+- Internal improvement on all controls which do internal resizing to certain boundaries, e.g. MonthView control.
+  Full elimination of UserControl.Size method, even if DPICorrectionFactor() equals 1.
+
+14-Aug-2017
+- Internal improvement in the TreeView and ListView control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the Pager and MCIWnd control.
+
+13-Aug-2017
+- Included the DblClick event in the ProgressBar control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the StatusBar control.
+
+12-Aug-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the TreeView and ListView control.
+
+11-Aug-2017
+- Included the DblClick event in the HotKey control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the HotKey and TextBoxW control.
+
+10-Aug-2017
+- Bugfix of the X/Y param in the MouseDown/MouseMove/MouseUp event on controls with child windows, e.g. edit control.
+  Affected are the IPAddress, ComboBoxW, ImageCombo, SpinBox and DTPicker control.
+
+09-Aug-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the ComboBoxW and ImageCombo control.
+
+08-Aug-2017
+- Included the ButtonMouseEnter/ButtonMouseLeave event in the ToolBar control.
+  This enables more specific handling of a single button instead of the global MouseEnter/MouseLeave event.
+
+07-Aug-2017
+- Bugfix in the NewDevice write-only property in the MCIWnd control.
+  That property will not be shown anymore in the property browser. (before an error on control creation could be raised on certain systems)
+- The HelpContextID and WhatsThisHelpID property is now also available when setting to a shadow object. ('Set' command)
+  Affected are almost all controls. (one or both properties)
+
+06-Aug-2017
+- Included the HelpContextID property in the FrameW control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the FrameW control.
+
+05-Aug-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the DTPicker and MonthView control.
+
+30-Jul-2017
+- Changed the GetRowCount function to a RowCount property in the CoolBar control. (like in the original MS control)
+- Renamed the ChevronPushed event to 'BandChevronPushed' in the CoolBar control.
+  Also included the BandBeforeDrag and BandAfterDrag event.
+
+28-Jul-2017
+- Bugfix "DPI Aware" in the ListBoxW control. (Font and IntegralHeight)
+
+27-Jul-2017
+- Internal "DPI Aware" improvements on certain controls.
+  Improved the functions PixelsPerDIP_X/PixelsPerDIP_Y in Common.bas.
+
+26-Jul-2017
+- Bugfixes related to 25-Jul-2017 update in the TabStrip, ToolBar and CoolBar control.
+
+25-Jul-2017
+- Pixels in property bags are now treated as DIPs. (Device-independent pixels)
+  There is no compatibility break in the property bags when there were saved at 100% (96) DPI.
+  Included new functions PixelsPerDIP_X/PixelsPerDIP_Y in Common.bas.
+  This "DPI Aware" enhancement affects the TabStrip, ToolBar, Pager and CoolBar control.
+
+23-Jul-2017
+- Bugfix that the checked state of the last item was unchecked when inserting a new item in a Checkbox Style ListBoxW control.
+
+19-Jul-2017
+- Included DataBinding to the SpinBox control. (Value property)
+- Internal improvement in the ImageCombo control when using comctl32.dll version 5.8x.
+
+18-Jul-2017
+- The DataChanged property works now also without DataBinding in all concerned controls.
+- Included DataBinding to the Slider control. (Value property)
+
+14-Jul-2017
+- Black horizontal line on top of FrameW control fixed. (did happen only when placed a windowless control on it)
+- Bugfix related to 13-Jul-2017 update in the ListBoxW control.
+- UpDown control no longer a 'ControlContainer'. (was set by error)
+
+13-Jul-2017
+- Major internal improvement in the VTableHandle.bas
+  It is necessary to replace also all controls. (.ctl)
+  Improvement is that no workaround is necessary anymore when a control is embedded into another UserControl.
+- Some other minor internal improvements.
+
+03-Jul-2017
+- Major internal improvement in the FrameW control. The rendering is now done directly, without resorting to BS_GROUPBOX window.
+  The code is now more compact and more efficient, other side benefits are:
+  - ForeColor property can also be used when visual styles are in use
+  - Transparent property works also on design-time
+  Also renamed the Border property to 'BorderStyle' in the FrameW control. (like in the original MS control) 
+
+01-Jul-2017
+- Included the LinkMouseEnter/LinkMouseLeave event in the LinkLabel control.
+  This enables more specific handling of a single link instead of the global MouseEnter/MouseLeave event.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the TabStrip control.
+
+27-Jun-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the UpDown control.
+
+25-Jun-2017
+- If the ResizableColumnHeaders property is set to False the CTRL+ key stroke will be discarded in the ListView control.
+  CTRL+ is used by SysListView32 to resize all columns.
+
+23-Jun-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the ListBoxW and ToolBar control.
+- Included the AnchorHot property in the ToolBar control.
+  It indicates if the currently hot button will remain hot even if the user moves the mouse out of the control.
+
+19-Jun-2017
+- Internal improvement in the StatusBar control.
+
+18-Jun-2017
+- ScrollToLine method does not change anymore the selection or caret position in the TextBoxW and RichTextBox control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the CommandLink control.
+
+10-Jun-2017
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - Included interface ISpecifyPropertyPages.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
+01-Jun-2017
+- Improved the AutoSize property in the LabelW control. (it now even works during Form_Load)
+
+31-May-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the ProgressBar control.
+- Internal improvement in the TabStrip control.
+
+29-May-2017
+- Internal improvement in the MonthView and DTPicker control.
+
+25-May-2017
+- Bugfix related to 17-Apr-2017 update in the RichTextBox control.
+
+23-May-2017
+- The default value of 'WordWrap' is now False instead of True in the LabelW control. (like in the original MS control)
+- Major internal improvement (can also be called bugfix) in the InPlaceActiveObject VTable subclass.
+  It is necessary to replace VTableHandle.bas and VTableSubclass.cls
+
+19-May-2017
+- PropertyPages are now supported with CausesValidation on mouse activation.
+  Removed 'GetUserControlTopParent' and included new 'GetTopUserControl' function in Common.bas
+  Included 'VTableInterfaceSupported' function in VTableHandle.bas
+  Included 'ComCtlsTopParentValidateControls' function in ComCtlsBase.bas
+
+17-May-2017
+- Bugfix of the bugfix in node deletion in the TreeView control.
+  Now all node objects (recursion) related to a parent node are removed. (children, grandchildren and so on)
+
+16-May-2017
+- Critical bugfix in node deletion in the TreeView control.
+  Now the child node objects are removed when removing a parent node object.
+- Internal improvement in the IPAddress, ComboBoxW, ImageCombo control.
+- Bugfix in the WM_MOUSEACTIVATE handler in the ListView control. (effects the filter edit control)
+
+14-May-2017
+- Renamed GetUserControlParentForm function to GetUserControlTopParent. (which was included on 13-May-2017 update.)
+  That function is now improved. It is now a safe function when used outside of VB6, e.g. IE, VBA etc. (tested)
+  So only in VB6 environment it returns a VB.Form, else Nothing. (without crash)
+
+13-May-2017
+- Internal improvement on all controls concerning CausesValidation on mouse activation.
+  For the ActiveX version this improvement is actually an important bugfix as it was broken there.
+
+05-May-2017
+- Picture's himetric to pixel conversions are now "DPI Aware".
+  VB's UserControl.ScaleX/Y with vbHimetric/vbPixel is broken on exotic or very large DPI settings. 
+  Included new functions CHimetricToPixel_X/CHimetricToPixel_Y in Common.bas.
+
+30-Apr-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the CheckBoxW and OptionButtonW control.
+
+29-Apr-2017
+- Internal improvement in the ComboBoxW and ListBoxW control.
+
+21-Apr-2017
+- Internal improvement in the LabelW control.
+
+20-Apr-2017
+- ScrollBars property can now also be changed at run-time in the RichTextBox control. (like in the TextBoxW control)
+
+19-Apr-2017
+- Internal improvement in the Slider control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the Slider control.
+
+18-Apr-2017
+- All internal tooltips are now as top-most, thus ensuring that tooltips will always be shown.
+  This is done by either SetWindowPos HWND_TOPMOST (created by comctl32) or directly WS_EX_TOPMOST on CreateWindowEx (own tooltip).
+- The internal tooltip in the TreeView control respects now changes in the VisualStyles property.
+
+17-Apr-2017
+- Bugfix in the RichTextBoxBase.bas module of the RichTextBox control.
+
+14-Apr-2017
+- Included the ShowTips property and ToolTipText property of a Band in the CoolBar control
+
+12-Apr-2017
+- Bugfix that sub item info tips still being displayed when 'ShowInfoTips' is False in the ListView control.
+
+09-Apr-2017
+- Bugfix in the RightToLeft property in the LinkLabel control.
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the LinkLabel and Animation control.
+- Included the MousePointer property in the Animation control.
+
+07-Apr-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the CommandButtonW and RichTextBox control.
+
+05-Apr-2017
+- Included the IMEMode property in the TreeView control that effects the incremental search and label edit.
+
+04-Apr-2017
+- Included the IMEMode property in the ListView control that effects the incremental search, label edit and filter edit.
+
+29-Mar-2017
+- Included the MouseEnter/MouseLeave event and MouseTrack property in the LabelW control.
+
+23-Mar-2017
+- Included the PrintQuality/ColorMode/Duplex property in the CommonDialog class.
+- Fixed GDI leak for 'hDC' in the CommonDialog class. (DeleteObject on Class_Terminate or new return of printer dialog)
+
+20-Mar-2017
+- Critical bugfix in the PrinterDriver/PrinterPort after user selections in the CommonDialog class.
+  This might caused wrong initialization in case 'PrinterDefaultInit' is set to False.
+- PrinterDriver/PrinterName/PrinterPort will be set empty when default printer (wDefault = DN_DEFAULTPRN) was selected in the CommonDialog class.
+  This ensures that the default printer remains active also when it got changed in the meantime.
+
+19-Mar-2017
+- VB.Printer object is no longer used in the CommonDialog class.
+  Therefore included the PrinterDriver/PrinterName/PrinterPort property which will be set
+  automatically when the user selected a printer in a print dialog box.
+  So even when 'PrinterDefault' is False, you can write code to print directly to the VB.Printer object in your app.
+  Also included the PrinterDefaultInit property which indicates if the default (like the original MS CommonDialog)
+  or user-selected printer will be initialized in a print or page setup dialog box.
+
+18-Mar-2017
+- Included the PaperSize/PaperBin property in the CommonDialog class.
+  The printer dialog will now read/write to that PaperSize/PaperBin property instead of the VB.Printer object.
+- When Orientation, PaperSize and/or PaperBin properties are not set explicitly in the CommonDialog class then
+  the default driver settings will be used until the first printer dialog has been succesfully finished.
+  If the properties are not set explicitly they will however return some "most common default values", but that
+  does not necessarily mean that these are the default driver settings that will be used later on in the dialog boxes.
+  This approach is the same as in the original MS CommonDialog, though the PaperSize/PaperBin are not exposed/accesible.
+
+17-Mar-2017
+- Bugfix when using flag 'CdlPDReturnDefault' in the ShowPrinterEx dialog (no bug in ShowPrinter) in the CommonDialog class.
+- Included the Orientation property in the CommonDialog class. (like the original MS CommonDialog)
+  The printer dialog will now read/write to that Orientation property instead of the VB.Printer object.
+
+16-Mar-2017
+- The default value of 'PrinterDefault' is now True instead of False in the CommonDialog class.
+- Included the Copies property in the CommonDialog class. (like the original MS CommonDialog)
+  The printer dialog will now read/write to that Copies property instead of the VB.Printer object.
+
+21-Feb-2017
+- Included the AllowOverType and OverTypeMode property in the TextBoxW control.
+  The default value of AllowOverType is False. (contrary to the RichTextBox control, where default value is True)
+
+19-Feb-2017
+- Included the AllowOverType and OverTypeMode property in the RichTextBox control.
+
+14-Feb-2017
+- Improved the SelPrint and PrintDoc methods in the RichTextBox control.
+  It can now also be used on a non-printer DC, e.g. DC of a PictureBox.
+
+13-Feb-2017
+- Two bugfixes in the SelPrint and PrintDoc methods in the RichtTextBox control.
+  - RightMargin/BottomMargin were added to the printable area instead deducted.
+  - The printable area was not converted from device units to twips. (the paper area was not wrong)
+
+09-Feb-2017
+- Improved the themed border appearance in the RichTextBox control.
+  It can be now in a 'hot' and 'focused' state, beside the already exist 'disabled' and 'normal' state.
+
+06-Feb-2017
+- Bugfix in the Text property of a ComboItem in the ImageCombo control.
+
+03-Feb-2017
+- Bugfix in the RightToLeft property in the TabStrip control. (TCIF_RTLREADING now used instead of WS_EX_RTLREADING)
+
+21-Jan-2017
+- Fixed a bug that the item's checkboxes/options were not drawn grayed in a disabled non-standard Style ListBoxW control.
+  On update from 18-Oct-2016 was only the text fixed to drawn grayed in that case, but not the button itself.
+
+20-Jan-2017
+- Enhanced the Style property with '2 - Option' in the ListBoxW control.
+  Also included the OptionIndex run-time property.
+- Included the AutoSelectFirstItem property in the ListView control. (Default is True)
+  Setting to False equals MS 5.0 ListView behavior and True equals MS 6.0 ListView behavior.
+
+19-Jan-2017
+- Two minor bugfixes in the ListBoxW control.
+  - Direct clicking the checkbox (Checkbox Style and MultiColumn set to True) was not possible when not selected before. (behavior bug)
+  - If both RightToLeft and MultiColumn are set True the top index goes negative and everything is unpredictable and unstable. (MS bug?)
+    Solution was to set (in that specific case) the right-to-left alignment after the control was created.
+
+15-Jan-2017
+- Included the ItemBeforeCheck event (with 'Cancel' parameter) in the ListBoxW control.
+- Bugfix that the checked state was not unchecked by default of a new inserted item in a Checkbox Style ListBoxW control.
+- Included X/Y parameter in the OLEGetDropEffect event in the RichTextBox control.
+
+14-Jan-2017
+- The Locked property in the ComboBoxW control works now like the original VB ComboBox.
+  So, beside the locking of the edit control, the list portion is locked as well.
+  The drop-down list can be shown but no item can be selected by mouse or key from the user.
+  That also means that now the Locked property is available when having the style set to 'DropDownList'.
+- Same ComboBoxW improvements implemented into the ImageCombo control.
+
+13-Jan-2017
+- 16-bit barrier for thumb scrolling circumvented in the ComboBoxW control. (like as for the ListBoxW control)
+- Included the ScrollTrack property in the ComboBoxW control.
+- .hWndList in the ComboBoxW control is now working on Windows 2000.
+  Message CB_GETCOMBOBOXINFO is not supported on Windows 2000. (similar issue as 29-Feb-2016 update)
+  Thus the message got replaced by the API GetComboBoxInfo in user32.dll.
+
+10-Jan-2017
+- Bugfix for the 32-bit thumb scrolling support in the ListBoxW control.
+  It now also works in a multi-column list box or when doing a 'HorizontalExtent' scrolling.
+
+09-Jan-2017
+- 16-bit barrier for thumb scrolling circumvented in the ListBoxW control. (standard windows list box limitation)
+- Included the ScrollTrack property in the ListBoxW control.
+
+08-Jan-2017
+- Some minor internal improvements.
+
+07-Jan-2017
+- Included the InsertMark/InsertMarkColor property and HitTestInsertMark function in the ListBoxW control.
+  The InsertMark property and the HitTestInsertMark function have both an optional 'After' parameter.
+- Bugfix that NewIndex property was not initialized with -1 in the ListBoxW control. (no bug in ComboBoxW control)
+
+04-Jan-2017
+- Fixed a bug that when setting the Text property by code it did not respect the MaxLength property in the TextBoxW, ComboBoxW and ImageCombo control.
+- Some other minor internal improvements.
+
+02-Jan-2017
+- Included the Scroll event in the ListBoxW control.
+  It will be fired whenever the TopIndex have been changed, either by code or by user action.
+
+30-Dec-2016
+- Bugfix in the Value property in the CheckBoxW and OptionButtonW control. (related to 23-Dec-2016 update)
+
+29-Dec-2016
+- The default value of the WantReturn property was wrong declared in ReadProperties/WriteProperties in the RichTextBox control.
+
+27-Dec-2016
+- Internal improvement in the key events (such as KeyDown) and some mouse events.
+  It is also necessary to replace the Common.bas module. (included the GetShiftStateFromMsg/GetMouseStateFromMsg function)
+- Renamed OLEGetDragEffect to OLEStartDrag in the RichTextBox control. (also Button/Shift parameter are removed as anyway always zero)
+
+26-Dec-2016
+- Internal improvement in the mouse events. The correct button value will be passed now in case left and right button are "swapped". (windows setting)
+  It is also necessary to replace the Common.bas module. (included the GetShiftStateFromParam/GetMouseStateFromParam function)
+
+23-Dec-2016
+- Bugfix that the Click event was not fired when changing the Value property by code in the CheckBoxW and OptionButtonW control.
+- Some other minor internal improvements.
+
+21-Dec-2016
+- The Resizable property of a ColumnHeader requires not anymore the comctls32.dll version 6.1 or higher in the ListView control.
+  So that property could even be used when not manifested. (comctl32.dll version 5.8x)
+- Bugfix in the ResizableColumnHeaders property in the ListView control.
+- Renamed the ItemFromPos property to ItemFromPosition in 'CbrBands' and 'LvwColumnHeaders'.
+
+17-Dec-2016
+- Included the ColumnDblClick event in the ListView control.
+
+16-Dec-2016
+- Included the NewWidth parameter in the ColumnAfterResize event in the ListView control.
+- Included the ColumnDividerDblClick event in the ListView control.
+
+15-Dec-2016
+- Renamed the ColumnBeforeSize/ColumnAfterSize events to ColumnBeforeResize/ColumnAfterResize in the ListView control.
+- The ResizableColumnHeaders property requires not anymore the comctls32.dll version 6.1 or higher in the ListView control.
+  So that property could even be used when not manifested. (comctl32.dll version 5.8x)
+
+10-Dec-2016
+- Modified OLEGuids.tlb as following: (compiled with a new uuid)
+  - Renamed interface IEnumeration to IEnumVARIANTUnrestricted. (like as IUnknownUnrestricted)
+  - Removed interface IEnumerationVB. (obselete)
+  - Correction in IDispatch.GetIDsOfNames. (rgszNames param now declared as LPWSTR)
+  It is necessary to replace all components and it is recommended to unregister the old OLEGuids.tlb.
+
+07-Dec-2016
+- Some minor internal improvements.
+
+06-Dec-2016
+- Bugfix that the Click event was not fired in two cases in the ListBoxW control:
+  - User has de-selected an item in a multiple-selection list box
+  - User has clicked again on a selected item in a single-selection list box
+  Reason was that the LBN_SELCANCEL notification code was missing in the event handling.
+- Included the SetSelRange method in the ListBoxW control.
+
+05-Dec-2016
+- Included the HideClippedButtons property in the ToolBar control.
+
+01-Dec-2016
+- Bugfix in the VisualStyles property in the ProgressBar control.
+  There was no border when using the comctl32.dll version 6.0 or higher and VisualStyles property set to False.
+
+29-Nov-2016
+- Bugfix in the CalendarDayState property in the DTPicker control.
+
+27-Nov-2016
+- Included the HotTracking property in the ToolBar control.
+- Removed the Selected property of a Button in the ToolBar control.
+  Instead the text and image will now be drawn selected when the HighLighted property is set to true, like in the TabStrip control and other.
+
+25-Nov-2016
+- Included the Selected and ForeColor property of a Button in the ToolBar control.
+  The Selected property only determines if a button image is drawn selected. (via ILD_SELECTED)
+  Also included new class 'TbrButtonProperties', which is necessary for the ForeColor property.
+
+22-Nov-2016
+- Minor internal improvements in the MonthView and DTPicker control.
+
+20-Nov-2016
+- Fixed a bug in the hidden 'IDEStop' method in the RichtTextBox control.
+  I forgot there to change to the new class 'RtfOleCallback', which was implemented on 17-May-2016.
+
+18-Nov-2016
+- Included the Transparent property in the ToolBar control.
+- Minor internal improvements for right-to-left support.
+
+16-Nov-2016
+- The LineColor property in the TreeView control is now also a design-time property and not anymore run-time only. (Default value is vbGrayText)
+
+14-Nov-2016
+- WM_SETREDRAW was replaced with the LockWindowUpdate API in all internal ReCreate methods.
+
+13-Nov-2016
+- Bugfix in the internal ModifyButton method in the ToolBar control.
+- The '&' was displayed as a normal character in a Band's caption in the CoolBar control.
+  Now it will underline the character to make it as an accelerator key.
+  The solution was to send a CCM_SETVERSION with the wParam value set to 5 to the control.
+  This was only an issue when not using the comctl32.dll version 6.0 or higher.
+- Minor internal improvement in the TabStrip control.
+
+12-Nov-2016
+- Included the PressedImageList property in the ToolBar control.
+- Included the ImageHeight/ImageWidth run-time property in the ToolBar control.
+
+08-Nov-2016
+- Internal improvement in the ImageList property in the ToolBar control.
+
+07-Nov-2016
+- Bugfix in the ImageList/DisabledImageList/HotImageList property in the ToolBar control.
+  It was possible to outwit the "ImageList Image sizes must be the same" error.
+
+06-Nov-2016
+- Bugfix in the NoImage property of a Button in the ToolBar control.
+  It was not possible to set the NoImage property of a Button to True when no ImageList was set.
+
+02-Nov-2016
+- The FilterIndex property will be set on return (chosen filter) of the ShowOpen/ShowSave function in the CommonDialog class.
+
+28-Oct-2016
+- Bugfix in the Selected property of a Node in the TreeView control.
+- Improved the CreateDragImage function of a Node in the TreeView control.
+
+25-Oct-2016
+- Renamed the internal functions from CLongToULong/CULongToLong to CLngToULng/CULngToLng.
+
+18-Oct-2016
+- Fixed a bug that the items were not drawn grayed in a disabled Checkbox Style ListBoxW control.
+  Reason was a missing check for ODS_DISABLED in the WM_DRAWITEM handler.
+
+12-Oct-2016
+- Fixed a bug when no DefaultExt property is set for the ShowSave function in the CommonDialog class.
+
+05-Oct-2016
+- Minor internal improvement in the CommonDialog class.
+
+01-Oct-2016
+- Included the ToolTipText property of a ListSubItem in the ListView control.
+- The ShowLabelTips property (LVS_EX_LABELTIP) is now working as expected in the ListView control. (MS bug)
+
+28-Sep-2016
+- Fixed a critical bug in the 'Bands' property page in the CoolBar control that was caused by update on 07-Jul-2016.
+- Included the RightToLeft and RightToLeftMode property on supported controls.
+- Included the RightToLeftLayout property on some controls. (where mirror placement is applicable)
+- Included the RightToLeftMirror property in the ImageList control.
+  If enabled, an list image is drawn mirrored on a right-to-left device context (WS_EX_LAYOUTRTL) to preserve directional-sensitivity.
+- Some internal improvements to ensure right-to-left support. (e.g. use of MapWindowPoints instead of the ScreenToClient)
+- Bugfix in the TextBoxW control that the horizontal scrollbar could disappear on certain conditions.
+- Removed the Orientation property in the SpinBox control.
+- The internal tooltip in the ListView control respects now changes in the VisualStyles property.
+- Renamed the CalendarRightAligned property to 'CalendarAlignment' in the DTPicker control.
+
+30-Aug-2016
+- Minor internal improvement in the Appearance property in the FrameW, OptionButtonW, CheckBoxW, CommandButtonW and LabelW control.
+
+23-Aug-2016
+- Included the VisualTheme property in the TreeView and ListView control.
+  The SetExplorerTheme method has been removed.
+
+19-Aug-2016
+- Internal improvement in the TextBoxW control.
+
+15-Aug-2016
+- Fixed a bug that setting the Text property does not fire the Change event in the TextBoxW control.
+  That bug appeared only when the MultiLine property was set to True.
+  MSDN: EN_CHANGE is not sent when the ES_MULTILINE style is used and the text is sent through WM_SETTEXT.
+
+14-Aug-2016
+- Fixed a bug that setting the Text property does not fire the Change event in the ComboBoxW control.
+
+12-Aug-2016
+- Included the Orientation property in ToolBar control.
+  This property is read-only when the Align property is <> vbAlignNone.
+- The Align property is now also available when setting to a shadow object. ('Set' command)
+  Affected are only the alignable controls. (ToolBar, CoolBar, ProgressBar, StatusBar and Pager)
+
+08-Aug-2016
+- Included the VerticalAlignment property in the LabelW control.
+
+22-Jul-2016
+- Internal improvement in the ImageList control.
+
+21-Jul-2016
+- Bugfix in the ImageList control.
+
+18-Jul-2016
+- Some minor internal improvements.
+
+15-Jul-2016
+- Internal improvement when Redraw property is False in the TreeView, ListView, ComboBoxW and ListBoxW control.
+
+08-Jul-2016
+- It is now allowed to set a zero ImageWidth and/or ImageHeight property in the ImageList control.
+  When adding the first picture into the ImageList the zero ImageWidth and/or ImageHeight will then be set automatically.
+  This behavior is equal to the original MS control.
+
+07-Jul-2016
+- Image property in class collections are now as Variant.
+  This allows to set a index or key of an image in an associated image list control.
+  Affected are the CoolBar, ListView, ToolBar, ImageCombo, TabStrip and TreeView control.
+  It is necessary to replace all components.
+- Some other minor internal improvements.
+
+27-Jun-2016
+- Internal improvement for SyncProperty in the UpDown control.
+
+23-Jun-2016
+- Minor improvement in the ImageList property on all affected controls.
+
+20-Jun-2016
+- Included the Enabled property of a node in the TreeView control.
+  This indicates only if a node is drawn in grey. The application is responsible to limit the user interaction. (via the Before... events)
+
+11-Jun-2016
+- Some minor internal improvements.
+
+08-Jun-2016
+- Fixed a bug that LabelEdit was not working (anymore) in the ListView control.
+  This bug came into effect after the recent internal improvement.
+  Friend method 'FInit' of a ListItem was changed and forgot in LVN_ENDLABELEDIT to reflect this.
+
+04-Jun-2016
+- Included the Level property of a Node in the TreeView control.
+
+02-Jun-2016
+- Included the ItemFromPos property in 'CbrBands' in the CoolBar control.
+
+01-Jun-2016
+- Bugfix in the Key (String) handling for the ListSubItems method 'Add', 'Item' and 'Remove' in the ListView control.
+
+31-May-2016
+- Noticeable less memory consumption in Report View in the ListView control.
+  Also the Tag property in 'LvwListSubItem' is now as Variant.
+- Some other minor internal improvements.
+
+30-May-2016
+- Fixed a bug when adding a ListSubItem in-between in the ListView control.
+
+29-May-2016
+- Tag property in class collections are now as Variant. (except for 'LvwListSubItem', which remains as String)
+  At design-time only String variables can be set, like in the original MS control.
+  It is not allowed to store circular reference objects. (error will be raised)
+  Example: 'Set TreeView1.Nodes(1).Tag = TreeView1.Object' (Though TreeView1 without '.Object' is allowed)
+
+28-May-2016
+- Shadow objects in class collections are now also decoupled in run-time controls. (ImageCombo, LinkLabel, ListView and TreeView control)
+  This ensures that UserControl_Terminate will always be fired.
+  They were already decoupled in design-time controls. (TabStrip, StatusBar, ToolBar, CoolBar and ImageList control)
+
+26-May-2016
+- Included the ItemFromPos property in 'LvwColumnHeaders' in the ListView control. (via HDM_ORDERTOINDEX)
+
+25-May-2016
+- Included the NodeBeforeCheck event in the TreeView control.
+
+23-May-2016
+- Minor bugfixes in the TopItem property in the ListView control.
+
+22-May-2016
+- Improved the TopItem property in the ListView control.
+  It can be used now also when groups are enabled in 'report' view. (LVM_GETTOPINDEX fails in this case, thus a workaround was necessary)
+  Enhanced the code when in 'Icon', 'SmallIcon' and 'Tile' view.
+
+21-May-2016
+- Included the NodeBeforeSelect event in the TreeView control.
+- Removed the GetFirstVisible function in the TreeView, ListView and ImageCombo control.
+  It has been replaced by the TopItem property. It can be even 'Set' in the TreeView and ImageCombo control.
+- The NodeCheck event is now also fired when the checked state of a node was changed by code in the TreeView control.
+- The ItemCheck event is now also fired when the checked state of an item was changed by code in the ListBoxW control.
+- The ColumnCheck event is now also fired when the checked state of a column header was changed by code in the ListView control.
+
+19-May-2016
+- The DragIcon, DragMode and ToolTipText property are now also available when setting to a shadow object. ('Set' command)
+- The Drag and SetFocus method are now also available when setting to a shadow object. ('Set' command)
+
+17-May-2016
+- Included the class 'RtfOleCallback' in the RichTextBox control.
+  This decouples the IRichEditOleCallback interface and ensures UserControl_Terminate will always be fired.
+  When updating, please replace all components. (e.g. RichTextBoxBase.bas)
+
+16-May-2016
+- Improved the Expanded property of a Node in the TreeView control. It works now like in the original MS control.
+  It is now ensured that BeforeCollapse/BeforeExpand and Collapse/Expand events are always fired when state is being changed.
+  Also it is now possible to set the expanded state even when there are no child items associated.
+- To support large numbers the Children property of a Node returns now 'Long' instead of 'Integer' in the TreeView control.
+
+15-May-2016
+- It is now possible to pass a Node object in the Relative parameter in Nodes.Add and Node.Move in the TreeView control.
+- Removed the error message 'the size of the selected picture is not compatible' in the Images property page of the ImageList control.
+  So at design time it is now allowed to select different sized pictures. At run time it was already allowed.
+  The original MS control allows it also. So such error message was a unnecessary limitation.
+
+12-May-2016
+- Fixed a bug in the Move method of a Node and some other internal improvements in the TreeView control.
+  Bugs were in relation to the new ExpandedImage property of a Node.
+
+11-May-2016
+- Included the ExpandedImage property of a Node in the TreeView control.
+
+08-May-2016
+- The SelChange event is now also fired when value or selection was changed by code in the MonthView control.
+- Some internal improvements in the DTPicker and MonthView control.
+
+06-May-2016
+- Fixed a bug that the DateClicked parameter in the DateClick event was invalid in the MonthView control.
+- Included Error 35770 "An invalid date range was specified" in the MonthView control.
+
+05-May-2016
+- Fixed a bug that the Change event was not fired when the checkbox state changed in the DTPicker control.
+- Included Error 35787 "Can't set Value to Null when CheckBox property is False" in the DTPicker control.
+  This Error is also raised in the original MS control.
+
+04-May-2016
+- The Change event is now also fired when value was changed by code in the DTPicker control.
+  Though in the original MS control it is only raised when value was changed by user.
+  But that makes actually no sense and might be even a bug in the original MS control.
+
+15-Apr-2016
+- Minor adjustment to the BackColor in the StatusBar control so that the Pager control can recognize it.
+
+31-Mar-2016
+- Minor bugfix in the internal Numeric/Currency/Date sorting functions in the ListView control.
+
+09-Mar-2016
+- Improved the calculation that determines if DPIs are different. All controls are now really "DPI Aware".
+
+01-Mar-2016
+- Bugfixes and improvements for vertical ToolBar control. (Align property set to vbAlignLeft or vbAlignRight)
+  The Vertical ToolBar behaves now like the original MS control when the Wrappable property is set to False.
+  Also changing from horizontal to vertical and vice versa after initialization works now properly.
+
+29-Feb-2016
+- All controls are now "DPI Aware". (concerns exotic DPI or very large DPI, e.g. 113% and 200%)
+- ComboBoxW with Style 'CboStyleDropDownCombo' is now working on Windows 2000.
+  Message CB_GETCOMBOBOXINFO is not supported on Windows 2000, so little workaround was necessary to solve this.
+- Some other minor internal improvements.
+
+25-Feb-2016
+- Minor adjustment to the BackColor in the ToolBar control so that the Pager control can recognize it.
+
+24-Feb-2016
+- Fixed a bug that the Scroll event fired twice instead of once in the Slider control.
+
+19-Feb-2016
+- The BackColor property in the ToolBar control is now shown/visible at design-time.
+  But it remains ignored when the control paints via double-buffering. (also at run-time)
+
+30-Jan-2016
+- Included the ShowTrailingDates property in the MonthView control.
+- Included the CalendarShowTrailingDates property in the DTPicker control.
+- Forgot to rename the HotTrack property to 'HotTracking' in the property page of the SpinBox control.
+
+28-Jan-2016
+- Fixed a bug in the LVN_ITEMACTIVATE handler in the ListView control.
+  The Shift parameter in the ItemActivate event was not properly set.
+
+19-Jan-2016
+- Renamed the HotTrack property to 'HotTracking' in the SpinBox control.
+  So the wording is in line with the UpDown, TreeView, TabStrip, ListView and LinkLabel control.
+
+07-Jan-2016
+- Included the MaxText event in the TextBoxW and RichTextBox control.
+
+01-Jan-2016
+- Mouse events now again in correct order in the ImageCombo, TreeView and ListView control.
+  Some workaround was necessary to raise them 'After' (refer to update 21-Nov-2015) and keep correct order.
+  Issue was an internal modal message loop on these controls. (DragDetect)
+
+[...]
+
+11-Nov-2012
+- First release.
