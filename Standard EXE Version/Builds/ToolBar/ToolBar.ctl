@@ -1304,6 +1304,7 @@ OldFontHandle = ToolBarFontHandle
 ToolBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
 If ToolBarHandle <> 0 Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
+Call ReCreateButtons
 Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Property
@@ -1314,6 +1315,7 @@ OldFontHandle = ToolBarFontHandle
 ToolBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
 If ToolBarHandle <> 0 Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
+Call ReCreateButtons
 Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Sub
