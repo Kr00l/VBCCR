@@ -12,11 +12,9 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-Private PropForeColorObject As Object
 Private PropForeColor As OLE_COLOR
 
-Friend Sub FInit(ByVal ForeColorObject As Object, ByVal ForeColor As OLE_COLOR)
-If TypeOf ForeColorObject Is VB.CommandButton Then Set PropForeColorObject = ForeColorObject
+Friend Sub FInit(ByVal ForeColor As OLE_COLOR)
 PropForeColor = ForeColor
 End Sub
 
@@ -27,5 +25,4 @@ End Property
 
 Public Property Let ForeColor(ByVal Value As OLE_COLOR)
 PropForeColor = Value
-If Not PropForeColorObject Is Nothing Then PropForeColorObject.BackColor = PropForeColor
 End Property
