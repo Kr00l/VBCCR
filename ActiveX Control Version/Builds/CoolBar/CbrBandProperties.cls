@@ -18,8 +18,8 @@ Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
 
 Friend Sub FInit(ByVal BackColorObject As Object, ByVal ForeColorObject As Object, ByVal BackColor As OLE_COLOR, ByVal ForeColor As OLE_COLOR)
-If TypeOf BackColorObject Is VB.CommandButton Then Set PropBackColorObject = BackColorObject
-If TypeOf ForeColorObject Is VB.CommandButton Then Set PropForeColorObject = ForeColorObject
+Set PropBackColorObject = BackColorObject
+Set PropForeColorObject = ForeColorObject
 PropBackColor = BackColor
 PropForeColor = ForeColor
 End Sub
