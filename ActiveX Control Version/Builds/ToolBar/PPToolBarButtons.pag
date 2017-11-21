@@ -1139,12 +1139,9 @@ Dim CLSID As OLEGuids.OLECLSID, PrevColor As OLE_COLOR
 CLSIDFromString StrPtr(CLSID_StandardColorPage), CLSID
 PrevColor = CommandForeColor.BackColor
 Dim ButtonProperties As New TbrButtonProperties
-ButtonProperties.FInit CommandForeColor.BackColor
+ButtonProperties.FInit CommandForeColor, CommandForeColor.BackColor
 OleCreatePropertyFrame PropertyPage.hWnd, 0, 0, StrPtr("Button"), 1, ButtonProperties, 1, CLSID, 0, 0, 0
-If PrevColor <> ButtonProperties.ForeColor Then
-    CommandForeColor.BackColor = ButtonProperties.ForeColor
-    PropertyPage.Changed = True
-End If
+If PrevColor <> CommandForeColor.BackColor Then PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckEnabled_Click()
