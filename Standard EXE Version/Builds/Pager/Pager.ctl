@@ -6,7 +6,6 @@ Begin VB.UserControl Pager
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
-   ClipControls    =   0   'False
    HasDC           =   0   'False
    PropertyPages   =   "Pager.ctx":0000
    ScaleHeight     =   120
