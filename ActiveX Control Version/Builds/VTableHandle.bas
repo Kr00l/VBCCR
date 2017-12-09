@@ -69,6 +69,11 @@ Bounds(0 To 0) As SAFEARRAYBOUND
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function ArrPtr Lib "msvbvm60" Alias "VarPtr" (ByRef Var() As Any) As Long
+Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadId As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
+Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
+Private Declare Function SetProp Lib "user32" Alias "SetPropW" (ByVal hWnd As Long, ByVal lpString As Long, ByVal hData As Long) As Long
+Private Declare Function GetProp Lib "user32" Alias "GetPropW" (ByVal hWnd As Long, ByVal lpString As Long) As Long
+Private Declare Function RemoveProp Lib "user32" Alias "RemovePropW" (ByVal hWnd As Long, ByVal lpString As Long) As Long
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function SysAllocString Lib "oleaut32" (ByVal lpString As Long) As Long
@@ -76,6 +81,7 @@ Private Declare Function DispCallFunc Lib "oleaut32" (ByVal pvInstance As IUnkno
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 Private Const CC_STDCALL As Long = 4
 Private Const GA_ROOT As Long = 2
+Private Const GWL_HWNDPARENT As Long = (-8)
 Private Const E_OUTOFMEMORY As Long = &H8007000E
 Private Const E_POINTER As Long = &H80004003
 Private Const E_INVALIDARG As Long = &H80070057
@@ -200,8 +206,14 @@ End Function
 Private Sub ReplaceIOleIPAO(ByVal This As OLEGuids.IOleInPlaceActiveObject)
 If VTableSubclassIPAO Is Nothing Then Set VTableSubclassIPAO = New VTableSubclass
 If VTableSubclassIPAO.RefCount = 0 Then
-    VTableSubclassIPAO.Subclass ObjPtr(This), VTableIndexIPAOTranslateAccelerator, VTableIndexIPAOTranslateAccelerator, _
-    AddressOf IOleIPAO_TranslateAccelerator
+    Dim hMain As Long, Handled As Boolean
+    hMain = GetHiddenMainWindow()
+    If hMain <> 0 Then Handled = CBool(GetProp(hMain, StrPtr("VTableSubclassIPAOInit")) <> 0)
+    If Handled = False Then
+        VTableSubclassIPAO.Subclass ObjPtr(This), VTableIndexIPAOTranslateAccelerator, VTableIndexIPAOTranslateAccelerator, _
+        AddressOf IOleIPAO_TranslateAccelerator
+        If hMain <> 0 Then SetProp hMain, StrPtr("VTableSubclassIPAOInit"), 1
+    End If
 End If
 VTableSubclassIPAO.AddRef
 End Sub
@@ -209,7 +221,12 @@ End Sub
 Private Sub RestoreIOleIPAO(ByVal This As OLEGuids.IOleInPlaceActiveObject)
 If Not VTableSubclassIPAO Is Nothing Then
     VTableSubclassIPAO.Release
-    If VTableSubclassIPAO.RefCount = 0 Then VTableSubclassIPAO.UnSubclass
+    If VTableSubclassIPAO.RefCount = 0 Then
+        Dim hMain As Long
+        hMain = GetHiddenMainWindow()
+        If hMain <> 0 Then RemoveProp hMain, StrPtr("VTableSubclassIPAOInit")
+        VTableSubclassIPAO.UnSubclass
+    End If
 End If
 End Sub
 
@@ -286,9 +303,15 @@ End Function
 Private Sub ReplaceIOleControl(ByVal This As OLEGuids.IOleControl)
 If VTableSubclassControl Is Nothing Then Set VTableSubclassControl = New VTableSubclass
 If VTableSubclassControl.RefCount = 0 Then
-    VTableSubclassControl.Subclass ObjPtr(This), VTableIndexControlGetControlInfo, VTableIndexControlOnMnemonic, _
-    AddressOf IOleControl_GetControlInfo, _
-    AddressOf IOleControl_OnMnemonic
+    Dim hMain As Long, Handled As Boolean
+    hMain = GetHiddenMainWindow()
+    If hMain <> 0 Then Handled = CBool(GetProp(hMain, StrPtr("VTableSubclassControlInit")) <> 0)
+    If Handled = False Then
+        VTableSubclassControl.Subclass ObjPtr(This), VTableIndexControlGetControlInfo, VTableIndexControlOnMnemonic, _
+        AddressOf IOleControl_GetControlInfo, _
+        AddressOf IOleControl_OnMnemonic
+        If hMain <> 0 Then SetProp hMain, StrPtr("VTableSubclassControlInit"), 1
+    End If
 End If
 VTableSubclassControl.AddRef
 End Sub
@@ -296,7 +319,12 @@ End Sub
 Private Sub RestoreIOleControl(ByVal This As OLEGuids.IOleControl)
 If Not VTableSubclassControl Is Nothing Then
     VTableSubclassControl.Release
-    If VTableSubclassControl.RefCount = 0 Then VTableSubclassControl.UnSubclass
+    If VTableSubclassControl.RefCount = 0 Then
+        Dim hMain As Long
+        hMain = GetHiddenMainWindow()
+        If hMain <> 0 Then RemoveProp hMain, StrPtr("VTableSubclassControlInit")
+        VTableSubclassControl.UnSubclass
+    End If
 End If
 End Sub
 
@@ -374,10 +402,16 @@ End Function
 Private Sub ReplaceIPPB(ByVal This As OLEGuids.IPerPropertyBrowsing)
 If VTableSubclassPPB Is Nothing Then Set VTableSubclassPPB = New VTableSubclass
 If VTableSubclassPPB.RefCount = 0 Then
-    VTableSubclassPPB.Subclass ObjPtr(This), VTableIndexPPBGetDisplayString, VTAbleIndexPPBGetPredefinedValue, _
-    AddressOf IPPB_GetDisplayString, 0, _
-    AddressOf IPPB_GetPredefinedStrings, _
-    AddressOf IPPB_GetPredefinedValue
+    Dim hMain As Long, Handled As Boolean
+    hMain = GetHiddenMainWindow()
+    If hMain <> 0 Then Handled = CBool(GetProp(hMain, StrPtr("VTableSubclassPPBInit")) <> 0)
+    If Handled = False Then
+        VTableSubclassPPB.Subclass ObjPtr(This), VTableIndexPPBGetDisplayString, VTAbleIndexPPBGetPredefinedValue, _
+        AddressOf IPPB_GetDisplayString, 0, _
+        AddressOf IPPB_GetPredefinedStrings, _
+        AddressOf IPPB_GetPredefinedValue
+        If hMain <> 0 Then SetProp hMain, StrPtr("VTableSubclassPPBInit"), 1
+    End If
 End If
 VTableSubclassPPB.AddRef
 End Sub
@@ -385,7 +419,12 @@ End Sub
 Private Sub RestoreIPPB(ByVal This As OLEGuids.IPerPropertyBrowsing)
 If Not VTableSubclassPPB Is Nothing Then
     VTableSubclassPPB.Release
-    If VTableSubclassPPB.RefCount = 0 Then VTableSubclassPPB.UnSubclass
+    If VTableSubclassPPB.RefCount = 0 Then
+        Dim hMain As Long
+        hMain = GetHiddenMainWindow()
+        If hMain <> 0 Then RemoveProp hMain, StrPtr("VTableSubclassPPBInit")
+        VTableSubclassPPB.UnSubclass
+    End If
 End If
 End Sub
 
@@ -570,6 +609,24 @@ If ErrNumber <> 0 Then
         MapCOMErr = ErrNumber
     Else
         MapCOMErr = &H800A0000 Or ErrNumber
+    End If
+End If
+End Function
+
+Public Function GetHiddenMainWindow() As Long
+EnumThreadWindows App.ThreadID, AddressOf EnumThreadWndProc, VarPtr(GetHiddenMainWindow)
+End Function
+
+Private Function EnumThreadWndProc(ByVal hWnd As Long, ByVal lpResult As Long) As Long
+Dim ClassName As String
+EnumThreadWndProc = 1
+If GetWindowLong(hWnd, GWL_HWNDPARENT) = 0 Then
+    ClassName = GetWindowClassName(hWnd)
+    If InStr(ClassName, "Thunder") = 1 Then
+        If InStr(ClassName, "Main") = (Len(ClassName) - 3) Then
+            CopyMemory ByVal lpResult, hWnd, 4
+            EnumThreadWndProc = 0
+        End If
     End If
 End If
 End Function
