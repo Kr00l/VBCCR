@@ -613,7 +613,7 @@ If ErrNumber <> 0 Then
 End If
 End Function
 
-Public Function GetHiddenMainWindow() As Long
+Private Function GetHiddenMainWindow() As Long
 EnumThreadWindows App.ThreadID, AddressOf EnumThreadWndProc, VarPtr(GetHiddenMainWindow)
 End Function
 
