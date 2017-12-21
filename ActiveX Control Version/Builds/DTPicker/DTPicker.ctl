@@ -1953,8 +1953,9 @@ Select Case wMsg
             End If
         End If
     Case WM_MOUSEWHEEL
-        Dim WheelDelta As Long
-        WheelDelta = HiWord(wParam)
+        Static WheelDelta As Long, LastWheelDelta As Long
+        If Sgn(HiWord(wParam)) <> Sgn(LastWheelDelta) Then WheelDelta = 0
+        WheelDelta = WheelDelta + HiWord(wParam)
         If Abs(WheelDelta) >= 120 Then
             If Sgn(WheelDelta) = -1 Then
                 SendMessage hWnd, WM_KEYDOWN, vbKeyDown, ByVal &H1500001
@@ -1963,7 +1964,9 @@ Select Case wMsg
                 SendMessage hWnd, WM_KEYDOWN, vbKeyUp, ByVal &H1480001
                 SendMessage hWnd, WM_KEYUP, vbKeyUp, ByVal &H1480001
             End If
+            WheelDelta = 0
         End If
+        LastWheelDelta = HiWord(wParam)
         WindowProcControl = 0
         Exit Function
     Case WM_KEYDOWN, WM_KEYUP
@@ -2089,8 +2092,9 @@ Select Case wMsg
         End If
     Case WM_MOUSEWHEEL
         If ComCtlsSupportLevel() < 2 Then
-            Dim WheelDelta As Long
-            WheelDelta = HiWord(wParam)
+            Static WheelDelta As Long, LastWheelDelta As Long
+            If Sgn(HiWord(wParam)) <> Sgn(LastWheelDelta) Then WheelDelta = 0
+            WheelDelta = WheelDelta + HiWord(wParam)
             If Abs(WheelDelta) >= 120 Then
                 Dim NewValue As Date
                 Dim ST As SYSTEMTIME
@@ -2116,7 +2120,9 @@ Select Case wMsg
                     On Error GoTo 0
                     PostMessage DTPickerHandle, UM_DATETIMECHANGE, 0, ByVal 0&
                 End If
+                WheelDelta = 0
             End If
+            LastWheelDelta = HiWord(wParam)
             WindowProcCalendar = 0
             Exit Function
         End If
