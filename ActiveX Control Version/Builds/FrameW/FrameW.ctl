@@ -1,6 +1,7 @@
 VERSION 5.00
 Begin VB.UserControl FrameW 
    AutoRedraw      =   -1  'True
+   CanGetFocus     =   0   'False
    ClientHeight    =   1800
    ClientLeft      =   0
    ClientTop       =   0
@@ -82,8 +83,6 @@ Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal 
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal XSrc As Long, ByVal YSrc As Long, ByVal dwRop As Long) As Long
-Private Declare Function GetMessagePos Lib "user32" () As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 
 #If ImplementThemedButton = True Then
 
@@ -129,7 +128,6 @@ Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_E
 Private Const HWND_DESKTOP As Long = &H0
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const DI_NORMAL As Long = &H3
 Private Const DT_LEFT As Long = &H0
@@ -233,7 +231,6 @@ If PropRightToLeft = False Then PropAlignment = vbLeftJustify Else PropAlignment
 PropTransparent = False
 Set PropPicture = Nothing
 If PropRightToLeft = False Then PropPictureAlignment = CCLeftRightAlignmentLeft Else PropPictureAlignment = CCLeftRightAlignmentRight
-UserControl.Extender.TabStop = False
 If Ambient.UserMode = True Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
 End Sub
 
@@ -262,7 +259,6 @@ PropTransparent = .ReadProperty("Transparent", False)
 Set PropPicture = .ReadProperty("Picture", Nothing)
 PropPictureAlignment = .ReadProperty("PictureAlignment", CCLeftRightAlignmentLeft)
 End With
-UserControl.Extender.TabStop = False
 If Ambient.UserMode = True Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
 End Sub
 
@@ -448,11 +444,11 @@ End Property
 
 Public Property Get HelpContextID() As Long
 Attribute HelpContextID.VB_Description = "Specifies the default Help file context ID for an object."
-HelpContextID = Extender.HelpContextID
+' HelpContextID = Extender.HelpContextID
 End Property
 
 Public Property Let HelpContextID(ByVal Value As Long)
-Extender.HelpContextID = Value
+' Extender.HelpContextID = Value
 End Property
 
 Public Property Get WhatsThisHelpID() As Long
@@ -1186,14 +1182,7 @@ ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-If wMsg = WM_MOUSEACTIVATE Then
-    Dim Pos As Long
-    Pos = GetMessagePos()
-    If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) = hWnd Then
-        WindowProcUserControl = MA_NOACTIVATEANDEAT
-        Exit Function
-    End If
-ElseIf wMsg = WM_PRINTCLIENT Then
+If wMsg = WM_PRINTCLIENT Then
     Dim ClientRect As RECT
     GetClientRect UserControl.hWnd, ClientRect
     BitBlt wParam, 0, 0, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top, UserControl.hDC, 0, 0, vbSrcCopy
