@@ -85,15 +85,14 @@ Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function GetDeviceCaps Lib "gdi32" (ByVal hDC As Long, ByVal nIndex As Long) As Long
 Private Declare Function DestroyIcon Lib "user32" (ByVal hIcon As Long) As Long
-Private Const ILD_NORMAL As Long = 0
-Private Const ILD_TRANSPARENT As Long = 1
-Private Const ILD_BLEND25 As Long = 2
-Private Const ILD_SELECTED As Long = 4
-Private Const ILD_FOCUS As Long = 4
+Private Const ILD_NORMAL As Long = &H0
+Private Const ILD_TRANSPARENT As Long = &H1
+Private Const ILD_FOCUS As Long = &H2
+Private Const ILD_SELECTED As Long = &H4
 Private Const ILD_MASK As Long = &H10
 Private Const ILD_IMAGE As Long = &H20
 Private Const ILD_ROP As Long = &H40
-Private Const ILD_OVERLAYMASK As Long = 3840
+Private Const ILD_OVERLAYMASK As Long = &HF00
 Private Const ILC_MASK As Long = &H1
 Private Const ILC_MIRROR As Long = &H2000
 Private Const ILCF_MOVE As Long = &H0
