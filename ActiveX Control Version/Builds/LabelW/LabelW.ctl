@@ -97,23 +97,15 @@ Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As 
 Private Const DT_BOTTOM As Long = &H8
 Private Const DT_CALCRECT As Long = &H400
 Private Const DT_CENTER As Long = &H1
-Private Const DT_EDITCONTROL As Long = &H2000
 Private Const DT_END_ELLIPSIS As Long = &H8000&
-Private Const DT_EXPANDTABS As Long = &H40
-Private Const DT_EXTERNALLEADING As Long = &H200
-Private Const DT_HIDEPREFIX As Long = &H100000
-Private Const DT_INTERNAL As Long = &H1000
 Private Const DT_LEFT As Long = &H0
 Private Const DT_MODIFYSTRING As Long = &H10000
 Private Const DT_NOCLIP As Long = &H100
-Private Const DT_NOFULLWIDTHCHARBREAK As Long = &H80000
 Private Const DT_NOPREFIX As Long = &H800
 Private Const DT_PATH_ELLIPSIS As Long = &H4000
-Private Const DT_PREFIXONLY As Long = &H200000
 Private Const DT_RIGHT As Long = &H2
 Private Const DT_RTLREADING As Long = &H20000
 Private Const DT_SINGLELINE As Long = &H20
-Private Const DT_TABSTOP As Long = &H80
 Private Const DT_TOP As Long = &H0
 Private Const DT_VCENTER As Long = &H4
 Private Const DT_WORDBREAK As Long = &H10
@@ -124,10 +116,8 @@ Private Const SM_CXEDGE As Long = 45
 Private Const SM_CYEDGE As Long = 46
 Private Const SM_CXDLGFRAME As Long = 7
 Private Const SM_CYDLGFRAME As Long = 8
-Private Const BDR_RAISED As Long = &H5
 Private Const BDR_RAISEDINNER As Long = &H4
 Private Const BDR_RAISEDOUTER As Long = &H1
-Private Const BDR_SUNKEN As Long = &HA
 Private Const BDR_SUNKENINNER As Long = &H8
 Private Const BDR_SUNKENOUTER As Long = &H2
 Private Const BF_LEFT As Long = &H1
@@ -290,11 +280,11 @@ Select Case PropBorderStyle
     Case CCBorderStyleSunken
         BorderWidth = GetSystemMetrics(SM_CXEDGE)
         BorderHeight = GetSystemMetrics(SM_CYEDGE)
-        DrawEdge .hDC, RC, BDR_SUNKEN, BF_RECT
+        DrawEdge .hDC, RC, BDR_SUNKENOUTER Or BDR_SUNKENINNER, BF_RECT
     Case CCBorderStyleRaised
         BorderWidth = GetSystemMetrics(SM_CXDLGFRAME)
         BorderHeight = GetSystemMetrics(SM_CYDLGFRAME)
-        DrawEdge .hDC, RC, BDR_RAISED, BF_RECT
+        DrawEdge .hDC, RC, BDR_RAISEDOUTER Or BDR_RAISEDINNER, BF_RECT
 End Select
 If .Enabled = False Then SetTextColor .hDC, WinColor(vbGrayText)
 Format = DT_NOCLIP
