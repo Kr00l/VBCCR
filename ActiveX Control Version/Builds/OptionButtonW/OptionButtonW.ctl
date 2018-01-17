@@ -1036,7 +1036,7 @@ If OptionButtonHandle <> 0 Then
     End If
 End If
 UserControl.PropertyChanged "Value"
-If Changed = True Then RaiseEvent Click
+If Changed = True And PropValue = True Then RaiseEvent Click
 End Property
 
 Public Property Get Caption() As String
