@@ -132,6 +132,8 @@ Private Declare Function OleLoadPicture Lib "oleaut32" (ByVal pStream As IUnknow
 Private Declare Function OleLoadPicturePath Lib "oleaut32" (ByVal lpszPath As Long, ByVal pUnkCaller As Long, ByVal dwReserved As Long, ByVal ClrReserved As OLE_COLOR, ByRef riid As CLSID, ByRef pIPicture As IPicture) As Long
 Private Declare Function OleCreatePictureIndirect Lib "olepro32" (ByRef pPictDesc As PICTDESC, ByRef riid As Any, ByVal fPictureOwnsHandle As Long, ByRef pIPicture As IPicture) As Long
 Private Declare Function CreateStreamOnHGlobal Lib "ole32" (ByVal hGlobal As Long, ByVal fDeleteOnRelease As Long, ByRef pStream As IUnknown) As Long
+Private Declare Function WideCharToMultiByte Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpWideCharStr As Long, ByVal cchWideChar As Long, ByVal lpMultiByteStr As Long, ByVal cbMultiByte As Long, ByVal lpDefaultChar As Long, ByVal lpUsedDefaultChar As Long) As Long
+Private Declare Function MultiByteToWideChar Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpMultiByteStr As Long, ByVal cbMultiByte As Long, ByVal lpWideCharStr As Long, ByVal cchWideChar As Long) As Long
 
 ' (VB-Overwrite)
 Public Function MsgBox(ByVal Prompt As String, Optional ByVal Buttons As VbMsgBoxStyle = vbOKOnly, Optional ByVal Title As String) As VbMsgBoxResult
@@ -666,6 +668,33 @@ End Function
 Public Function Get_Y_lParam(ByVal lParam As Long) As Long
 Get_Y_lParam = (lParam And &H7FFF0000) \ &H10000
 If lParam And &H80000000 Then Get_Y_lParam = Get_Y_lParam Or &HFFFF8000
+End Function
+
+Public Function UTF16_To_UTF8(ByRef Source As String) As Byte()
+Const CP_UTF8 As Long = 65001
+Dim Length As Long, Pointer As Long, Size As Long
+Length = Len(Source)
+Pointer = StrPtr(Source)
+Size = WideCharToMultiByte(CP_UTF8, 0, Pointer, Length, 0, 0, 0, 0)
+If Size > 0 Then
+    Dim Buffer() As Byte
+    ReDim Buffer(0 To Size - 1) As Byte
+    WideCharToMultiByte CP_UTF8, 0, Pointer, Length, VarPtr(Buffer(0)), Size, 0, 0
+    UTF16_To_UTF8 = Buffer()
+End If
+End Function
+
+Public Function UTF8_To_UTF16(ByRef Source() As Byte) As String
+If (0 / 1) + (Not Not Source()) = 0 Then Exit Function
+Const CP_UTF8 As Long = 65001
+Dim Size As Long, Pointer As Long, Length As Long
+Size = UBound(Source) - LBound(Source) + 1
+Pointer = VarPtr(Source(LBound(Source)))
+Length = MultiByteToWideChar(CP_UTF8, 0, Pointer, Size, 0, 0)
+If Length > 0 Then
+    UTF8_To_UTF16 = Space$(Length)
+    MultiByteToWideChar CP_UTF8, 0, Pointer, Size, StrPtr(UTF8_To_UTF16), Length
+End If
 End Function
 
 Public Function StrToVar(ByVal Text As String) As Variant
