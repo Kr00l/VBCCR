@@ -1,5 +1,29 @@
 List of revisions:
 
+17-Jan-2018
+- Minor behavior change in the Click event of the OptionButtonW control.
+
+14-Jan-2018
+- Fixed constant ILD_FOCUS in the ImageList control. (should be &H2 instead of &H4)
+  This impacts the enum value 'ImlDrawFocus'.
+
+13-Jan-2018
+- Modification in the FrameW control so it supports mouse down events and clicks of itself and windowless controls on it.
+  This has been achieved by the expense of the HelpContextID support. It was not practical possible to support both.
+
+21-Dec-2017
+- Improved the WM_MOUSEWHEEL handler for fine-grained wheel changes in the TabStrip, MonthView and DTPicker control.
+
+09-Dec-2017
+- Improved VTableHandle.bas so it does not crash anymore when using VBCCRxx.OCX and VBFLXGRDxx.OCX in paralell. (concerns ActiveX control only)
+
+24-Nov-2017
+- ClipControls property set to True in the Pager control's UserControl properties.
+
+21-Nov-2017
+- Bugfix in the PPStatusBarPanels/PPToolBarButtons/PPCoolBarBands property page that the ForeColor property could perhaps not be applied.
+  It is also necessary to replace SbrPanelProperties/TbrButtonProperties/CbrBandProperties class module.
+
 04-Nov-2017
 - Bugfix "DPI Aware" in the StatusBar control. (Panel.MinWidth)
   Also the StatusBar control does not crash anymore in the VBA environment.
