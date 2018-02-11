@@ -1,4 +1,28 @@
 List of revisions:
 
+17-Jan-2018
+- Revision update. (Version 1.5.8)
+
+14-Jan-2018
+- Revision update. (Version 1.5.7)
+
+13-Jan-2018
+- Revision update. (Version 1.5.6)
+
+21-Dec-2017
+- Revision update. (Version 1.5.5)
+
+09-Dec-2017
+- Revision update. (Version 1.5.4)
+
+24-Nov-2017
+- Revision update. (Version 1.5.3)
+
+21-Nov-2017
+- Revision update. (Version 1.5.2)
+
+21-Nov-2017
+- Revision update. (Version 1.5.1)
+
 08-Nov-2017
 - First release. (Version 1.5.0)
