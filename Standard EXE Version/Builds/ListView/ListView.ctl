@@ -771,7 +771,7 @@ Private Const LVIS_FOCUSED As Long = &H1
 Private Const LVIS_SELECTED As Long = &H2
 Private Const LVIS_CUT As Long = &H4
 Private Const LVIS_DROPHILITED As Long = &H8
-Private Const LVIS_ACTIVATING As Long = &H20
+Private Const LVIS_ACTIVATING As Long = &H20 ' Unsupported
 Private Const LVIS_OVERLAYMASK As Long = &HF00
 Private Const LVIS_STATEIMAGEMASK As Long = &HF000
 Private Const LVFI_PARAM As Long = &H1
@@ -884,7 +884,6 @@ Private Const LVCF_TEXT As Long = &H4
 Private Const LVCF_SUBITEM As Long = &H8
 Private Const LVCF_IMAGE As Long = &H10
 Private Const LVCF_ORDER As Long = &H20
-Private Const LVGF_NONE As Long = &H0
 Private Const LVGF_HEADER As Long = &H1
 Private Const LVGF_FOOTER As Long = &H2
 Private Const LVGF_STATE As Long = &H4
@@ -925,7 +924,7 @@ Private Const LVCFMT_JUSTIFYMASK As Long = &H3
 Private Const LVCFMT_FIXED_WIDTH As Long = &H100
 Private Const LVCFMT_IMAGE As Long = &H800
 Private Const LVCFMT_BITMAP_ON_RIGHT As Long = &H1000
-Private Const LVCFMT_COL_HAS_IMAGES As Long = &H8000&
+Private Const LVCFMT_COL_HAS_IMAGES As Long = &H8000& ' Same as HDF_OWNERDRAW
 Private Const LVCFMT_SPLITBUTTON As Long = &H1000000
 Private Const LVTVIM_TILESIZE As Long = &H1
 Private Const LVTVIM_COLUMNS As Long = &H2
@@ -5576,6 +5575,34 @@ If ListViewHandle <> 0 Then
         SelectedIndices.Add (iItem + 1)
         iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, iItem, ByVal LVNI_ALL Or LVNI_SELECTED)
     Loop
+End If
+End Function
+
+Public Function GhostedIndices() As Collection
+Attribute GhostedIndices.VB_Description = "Returns a reference to a collection containing the indexes to the ghosted items."
+Set GhostedIndices = New Collection
+If ListViewHandle <> 0 Then
+    Dim iItem As Long
+    iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL Or LVNI_CUT)
+    Do While iItem > -1
+        GhostedIndices.Add (iItem + 1)
+        iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, iItem, ByVal LVNI_ALL Or LVNI_CUT)
+    Loop
+End If
+End Function
+
+Public Function CheckedIndices() As Collection
+Attribute CheckedIndices.VB_Description = "Returns a reference to a collection containing the indexes to the checked items."
+Set CheckedIndices = New Collection
+If ListViewHandle <> 0 Then
+    Dim Count As Long
+    Count = SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&)
+    If Count > 0 Then
+        Dim i As Long
+        For i = 0 To Count - 1
+            If StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, i, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED Then CheckedIndices.Add (i + 1)
+        Next i
+    End If
 End If
 End Function
 
