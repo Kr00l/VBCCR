@@ -709,7 +709,7 @@ PropShowTips = .ReadProperty("ShowTips", False)
 PropHideSelection = .ReadProperty("HideSelection", True)
 PropFullRowSelect = .ReadProperty("FullRowSelect", False)
 PropHotTracking = .ReadProperty("HotTracking", False)
-PropIndentation = .ReadProperty("Indentation", 0)
+PropIndentation = (.ReadProperty("Indentation", 0) * PixelsPerDIP_X())
 PropPathSeparator = VarToStr(.ReadProperty("PathSeparator", "\"))
 PropScroll = .ReadProperty("Scroll", True)
 PropSingleSel = .ReadProperty("SingleSel", False)
@@ -765,7 +765,7 @@ With PropBag
 .WriteProperty "HideSelection", PropHideSelection, True
 .WriteProperty "FullRowSelect", PropFullRowSelect, False
 .WriteProperty "HotTracking", PropHotTracking, False
-.WriteProperty "Indentation", PropIndentation, 0
+.WriteProperty "Indentation", (PropIndentation / PixelsPerDIP_X()), 0
 .WriteProperty "PathSeparator", IIf(PropPathSeparator = "\", "\", StrToVar(PropPathSeparator)), "\"
 .WriteProperty "Scroll", PropScroll, True
 .WriteProperty "SingleSel", PropSingleSel, False
