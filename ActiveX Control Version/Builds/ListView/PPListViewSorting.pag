@@ -130,7 +130,7 @@ Dim i As Long
 FreezeChanged = True
 With PropertyPage.SelectedControls(0)
 CheckSorted.Value = IIf(.Sorted = True, vbChecked, vbUnchecked)
-TextSortKey.Text = .SortKey
+TextSortKey.Text = CStr(.SortKey)
 For i = 0 To ComboSortOrder.ListCount - 1
     If ComboSortOrder.ItemData(i) = .SortOrder Then
         ComboSortOrder.ListIndex = i
@@ -164,7 +164,7 @@ End Sub
 Private Sub TextSortKey_Change()
 If FreezeChanged = True Then Exit Sub
 If TextSortKey.Text = vbNullString Then
-    TextSortKey.Text = "0"
+    TextSortKey.Text = PropertyPage.SelectedControls(0).SortKey
     TextSortKey.SelStart = 0
     TextSortKey.SelLength = 1
 End If
@@ -178,13 +178,18 @@ If Not IsNumeric(TextSortKey.Text) Then
     TextSortKey.SetFocus
     Cancel = True
 Else
-    If CInt(TextSortKey.Text) < 0 Then
+    Dim IntValue As Integer
+    On Error Resume Next
+    IntValue = CInt(TextSortKey.Text)
+    Cancel = CBool(Err.Number <> 0)
+    On Error GoTo 0
+    If IntValue < 0 Then Cancel = True
+    If Cancel = False Then
+        TextSortKey.Text = IntValue
+    Else
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         TextSortKey.Text = PropertyPage.SelectedControls(0).SortKey
         TextSortKey.SetFocus
-        Cancel = True
-    Else
-        TextSortKey.Text = CInt(TextSortKey.Text)
     End If
 End If
 End Sub
