@@ -1,5 +1,9 @@
 List of revisions:
 
+16-Feb-2018
+- Included the MaxTextRows property in the ToolBar control.
+- Bugfix "DPI Aware" in the TreeView control. (Indentation property)
+
 12-Feb-2018
 - Included the CheckedIndices function in the ListBoxW control.
 - Included the CheckedIndices and GhostedIndices function in the ListView control.
