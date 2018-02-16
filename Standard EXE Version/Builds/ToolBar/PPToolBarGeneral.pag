@@ -1,19 +1,26 @@
 VERSION 5.00
 Begin VB.PropertyPage PPToolBarGeneral 
    Caption         =   "General"
-   ClientHeight    =   4875
+   ClientHeight    =   5625
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   6225
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4875
+   ScaleHeight     =   5625
    ScaleWidth      =   6225
+   Begin VB.TextBox TextMaxTextRows 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   28
+      Top             =   4800
+      Width           =   2235
+   End
    Begin VB.CheckBox CheckAnchorHot 
       Caption         =   "AnchorHot"
       Height          =   285
       Left            =   4200
-      TabIndex        =   36
+      TabIndex        =   38
       Top             =   3720
       Width           =   1920
    End
@@ -21,7 +28,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "MouseTrack"
       Height          =   285
       Left            =   4200
-      TabIndex        =   27
+      TabIndex        =   29
       Top             =   480
       Width           =   1920
    End
@@ -29,7 +36,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "HideClippedButtons"
       Height          =   285
       Left            =   4200
-      TabIndex        =   35
+      TabIndex        =   37
       Top             =   3360
       Width           =   1920
    End
@@ -37,7 +44,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "HotTracking"
       Height          =   285
       Left            =   4200
-      TabIndex        =   34
+      TabIndex        =   36
       Top             =   3000
       Width           =   1920
    End
@@ -45,7 +52,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "Transparent"
       Height          =   285
       Left            =   4200
-      TabIndex        =   33
+      TabIndex        =   35
       Top             =   2640
       Width           =   1920
    End
@@ -83,7 +90,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "AltDrag"
       Height          =   285
       Left            =   4200
-      TabIndex        =   32
+      TabIndex        =   34
       Top             =   2280
       Width           =   1920
    End
@@ -107,7 +114,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "Wrappable"
       Height          =   285
       Left            =   4200
-      TabIndex        =   29
+      TabIndex        =   31
       Top             =   1200
       Width           =   1920
    End
@@ -115,7 +122,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "Divider"
       Height          =   285
       Left            =   4200
-      TabIndex        =   31
+      TabIndex        =   33
       Top             =   1920
       Width           =   1920
    End
@@ -177,7 +184,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "ShowTips"
       Height          =   285
       Left            =   4200
-      TabIndex        =   30
+      TabIndex        =   32
       Top             =   1560
       Width           =   1920
    End
@@ -185,7 +192,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Caption         =   "AllowCustomize"
       Height          =   285
       Left            =   4200
-      TabIndex        =   28
+      TabIndex        =   30
       Top             =   840
       Width           =   1920
    End
@@ -203,6 +210,14 @@ Begin VB.PropertyPage PPToolBarGeneral
       Left            =   1800
       TabIndex        =   1
       Top             =   120
+      Width           =   1620
+   End
+   Begin VB.Label LabelMaxTextRows 
+      Caption         =   "MaxTextRows:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   27
+      Top             =   4800
       Width           =   1620
    End
    Begin VB.Label LabelPressedImageList 
@@ -387,6 +402,7 @@ End Select
 .ButtonWidth = CSng(TextButtonWidth.Text)
 .MinButtonWidth = CSng(TextMinButtonWidth.Text)
 .MaxButtonWidth = CSng(TextMaxButtonWidth.Text)
+.MaxTextRows = CInt(TextMaxTextRows.Text)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .AllowCustomize = CBool(CheckAllowCustomize.Value = vbChecked)
 .Wrappable = CBool(CheckWrappable.Value = vbChecked)
@@ -493,6 +509,7 @@ TextButtonHeight.Text = CStr(.ButtonHeight)
 TextButtonWidth.Text = CStr(.ButtonWidth)
 TextMinButtonWidth.Text = CStr(.MinButtonWidth)
 TextMaxButtonWidth.Text = CStr(.MaxButtonWidth)
+TextMaxTextRows.Text = CStr(.MaxTextRows)
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckAllowCustomize.Value = IIf(.AllowCustomize = True, vbChecked, vbUnchecked)
 CheckWrappable.Value = IIf(.Wrappable = True, vbChecked, vbUnchecked)
@@ -726,6 +743,48 @@ Else
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         TextMaxButtonWidth.Text = PropertyPage.SelectedControls(0).MaxButtonWidth
         TextMaxButtonWidth.SetFocus
+    End If
+End If
+End Sub
+
+Private Sub TextMaxTextRows_GotFocus()
+If Not TextMaxTextRows.SelStart = 0 Then Exit Sub
+TextMaxTextRows.SelLength = Len(TextMaxTextRows.Text)
+End Sub
+
+Private Sub TextMaxTextRows_LostFocus()
+TextMaxTextRows.SelStart = 0
+End Sub
+
+Private Sub TextMaxTextRows_Change()
+If FreezeChanged = True Then Exit Sub
+If TextMaxTextRows.Text = vbNullString Then
+    TextMaxTextRows.Text = PropertyPage.SelectedControls(0).MaxTextRows
+    TextMaxTextRows.SelStart = 0
+    TextMaxTextRows.SelLength = Len(TextMaxTextRows.Text)
+End If
+PropertyPage.Changed = True
+End Sub
+
+Private Sub TextMaxTextRows_Validate(Cancel As Boolean)
+If Not IsNumeric(TextMaxTextRows.Text) Then
+    MsgBox "Invalid property value", vbCritical + vbOKOnly
+    TextMaxTextRows.Text = PropertyPage.SelectedControls(0).MaxTextRows
+    TextMaxTextRows.SetFocus
+    Cancel = True
+Else
+    Dim IntValue As Integer
+    On Error Resume Next
+    IntValue = CInt(TextMaxTextRows.Text)
+    Cancel = CBool(Err.Number <> 0)
+    On Error GoTo 0
+    If IntValue < 1 Then Cancel = True
+    If Cancel = False Then
+        TextMaxTextRows.Text = IntValue
+    Else
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        TextMaxTextRows.Text = PropertyPage.SelectedControls(0).MaxTextRows
+        TextMaxTextRows.SetFocus
     End If
 End If
 End Sub

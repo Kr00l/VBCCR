@@ -2,13 +2,13 @@ VERSION 5.00
 Begin VB.PropertyPage PPToolBarButtons 
    AutoRedraw      =   -1  'True
    Caption         =   "Buttons"
-   ClientHeight    =   4875
+   ClientHeight    =   5625
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   6225
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4875
+   ScaleHeight     =   5625
    ScaleWidth      =   6225
    Begin VB.CommandButton CommandForeColor 
       BackColor       =   &H80000012&
