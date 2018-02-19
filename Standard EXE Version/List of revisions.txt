@@ -1,5 +1,8 @@
 List of revisions:
 
+19-Feb-2018
+- Included the HeaderMousePointer property in the ListView control.
+
 16-Feb-2018
 - Included the MaxTextRows property in the ToolBar control.
 - Bugfix "DPI Aware" in the TreeView control. (Indentation property)
