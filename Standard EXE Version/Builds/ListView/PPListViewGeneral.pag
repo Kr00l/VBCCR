@@ -9,31 +9,7 @@ Begin VB.PropertyPage PPListViewGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   7425
    ScaleWidth      =   6450
-   Begin VB.CheckBox CheckMouseTrack 
-      Caption         =   "MouseTrack"
-      Height          =   285
-      Left            =   4200
-      TabIndex        =   34
-      Top             =   480
-      Width           =   2160
-   End
-   Begin VB.ComboBox ComboIMEMode 
-      Height          =   315
-      Left            =   1800
-      Style           =   2  'Dropdown List
-      TabIndex        =   26
-      Top             =   4440
-      Width           =   2235
-   End
-   Begin VB.CheckBox CheckAutoSelectFirstItem 
-      Caption         =   "AutoSelectFirstItem"
-      Height          =   285
-      Left            =   4200
-      TabIndex        =   52
-      Top             =   6960
-      Width           =   2160
-   End
-   Begin VB.ComboBox ComboVisualTheme 
+   Begin VB.ComboBox ComboHeaderMousePointer 
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
@@ -41,19 +17,51 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   1200
       Width           =   2235
    End
+   Begin VB.CheckBox CheckMouseTrack 
+      Caption         =   "MouseTrack"
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   29
+      Top             =   480
+      Width           =   2160
+   End
+   Begin VB.ComboBox ComboIMEMode 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   28
+      Top             =   4800
+      Width           =   2235
+   End
+   Begin VB.CheckBox CheckAutoSelectFirstItem 
+      Caption         =   "AutoSelectFirstItem"
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   54
+      Top             =   6480
+      Width           =   2160
+   End
+   Begin VB.ComboBox ComboVisualTheme 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   10
+      Top             =   1560
+      Width           =   2235
+   End
    Begin VB.CheckBox CheckUseColumnFilterBar 
       Caption         =   "UseColumnFilterBar"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   51
-      Top             =   6600
+      TabIndex        =   53
+      Top             =   6240
       Width           =   2160
    End
    Begin VB.TextBox TextGroupSubsetCount 
       Height          =   315
       Left            =   1800
-      TabIndex        =   24
-      Top             =   4080
+      TabIndex        =   26
+      Top             =   4440
       Width           =   2235
    End
    Begin VB.ComboBox ComboHotMousePointer 
@@ -66,113 +74,113 @@ Begin VB.PropertyPage PPListViewGeneral
    End
    Begin VB.CheckBox CheckUseColumnChevron 
       Caption         =   "UseColumnChevron"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   50
-      Top             =   6240
+      TabIndex        =   52
+      Top             =   6000
       Width           =   2160
    End
    Begin VB.CheckBox CheckGroupView 
       Caption         =   "GroupView"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   49
-      Top             =   5880
+      TabIndex        =   51
+      Top             =   5760
       Width           =   2160
    End
    Begin VB.CheckBox CheckUnderlineHot 
       Caption         =   "UnderlineHot"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   39
-      Top             =   2280
+      TabIndex        =   41
+      Top             =   3360
       Width           =   2160
    End
    Begin VB.CheckBox CheckHighlightHot 
       Caption         =   "HighlightHot"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   38
-      Top             =   1920
+      TabIndex        =   40
+      Top             =   3120
       Width           =   2160
    End
    Begin VB.CheckBox CheckSnapToGrid 
       Caption         =   "SnapToGrid"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   48
+      TabIndex        =   50
       Top             =   5520
       Width           =   2160
    End
    Begin VB.TextBox TextTileViewLines 
       Height          =   315
       Left            =   1800
-      TabIndex        =   22
-      Top             =   3720
+      TabIndex        =   24
+      Top             =   4080
       Width           =   2235
    End
    Begin VB.CheckBox CheckPictureWatermark 
       Caption         =   "PictureWatermark"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   47
-      Top             =   5160
+      TabIndex        =   49
+      Top             =   5280
       Width           =   2160
    End
    Begin VB.CheckBox CheckAllowColumnCheckboxes 
       Caption         =   "AllowColumnCheckboxes"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   32
-      Top             =   6600
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   37
+      Top             =   2400
       Width           =   2160
    End
    Begin VB.ComboBox ComboPictureAlignment 
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
-      TabIndex        =   20
-      Top             =   3360
+      TabIndex        =   22
+      Top             =   3720
       Width           =   2235
    End
    Begin VB.CheckBox CheckResizableColumnHeaders 
       Caption         =   "ResizableColumnHeaders"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   46
-      Top             =   4800
+      TabIndex        =   48
+      Top             =   5040
       Width           =   2160
    End
    Begin VB.CheckBox CheckTrackSizeColumnHeaders 
       Caption         =   "TrackSizeColumnHeaders"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   45
-      Top             =   4440
+      TabIndex        =   47
+      Top             =   4800
       Width           =   2160
    End
    Begin VB.CheckBox CheckHighlightColumnHeaders 
       Caption         =   "HighlightColumnHeaders"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   44
-      Top             =   4080
+      TabIndex        =   46
+      Top             =   4560
       Width           =   2160
    End
    Begin VB.CheckBox CheckClickableColumnHeaders 
       Caption         =   "ClickableColumnHeaders"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   43
-      Top             =   3720
+      TabIndex        =   45
+      Top             =   4320
       Width           =   2160
    End
    Begin VB.ComboBox ComboTextBackground 
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
-      TabIndex        =   18
-      Top             =   3000
+      TabIndex        =   20
+      Top             =   3360
       Width           =   2235
    End
    Begin VB.CheckBox CheckDoubleBuffer 
@@ -186,91 +194,99 @@ Begin VB.PropertyPage PPListViewGeneral
    Begin VB.TextBox TextHoverSelectionTime 
       Height          =   315
       Left            =   1800
-      TabIndex        =   16
-      Top             =   2640
+      TabIndex        =   18
+      Top             =   3000
       Width           =   2235
    End
    Begin VB.CheckBox CheckShowLabelTips 
       Caption         =   "ShowLabelTips"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   42
-      Top             =   3360
+      TabIndex        =   44
+      Top             =   4080
       Width           =   2160
    End
    Begin VB.CheckBox CheckShowInfoTips 
       Caption         =   "ShowInfoTips"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   41
-      Top             =   3000
+      TabIndex        =   43
+      Top             =   3840
       Width           =   2160
    End
    Begin VB.CheckBox CheckHoverSelection 
       Caption         =   "HoverSelection"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   40
-      Top             =   2640
+      TabIndex        =   42
+      Top             =   3600
       Width           =   2160
    End
    Begin VB.CheckBox CheckHotTracking 
       Caption         =   "HotTracking"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   37
-      Top             =   1560
+      TabIndex        =   39
+      Top             =   2880
       Width           =   2160
    End
    Begin VB.CheckBox CheckGridLines 
       Caption         =   "GridLines"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   36
-      Top             =   1200
+      TabIndex        =   31
+      Top             =   960
       Width           =   2160
    End
    Begin VB.CheckBox CheckFullRowSelect 
       Caption         =   "FullRowSelect"
-      Height          =   285
+      Height          =   225
       Left            =   4200
-      TabIndex        =   35
-      Top             =   840
+      TabIndex        =   30
+      Top             =   720
       Width           =   2160
    End
    Begin VB.CheckBox CheckCheckboxes 
       Caption         =   "Checkboxes"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   33
-      Top             =   6960
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   38
+      Top             =   2640
       Width           =   2160
    End
    Begin VB.CheckBox CheckAllowColumnReorder 
       Caption         =   "AllowColumnReorder"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   31
-      Top             =   6240
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   36
+      Top             =   2160
       Width           =   2160
    End
    Begin VB.CheckBox CheckMultiSelect 
       Caption         =   "MultiSelect"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   30
-      Top             =   5880
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   35
+      Top             =   1920
       Width           =   2160
    End
    Begin VB.CheckBox CheckLabelWrap 
       Caption         =   "LabelWrap"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   29
-      Top             =   5520
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   34
+      Top             =   1680
       Width           =   2160
    End
    Begin VB.ComboBox ComboLabelEdit 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   16
+      Top             =   2640
+      Width           =   2235
+   End
+   Begin VB.ComboBox ComboArrange 
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
@@ -278,20 +294,12 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   2280
       Width           =   2235
    End
-   Begin VB.ComboBox ComboArrange 
-      Height          =   315
-      Left            =   1800
-      Style           =   2  'Dropdown List
-      TabIndex        =   12
-      Top             =   1920
-      Width           =   2235
-   End
    Begin VB.CheckBox CheckHideSelection 
       Caption         =   "HideSelection"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   28
-      Top             =   5160
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   33
+      Top             =   1440
       Width           =   2160
    End
    Begin VB.ComboBox ComboMousePointer 
@@ -306,16 +314,16 @@ Begin VB.PropertyPage PPListViewGeneral
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
-      TabIndex        =   10
-      Top             =   1560
+      TabIndex        =   12
+      Top             =   1920
       Width           =   2235
    End
    Begin VB.CheckBox CheckHideColumnHeaders 
       Caption         =   "HideColumnHeaders"
-      Height          =   285
-      Left            =   1800
-      TabIndex        =   27
-      Top             =   4800
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   32
+      Top             =   1200
       Width           =   2160
    End
    Begin VB.CheckBox CheckEnabled 
@@ -334,28 +342,36 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   120
       Width           =   1620
    End
-   Begin VB.Label LabelIMEMode 
-      Caption         =   "IMEMode:"
-      Height          =   240
-      Left            =   120
-      TabIndex        =   25
-      Top             =   4440
-      Width           =   1620
-   End
-   Begin VB.Label LabelVisualTheme 
-      Caption         =   "VisualTheme:"
+   Begin VB.Label LabelHeaderMousePointer 
+      Caption         =   "HeaderMousePointer:"
       Height          =   240
       Left            =   120
       TabIndex        =   7
       Top             =   1200
       Width           =   1620
    End
+   Begin VB.Label LabelIMEMode 
+      Caption         =   "IMEMode:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   27
+      Top             =   4800
+      Width           =   1620
+   End
+   Begin VB.Label LabelVisualTheme 
+      Caption         =   "VisualTheme:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   9
+      Top             =   1560
+      Width           =   1620
+   End
    Begin VB.Label LabelGroupSubsetCount 
       Caption         =   "GroupSubsetCount:"
       Height          =   240
       Left            =   120
-      TabIndex        =   23
-      Top             =   4080
+      TabIndex        =   25
+      Top             =   4440
       Width           =   1620
    End
    Begin VB.Label LabelHotMousePointer 
@@ -370,48 +386,48 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "TileViewLines:"
       Height          =   240
       Left            =   120
-      TabIndex        =   21
-      Top             =   3720
+      TabIndex        =   23
+      Top             =   4080
       Width           =   1620
    End
-   Begin VB.Label Label1 
+   Begin VB.Label LabelPictureAlignment 
       Caption         =   "PictureAlignment:"
       Height          =   240
       Left            =   120
-      TabIndex        =   19
-      Top             =   3360
+      TabIndex        =   21
+      Top             =   3720
       Width           =   1620
    End
    Begin VB.Label LabelTextBackground 
       Caption         =   "TextBackground:"
       Height          =   240
       Left            =   120
-      TabIndex        =   17
-      Top             =   3000
+      TabIndex        =   19
+      Top             =   3360
       Width           =   1620
    End
    Begin VB.Label LabelHoverSelectionTime 
       Caption         =   "HoverSelectionTime:"
       Height          =   240
       Left            =   120
-      TabIndex        =   15
-      Top             =   2640
+      TabIndex        =   17
+      Top             =   3000
       Width           =   1620
    End
    Begin VB.Label LabelLabelEdit 
       Caption         =   "LabelEdit:"
       Height          =   240
       Left            =   120
-      TabIndex        =   13
-      Top             =   2280
+      TabIndex        =   15
+      Top             =   2640
       Width           =   1620
    End
    Begin VB.Label LabelArrange 
       Caption         =   "Arrange:"
       Height          =   240
       Left            =   120
-      TabIndex        =   11
-      Top             =   1920
+      TabIndex        =   13
+      Top             =   2280
       Width           =   1620
    End
    Begin VB.Label LabelMousePointer 
@@ -426,8 +442,8 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "View:"
       Height          =   240
       Left            =   120
-      TabIndex        =   9
-      Top             =   1560
+      TabIndex        =   11
+      Top             =   1920
       Width           =   1620
    End
 End
@@ -443,6 +459,7 @@ Private Sub PropertyPage_Initialize()
 Call ComCtlsShowAllUIStates(PropertyPage.hWnd)
 Call ComCtlsPPInitComboMousePointer(ComboMousePointer)
 Call ComCtlsPPInitComboMousePointer(ComboHotMousePointer)
+Call ComCtlsPPInitComboMousePointer(ComboHeaderMousePointer)
 With ComboVisualTheme
 .AddItem LvwVisualThemeStandard & " - Standard"
 .ItemData(.NewIndex) = LvwVisualThemeStandard
@@ -515,6 +532,7 @@ With PropertyPage.SelectedControls(0)
 .DoubleBuffer = CBool(CheckDoubleBuffer.Value = vbChecked)
 .MousePointer = ComboMousePointer.ItemData(ComboMousePointer.ListIndex)
 .HotMousePointer = ComboHotMousePointer.ItemData(ComboHotMousePointer.ListIndex)
+.HeaderMousePointer = ComboHeaderMousePointer.ItemData(ComboHeaderMousePointer.ListIndex)
 .VisualTheme = ComboVisualTheme.ItemData(ComboVisualTheme.ListIndex)
 .View = ComboView.ItemData(ComboView.ListIndex)
 .Arrange = ComboArrange.ItemData(ComboArrange.ListIndex)
@@ -572,6 +590,12 @@ Next i
 For i = 0 To ComboHotMousePointer.ListCount - 1
     If ComboHotMousePointer.ItemData(i) = .HotMousePointer Then
         ComboHotMousePointer.ListIndex = i
+        Exit For
+    End If
+Next i
+For i = 0 To ComboHeaderMousePointer.ListCount - 1
+    If ComboHeaderMousePointer.ItemData(i) = .HeaderMousePointer Then
+        ComboHeaderMousePointer.ListIndex = i
         Exit For
     End If
 Next i
@@ -671,6 +695,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub ComboHotMousePointer_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub ComboHeaderMousePointer_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
