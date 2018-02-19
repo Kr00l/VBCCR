@@ -6937,8 +6937,8 @@ Select Case wMsg
             Dim hCursor As Long
             If MousePointerID(PropHeaderMousePointer) <> 0 Then
                 hCursor = LoadCursor(0, MousePointerID(PropHeaderMousePointer))
-            ElseIf PropMousePointer = 99 Then
-                If Not PropMouseIcon Is Nothing Then hCursor = PropMouseIcon.Handle
+            ElseIf PropHeaderMousePointer = 99 Then
+                If Not PropHeaderMouseIcon Is Nothing Then hCursor = PropHeaderMouseIcon.Handle
             End If
             Dim HDHTI As HDHITTESTINFO, Pos As Long
             With HDHTI
