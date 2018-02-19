@@ -1005,6 +1005,7 @@ Private ListViewMemoryColumnWidth As Long
 Private ListViewFilterEditHandle As Long, ListViewFilterEditIndex As Long
 Private DispIDMousePointer As Long
 Private DispIDHotMousePointer As Long
+Private DispIDHeaderMousePointer As Long
 Private DispIDIcons As Long, IconsArray() As String
 Private DispIDSmallIcons As Long, SmallIconsArray() As String
 Private DispIDColumnHeaderIcons As Long, ColumnHeaderIconsArray() As String
@@ -1020,6 +1021,7 @@ Private PropOLEDragMode As VBRUN.OLEDragConstants
 Private PropOLEDragDropScroll As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropHotMousePointer As Integer, PropHotMouseIcon As IPictureDisp
+Private PropHeaderMousePointer As Integer, PropHeaderMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
@@ -1116,6 +1118,9 @@ If DispID = DispIDMousePointer Then
 ElseIf DispID = DispIDHotMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropHotMousePointer, DisplayName)
     Handled = True
+ElseIf DispID = DispIDHeaderMousePointer Then
+    Call ComCtlsIPPBSetDisplayStringMousePointer(PropHeaderMousePointer, DisplayName)
+    Handled = True
 ElseIf DispID = DispIDIcons Then
     DisplayName = PropIconsName
     Handled = True
@@ -1132,7 +1137,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Or DispID = DispIDHotMousePointer Then
+If DispID = DispIDMousePointer Or DispID = DispIDHotMousePointer Or DispID = DispIDHeaderMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
 ElseIf DispID = DispIDIcons Or DispID = DispIDSmallIcons Or DispID = DispIDColumnHeaderIcons Or DispID = DispIDGroupIcons Then
@@ -1150,7 +1155,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Or DispID = DispIDHotMousePointer Then
+If DispID = DispIDMousePointer Or DispID = DispIDHotMousePointer Or DispID = DispIDHeaderMousePointer Then
     Value = Cookie
     Handled = True
 ElseIf DispID = DispIDIcons Then
@@ -1182,6 +1187,7 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDHotMousePointer = 0 Then DispIDHotMousePointer = GetDispID(Me, "HotMousePointer")
+If DispIDHeaderMousePointer = 0 Then DispIDHeaderMousePointer = GetDispID(Me, "HeaderMousePointer")
 If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
 If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
 If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
@@ -1194,6 +1200,7 @@ PropOLEDragDropScroll = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropHotMousePointer = 0: Set PropHotMouseIcon = Nothing
+PropHeaderMousePointer = 0: Set PropHeaderMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
@@ -1266,6 +1273,7 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDHotMousePointer = 0 Then DispIDHotMousePointer = GetDispID(Me, "HotMousePointer")
+If DispIDHeaderMousePointer = 0 Then DispIDHeaderMousePointer = GetDispID(Me, "HeaderMousePointer")
 If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
 If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
 If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
@@ -1282,6 +1290,8 @@ PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropHotMousePointer = .ReadProperty("HotMousePointer", 0)
 Set PropHotMouseIcon = .ReadProperty("HotMouseIcon", Nothing)
+PropHeaderMousePointer = .ReadProperty("HeaderMousePointer", 0)
+Set PropHeaderMouseIcon = .ReadProperty("HeaderMouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
 PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
@@ -1367,6 +1377,8 @@ With PropBag
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "HotMousePointer", PropHotMousePointer, 0
 .WriteProperty "HotMouseIcon", PropHotMouseIcon, Nothing
+.WriteProperty "HeaderMousePointer", PropHeaderMousePointer, 0
+.WriteProperty "HeaderMouseIcon", PropHeaderMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
@@ -2001,6 +2013,48 @@ If ListViewHandle <> 0 Then
     End If
 End If
 UserControl.PropertyChanged "HotMouseIcon"
+End Property
+
+Public Property Get HeaderMousePointer() As Integer
+Attribute HeaderMousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over the column headers."
+HeaderMousePointer = PropHeaderMousePointer
+End Property
+
+Public Property Let HeaderMousePointer(ByVal Value As Integer)
+Select Case Value
+    Case 0 To 16, 99
+        PropHeaderMousePointer = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "HeaderMousePointer"
+End Property
+
+Public Property Get HeaderMouseIcon() As IPictureDisp
+Attribute HeaderMouseIcon.VB_Description = "Returns/sets a custom header mouse icon."
+Set HeaderMouseIcon = PropHeaderMouseIcon
+End Property
+
+Public Property Let HeaderMouseIcon(ByVal Value As IPictureDisp)
+Set Me.HeaderMouseIcon = Value
+End Property
+
+Public Property Set HeaderMouseIcon(ByVal Value As IPictureDisp)
+If Value Is Nothing Then
+    Set PropHeaderMouseIcon = Nothing
+Else
+    If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
+        Set PropHeaderMouseIcon = Value
+    Else
+        If Ambient.UserMode = False Then
+            MsgBox "Invalid property value", vbCritical + vbOKOnly
+            Exit Property
+        Else
+            Err.Raise 380
+        End If
+    End If
+End If
+UserControl.PropertyChanged "HeaderMouseIcon"
 End Property
 
 Public Property Get MouseTrack() As Boolean
@@ -6880,6 +6934,12 @@ Private Function WindowProcHeader(ByVal hWnd As Long, ByVal wMsg As Long, ByVal 
 Select Case wMsg
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
+            Dim hCursor As Long
+            If MousePointerID(PropHeaderMousePointer) <> 0 Then
+                hCursor = LoadCursor(0, MousePointerID(PropHeaderMousePointer))
+            ElseIf PropMousePointer = 99 Then
+                If Not PropMouseIcon Is Nothing Then hCursor = PropMouseIcon.Handle
+            End If
             Dim HDHTI As HDHITTESTINFO, Pos As Long
             With HDHTI
             Pos = GetMessagePos()
@@ -6889,15 +6949,20 @@ Select Case wMsg
             If SendMessage(hWnd, HDM_HITTEST, 0, ByVal VarPtr(HDHTI)) > -1 Then
                 If (.Flags And HHT_ONDIVIDER) <> 0 Or (.Flags And HHT_ONDIVOPEN) <> 0 Then
                     If PropResizableColumnHeaders = False Then
-                        SetCursor LoadCursor(0, MousePointerID(vbArrow))
-                        Exit Function
+                        If hCursor = 0 Then hCursor = LoadCursor(0, MousePointerID(vbArrow))
                     ElseIf Me.ColumnHeaders(.iItem + 1).Resizable = False Then
-                        SetCursor LoadCursor(0, MousePointerID(vbArrow))
-                        Exit Function
+                        If hCursor = 0 Then hCursor = LoadCursor(0, MousePointerID(vbArrow))
+                    Else
+                        hCursor = 0
                     End If
                 End If
             End If
             End With
+            If hCursor <> 0 Then
+                SetCursor hCursor
+                WindowProcHeader = 1
+                Exit Function
+            End If
         End If
     Case WM_COMMAND
         Const EN_SETFOCUS As Long = &H100, EN_KILLFOCUS = &H200
