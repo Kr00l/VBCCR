@@ -2085,10 +2085,10 @@ Select Case wMsg
             KeyCode = wParam And &HFF&
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-                ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
+            ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
             wParam = KeyCode
         End If
     Case WM_CHAR
@@ -2228,10 +2228,10 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
