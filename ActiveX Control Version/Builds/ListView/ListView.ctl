@@ -6532,18 +6532,13 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            If PropResizableColumnHeaders = True Then
-                ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
-            Else
-                If KeyCode = vbKeyAdd And (GetShiftStateFromMsg() And vbCtrlMask) = vbCtrlMask Then
-                    Exit Function
-                Else
-                    ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
-                End If
+            If PropResizableColumnHeaders = False Then
+                If KeyCode = vbKeyAdd And (GetShiftStateFromMsg() And vbCtrlMask) = vbCtrlMask Then Exit Function
             End If
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -6824,7 +6819,7 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN
+    Case WM_KEYDOWN, WM_KEYUP
         ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
     Case WM_CHAR
         If ListViewCharCodeCache <> 0 Then
@@ -6872,9 +6867,11 @@ Select Case wMsg
                 If (.Flags And HHT_ONDIVIDER) <> 0 Or (.Flags And HHT_ONDIVOPEN) <> 0 Then
                     If PropResizableColumnHeaders = False Then
                         SetCursor LoadCursor(0, MousePointerID(vbArrow))
+                        WindowProcHeader = 1
                         Exit Function
                     ElseIf Me.ColumnHeaders(.iItem + 1).Resizable = False Then
                         SetCursor LoadCursor(0, MousePointerID(vbArrow))
+                        WindowProcHeader = 1
                         Exit Function
                     End If
                 End If
