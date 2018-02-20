@@ -3009,7 +3009,6 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
             If KeyCode = vbKeySpace And PropCheckboxes = True Then
                 Dim TVI As TVITEM
                 With TVI
@@ -3029,6 +3028,7 @@ Select Case wMsg
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -3116,7 +3116,7 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN
+    Case WM_KEYDOWN, WM_KEYUP
         TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
     Case WM_CHAR
         If TreeViewCharCodeCache <> 0 Then
