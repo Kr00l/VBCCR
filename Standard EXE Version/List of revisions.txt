@@ -1,5 +1,9 @@
 List of revisions:
 
+20-Feb-2018
+- Unicode support when generating ASCII key combos, e.g. ALT + 3333.
+  It affects almost all controls, but most important are the TextBoxW and RichTextBox control.
+
 19-Feb-2018
 - Included the HeaderMousePointer property in the ListView control.
 
