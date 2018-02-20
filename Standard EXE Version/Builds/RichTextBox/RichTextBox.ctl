@@ -3433,15 +3433,15 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            RichTextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        wParam = KeyCode
-        If wParam = vbKeyInsert Then
+        If KeyCode = vbKeyInsert Then
             If PropAllowOverType = False And PropOverTypeMode = False Then Exit Function
             If wMsg = WM_KEYDOWN Then PropOverTypeMode = Not PropOverTypeMode
         End If
+        RichTextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
         If RichTextBoxCharCodeCache <> 0 Then
