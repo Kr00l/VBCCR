@@ -164,7 +164,7 @@ End Sub
 Private Sub TextSortKey_Change()
 If FreezeChanged = True Then Exit Sub
 If TextSortKey.Text = vbNullString Then
-    TextSortKey.Text = PropertyPage.SelectedControls(0).SortKey
+    TextSortKey.Text = "0"
     TextSortKey.SelStart = 0
     TextSortKey.SelLength = 1
 End If

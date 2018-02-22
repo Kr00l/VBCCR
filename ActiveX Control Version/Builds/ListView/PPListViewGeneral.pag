@@ -456,7 +456,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   3720
       Width           =   1620
    End
-   Begin VB.Label Label1 
+   Begin VB.Label LabelPictureAlignment 
       Caption         =   "PictureAlignment:"
       Height          =   240
       Left            =   120
@@ -630,7 +630,6 @@ With PropertyPage.SelectedControls(0)
 .PictureWatermark = CBool(CheckPictureWatermark.Value = vbChecked)
 .SnapToGrid = CBool(CheckSnapToGrid.Value = vbChecked)
 .GroupView = CBool(CheckGroupView.Value = vbChecked)
-.GroupSubsetCount = CLng(TextGroupSubsetCount.Text)
 .UseColumnChevron = CBool(CheckUseColumnChevron.Value = vbChecked)
 .UseColumnFilterBar = CBool(CheckUseColumnFilterBar.Value = vbChecked)
 .AutoSelectFirstItem = CBool(CheckAutoSelectFirstItem.Value = vbChecked)
@@ -681,7 +680,7 @@ For i = 0 To ComboLabelEdit.ListCount - 1
         Exit For
     End If
 Next i
-TextHoverSelectionTime.Text = .HoverSelectionTime
+TextHoverSelectionTime.Text = CStr(.HoverSelectionTime)
 For i = 0 To ComboTextBackground.ListCount - 1
     If ComboTextBackground.ItemData(i) = .TextBackground Then
         ComboTextBackground.ListIndex = i
@@ -694,8 +693,8 @@ For i = 0 To ComboPictureAlignment.ListCount - 1
         Exit For
     End If
 Next i
-TextTileViewLines.Text = .TileViewLines
-TextGroupSubsetCount.Text = .GroupSubsetCount
+TextTileViewLines.Text = CStr(.TileViewLines)
+TextGroupSubsetCount.Text = CStr(.GroupSubsetCount)
 For i = 0 To ComboIMEMode.ListCount - 1
     If ComboIMEMode.ItemData(i) = .IMEMode Then
         ComboIMEMode.ListIndex = i
