@@ -543,6 +543,9 @@ With PropertyPage.SelectedControls(0)
 .TileViewLines = CLng(TextTileViewLines.Text)
 .GroupSubsetCount = CLng(TextGroupSubsetCount.Text)
 .IMEMode = ComboIMEMode.ItemData(ComboIMEMode.ListIndex)
+.MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
+.FullRowSelect = CBool(CheckFullRowSelect.Value = vbChecked)
+.GridLines = CBool(CheckGridLines.Value = vbChecked)
 .HideColumnHeaders = CBool(CheckHideColumnHeaders.Value = vbChecked)
 .HideSelection = CBool(CheckHideSelection.Value = vbChecked)
 .LabelWrap = CBool(CheckLabelWrap.Value = vbChecked)
@@ -550,9 +553,6 @@ With PropertyPage.SelectedControls(0)
 .AllowColumnReorder = CBool(CheckAllowColumnReorder.Value = vbChecked)
 .AllowColumnCheckboxes = CBool(CheckAllowColumnCheckboxes.Value = vbChecked)
 .Checkboxes = CBool(CheckCheckboxes.Value = vbChecked)
-.MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
-.FullRowSelect = CBool(CheckFullRowSelect.Value = vbChecked)
-.GridLines = CBool(CheckGridLines.Value = vbChecked)
 .HotTracking = CBool(CheckHotTracking.Value = vbChecked)
 .HighlightHot = CBool(CheckHighlightHot.Value = vbChecked)
 .UnderlineHot = CBool(CheckUnderlineHot.Value = vbChecked)
@@ -566,7 +566,6 @@ With PropertyPage.SelectedControls(0)
 .PictureWatermark = CBool(CheckPictureWatermark.Value = vbChecked)
 .SnapToGrid = CBool(CheckSnapToGrid.Value = vbChecked)
 .GroupView = CBool(CheckGroupView.Value = vbChecked)
-.GroupSubsetCount = CLng(TextGroupSubsetCount.Text)
 .UseColumnChevron = CBool(CheckUseColumnChevron.Value = vbChecked)
 .UseColumnFilterBar = CBool(CheckUseColumnFilterBar.Value = vbChecked)
 .AutoSelectFirstItem = CBool(CheckAutoSelectFirstItem.Value = vbChecked)
@@ -623,7 +622,7 @@ For i = 0 To ComboLabelEdit.ListCount - 1
         Exit For
     End If
 Next i
-TextHoverSelectionTime.Text = .HoverSelectionTime
+TextHoverSelectionTime.Text = CStr(.HoverSelectionTime)
 For i = 0 To ComboTextBackground.ListCount - 1
     If ComboTextBackground.ItemData(i) = .TextBackground Then
         ComboTextBackground.ListIndex = i
@@ -636,14 +635,17 @@ For i = 0 To ComboPictureAlignment.ListCount - 1
         Exit For
     End If
 Next i
-TextTileViewLines.Text = .TileViewLines
-TextGroupSubsetCount.Text = .GroupSubsetCount
+TextTileViewLines.Text = CStr(.TileViewLines)
+TextGroupSubsetCount.Text = CStr(.GroupSubsetCount)
 For i = 0 To ComboIMEMode.ListCount - 1
     If ComboIMEMode.ItemData(i) = .IMEMode Then
         ComboIMEMode.ListIndex = i
         Exit For
     End If
 Next i
+CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
+CheckFullRowSelect.Value = IIf(.FullRowSelect = True, vbChecked, vbUnchecked)
+CheckGridLines.Value = IIf(.GridLines = True, vbChecked, vbUnchecked)
 CheckHideColumnHeaders.Value = IIf(.HideColumnHeaders = True, vbChecked, vbUnchecked)
 CheckHideSelection.Value = IIf(.HideSelection = True, vbChecked, vbUnchecked)
 CheckLabelWrap.Value = IIf(.LabelWrap = True, vbChecked, vbUnchecked)
@@ -651,9 +653,6 @@ CheckMultiSelect.Value = IIf(.MultiSelect = True, vbChecked, vbUnchecked)
 CheckAllowColumnReorder.Value = IIf(.AllowColumnReorder = True, vbChecked, vbUnchecked)
 CheckAllowColumnCheckboxes.Value = IIf(.AllowColumnCheckboxes = True, vbChecked, vbUnchecked)
 CheckCheckboxes.Value = IIf(.Checkboxes = True, vbChecked, vbUnchecked)
-CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
-CheckFullRowSelect.Value = IIf(.FullRowSelect = True, vbChecked, vbUnchecked)
-CheckGridLines.Value = IIf(.GridLines = True, vbChecked, vbUnchecked)
 CheckHotTracking.Value = IIf(.HotTracking = True, vbChecked, vbUnchecked)
 CheckHighlightHot.Value = IIf(.HighlightHot = True, vbChecked, vbUnchecked)
 CheckUnderlineHot.Value = IIf(.UnderlineHot = True, vbChecked, vbUnchecked)
@@ -877,6 +876,21 @@ If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
 
+Private Sub CheckMouseTrack_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckFullRowSelect_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckGridLines_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
 Private Sub CheckHideColumnHeaders_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
@@ -908,21 +922,6 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckCheckboxes_Click()
-If FreezeChanged = True Then Exit Sub
-PropertyPage.Changed = True
-End Sub
-
-Private Sub CheckMouseTrack_Click()
-If FreezeChanged = True Then Exit Sub
-PropertyPage.Changed = True
-End Sub
-
-Private Sub CheckFullRowSelect_Click()
-If FreezeChanged = True Then Exit Sub
-PropertyPage.Changed = True
-End Sub
-
-Private Sub CheckGridLines_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
