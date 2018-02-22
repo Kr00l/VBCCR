@@ -1172,7 +1172,7 @@ Select Case Value
                 MsgBox "MultiSelect must be 0 - None when Style is not 0 - Standard", vbCritical + vbOKOnly
                 Exit Property
             Else
-                Err.Raise Number:=383, Description:="MultiSelect must be 0 - None when Style is 1 - Checkbox"
+                Err.Raise Number:=383, Description:="MultiSelect must be 0 - None when Style is not 0 - Standard"
             End If
         End If
         PropMultiSelect = Value
