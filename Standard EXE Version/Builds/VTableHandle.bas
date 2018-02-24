@@ -14,18 +14,6 @@ VTableInterfaceInPlaceActiveObject = 2
 VTableInterfacePerPropertyBrowsing = 3
 VTableInterfaceEnumeration = 4
 End Enum
-Private Enum VTableIndexIPAOConstants
-' Ignore : IPAOQueryInterface = 1
-' Ignore : IPAOAddRef = 2
-' Ignore : IPAORelease = 3
-' Ignore : IPAOGetWindow = 4
-' Ignore : IPAOContextSensitiveHelp = 5
-VTableIndexIPAOTranslateAccelerator = 6
-' Ignore : IPAOOnFrameWindowActivate = 7
-' Ignore : IPAOOnDocWindowActivate = 8
-' Ignore : IPAOResizeBorder = 9
-' Ignore : IPAOEnableModeless = 10
-End Enum
 Private Enum VTableIndexControlConstants
 ' Ignore : ControlQueryInterface = 1
 ' Ignore : ControlAddRef = 2
@@ -35,6 +23,13 @@ VTableIndexControlOnMnemonic = 5
 ' Ignore : ControlOnAmbientPropertyChange = 6
 ' Ignore : ControlFreezeEvents = 7
 End Enum
+Private Type VTableIPAODataStruct
+VTable As Long
+OriginalIOleIPAO As OLEGuids.IOleInPlaceActiveObject
+IOleIPAO As OLEGuids.IOleInPlaceActiveObjectVB
+RefCount As Long
+This As Long
+End Type
 Private Enum VTableIndexPPBConstants
 ' Ignore : PPBQueryInterface = 1
 ' Ignore : PPBAddRef = 2
@@ -69,7 +64,7 @@ Bounds(0 To 0) As SAFEARRAYBOUND
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function ArrPtr Lib "msvbvm60" Alias "VarPtr" (ByRef Var() As Any) As Long
-Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadId As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
+Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function SetProp Lib "user32" Alias "SetPropW" (ByVal hWnd As Long, ByVal lpString As Long, ByVal hData As Long) As Long
 Private Declare Function GetProp Lib "user32" Alias "GetPropW" (ByVal hWnd As Long, ByVal lpString As Long) As Long
@@ -88,7 +83,7 @@ Private Const E_INVALIDARG As Long = &H80070057
 Private Const E_NOTIMPL As Long = &H80004001
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
-Private VTableSubclassIPAO As VTableSubclass, ActiveIOleInPlaceActiveObjectVB As OLEGuids.IOleInPlaceActiveObjectVB
+Private VTableIPAO(0 To 9) As Long, VTableIPAOData As VTableIPAODataStruct
 Private VTableSubclassControl As VTableSubclass
 Private VTableSubclassPPB As VTableSubclass, StringsOutArray() As String, CookiesOutArray() As Long
 Private VTableSubclassEnumeration As VTableSubclass, SAHeader As SAFEARRAY1D, VariantArray() As Variant
@@ -96,7 +91,7 @@ Private VTableSubclassEnumeration As VTableSubclass, SAHeader As SAFEARRAY1D, Va
 Public Sub SetVTableSubclass(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        If VTableSubclassSupported(This, VTableInterfaceInPlaceActiveObject) = True Then Call ReplaceIOleIPAO(This)
+        If VTableSubclassSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
     Case VTableInterfaceControl
         If VTableSubclassSupported(This, VTableInterfaceControl) = True Then Call ReplaceIOleControl(This)
     Case VTableInterfacePerPropertyBrowsing
@@ -109,7 +104,7 @@ End Sub
 Public Sub RemoveVTableSubclass(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        If VTableSubclassSupported(This, VTableInterfaceInPlaceActiveObject) = True Then Call RestoreIOleIPAO(This)
+        If VTableSubclassSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
     Case VTableInterfaceControl
         If VTableSubclassSupported(This, VTableInterfaceControl) = True Then Call RestoreIOleControl(This)
     Case VTableInterfacePerPropertyBrowsing
@@ -122,7 +117,8 @@ End Sub
 Public Sub RemoveAllVTableSubclass(ByVal OLEInterface As VTableInterfaceConstants)
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        Set VTableSubclassIPAO = Nothing
+        VTableIPAOData.RefCount = 0
+        If Not VTableIPAOData.OriginalIOleIPAO Is Nothing Then Call ActivateIPAO(VTableIPAOData.OriginalIOleIPAO)
     Case VTableInterfaceControl
         Set VTableSubclassControl = Nothing
     Case VTableInterfacePerPropertyBrowsing
@@ -203,35 +199,7 @@ End If
 VTableInterfaceSupported = CBool(HResult = S_OK)
 End Function
 
-Private Sub ReplaceIOleIPAO(ByVal This As OLEGuids.IOleInPlaceActiveObject)
-If VTableSubclassIPAO Is Nothing Then Set VTableSubclassIPAO = New VTableSubclass
-If VTableSubclassIPAO.RefCount = 0 Then
-    Dim hMain As Long, Handled As Boolean
-    hMain = GetHiddenMainWindow()
-    If hMain <> 0 Then Handled = CBool(GetProp(hMain, StrPtr("VTableSubclassIPAOInit")) <> 0)
-    If Handled = False Then
-        VTableSubclassIPAO.Subclass ObjPtr(This), VTableIndexIPAOTranslateAccelerator, VTableIndexIPAOTranslateAccelerator, _
-        AddressOf IOleIPAO_TranslateAccelerator
-        If hMain <> 0 Then SetProp hMain, StrPtr("VTableSubclassIPAOInit"), 1
-    End If
-End If
-VTableSubclassIPAO.AddRef
-End Sub
-
-Private Sub RestoreIOleIPAO(ByVal This As OLEGuids.IOleInPlaceActiveObject)
-If Not VTableSubclassIPAO Is Nothing Then
-    VTableSubclassIPAO.Release
-    If VTableSubclassIPAO.RefCount = 0 Then
-        Dim hMain As Long
-        hMain = GetHiddenMainWindow()
-        If hMain <> 0 Then RemoveProp hMain, StrPtr("VTableSubclassIPAOInit")
-        VTableSubclassIPAO.UnSubclass
-    End If
-End If
-End Sub
-
 Public Sub ActivateIPAO(ByVal This As Object)
-Static hWndPrevTopParent As Long
 On Error GoTo CATCH_EXCEPTION
 Dim PropOleObject As OLEGuids.IOleObject
 Dim PropOleInPlaceSite As OLEGuids.IOleInPlaceSite
@@ -242,62 +210,104 @@ Dim PosRect As OLEGuids.OLERECT
 Dim ClipRect As OLEGuids.OLERECT
 Dim FrameInfo As OLEGuids.OLEINPLACEFRAMEINFO
 Set PropOleObject = This
-Set PropOleInPlaceActiveObject = This
+If VTableIPAOData.RefCount > 0 Then
+    With VTableIPAOData
+    .VTable = GetVTableIPAO()
+    Set .OriginalIOleIPAO = This
+    Set .IOleIPAO = This
+    .This = VarPtr(VTableIPAOData)
+    End With
+    CopyMemory ByVal VarPtr(PropOleInPlaceActiveObject), ByVal VarPtr(VTableIPAOData.This), 4
+    PropOleInPlaceActiveObject.AddRef
+Else
+    Set PropOleInPlaceActiveObject = This
+End If
 Set PropOleInPlaceSite = PropOleObject.GetClientSite
 PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
 PropOleInPlaceFrame.SetActiveObject PropOleInPlaceActiveObject, vbNullString
 If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject PropOleInPlaceActiveObject, vbNullString
-If TypeOf This Is OLEGuids.IOleInPlaceActiveObjectVB Then
-    Set ActiveIOleInPlaceActiveObjectVB = This
-Else
-    Set ActiveIOleInPlaceActiveObjectVB = Nothing
-End If
-Dim hWndUserControl As Long
-PropOleInPlaceActiveObject.GetWindow hWndUserControl
-If hWndUserControl <> 0 Then
-    Dim hWndTopParent As Long
-    hWndTopParent = GetAncestor(hWndUserControl, GA_ROOT)
-    If hWndTopParent <> hWndPrevTopParent And hWndTopParent <> 0 And hWndPrevTopParent <> 0 Then
-        If Not VTableSubclassIPAO Is Nothing Then VTableSubclassIPAO.ReSubclass
-    End If
-    hWndPrevTopParent = hWndTopParent
-End If
 CATCH_EXCEPTION:
 End Sub
 
 Public Sub DeActivateIPAO()
-Set ActiveIOleInPlaceActiveObjectVB = Nothing
+' Void
 End Sub
 
-Private Function IOleIPAO_TranslateAccelerator(ByVal This As Object, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
-Dim ShadowIOleInPlaceActiveObjectVB As OLEGuids.IOleInPlaceActiveObjectVB
+Private Function GetVTableIPAO() As Long
+VTableIPAO(0) = ProcPtr(AddressOf IOleIPAO_QueryInterface)
+VTableIPAO(1) = ProcPtr(AddressOf IOleIPAO_AddRef)
+VTableIPAO(2) = ProcPtr(AddressOf IOleIPAO_Release)
+VTableIPAO(3) = ProcPtr(AddressOf IOleIPAO_GetWindow)
+VTableIPAO(4) = ProcPtr(AddressOf IOleIPAO_ContextSensitiveHelp)
+VTableIPAO(5) = ProcPtr(AddressOf IOleIPAO_TranslateAccelerator)
+VTableIPAO(6) = ProcPtr(AddressOf IOleIPAO_OnFrameWindowActivate)
+VTableIPAO(7) = ProcPtr(AddressOf IOleIPAO_OnDocWindowActivate)
+VTableIPAO(8) = ProcPtr(AddressOf IOleIPAO_ResizeBorder)
+VTableIPAO(9) = ProcPtr(AddressOf IOleIPAO_EnableModeless)
+GetVTableIPAO = VarPtr(VTableIPAO(0))
+End Function
+
+Private Function IOleIPAO_QueryInterface(ByRef This As VTableIPAODataStruct, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As Long) As Long
+' IID_IOleInPlaceActiveObject = {00000117-0000-0000-C000-000000000046}
+If IID.Data1 = &H117 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
+    If IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
+    And IID.Data4(4) = &H0 And IID.Data4(5) = &H0 And IID.Data4(6) = &H0 And IID.Data4(7) = &H46 Then
+        pvObj = This.This
+        IOleIPAO_AddRef This
+        IOleIPAO_QueryInterface = S_OK
+    Else
+        IOleIPAO_QueryInterface = This.OriginalIOleIPAO.QueryInterface(VarPtr(IID), pvObj)
+    End If
+Else
+    IOleIPAO_QueryInterface = This.OriginalIOleIPAO.QueryInterface(VarPtr(IID), pvObj)
+End If
+End Function
+
+Private Function IOleIPAO_AddRef(ByRef This As VTableIPAODataStruct) As Long
+IOleIPAO_AddRef = This.OriginalIOleIPAO.AddRef
+End Function
+
+Private Function IOleIPAO_Release(ByRef This As VTableIPAODataStruct) As Long
+IOleIPAO_Release = This.OriginalIOleIPAO.Release
+End Function
+
+Private Function IOleIPAO_GetWindow(ByRef This As VTableIPAODataStruct, ByRef hWnd As Long) As Long
+IOleIPAO_GetWindow = This.OriginalIOleIPAO.GetWindow(hWnd)
+End Function
+
+Private Function IOleIPAO_ContextSensitiveHelp(ByRef This As VTableIPAODataStruct, ByVal EnterMode As Long) As Long
+IOleIPAO_ContextSensitiveHelp = This.OriginalIOleIPAO.ContextSensitiveHelp(EnterMode)
+End Function
+
+Private Function IOleIPAO_TranslateAccelerator(ByRef This As VTableIPAODataStruct, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
 Dim Handled As Boolean
 On Error GoTo CATCH_EXCEPTION
 If VarPtr(Msg) = 0 Then
     IOleIPAO_TranslateAccelerator = E_POINTER
     Exit Function
-ElseIf ActiveIOleInPlaceActiveObjectVB Is Nothing Then
-    If TypeOf This Is OLEGuids.IOleInPlaceActiveObjectVB Then
-        Set ShadowIOleInPlaceActiveObjectVB = This
-    Else
-        IOleIPAO_TranslateAccelerator = Original_IOleIPAO_TranslateAccelerator(This, Msg)
-        Exit Function
-    End If
-Else
-    Set ShadowIOleInPlaceActiveObjectVB = ActiveIOleInPlaceActiveObjectVB
 End If
 IOleIPAO_TranslateAccelerator = S_OK
-ShadowIOleInPlaceActiveObjectVB.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
-If Handled = False Then IOleIPAO_TranslateAccelerator = Original_IOleIPAO_TranslateAccelerator(This, Msg)
+This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+If Handled = False Then IOleIPAO_TranslateAccelerator = This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
 Exit Function
 CATCH_EXCEPTION:
-IOleIPAO_TranslateAccelerator = Original_IOleIPAO_TranslateAccelerator(This, Msg)
+IOleIPAO_TranslateAccelerator = This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
 End Function
 
-Private Function Original_IOleIPAO_TranslateAccelerator(ByVal This As OLEGuids.IOleInPlaceActiveObject, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
-VTableSubclassIPAO.SubclassEntry(VTableIndexIPAOTranslateAccelerator) = False
-Original_IOleIPAO_TranslateAccelerator = This.TranslateAccelerator(ByVal VarPtr(Msg))
-VTableSubclassIPAO.SubclassEntry(VTableIndexIPAOTranslateAccelerator) = True
+Private Function IOleIPAO_OnFrameWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
+IOleIPAO_OnFrameWindowActivate = This.OriginalIOleIPAO.OnFrameWindowActivate(Activate)
+End Function
+
+Private Function IOleIPAO_OnDocWindowActivate(ByRef This As VTableIPAODataStruct, ByVal Activate As Long) As Long
+IOleIPAO_OnDocWindowActivate = This.OriginalIOleIPAO.OnDocWindowActivate(Activate)
+End Function
+
+Private Function IOleIPAO_ResizeBorder(ByRef This As VTableIPAODataStruct, ByRef RC As OLEGuids.OLERECT, ByVal UIWindow As OLEGuids.IOleInPlaceUIWindow, ByVal FrameWindow As Long) As Long
+IOleIPAO_ResizeBorder = This.OriginalIOleIPAO.ResizeBorder(VarPtr(RC), UIWindow, FrameWindow)
+End Function
+
+Private Function IOleIPAO_EnableModeless(ByRef This As VTableIPAODataStruct, ByVal Enable As Long) As Long
+IOleIPAO_EnableModeless = This.OriginalIOleIPAO.EnableModeless(Enable)
 End Function
 
 Private Sub ReplaceIOleControl(ByVal This As OLEGuids.IOleControl)
