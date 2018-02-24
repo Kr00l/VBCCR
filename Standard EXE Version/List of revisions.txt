@@ -1,5 +1,8 @@
 List of revisions:
 
+25-Feb-2018
+- Major internal improvement in the VTableHandle.bas concerning IOleInPlaceActiveObject.
+
 20-Feb-2018
 - Unicode support when generating ASCII key combos, e.g. ALT + 3333.
   It affects almost all controls, but most important are the TextBoxW and RichTextBox control.
