@@ -1,5 +1,11 @@
 List of revisions:
 
+27-Feb-2018
+- Fixed constant LVIS_STATEIMAGEMASK in the ListView control. (should be &HF000& instead of &HF000)
+  The missing & resulted in a value of -4096 instead of 61440.
+  However, MS ListView was apparently flexible enough and accepted state mask -4096 as 61440 in LVM_GETITEMSTATE.
+  But -4096 would fail in a callback testing situation. (LVN_GETDISPINFO; not used now for that)
+
 25-Feb-2018
 - Major internal improvement in the VTableHandle.bas concerning IOleInPlaceActiveObject.
 
