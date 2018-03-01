@@ -17,15 +17,6 @@ Begin VB.Form PagerForm
       Width           =   1575
       _ExtentX        =   2778
       _ExtentY        =   953
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
       Divider         =   0   'False
       Wrappable       =   0   'False
       ButtonHeight    =   36

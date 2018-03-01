@@ -103,6 +103,7 @@ Class=CbrBandProperties; Builds\CoolBar\CbrBandProperties.cls
 Class=SbrPanelProperties; Builds\StatusBar\SbrPanelProperties.cls
 Class=RtfOleCallback; Builds\RichTextBox\RtfOleCallback.cls
 Class=TbrButtonProperties; Builds\ToolBar\TbrButtonProperties.cls
+Form=VirtualControlsForm.frm
 ResFile32="Resources\Resources.res"
 IconForm="MainForm"
 Startup="Sub Main"
