@@ -38,6 +38,7 @@ Private LvwPictureAlignmentTopLeft, LvwPictureAlignmentTopRight, LvwPictureAlign
 Private LvwGroupHeaderAlignmentLeft, LvwGroupHeaderAlignmentRight, LvwGroupHeaderAlignmentCenter
 Private LvwGroupFooterAlignmentLeft, LvwGroupFooterAlignmentRight, LvwGroupFooterAlignmentCenter
 Private LvwVisualThemeStandard, LvwVisualThemeExplorer
+Private LvwVirtualPropertyText, LvwVirtualPropertyIcon, LvwVirtualPropertyIndentation, LvwVirtualPropertyToolTipText, LvwVirtualPropertyBold, LvwVirtualPropertyForeColor, LvwVirtualPropertyChecked
 #End If
 Public Enum LvwViewConstants
 LvwViewIcon = 0
@@ -108,6 +109,15 @@ End Enum
 Public Enum LvwVisualThemeConstants
 LvwVisualThemeStandard = 0
 LvwVisualThemeExplorer = 1
+End Enum
+Public Enum LvwVirtualPropertyConstants
+LvwVirtualPropertyText = 1
+LvwVirtualPropertyIcon = 2
+LvwVirtualPropertyIndentation = 4
+LvwVirtualPropertyToolTipText = 8
+LvwVirtualPropertyBold = 16
+LvwVirtualPropertyForeColor = 32
+LvwVirtualPropertyChecked = 64
 End Enum
 Private Type POINTAPI
 X As Long
@@ -304,6 +314,11 @@ hdr As NMHDR
 dwFlags As Long
 szMarkup(0 To ((L_MAX_URL_LENGTH * 2) - 1)) As Byte
 End Type
+Private Type NMLVFINDITEM
+hdr As NMHDR
+iStart As Long
+LVFI As LVFINDINFO
+End Type
 Private Type NMLVSCROLL
 hdr As NMHDR
 DX As Long
@@ -402,6 +417,10 @@ Public Event ItemDrag(ByVal Item As LvwListItem, ByVal Button As Integer)
 Attribute ItemDrag.VB_Description = "Occurs when a list item initiate a drag-and-drop operation."
 Public Event ItemBkColor(ByVal Item As LvwListItem, ByRef RGBColor As Long)
 Attribute ItemBkColor.VB_Description = "Occurs when a list item is about to draw the background in 'report' view. This is a request to provide an alternative back color. The back color is passed in an RGB format."
+Public Event GetVirtualItem(ByVal Index As Long, ByVal SubItemIndex As Long, ByVal VirtualProperty As LvwVirtualPropertyConstants, ByRef Value As Variant)
+Attribute GetVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and requests for an item or sub item property."
+Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal Count As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, ByRef FoundIndex As Long)
+Attribute FindVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and needs to find a particular item."
 Public Event BeforeLabelEdit(ByRef Cancel As Boolean)
 Attribute BeforeLabelEdit.VB_Description = "Occurs when a user attempts to edit the label of the currently selected list item."
 Public Event AfterLabelEdit(ByRef Cancel As Boolean, ByRef NewString As String)
@@ -729,6 +748,9 @@ Private Const LVN_GETDISPINFO As Long = LVN_GETDISPINFOW
 Private Const LVN_SETDISPINFOA As Long = (LVN_FIRST - 51)
 Private Const LVN_SETDISPINFOW As Long = (LVN_FIRST - 78)
 Private Const LVN_SETDISPINFO As Long = LVN_SETDISPINFOW
+Private Const LVN_ODFINDITEMA As Long = (LVN_FIRST - 52)
+Private Const LVN_ODFINDITEMW As Long = (LVN_FIRST - 79)
+Private Const LVN_ODFINDITEM As Long = LVN_ODFINDITEMW
 Private Const LVN_KEYDOWN As Long = (LVN_FIRST - 55)
 Private Const LVN_MARQUEEBEGIN As Long = (LVN_FIRST - 56)
 Private Const LVN_GETINFOTIPA As Long = (LVN_FIRST - 57)
@@ -1075,6 +1097,9 @@ Private PropUseColumnChevron As Boolean
 Private PropUseColumnFilterBar As Boolean
 Private PropAutoSelectFirstItem As Boolean
 Private PropIMEMode As CCIMEModeConstants
+Private PropVirtualMode As Boolean
+Private PropVirtualItemCount As Long
+Private PropVirtualDisabledInfos As LvwVirtualPropertyConstants
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -1255,6 +1280,9 @@ PropUseColumnChevron = False
 PropUseColumnFilterBar = False
 PropAutoSelectFirstItem = True
 PropIMEMode = CCIMEModeNoControl
+PropVirtualMode = False
+PropVirtualItemCount = 0
+PropVirtualDisabledInfos = 0
 Call CreateListView
 If Ambient.UserMode = False Then
     Dim LVI As LVITEM, Buffer As String
@@ -1346,6 +1374,9 @@ PropUseColumnChevron = .ReadProperty("UseColumnChevron", False)
 PropUseColumnFilterBar = .ReadProperty("UseColumnFilterBar", PropUseColumnFilterBar)
 PropAutoSelectFirstItem = .ReadProperty("AutoSelectFirstItem", True)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
+PropVirtualMode = .ReadProperty("VirtualMode", False)
+PropVirtualItemCount = .ReadProperty("VirtualItemCount", 0)
+PropVirtualDisabledInfos = .ReadProperty("VirtualDisabledInfos", 0)
 End With
 Call CreateListView
 If Ambient.UserMode = True Then
@@ -1432,6 +1463,9 @@ With PropBag
 .WriteProperty "UseColumnFilterBar", PropUseColumnFilterBar, False
 .WriteProperty "AutoSelectFirstItem", PropAutoSelectFirstItem, True
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
+.WriteProperty "VirtualMode", PropVirtualMode, False
+.WriteProperty "VirtualItemCount", PropVirtualItemCount, 0
+.WriteProperty "VirtualDisabledInfos", PropVirtualDisabledInfos, 0
 End With
 End Sub
 
@@ -2527,6 +2561,14 @@ End Property
 Public Property Let View(ByVal Value As LvwViewConstants)
 Select Case Value
     Case LvwViewIcon, LvwViewSmallIcon, LvwViewList, LvwViewReport, LvwViewTile
+        If PropVirtualMode = True And Value = LvwViewTile Then
+            If Ambient.UserMode = False Then
+                MsgBox "View must not be 4 - Tile when VirtualMode is True", vbCritical + vbOKOnly
+                Exit Property
+            Else
+                Err.Raise Number:=383, Description:="View must not be 4 - Tile when VirtualMode is True"
+            End If
+        End If
         PropView = Value
     Case Else
         Err.Raise 380
@@ -2586,26 +2628,40 @@ End Property
 Public Property Let Arrange(ByVal Value As LvwArrangeConstants)
 Select Case Value
     Case LvwArrangeNone, LvwArrangeAutoLeft, LvwArrangeAutoTop, LvwArrangeLeft, LvwArrangeTop
+        If PropVirtualMode = True And Value <> LvwArrangeNone Then
+            If Ambient.UserMode = False Then
+                MsgBox "Arrange must be 0 - None when VirtualMode is True", vbCritical + vbOKOnly
+                Exit Property
+            Else
+                Err.Raise Number:=383, Description:="Arrange must be 0 - None when VirtualMode is True"
+            End If
+        End If
         PropArrange = Value
     Case Else
         Err.Raise 380
 End Select
-If ListViewHandle <> 0 Then
+If ListViewHandle <> 0 And Ambient.UserMode = True Then
     Dim dwStyle As Long
     dwStyle = GetWindowLong(ListViewHandle, GWL_STYLE)
     If (dwStyle And LVS_AUTOARRANGE) = LVS_AUTOARRANGE Then dwStyle = dwStyle And Not LVS_AUTOARRANGE
     If (dwStyle And LVS_ALIGNLEFT) = LVS_ALIGNLEFT Then dwStyle = dwStyle And Not LVS_ALIGNLEFT
     If (dwStyle And LVS_ALIGNTOP) = LVS_ALIGNTOP Then dwStyle = dwStyle And Not LVS_ALIGNTOP
-    Select Case PropArrange
-        Case LvwArrangeAutoLeft
-            dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNLEFT
-        Case LvwArrangeAutoTop
-            dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNTOP
-        Case LvwArrangeLeft
-            dwStyle = dwStyle Or LVS_ALIGNLEFT
-        Case LvwArrangeTop
-            dwStyle = dwStyle Or LVS_ALIGNTOP
-    End Select
+    If PropVirtualMode = False Then
+        Select Case PropArrange
+            Case LvwArrangeAutoLeft
+                dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNLEFT
+            Case LvwArrangeAutoTop
+                dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNTOP
+            Case LvwArrangeLeft
+                dwStyle = dwStyle Or LVS_ALIGNLEFT
+            Case LvwArrangeTop
+                dwStyle = dwStyle Or LVS_ALIGNTOP
+        End Select
+    Else
+        ' According to MSDN:
+        ' All virtual list view controls default to the LVS_AUTOARRANGE style.
+        dwStyle = dwStyle Or LVS_AUTOARRANGE
+    End If
     SetWindowLong ListViewHandle, GWL_STYLE, dwStyle
 End If
 UserControl.PropertyChanged "Arrange"
@@ -2765,6 +2821,14 @@ Sorted = PropSorted
 End Property
 
 Public Property Let Sorted(ByVal Value As Boolean)
+If PropVirtualMode = True And Value = True Then
+    If Ambient.UserMode = False Then
+        MsgBox "Sorted must be False when VirtualMode is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="Sorted must be False when VirtualMode is True"
+    End If
+End If
 PropSorted = Value
 If PropSorted = True And Ambient.UserMode = True Then Call SortListItems
 UserControl.PropertyChanged "Sorted"
@@ -3311,6 +3375,14 @@ GroupView = PropGroupView
 End Property
 
 Public Property Let GroupView(ByVal Value As Boolean)
+If PropVirtualMode = True And Value = True Then
+    If Ambient.UserMode = False Then
+        MsgBox "GroupView must be False when VirtualMode is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="GroupView must be False when VirtualMode is True"
+    End If
+End If
 PropGroupView = Value
 If Ambient.UserMode = True Then
     If ComCtlsSupportLevel() >= 1 Then
@@ -3443,11 +3515,94 @@ End If
 UserControl.PropertyChanged "IMEMode"
 End Property
 
+Public Property Get VirtualMode() As Boolean
+Attribute VirtualMode.VB_Description = "Returns/sets a value indicating if you have provided your own data-management operations for the control."
+VirtualMode = PropVirtualMode
+End Property
+
+Public Property Let VirtualMode(ByVal Value As Boolean)
+If Ambient.UserMode = True Then
+    Err.Raise Number:=382, Description:="VirtualMode property is read-only at run time"
+Else
+    PropVirtualMode = Value
+    If PropVirtualMode = True Then
+        If PropView = LvwViewTile Then PropView = LvwViewIcon
+        PropArrange = LvwArrangeNone
+        PropSorted = False
+        PropGroupView = False
+    End If
+End If
+UserControl.PropertyChanged "VirtualMode"
+End Property
+
+Public Property Get VirtualItemCount() As Long
+Attribute VirtualItemCount.VB_Description = "Returns/sets the virtual number of items that the control contains."
+VirtualItemCount = PropVirtualItemCount
+End Property
+
+Public Property Let VirtualItemCount(ByVal Value As Long)
+If Value < 0 Or Value > 100000000 Then
+    ' According to MSDN:
+    ' There is a 100,000,000 item limit on a virtualized list view.
+    If Ambient.UserMode = False Then
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise 380
+    End If
+End If
+If PropVirtualMode = True Then
+    If ListViewHandle <> 0 And Ambient.UserMode = True Then
+        If SendMessage(ListViewHandle, LVM_SETITEMCOUNT, Value, ByVal 0&) = 0 Then Err.Raise 380
+        If ListViewListItemsControl = 0 Then
+            Dim LVI As LVITEM
+            With LVI
+            If PropAutoSelectFirstItem = True Then
+                .StateMask = LVIS_SELECTED Or LVIS_FOCUSED
+                .State = LVIS_SELECTED Or LVIS_FOCUSED
+            Else
+                .StateMask = LVIS_FOCUSED
+                .State = LVIS_FOCUSED
+            End If
+            End With
+            SendMessage ListViewHandle, LVM_SETITEMSTATE, 0, ByVal VarPtr(LVI)
+            ListViewFocusIndex = 1
+        End If
+        ListViewListItemsControl = Value
+    End If
+End If
+PropVirtualItemCount = Value
+UserControl.PropertyChanged "VirtualItemCount"
+End Property
+
+Public Property Get VirtualDisabledInfos() As LvwVirtualPropertyConstants
+Attribute VirtualDisabledInfos.VB_Description = "Returns/sets the disabled virtual properties that are not needed and to increase performance."
+Attribute VirtualDisabledInfos.VB_MemberFlags = "400"
+VirtualDisabledInfos = PropVirtualDisabledInfos
+End Property
+
+Public Property Let VirtualDisabledInfos(ByVal Value As LvwVirtualPropertyConstants)
+If Value < 0 Then
+    If Ambient.UserMode = False Then
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise 380
+    End If
+End If
+PropVirtualDisabledInfos = Value
+UserControl.PropertyChanged "VirtualDisabledInfos"
+End Property
+
 Public Property Get ListItems() As LvwListItems
 Attribute ListItems.VB_Description = "Returns a reference to a collection of the list item objects."
 If PropListItems Is Nothing Then
-    Set PropListItems = New LvwListItems
-    PropListItems.FInit Me
+    If PropVirtualMode = False Then
+        Set PropListItems = New LvwListItems
+        PropListItems.FInit Me
+    Else
+        Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
+    End If
 End If
 Set ListItems = PropListItems
 End Property
@@ -3853,16 +4008,6 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 1 Then
     SendMessage ListViewHandle, LVM_SETITEM, 0, ByVal VarPtr(LVI_V60)
 End If
 End Property
-
-Friend Sub FListSubItemCheckReportIconMode()
-Static Once As Boolean
-If Once = False Then
-    If ListViewHandle <> 0 Then
-        SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_SUBITEMIMAGES, ByVal LVS_EX_SUBITEMIMAGES
-        Once = True
-    End If
-End If
-End Sub
 
 Public Property Get ColumnHeaders() As LvwColumnHeaders
 Attribute ColumnHeaders.VB_Description = "Returns a reference to a collection of the column header objects."
@@ -4485,8 +4630,12 @@ Public Property Get Groups() As LvwGroups
 Attribute Groups.VB_Description = "Returns a reference to a collection of the group objects. Any groups assigned appear whenever the view property is other than 'list' view. Requires comctl32.dll version 6.0 or higher."
 If PropGroups Is Nothing Then
     If ComCtlsSupportLevel() >= 1 Then
-        Set PropGroups = New LvwGroups
-        PropGroups.FInit Me
+        If PropVirtualMode = False Then
+            Set PropGroups = New LvwGroups
+            PropGroups.FInit Me
+        Else
+            Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
+        End If
     Else
         Err.Raise Number:=91, Description:="To use this functionality, you must provide a manifest specifying comctl32.dll version 6.0 or higher."
     End If
@@ -5136,7 +5285,7 @@ If PropRightToLeft = True Then
 End If
 Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
 If Ambient.UserMode = True Then
-    If ComCtlsSupportLevel() = 0 And PropView = LvwViewTile Then PropView = LvwViewIcon
+    If (ComCtlsSupportLevel() = 0 Or PropVirtualMode = True) And PropView = LvwViewTile Then PropView = LvwViewIcon
     Select Case PropView
         Case LvwViewIcon
             dwStyle = dwStyle Or LVS_ICON
@@ -5147,25 +5296,32 @@ If Ambient.UserMode = True Then
         Case LvwViewReport
             dwStyle = dwStyle Or LVS_REPORT
     End Select
+    If PropVirtualMode = False Then
+        Select Case PropArrange
+            Case LvwArrangeAutoLeft
+                dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNLEFT
+            Case LvwArrangeAutoTop
+                dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNTOP
+            Case LvwArrangeLeft
+                dwStyle = dwStyle Or LVS_ALIGNLEFT
+            Case LvwArrangeTop
+                dwStyle = dwStyle Or LVS_ALIGNTOP
+        End Select
+    Else
+        ' According to MSDN:
+        ' All virtual list view controls default to the LVS_AUTOARRANGE style.
+        dwStyle = dwStyle Or LVS_AUTOARRANGE
+    End If
 Else
     dwStyle = dwStyle Or LVS_LIST
 End If
-Select Case PropArrange
-    Case LvwArrangeAutoLeft
-        dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNLEFT
-    Case LvwArrangeAutoTop
-        dwStyle = dwStyle Or LVS_AUTOARRANGE Or LVS_ALIGNTOP
-    Case LvwArrangeLeft
-        dwStyle = dwStyle Or LVS_ALIGNLEFT
-    Case LvwArrangeTop
-        dwStyle = dwStyle Or LVS_ALIGNTOP
-End Select
 If PropMultiSelect = False Then dwStyle = dwStyle Or LVS_SINGLESEL
 If PropLabelEdit <> LvwLabelEditDisabled Then dwStyle = dwStyle Or LVS_EDITLABELS
 If PropLabelWrap = False Then dwStyle = dwStyle Or LVS_NOLABELWRAP
 If PropHideSelection = False Then dwStyle = dwStyle Or LVS_SHOWSELALWAYS
 If PropHideColumnHeaders = True Then dwStyle = dwStyle Or LVS_NOCOLUMNHEADER
 If Ambient.UserMode = True Then
+    If PropVirtualMode = True Then dwStyle = dwStyle Or LVS_OWNERDATA
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
@@ -5179,7 +5335,18 @@ If PropView = LvwViewReport Then
     ListViewHeaderHandle = Me.hWndHeader
     If ListViewHeaderHandle <> 0 Then Call ComCtlsSetSubclass(ListViewHeaderHandle, Me, 4)
 End If
-If ListViewHandle <> 0 Then If Ambient.UserMode = True And PropView = LvwViewTile Then SendMessage ListViewHandle, LVM_SETVIEW, LV_VIEW_TILE, ByVal 0&
+If ListViewHandle <> 0 Then
+    If Ambient.UserMode = True Then
+        If PropView = LvwViewTile Then SendMessage ListViewHandle, LVM_SETVIEW, LV_VIEW_TILE, ByVal 0&
+        SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_SUBITEMIMAGES, ByVal LVS_EX_SUBITEMIMAGES
+        If PropVirtualMode = True Then
+            Dim CallbackMask As Long
+            CallbackMask = SendMessage(ListViewHandle, LVM_GETCALLBACKMASK, 0, ByVal 0&)
+            If (CallbackMask And LVIS_STATEIMAGEMASK) = 0 Then CallbackMask = CallbackMask Or LVIS_STATEIMAGEMASK
+            SendMessage ListViewHandle, LVM_SETCALLBACKMASK, CallbackMask, ByVal 0&
+        End If
+    End If
+End If
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
@@ -5211,6 +5378,7 @@ Me.GroupView = PropGroupView
 Me.GroupSubsetCount = PropGroupSubsetCount
 Me.UseColumnChevron = PropUseColumnChevron
 Me.UseColumnFilterBar = PropUseColumnFilterBar
+Me.VirtualItemCount = PropVirtualItemCount
 If ListViewHandle <> 0 Then
     If ComCtlsSupportLevel() = 0 Then
         ' According to MSDN:
@@ -5275,12 +5443,24 @@ If ListViewHandle <> 0 Then
     .PT.Y = UserControl.ScaleY(Y, vbContainerPosition, vbPixels)
     If IsMissing(SubItemIndex) = True Then
         If SendMessage(ListViewHandle, LVM_HITTEST, 0, ByVal VarPtr(LVHTI)) > -1 Then
-            If (.Flags And LVHT_ONITEM) <> 0 Then Set HitTest = Me.ListItems(.iItem + 1)
+            If (.Flags And LVHT_ONITEM) <> 0 Then
+                If PropVirtualMode = False Then
+                    Set HitTest = Me.ListItems(.iItem + 1)
+                Else
+                    Set HitTest = New LvwListItem
+                    HitTest.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                End If
+            End If
         End If
     Else
         If SendMessage(ListViewHandle, LVM_SUBITEMHITTEST, 0, ByVal VarPtr(LVHTI)) > -1 Then
             If (.Flags And LVHT_ONITEM) <> 0 Then
-                Set HitTest = Me.ListItems(.iItem + 1)
+                If PropVirtualMode = False Then
+                    Set HitTest = Me.ListItems(.iItem + 1)
+                Else
+                    Set HitTest = New LvwListItem
+                    HitTest.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                End If
                 SubItemIndex = .iSubItem
             End If
         End If
@@ -5298,7 +5478,14 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
     With LVIM
     .cbSize = LenB(LVIM)
     SendMessage ListViewHandle, LVM_INSERTMARKHITTEST, VarPtr(P), ByVal VarPtr(LVIM)
-    If .iItem > -1 Then Set HitTestInsertMark = Me.ListItems(.iItem + 1)
+    If .iItem > -1 Then
+        If PropVirtualMode = False Then
+            Set HitTestInsertMark = Me.ListItems(.iItem + 1)
+        Else
+            Set HitTestInsertMark = New LvwListItem
+            HitTestInsertMark.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+    End If
     After = CBool((.dwFlags And LVIM_AFTER) <> 0)
     End With
 End If
@@ -5321,7 +5508,14 @@ If ListViewHandle <> 0 Then
                 If Wrap = True Then .Flags = .Flags Or LVFI_WRAP
                 End With
                 Index = SendMessage(ListViewHandle, LVM_FINDITEM, Index - 1, ByVal VarPtr(LVFI))
-                If Index > -1 Then Set FindItem = Me.ListItems(Index + 1)
+                If Index > -1 Then
+                    If PropVirtualMode = False Then
+                        Set FindItem = Me.ListItems(Index + 1)
+                    Else
+                        Set FindItem = New LvwListItem
+                        FindItem.FInit ObjPtr(Me), Index + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                    End If
+                End If
             Else
                 Err.Raise 380
             End If
@@ -5334,6 +5528,7 @@ End Function
 
 Public Function FindSubItem(ByVal Text As String, Optional ByVal Index As Long, Optional ByRef SubItemIndex As Long, Optional ByVal Partial As Boolean, Optional ByVal Wrap As Boolean) As LvwListItem
 Attribute FindSubItem.VB_Description = "Finds a sub item in the list and returns a reference to that item."
+If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
 If ListViewHandle <> 0 Then
     If Index >= 0 And SubItemIndex >= 0 Then
         Dim Count As Long, SubItemCount As Long
@@ -5468,7 +5663,12 @@ If ListViewHandle <> 0 Then
         Select Case PropView
             Case LvwViewReport
                 If PropGroupView = False Or ComCtlsSupportLevel() = 0 Then
-                    Set TopItem = PtrToObj(Me.FListItemPtr(SendMessage(ListViewHandle, LVM_GETTOPINDEX, 0, ByVal 0&) + 1))
+                    If PropVirtualMode = False Then
+                        Set TopItem = PtrToObj(Me.FListItemPtr(SendMessage(ListViewHandle, LVM_GETTOPINDEX, 0, ByVal 0&) + 1))
+                    Else
+                        Set TopItem = New LvwListItem
+                        TopItem.FInit ObjPtr(Me), SendMessage(ListViewHandle, LVM_GETTOPINDEX, 0, ByVal 0&) + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                    End If
                 ElseIf ComCtlsSupportLevel() >= 2 Then
                     ' Not supported if ComCtlsSupportLevel() = 1 and group view property is set to true.
                     If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
@@ -5511,7 +5711,12 @@ If ListViewHandle <> 0 Then
                 End If
             Case LvwViewList
                 ' LVM_GETTOPINDEX works here in all scenarios.
-                Set TopItem = PtrToObj(Me.FListItemPtr(SendMessage(ListViewHandle, LVM_GETTOPINDEX, 0, ByVal 0&) + 1))
+                If PropVirtualMode = False Then
+                    Set TopItem = PtrToObj(Me.FListItemPtr(SendMessage(ListViewHandle, LVM_GETTOPINDEX, 0, ByVal 0&) + 1))
+                Else
+                    Set TopItem = New LvwListItem
+                    TopItem.FInit ObjPtr(Me), SendMessage(ListViewHandle, LVM_GETTOPINDEX, 0, ByVal 0&) + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                End If
             Case Else
                 If PropGroupView = False Or ComCtlsSupportLevel() = 0 Then
                     ' Not supported if ComCtlsSupportLevel() >= 1 and group view property is set to true.
@@ -5581,6 +5786,12 @@ If ListViewHandle <> 0 Then
                             iItem = iItemTemp
                         Loop
                         Set TopItem = PtrToObj(Me.FListItemPtr(iItemResult + 1))
+                        If PropVirtualMode = False Then
+                            Set TopItem = PtrToObj(Me.FListItemPtr(iItemResult + 1))
+                        Else
+                            Set TopItem = New LvwListItem
+                            TopItem.FInit ObjPtr(Me), iItemResult + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                        End If
                     End If
                 End If
         End Select
@@ -5594,7 +5805,14 @@ Attribute SelectedItem.VB_MemberFlags = "400"
 If ListViewHandle <> 0 Then
     Dim iItem As Long
     iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL Or LVNI_FOCUSED)
-    If iItem > -1 Then Set SelectedItem = Me.ListItems(iItem + 1)
+    If iItem > -1 Then
+        If PropVirtualMode = False Then
+            Set SelectedItem = Me.ListItems(iItem + 1)
+        Else
+            Set SelectedItem = New LvwListItem
+            SelectedItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+    End If
 End If
 End Property
 
@@ -5634,6 +5852,7 @@ End Function
 
 Public Function GhostedIndices() As Collection
 Attribute GhostedIndices.VB_Description = "Returns a reference to a collection containing the indexes to the ghosted items."
+Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 Set GhostedIndices = New Collection
 If ListViewHandle <> 0 Then
     Dim iItem As Long
@@ -5666,7 +5885,14 @@ Attribute HotItem.VB_MemberFlags = "400"
 If ListViewHandle <> 0 Then
     Dim iItem As Long
     iItem = SendMessage(ListViewHandle, LVM_GETHOTITEM, 0, ByVal 0&)
-    If iItem > -1 Then Set HotItem = Me.ListItems(iItem + 1)
+    If iItem > -1 Then
+        If PropVirtualMode = False Then
+            Set HotItem = Me.ListItems(iItem + 1)
+        Else
+            Set HotItem = New LvwListItem
+            HotItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+    End If
 End If
 End Property
 
@@ -5715,7 +5941,14 @@ Attribute SelectionMark.VB_MemberFlags = "400"
 If ListViewHandle <> 0 Then
     Dim iItem As Long
     iItem = SendMessage(ListViewHandle, LVM_GETSELECTIONMARK, 0, ByVal 0&)
-    If iItem > -1 Then Set SelectionMark = Me.ListItems(iItem + 1)
+    If iItem > -1 Then
+        If PropVirtualMode = False Then
+            Set SelectionMark = Me.ListItems(iItem + 1)
+        Else
+            Set SelectionMark = New LvwListItem
+            SelectionMark.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+    End If
 End If
 End Property
 
@@ -5901,7 +6134,14 @@ Attribute DropHighlight.VB_MemberFlags = "400"
 If ListViewHandle <> 0 Then
     Dim iItem As Long
     iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL Or LVNI_DROPHILITED)
-    If iItem > -1 Then Set DropHighlight = Me.ListItems(iItem + 1)
+    If iItem > -1 Then
+        If PropVirtualMode = False Then
+            Set DropHighlight = Me.ListItems(iItem + 1)
+        Else
+            Set DropHighlight = New LvwListItem
+            DropHighlight.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+    End If
 End If
 End Property
 
@@ -5941,7 +6181,12 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
     .cbSize = LenB(LVIM)
     SendMessage ListViewHandle, LVM_GETINSERTMARK, 0, ByVal VarPtr(LVIM)
     If .iItem > -1 Then
-        Set InsertMark = Me.ListItems(.iItem + 1)
+        If PropVirtualMode = False Then
+            Set InsertMark = Me.ListItems(.iItem + 1)
+        Else
+            Set InsertMark = New LvwListItem
+            InsertMark.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
         After = CBool((CDbl(.dwFlags) - CDbl(vbDropEffectScroll)) = LVIM_AFTER)
     End If
     End With
@@ -5973,15 +6218,21 @@ Public Property Get OLEDraggedItem() As LvwListItem
 Attribute OLEDraggedItem.VB_Description = "Returns a reference to the currently dragged list item during an OLE drag/drop operation."
 Attribute OLEDraggedItem.VB_MemberFlags = "400"
 If ListViewDragIndex > 0 Then
-    Dim Ptr As Long
-    Ptr = Me.FListItemPtr(ListViewDragIndex)
-    If Ptr <> 0 Then Set OLEDraggedItem = PtrToObj(Ptr)
+    If PropVirtualMode = False Then
+        Dim Ptr As Long
+        Ptr = Me.FListItemPtr(ListViewDragIndex)
+        If Ptr <> 0 Then Set OLEDraggedItem = PtrToObj(Ptr)
+    Else
+        Set OLEDraggedItem = New LvwListItem
+        OLEDraggedItem.FInit ObjPtr(Me), ListViewDragIndex, vbNullString, 0, vbNullString, 0, 0, 0, 0
+    End If
 End If
 End Property
 
 Public Property Get WorkAreas() As Variant
 Attribute WorkAreas.VB_Description = "Returns/sets the working areas of the list view in 'icon' and 'small icon' view. All the client coordinates (left, top, right and bottom) are in pixels."
 Attribute WorkAreas.VB_MemberFlags = "400"
+If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
 If ListViewHandle <> 0 Then
     Dim StructCount As Long
     SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(StructCount)
@@ -6000,6 +6251,7 @@ End If
 End Property
 
 Public Property Let WorkAreas(ByVal ArgList As Variant)
+If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
 If ListViewHandle <> 0 Then
     If IsArray(ArgList) Then
         Dim Ptr As Long
@@ -6059,6 +6311,7 @@ End Property
 
 Public Property Get SelectedGroup() As LvwGroup
 Attribute SelectedGroup.VB_Description = "Returns/sets a reference to the currently selected group. Requires comctl32.dll version 6.1 or higher."
+If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
 If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
     Dim Index As Long
     Index = SendMessage(ListViewHandle, LVM_GETFOCUSEDGROUP, 0, ByVal 0&)
@@ -6085,6 +6338,7 @@ Set Me.SelectedGroup = Value
 End Property
 
 Public Property Set SelectedGroup(ByVal Value As LvwGroup)
+If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
 If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
     If Not Value Is Nothing Then
         Value.Selected = True
@@ -6192,6 +6446,7 @@ End Property
 
 Public Sub ResetForeColors()
 Attribute ResetForeColors.VB_Description = "Resets the foreground color of particular list and list sub items that have been modified."
+If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
 If ListViewHandle <> 0 Then
     Dim ListItem As LvwListItem, i As Long
     SendMessage ListViewHandle, WM_SETREDRAW, 0, ByVal 0&
@@ -6264,6 +6519,7 @@ End With
 End Sub
 
 Private Sub RebuildListItems()
+If PropVirtualMode = True Then Exit Sub
 Dim Count As Long
 Count = Me.ColumnHeaders.Count
 If Count > 0 Then
@@ -6312,18 +6568,32 @@ End If
 End Sub
 
 Private Sub CheckItemFocus(ByVal Index As Long)
-Dim ParamValid As Boolean, ModularValid As Boolean
-ParamValid = CBool(Index > 0 And Index <= Me.ListItems.Count)
-ModularValid = CBool(ListViewFocusIndex > 0)
-If (ParamValid = True And ModularValid = True And (Index <> ListViewFocusIndex)) Or (ParamValid Xor ModularValid) Then
-    RaiseEvent ItemFocus(Me.ListItems(Index))
-    ListViewFocusIndex = Index
-Else
-    ListViewFocusIndex = 0
+If ListViewHandle <> 0 Then
+    Dim ParamValid As Boolean, ModularValid As Boolean
+    If PropVirtualMode = False Then
+        ParamValid = CBool(Index > 0 And Index <= Me.ListItems.Count)
+    Else
+        ParamValid = CBool(Index > 0 And Index <= SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&))
+    End If
+    ModularValid = CBool(ListViewFocusIndex > 0)
+    If (ParamValid = True And ModularValid = True And (Index <> ListViewFocusIndex)) Or (ParamValid Xor ModularValid) Then
+        Dim ListItem As LvwListItem
+        If PropVirtualMode = False Then
+            Set ListItem = Me.ListItems(Index)
+        Else
+            Set ListItem = New LvwListItem
+            ListItem.FInit ObjPtr(Me), Index, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+        RaiseEvent ItemFocus(ListItem)
+        ListViewFocusIndex = Index
+    Else
+        ListViewFocusIndex = 0
+    End If
 End If
 End Sub
 
 Private Sub SortListItems()
+If PropVirtualMode = True Then Exit Sub
 If ListViewHandle <> 0 Then
     If SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) > 0 Then
         If PropSortKey > Me.ColumnHeaders.Count Then PropSortKey = Me.ColumnHeaders.Count
@@ -6607,6 +6877,18 @@ Select Case wMsg
             If PropResizableColumnHeaders = False Then
                 If KeyCode = vbKeyAdd And (GetShiftStateFromMsg() And vbCtrlMask) = vbCtrlMask Then Exit Function
             End If
+            If PropCheckboxes = True And KeyCode = vbKeySpace And PropVirtualMode = True Then
+                ' A virtual list view where checkboxes are displayed does not generate LVN_ITEMCHANGED upon pressing the space key.
+                Dim iItem As Long
+                iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL Or LVNI_FOCUSED)
+                If iItem > -1 Then
+                    Dim ListItem As LvwListItem
+                    Set ListItem = New LvwListItem
+                    ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                    RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
+                    Me.FListItemRedraw iItem + 1
+                End If
+            End If
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
@@ -6797,7 +7079,13 @@ Select Case wMsg
                                 End If
                                 If Text = vbNullString Then
                                     If (SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, ByVal 0&) And LVS_EX_INFOTIP) = LVS_EX_INFOTIP Then
-                                        Text = Me.ListItems(.iItem + 1).ListSubItems(.iSubItem).ToolTipText
+                                        If PropVirtualMode = False Then
+                                            Text = Me.ListItems(.iItem + 1).ListSubItems(.iSubItem).ToolTipText
+                                        Else
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyToolTipText) = 0 Then
+                                                RaiseEvent GetVirtualItem(.iItem + 1, .iSubItem, LvwVirtualPropertyToolTipText, Text)
+                                            End If
+                                        End If
                                         If Not Text = vbNullString Then
                                             With NMTTDI
                                             If Len(Text) <= 80 Then
@@ -7020,14 +7308,22 @@ Select Case wMsg
                     CopyMemory NMLV, ByVal lParam, LenB(NMLV)
                     With NMLV
                     If .uChanged = LVIF_STATE Then
+                        If PropVirtualMode = False Then
+                            Set ListItem = Me.ListItems(.iItem + 1)
+                        Else
+                            Set ListItem = New LvwListItem
+                            ListItem.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                        End If
                         If CBool((.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED) Xor CBool((.uOldState And LVIS_FOCUSED) = LVIS_FOCUSED) Then
                             If (.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED Then Call CheckItemFocus(.iItem + 1)
                         End If
                         If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
                             Me.FListItemRedraw .iItem + 1
-                            RaiseEvent ItemSelect(Me.ListItems(.iItem + 1), CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                            RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
                         End If
-                        If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(Me.ListItems(.iItem + 1), CBool((.uNewState And &H2000&) = &H2000&))
+                        If PropVirtualMode = False Then
+                            If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(ListItem, CBool((.uNewState And &H2000&) = &H2000&))
+                        End If
                     End If
                     End With
                 Case LVN_BEGINLABELEDIT, LVN_ENDLABELEDIT
@@ -7057,9 +7353,11 @@ Select Case wMsg
                                 CopyMemory ByVal StrPtr(NewText), ByVal .pszText, Length * 2
                                 RaiseEvent AfterLabelEdit(Cancel, NewText)
                                 If Cancel = False Then
-                                    With Me.ListItems(.iItem + 1)
-                                    .FInit ObjPtr(Me), .Index, .Key, NMLVDI.Item.lParam, NewText, .Icon, .IconIndex, .SmallIcon, .SmallIconIndex
-                                    End With
+                                    If PropVirtualMode = False Then
+                                        With Me.ListItems(.iItem + 1)
+                                        .FInit ObjPtr(Me), .Index, .Key, NMLVDI.Item.lParam, NewText, .Icon, .IconIndex, .SmallIcon, .SmallIconIndex
+                                        End With
+                                    End If
                                     WindowProcUserControl = 1
                                 Else
                                     WindowProcUserControl = 0
@@ -7078,12 +7376,18 @@ Select Case wMsg
                 Case LVN_BEGINDRAG, LVN_BEGINRDRAG
                     CopyMemory NMLV, ByVal lParam, LenB(NMLV)
                     If NMLV.iItem > -1 Then
+                        If PropVirtualMode = False Then
+                            Set ListItem = Me.ListItems(NMLV.iItem + 1)
+                        Else
+                            Set ListItem = New LvwListItem
+                            ListItem.FInit ObjPtr(Me), NMLV.iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                        End If
                         ListViewDragIndexBuffer = NMLV.iItem + 1
                         If NM.Code = LVN_BEGINDRAG Then
-                            RaiseEvent ItemDrag(Me.ListItems(NMLV.iItem + 1), vbLeftButton)
+                            RaiseEvent ItemDrag(ListItem, vbLeftButton)
                             If PropOLEDragMode = vbOLEDragAutomatic Then Me.OLEDrag
                         ElseIf NM.Code = LVN_BEGINRDRAG Then
-                            RaiseEvent ItemDrag(Me.ListItems(NMLV.iItem + 1), vbRightButton)
+                            RaiseEvent ItemDrag(ListItem, vbRightButton)
                         End If
                         ListViewDragIndexBuffer = 0
                     End If
@@ -7096,14 +7400,40 @@ Select Case wMsg
                     If (NMIA.uKeyFlags And LVKF_SHIFT) = LVKF_SHIFT Then Shift = vbShiftMask
                     If (NMIA.uKeyFlags And LVKF_CONTROL) = LVKF_CONTROL Then Shift = Shift Or vbCtrlMask
                     If (NMIA.uKeyFlags And LVKF_ALT) = LVKF_ALT Then Shift = Shift Or vbAltMask
-                    RaiseEvent ItemActivate(Me.ListItems(NMIA.iItem + 1), NMIA.iSubItem, Shift)
+                    If PropVirtualMode = False Then
+                        Set ListItem = Me.ListItems(NMIA.iItem + 1)
+                    Else
+                        Set ListItem = New LvwListItem
+                        ListItem.FInit ObjPtr(Me), NMIA.iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                    End If
+                    RaiseEvent ItemActivate(ListItem, NMIA.iSubItem, Shift)
                 Case NM_CLICK, NM_RCLICK
                     CopyMemory NMIA, ByVal lParam, LenB(NMIA)
                     If NMIA.iItem > -1 Then
+                        If PropVirtualMode = False Then
+                            Set ListItem = Me.ListItems(NMIA.iItem + 1)
+                        Else
+                            Set ListItem = New LvwListItem
+                            ListItem.FInit ObjPtr(Me), NMIA.iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                        End If
                         If NM.Code = NM_CLICK Then
-                            RaiseEvent ItemClick(Me.ListItems(NMIA.iItem + 1), vbLeftButton)
+                            RaiseEvent ItemClick(ListItem, vbLeftButton)
                         ElseIf NM.Code = NM_RCLICK Then
-                            RaiseEvent ItemClick(Me.ListItems(NMIA.iItem + 1), vbRightButton)
+                            RaiseEvent ItemClick(ListItem, vbRightButton)
+                        End If
+                        If PropCheckboxes = True And PropVirtualMode = True Then
+                            ' A virtual list view where checkboxes are displayed does not generate LVN_ITEMCHANGED upon clicking the checkbox.
+                            Dim LVHTI As LVHITTESTINFO
+                            With LVHTI
+                            LSet .PT = NMIA.PTAction
+                            SendMessage ListViewHandle, LVM_SUBITEMHITTEST, 0, ByVal VarPtr(LVHTI)
+                            If (.Flags And LVHT_ONITEM) <> 0 And .iSubItem = 0 Then
+                                If (.Flags And LVHT_ONITEMSTATEICON) <> 0 Then
+                                    RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, NMIA.iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
+                                    Me.FListItemRedraw NMIA.iItem + 1
+                                End If
+                            End If
+                            End With
                         End If
                     End If
                     If NMIA.iItem > -1 Or (NMIA.iItem = -1 And (PropView = LvwViewReport Or PropView = LvwViewList)) Then
@@ -7117,15 +7447,21 @@ Select Case wMsg
                 Case NM_DBLCLK, NM_RDBLCLK
                     CopyMemory NMIA, ByVal lParam, LenB(NMIA)
                     If NMIA.iItem > -1 Then
+                        If PropVirtualMode = False Then
+                            Set ListItem = Me.ListItems(NMIA.iItem + 1)
+                        Else
+                            Set ListItem = New LvwListItem
+                            ListItem.FInit ObjPtr(Me), NMIA.iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                        End If
                         If NM.Code = NM_DBLCLK Then
-                            RaiseEvent ItemDblClick(Me.ListItems(NMIA.iItem + 1), vbLeftButton)
+                            RaiseEvent ItemDblClick(ListItem, vbLeftButton)
                         ElseIf NM.Code = NM_RDBLCLK Then
-                            RaiseEvent ItemDblClick(Me.ListItems(NMIA.iItem + 1), vbRightButton)
+                            RaiseEvent ItemDblClick(ListItem, vbRightButton)
                         End If
                     End If
                     RaiseEvent DblClick
                 Case NM_CUSTOMDRAW
-                    Dim FontHandle As Long
+                    Dim FontHandle As Long, Bold As Boolean, ForeColor As OLE_COLOR
                     Dim NMLVCD As NMLVCUSTOMDRAW
                     CopyMemory NMLVCD, ByVal lParam, LenB(NMLVCD)
                     Select Case NMLVCD.NMCD.dwDrawStage
@@ -7134,7 +7470,20 @@ Select Case wMsg
                             Exit Function
                         Case CDDS_ITEMPREPAINT
                             FontHandle = ListViewFontHandle
-                            If NMLVCD.NMCD.lItemlParam <> 0 Then
+                            If PropVirtualMode = True Then
+                                If NMLVCD.NMCD.dwItemSpec > -1 And NMLVCD.NMCD.dwItemSpec <= PropVirtualItemCount Then
+                                    ' CDIS_HOT is not supported on a virtualized list view.
+                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                    End If
+                                    If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                    ForeColor = PropForeColor
+                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                    End If
+                                    NMLVCD.ClrText = WinColor(ForeColor)
+                                End If
+                            ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
                                 Set ListItem = PtrToObj(NMLVCD.NMCD.lItemlParam)
                                 With ListItem
                                 If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
@@ -7161,7 +7510,20 @@ Select Case wMsg
                             Exit Function
                         Case (CDDS_ITEMPREPAINT Or CDDS_SUBITEM)
                             FontHandle = ListViewFontHandle
-                            If NMLVCD.NMCD.lItemlParam <> 0 Then
+                            If PropVirtualMode = True Then
+                                If NMLVCD.NMCD.dwItemSpec > -1 And NMLVCD.NMCD.dwItemSpec <= PropVirtualItemCount Then
+                                    ' CDIS_HOT is not supported on a virtualized list view.
+                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                    End If
+                                    If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                    ForeColor = PropForeColor
+                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                    End If
+                                    NMLVCD.ClrText = WinColor(ForeColor)
+                                End If
+                            ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
                                 Set ListItem = PtrToObj(NMLVCD.NMCD.lItemlParam)
                                 With ListItem
                                 If NMLVCD.iSubItem > 0 Then
@@ -7233,7 +7595,13 @@ Select Case wMsg
                         If .iSubItem = 0 Then
                             Dim ToolTipText As String
                             If .dwFlags = LVGIT_UNFOLDED Or (PropView <> LvwViewIcon And (SendMessage(ListViewHandle, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, ByVal 0&) And LVS_EX_LABELTIP) = 0) Then
-                                ToolTipText = Me.ListItems(.iItem + 1).ToolTipText
+                                If PropVirtualMode = False Then
+                                    ToolTipText = Me.ListItems(.iItem + 1).ToolTipText
+                                Else
+                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyToolTipText) = 0 Then
+                                        RaiseEvent GetVirtualItem(.iItem + 1, .iSubItem, LvwVirtualPropertyToolTipText, ToolTipText)
+                                    End If
+                                End If
                                 If Not ToolTipText = vbNullString Then
                                     ToolTipText = Left$(ToolTipText, .cchTextMax - 1) & vbNullChar
                                     CopyMemory ByVal .pszText, ByVal StrPtr(ToolTipText), LenB(ToolTipText)
@@ -7249,12 +7617,13 @@ Select Case wMsg
                 Case LVN_GETDISPINFO
                     CopyMemory NMLVDI, ByVal lParam, LenB(NMLVDI)
                     With NMLVDI.Item
-                    If .iItem > -1 And .lParam <> 0 Then
-                        Set ListItem = PtrToObj(.lParam)
+                    If .iItem > -1 Then
                         Dim CallbackText As String
-                        If .iSubItem = 0 Then
+                        If PropVirtualMode = True Then
                             If (.Mask And LVIF_TEXT) = LVIF_TEXT Then
-                                CallbackText = ListItem.Text
+                                If (PropVirtualDisabledInfos And LvwVirtualPropertyText) = 0 Then
+                                    RaiseEvent GetVirtualItem(.iItem + 1, .iSubItem, LvwVirtualPropertyText, CallbackText)
+                                End If
                                 If Not CallbackText = vbNullString Then
                                     CallbackText = Left$(CallbackText, .cchTextMax - 1) & vbNullChar
                                     CopyMemory ByVal .pszText, ByVal StrPtr(CallbackText), LenB(CallbackText)
@@ -7263,30 +7632,99 @@ Select Case wMsg
                                 End If
                             End If
                             If (.Mask And LVIF_IMAGE) = LVIF_IMAGE Then
-                                Select Case PropView
-                                    Case LvwViewIcon, LvwViewTile
-                                        .iImage = ListItem.IconIndex - 1
-                                    Case LvwViewSmallIcon, LvwViewList, LvwViewReport
-                                        .iImage = ListItem.SmallIconIndex - 1
-                                End Select
-                            End If
-                        Else
-                            If (.Mask And LVIF_TEXT) = LVIF_TEXT Then
-                                If .iSubItem <= ListItem.FListSubItemsCount Then CallbackText = ListItem.FListSubItemProp(.iSubItem, 3)
-                                If Not CallbackText = vbNullString Then
-                                    CallbackText = Left$(CallbackText, .cchTextMax - 1) & vbNullChar
-                                    CopyMemory ByVal .pszText, ByVal StrPtr(CallbackText), LenB(CallbackText)
+                                Dim Icon As Variant
+                                If (PropVirtualDisabledInfos And LvwVirtualPropertyIcon) = 0 Then
+                                    RaiseEvent GetVirtualItem(.iItem + 1, .iSubItem, LvwVirtualPropertyIcon, Icon)
+                                End If
+                                If IsEmpty(Icon) Then
+                                    .iImage = -1
                                 Else
-                                    CopyMemory ByVal .pszText, 0&, 4
+                                    Dim IconIndex As Long
+                                    If PropView = LvwViewIcon Then
+                                        Call ComCtlsImlListImageIndex(Me, Me.Icons, Icon, IconIndex)
+                                    Else
+                                        Call ComCtlsImlListImageIndex(Me, Me.SmallIcons, Icon, IconIndex)
+                                    End If
+                                    .iImage = IconIndex - 1
                                 End If
                             End If
-                            If (.Mask And LVIF_IMAGE) = LVIF_IMAGE Then
-                                If .iSubItem <= ListItem.FListSubItemsCount Then .iImage = ListItem.FListSubItemProp(.iSubItem, 5) - 1
+                            If (.Mask And LVIF_INDENT) = LVIF_INDENT Then
+                                Dim Indentation As Long
+                                If (PropVirtualDisabledInfos And LvwVirtualPropertyIndentation) = 0 Then
+                                    RaiseEvent GetVirtualItem(.iItem + 1, .iSubItem, LvwVirtualPropertyIndentation, Indentation)
+                                End If
+                                .iIndent = Indentation
                             End If
+                            If (.Mask And LVIF_STATE) = LVIF_STATE Then
+                                If (.StateMask And LVIS_STATEIMAGEMASK) = LVIS_STATEIMAGEMASK And .iSubItem = 0 Then
+                                    Dim Checked As Boolean
+                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyChecked) = 0 Then
+                                        RaiseEvent GetVirtualItem(.iItem + 1, .iSubItem, LvwVirtualPropertyChecked, Checked)
+                                    End If
+                                    If Checked = True Then
+                                        .State = .State Or IndexToStateImageMask(IIL_CHECKED)
+                                    Else
+                                        .State = .State Or IndexToStateImageMask(IIL_UNCHECKED)
+                                    End If
+                                End If
+                            End If
+                            CopyMemory ByVal lParam, NMLVDI, LenB(NMLVDI)
+                        ElseIf .lParam <> 0 Then
+                            Set ListItem = PtrToObj(.lParam)
+                            If .iSubItem = 0 Then
+                                If (.Mask And LVIF_TEXT) = LVIF_TEXT Then
+                                    CallbackText = ListItem.Text
+                                    If Not CallbackText = vbNullString Then
+                                        CallbackText = Left$(CallbackText, .cchTextMax - 1) & vbNullChar
+                                        CopyMemory ByVal .pszText, ByVal StrPtr(CallbackText), LenB(CallbackText)
+                                    Else
+                                        CopyMemory ByVal .pszText, 0&, 4
+                                    End If
+                                End If
+                                If (.Mask And LVIF_IMAGE) = LVIF_IMAGE Then
+                                    Select Case PropView
+                                        Case LvwViewIcon, LvwViewTile
+                                            .iImage = ListItem.IconIndex - 1
+                                        Case LvwViewSmallIcon, LvwViewList, LvwViewReport
+                                            .iImage = ListItem.SmallIconIndex - 1
+                                    End Select
+                                End If
+                            Else
+                                If (.Mask And LVIF_TEXT) = LVIF_TEXT Then
+                                    If .iSubItem <= ListItem.FListSubItemsCount Then CallbackText = ListItem.FListSubItemProp(.iSubItem, 3)
+                                    If Not CallbackText = vbNullString Then
+                                        CallbackText = Left$(CallbackText, .cchTextMax - 1) & vbNullChar
+                                        CopyMemory ByVal .pszText, ByVal StrPtr(CallbackText), LenB(CallbackText)
+                                    Else
+                                        CopyMemory ByVal .pszText, 0&, 4
+                                    End If
+                                End If
+                                If (.Mask And LVIF_IMAGE) = LVIF_IMAGE Then
+                                    If .iSubItem <= ListItem.FListSubItemsCount Then .iImage = ListItem.FListSubItemProp(.iSubItem, 5) - 1
+                                End If
+                            End If
+                            CopyMemory ByVal lParam, NMLVDI, LenB(NMLVDI)
                         End If
-                        CopyMemory ByVal lParam, NMLVDI, LenB(NMLVDI)
                     End If
                     End With
+                Case LVN_ODFINDITEM
+                    Dim NMLVFI As NMLVFINDITEM
+                    CopyMemory NMLVFI, ByVal lParam, LenB(NMLVFI)
+                    If (NMLVFI.LVFI.Flags And LVFI_STRING) = LVFI_STRING Then
+                        Dim SearchText As String, FoundIndex As Long
+                        If NMLVFI.LVFI.psz <> 0 Then Length = lstrlen(NMLVFI.LVFI.psz)
+                        If Length > 0 Then
+                            SearchText = String(Length, vbNullChar)
+                            CopyMemory ByVal StrPtr(SearchText), ByVal NMLVFI.LVFI.psz, Length * 2
+                        End If
+                        RaiseEvent FindVirtualItem(NMLVFI.iStart + 1, SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&), SearchText, CBool((NMLVFI.LVFI.Flags And LVFI_PARTIAL) = LVFI_PARTIAL), CBool((NMLVFI.LVFI.Flags And LVFI_WRAP) = LVFI_WRAP), FoundIndex)
+                        If FoundIndex >= 0 Then
+                            WindowProcUserControl = FoundIndex - 1
+                        Else
+                            WindowProcUserControl = -1
+                        End If
+                        Exit Function
+                    End If
                 Case LVN_GETEMPTYMARKUP
                     Dim Text As String, Centered As Boolean
                     RaiseEvent GetEmptyMarkup(Text, Centered)
