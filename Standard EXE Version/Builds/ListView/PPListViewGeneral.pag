@@ -729,7 +729,7 @@ TextVirtualItemCount.Text = CStr(.VirtualItemCount)
 For i = 0 To ListVirtualDisabledInfos.ListCount - 1
     If (ListVirtualDisabledInfos.ItemData(i) And .VirtualDisabledInfos) <> 0 Then ListVirtualDisabledInfos.Selected(i) = True
 Next i
-ListVirtualDisabledInfos.ListIndex = -1
+ListVirtualDisabledInfos.ListIndex = 0
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckFullRowSelect.Value = IIf(.FullRowSelect = True, vbChecked, vbUnchecked)
 CheckGridLines.Value = IIf(.GridLines = True, vbChecked, vbUnchecked)
