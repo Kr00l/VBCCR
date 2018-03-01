@@ -9,6 +9,29 @@ Begin VB.PropertyPage PPListViewGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   7425
    ScaleWidth      =   6450
+   Begin VB.ListBox ListVirtualDisabledInfos 
+      Height          =   735
+      Left            =   1800
+      Style           =   1  'Checkbox
+      TabIndex        =   32
+      Top             =   5520
+      Width           =   2235
+   End
+   Begin VB.TextBox TextVirtualItemCount 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   30
+      Top             =   5160
+      Width           =   2235
+   End
+   Begin VB.CheckBox CheckVirtualMode 
+      Caption         =   "VirtualMode"
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   59
+      Top             =   6720
+      Width           =   2160
+   End
    Begin VB.ComboBox ComboHeaderMousePointer 
       Height          =   315
       Left            =   1800
@@ -21,7 +44,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "MouseTrack"
       Height          =   225
       Left            =   4200
-      TabIndex        =   29
+      TabIndex        =   33
       Top             =   480
       Width           =   2160
    End
@@ -37,7 +60,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "AutoSelectFirstItem"
       Height          =   225
       Left            =   4200
-      TabIndex        =   54
+      TabIndex        =   58
       Top             =   6480
       Width           =   2160
    End
@@ -53,7 +76,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "UseColumnFilterBar"
       Height          =   225
       Left            =   4200
-      TabIndex        =   53
+      TabIndex        =   57
       Top             =   6240
       Width           =   2160
    End
@@ -76,7 +99,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "UseColumnChevron"
       Height          =   225
       Left            =   4200
-      TabIndex        =   52
+      TabIndex        =   56
       Top             =   6000
       Width           =   2160
    End
@@ -84,7 +107,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "GroupView"
       Height          =   225
       Left            =   4200
-      TabIndex        =   51
+      TabIndex        =   55
       Top             =   5760
       Width           =   2160
    End
@@ -92,7 +115,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "UnderlineHot"
       Height          =   225
       Left            =   4200
-      TabIndex        =   41
+      TabIndex        =   45
       Top             =   3360
       Width           =   2160
    End
@@ -100,7 +123,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "HighlightHot"
       Height          =   225
       Left            =   4200
-      TabIndex        =   40
+      TabIndex        =   44
       Top             =   3120
       Width           =   2160
    End
@@ -108,7 +131,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "SnapToGrid"
       Height          =   225
       Left            =   4200
-      TabIndex        =   50
+      TabIndex        =   54
       Top             =   5520
       Width           =   2160
    End
@@ -123,7 +146,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "PictureWatermark"
       Height          =   225
       Left            =   4200
-      TabIndex        =   49
+      TabIndex        =   53
       Top             =   5280
       Width           =   2160
    End
@@ -131,7 +154,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "AllowColumnCheckboxes"
       Height          =   225
       Left            =   4200
-      TabIndex        =   37
+      TabIndex        =   41
       Top             =   2400
       Width           =   2160
    End
@@ -147,7 +170,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "ResizableColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   48
+      TabIndex        =   52
       Top             =   5040
       Width           =   2160
    End
@@ -155,7 +178,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "TrackSizeColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   47
+      TabIndex        =   51
       Top             =   4800
       Width           =   2160
    End
@@ -163,7 +186,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "HighlightColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   46
+      TabIndex        =   50
       Top             =   4560
       Width           =   2160
    End
@@ -171,7 +194,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "ClickableColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   45
+      TabIndex        =   49
       Top             =   4320
       Width           =   2160
    End
@@ -202,7 +225,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "ShowLabelTips"
       Height          =   225
       Left            =   4200
-      TabIndex        =   44
+      TabIndex        =   48
       Top             =   4080
       Width           =   2160
    End
@@ -210,7 +233,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "ShowInfoTips"
       Height          =   225
       Left            =   4200
-      TabIndex        =   43
+      TabIndex        =   47
       Top             =   3840
       Width           =   2160
    End
@@ -218,7 +241,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "HoverSelection"
       Height          =   225
       Left            =   4200
-      TabIndex        =   42
+      TabIndex        =   46
       Top             =   3600
       Width           =   2160
    End
@@ -226,7 +249,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "HotTracking"
       Height          =   225
       Left            =   4200
-      TabIndex        =   39
+      TabIndex        =   43
       Top             =   2880
       Width           =   2160
    End
@@ -234,7 +257,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "GridLines"
       Height          =   225
       Left            =   4200
-      TabIndex        =   31
+      TabIndex        =   35
       Top             =   960
       Width           =   2160
    End
@@ -242,7 +265,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "FullRowSelect"
       Height          =   225
       Left            =   4200
-      TabIndex        =   30
+      TabIndex        =   34
       Top             =   720
       Width           =   2160
    End
@@ -250,7 +273,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "Checkboxes"
       Height          =   225
       Left            =   4200
-      TabIndex        =   38
+      TabIndex        =   42
       Top             =   2640
       Width           =   2160
    End
@@ -258,7 +281,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "AllowColumnReorder"
       Height          =   225
       Left            =   4200
-      TabIndex        =   36
+      TabIndex        =   40
       Top             =   2160
       Width           =   2160
    End
@@ -266,7 +289,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "MultiSelect"
       Height          =   225
       Left            =   4200
-      TabIndex        =   35
+      TabIndex        =   39
       Top             =   1920
       Width           =   2160
    End
@@ -274,7 +297,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "LabelWrap"
       Height          =   225
       Left            =   4200
-      TabIndex        =   34
+      TabIndex        =   38
       Top             =   1680
       Width           =   2160
    End
@@ -298,7 +321,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "HideSelection"
       Height          =   225
       Left            =   4200
-      TabIndex        =   33
+      TabIndex        =   37
       Top             =   1440
       Width           =   2160
    End
@@ -322,7 +345,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "HideColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   32
+      TabIndex        =   36
       Top             =   1200
       Width           =   2160
    End
@@ -340,6 +363,22 @@ Begin VB.PropertyPage PPListViewGeneral
       Left            =   1800
       TabIndex        =   1
       Top             =   120
+      Width           =   1620
+   End
+   Begin VB.Label LabelVirtualDisabledInfos 
+      Caption         =   "VirtualDisabledInfos:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   31
+      Top             =   5520
+      Width           =   1620
+   End
+   Begin VB.Label LabelVirtualItemCount 
+      Caption         =   "VirtualItemCount:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   29
+      Top             =   5160
       Width           =   1620
    End
    Begin VB.Label LabelHeaderMousePointer 
@@ -519,6 +558,22 @@ With ComboPictureAlignment
 .ItemData(.NewIndex) = LvwPictureAlignmentTile
 End With
 Call ComCtlsPPInitComboIMEMode(ComboIMEMode)
+With ListVirtualDisabledInfos
+.AddItem "Text"
+.ItemData(.NewIndex) = LvwVirtualPropertyText
+.AddItem "Icon"
+.ItemData(.NewIndex) = LvwVirtualPropertyIcon
+.AddItem "Indentation"
+.ItemData(.NewIndex) = LvwVirtualPropertyIndentation
+.AddItem "ToolTipText"
+.ItemData(.NewIndex) = LvwVirtualPropertyToolTipText
+.AddItem "Bold"
+.ItemData(.NewIndex) = LvwVirtualPropertyBold
+.AddItem "ForeColor"
+.ItemData(.NewIndex) = LvwVirtualPropertyForeColor
+.AddItem "Checked"
+.ItemData(.NewIndex) = LvwVirtualPropertyChecked
+End With
 End Sub
 
 Private Sub PropertyPage_ApplyChanges()
@@ -526,6 +581,26 @@ On Error Resume Next
 PropertyPage.ValidateControls
 If Err.Number = 380 Then Exit Sub
 On Error GoTo 0
+If CheckVirtualMode.Value = vbChecked Then
+    If ComboView.ItemData(ComboView.ListIndex) = LvwViewTile Then
+        MsgBox "View must not be 4 - Tile when VirtualMode is True", vbExclamation + vbOKOnly
+        ComboView.SetFocus
+        PropertyPage.Changed = True
+        Exit Sub
+    End If
+    If ComboArrange.ItemData(ComboArrange.ListIndex) <> LvwArrangeNone Then
+        MsgBox "Arrange must be 0 - None when VirtualMode is True", vbExclamation + vbOKOnly
+        ComboArrange.SetFocus
+        PropertyPage.Changed = True
+        Exit Sub
+    End If
+    If CheckGroupView.Value = vbChecked Then
+        MsgBox "GroupView must be False when VirtualMode is True", vbExclamation + vbOKOnly
+        CheckGroupView.SetFocus
+        PropertyPage.Changed = True
+        Exit Sub
+    End If
+End If
 With PropertyPage.SelectedControls(0)
 .Enabled = CBool(CheckEnabled.Value = vbChecked)
 .VisualStyles = CBool(CheckVisualStyles.Value = vbChecked)
@@ -543,6 +618,12 @@ With PropertyPage.SelectedControls(0)
 .TileViewLines = CLng(TextTileViewLines.Text)
 .GroupSubsetCount = CLng(TextGroupSubsetCount.Text)
 .IMEMode = ComboIMEMode.ItemData(ComboIMEMode.ListIndex)
+.VirtualItemCount = CLng(TextVirtualItemCount.Text)
+Dim i As Long, Flags As LvwVirtualPropertyConstants
+For i = 0 To ListVirtualDisabledInfos.ListCount - 1
+    If ListVirtualDisabledInfos.Selected(i) = True Then Flags = Flags Or ListVirtualDisabledInfos.ItemData(i)
+Next i
+.VirtualDisabledInfos = Flags
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .FullRowSelect = CBool(CheckFullRowSelect.Value = vbChecked)
 .GridLines = CBool(CheckGridLines.Value = vbChecked)
@@ -569,6 +650,7 @@ With PropertyPage.SelectedControls(0)
 .UseColumnChevron = CBool(CheckUseColumnChevron.Value = vbChecked)
 .UseColumnFilterBar = CBool(CheckUseColumnFilterBar.Value = vbChecked)
 .AutoSelectFirstItem = CBool(CheckAutoSelectFirstItem.Value = vbChecked)
+.VirtualMode = CBool(CheckVirtualMode.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub
@@ -643,6 +725,11 @@ For i = 0 To ComboIMEMode.ListCount - 1
         Exit For
     End If
 Next i
+TextVirtualItemCount.Text = CStr(.VirtualItemCount)
+For i = 0 To ListVirtualDisabledInfos.ListCount - 1
+    If (ListVirtualDisabledInfos.ItemData(i) And .VirtualDisabledInfos) <> 0 Then ListVirtualDisabledInfos.Selected(i) = True
+Next i
+ListVirtualDisabledInfos.ListIndex = -1
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckFullRowSelect.Value = IIf(.FullRowSelect = True, vbChecked, vbUnchecked)
 CheckGridLines.Value = IIf(.GridLines = True, vbChecked, vbUnchecked)
@@ -669,6 +756,7 @@ CheckGroupView.Value = IIf(.GroupView = True, vbChecked, vbUnchecked)
 CheckUseColumnChevron.Value = IIf(.UseColumnChevron = True, vbChecked, vbUnchecked)
 CheckUseColumnFilterBar.Value = IIf(.UseColumnFilterBar = True, vbChecked, vbUnchecked)
 CheckAutoSelectFirstItem.Value = IIf(.AutoSelectFirstItem = True, vbChecked, vbUnchecked)
+CheckVirtualMode.Value = IIf(.VirtualMode = True, vbChecked, vbUnchecked)
 End With
 FreezeChanged = False
 End Sub
@@ -876,6 +964,57 @@ If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
 
+Private Sub TextVirtualItemCount_GotFocus()
+If Not TextVirtualItemCount.SelStart = 0 Then Exit Sub
+TextVirtualItemCount.SelLength = Len(TextVirtualItemCount.Text)
+End Sub
+
+Private Sub TextVirtualItemCount_LostFocus()
+TextVirtualItemCount.SelStart = 0
+End Sub
+
+Private Sub TextVirtualItemCount_Change()
+If FreezeChanged = True Then Exit Sub
+If TextVirtualItemCount.Text = vbNullString Then
+    TextVirtualItemCount.Text = "0"
+    TextVirtualItemCount.SelStart = 0
+    TextVirtualItemCount.SelLength = 1
+End If
+PropertyPage.Changed = True
+End Sub
+
+Private Sub TextVirtualItemCount_KeyPress(KeyAscii As Integer)
+Call ComCtlsPPKeyPressOnlyNumeric(KeyAscii)
+End Sub
+
+Private Sub TextVirtualItemCount_Validate(Cancel As Boolean)
+If Not IsNumeric(TextVirtualItemCount.Text) Then
+    MsgBox "Invalid property value", vbCritical + vbOKOnly
+    TextVirtualItemCount.Text = PropertyPage.SelectedControls(0).VirtualItemCount
+    TextVirtualItemCount.SetFocus
+    Cancel = True
+Else
+    Dim LngValue As Long
+    On Error Resume Next
+    LngValue = CLng(TextVirtualItemCount.Text)
+    Cancel = CBool(Err.Number <> 0)
+    On Error GoTo 0
+    If LngValue < 0 Or LngValue > 100000000 Then Cancel = True
+    If Cancel = False Then
+        TextVirtualItemCount.Text = LngValue
+    Else
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        TextVirtualItemCount.Text = PropertyPage.SelectedControls(0).VirtualItemCount
+        TextVirtualItemCount.SetFocus
+    End If
+End If
+End Sub
+
+Private Sub ListVirtualDisabledInfos_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
 Private Sub CheckMouseTrack_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
@@ -1002,6 +1141,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckAutoSelectFirstItem_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckVirtualMode_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

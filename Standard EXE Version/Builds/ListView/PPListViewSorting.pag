@@ -109,6 +109,14 @@ PropertyPage.ValidateControls
 If Err.Number = 380 Then Exit Sub
 On Error GoTo 0
 With PropertyPage.SelectedControls(0)
+If CheckSorted.Value = vbChecked Then
+    If .VirtualMode = True Then
+        MsgBox "Sorted must be False when VirtualMode is True", vbExclamation + vbOKOnly
+        CheckSorted.SetFocus
+        PropertyPage.Changed = True
+        Exit Sub
+    End If
+End If
 .Sorted = CBool(CheckSorted.Value = vbChecked)
 .SortKey = CInt(TextSortKey.Text)
 .SortOrder = ComboSortOrder.ItemData(ComboSortOrder.ListIndex)
