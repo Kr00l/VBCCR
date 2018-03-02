@@ -419,7 +419,7 @@ Public Event ItemBkColor(ByVal Item As LvwListItem, ByRef RGBColor As Long)
 Attribute ItemBkColor.VB_Description = "Occurs when a list item is about to draw the background in 'report' view. This is a request to provide an alternative back color. The back color is passed in an RGB format."
 Public Event GetVirtualItem(ByVal Index As Long, ByVal SubItemIndex As Long, ByVal VirtualProperty As LvwVirtualPropertyConstants, ByRef Value As Variant)
 Attribute GetVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and requests for an item or sub item property."
-Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal Count As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, ByRef FoundIndex As Long)
+Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, ByRef FoundIndex As Long)
 Attribute FindVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and needs to find a particular item."
 Public Event BeforeLabelEdit(ByRef Cancel As Boolean)
 Attribute BeforeLabelEdit.VB_Description = "Occurs when a user attempts to edit the label of the currently selected list item."
@@ -7472,16 +7472,18 @@ Select Case wMsg
                             FontHandle = ListViewFontHandle
                             If PropVirtualMode = True Then
                                 If NMLVCD.NMCD.dwItemSpec > -1 And NMLVCD.NMCD.dwItemSpec <= PropVirtualItemCount Then
-                                    ' CDIS_HOT is not supported on a virtualized list view.
-                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
-                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                    If NMLVCD.iSubItem = 0 Then
+                                        ' CDIS_HOT is not supported on a virtualized list view.
+                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                        End If
+                                        If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                        ForeColor = PropForeColor
+                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                        End If
+                                        NMLVCD.ClrText = WinColor(ForeColor)
                                     End If
-                                    If Bold = True Then FontHandle = ListViewBoldFontHandle
-                                    ForeColor = PropForeColor
-                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
-                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
-                                    End If
-                                    NMLVCD.ClrText = WinColor(ForeColor)
                                 End If
                             ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
                                 Set ListItem = PtrToObj(NMLVCD.NMCD.lItemlParam)
@@ -7512,16 +7514,20 @@ Select Case wMsg
                             FontHandle = ListViewFontHandle
                             If PropVirtualMode = True Then
                                 If NMLVCD.NMCD.dwItemSpec > -1 And NMLVCD.NMCD.dwItemSpec <= PropVirtualItemCount Then
-                                    ' CDIS_HOT is not supported on a virtualized list view.
-                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
-                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                    Dim SubItemCount As Long
+                                    SubItemCount = Me.ColumnHeaders.Count - 1 ' Deduct 1 for SubItem 0
+                                    If NMLVCD.iSubItem >= 0 And NMLVCD.iSubItem <= SubItemCount Then
+                                        ' CDIS_HOT is not supported on a virtualized list view.
+                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                        End If
+                                        If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                        ForeColor = PropForeColor
+                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                        End If
+                                        NMLVCD.ClrText = WinColor(ForeColor)
                                     End If
-                                    If Bold = True Then FontHandle = ListViewBoldFontHandle
-                                    ForeColor = PropForeColor
-                                    If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
-                                        RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
-                                    End If
-                                    NMLVCD.ClrText = WinColor(ForeColor)
                                 End If
                             ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
                                 Set ListItem = PtrToObj(NMLVCD.NMCD.lItemlParam)
@@ -7717,7 +7723,7 @@ Select Case wMsg
                             SearchText = String(Length, vbNullChar)
                             CopyMemory ByVal StrPtr(SearchText), ByVal NMLVFI.LVFI.psz, Length * 2
                         End If
-                        RaiseEvent FindVirtualItem(NMLVFI.iStart + 1, SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&), SearchText, CBool((NMLVFI.LVFI.Flags And LVFI_PARTIAL) = LVFI_PARTIAL), CBool((NMLVFI.LVFI.Flags And LVFI_WRAP) = LVFI_WRAP), FoundIndex)
+                        RaiseEvent FindVirtualItem(NMLVFI.iStart + 1, SearchText, CBool((NMLVFI.LVFI.Flags And LVFI_PARTIAL) = LVFI_PARTIAL), CBool((NMLVFI.LVFI.Flags And LVFI_WRAP) = LVFI_WRAP), FoundIndex)
                         If FoundIndex >= 0 Then
                             WindowProcUserControl = FoundIndex - 1
                         Else
