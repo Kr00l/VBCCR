@@ -1,5 +1,9 @@
 List of revisions:
 
+02-Mar-2018
+- Fixed potential crash in GetVirtualItem event in the ListView control.
+  Also removed Count paramter in FindVirtualItem event. (Not needed, ListView.VirtualItemsCount can be used)
+
 01-Mar-2018
 - Included the VirtualMode/VirtualItemCount property and GetVirtualItem/FindVirtualItem event in the ListView control.
   Also included VirtualDisabledInfos property that allows to disable not needed virtual properties and to increase performance. (less GetVirtualItem event calls)

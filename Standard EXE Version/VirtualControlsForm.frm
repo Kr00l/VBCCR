@@ -44,6 +44,7 @@ End Type
 Private VirtualLvwItems(1 To 100000, 0 To 3) As VirtualLvwItemStruct
 
 Private Sub Form_Load()
+Call SetupVisualStyles(Me)
 ListView1.VirtualDisabledInfos = 0 ' None disabled info
 Set ListView1.SmallIcons = MainForm.ImageList1
 Dim i As Long, j As Long
@@ -78,11 +79,11 @@ End With
 ListView1.VirtualItemCount = 100000
 End Sub
 
-Private Sub ListView1_FindVirtualItem(ByVal StartIndex As Long, ByVal Count As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, FoundIndex As Long)
+Private Sub ListView1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, FoundIndex As Long)
 ' This event must be handled to enable incremental search on key presses
 If Count = 0 Then Exit Sub
 Dim i As Long
-For i = StartIndex To Count
+For i = StartIndex To ListView1.VirtualItemCount
     If StrComp(Left$(VirtualLvwItems(i, 0).Text, Len(SearchText)), SearchText, vbTextCompare) = 0 Then
         FoundIndex = i
         Exit For
