@@ -1,5 +1,9 @@
 List of revisions:
 
+04-Mar-2018
+- Bugfix in VTableHandle.bas related to 25-Feb-2018 update. (concerns unload stability in IDE only)
+- Fixed constant TVIS_STATEIMAGEMASK in the TreeView control. (like in ListView on 27-Feb-2018 update)
+
 02-Mar-2018
 - Fixed potential crash in GetVirtualItem event in the ListView control.
   Also removed Count paramter in FindVirtualItem event. (Not needed, ListView.VirtualItemsCount can be used)
@@ -10,6 +14,15 @@ List of revisions:
   All normal list view events are supported. However, passed ListItem objects are limited in their functionality when VirtualMode is on.
   Several functions/properties/methods are disabled (error raise) when VirtualMode is on.
 - Added VirtualControlsForm into the demo project to demonstrate the virtual list view.
+
+27-Feb-2018
+- Fixed constant LVIS_STATEIMAGEMASK in the ListView control. (should be &HF000& instead of &HF000)
+  The missing & resulted in a value of -4096 instead of 61440.
+  However, MS ListView was apparently flexible enough and accepted state mask -4096 as 61440 in LVM_GETITEMSTATE.
+  But -4096 would fail in a callback testing situation. (LVN_GETDISPINFO; not used now for that)
+
+25-Feb-2018
+- Major internal improvement in the VTableHandle.bas concerning IOleInPlaceActiveObject.
 
 20-Feb-2018
 - Unicode support when generating ASCII key combos, e.g. ALT + 3333.
