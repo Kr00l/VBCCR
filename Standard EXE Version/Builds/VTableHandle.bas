@@ -230,7 +230,23 @@ CATCH_EXCEPTION:
 End Sub
 
 Public Sub DeActivateIPAO()
-' Void
+On Error GoTo CATCH_EXCEPTION
+If VTableIPAOData.OriginalIOleIPAO Is Nothing Then Exit Sub
+Dim PropOleObject As OLEGuids.IOleObject
+Dim PropOleInPlaceSite As OLEGuids.IOleInPlaceSite
+Dim PropOleInPlaceFrame As OLEGuids.IOleInPlaceFrame
+Dim PropOleInPlaceUIWindow As OLEGuids.IOleInPlaceUIWindow
+Dim PropOleInPlaceActiveObject As OLEGuids.IOleInPlaceActiveObject
+Dim PosRect As OLEGuids.OLERECT
+Dim ClipRect As OLEGuids.OLERECT
+Dim FrameInfo As OLEGuids.OLEINPLACEFRAMEINFO
+Set PropOleObject = VTableIPAOData.OriginalIOleIPAO
+Set PropOleInPlaceActiveObject = VTableIPAOData.OriginalIOleIPAO
+Set PropOleInPlaceSite = PropOleObject.GetClientSite
+PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
+PropOleInPlaceFrame.SetActiveObject PropOleInPlaceActiveObject, vbNullString
+If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject PropOleInPlaceActiveObject, vbNullString
+CATCH_EXCEPTION:
 End Sub
 
 Private Function GetVTableIPAO() As Long
