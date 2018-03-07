@@ -1945,6 +1945,17 @@ If ComboBoxHandle <> 0 And ComboBoxListHandle <> 0 Then
 End If
 End Function
 
+Public Function SelectItem(ByVal Text As String, Optional ByVal Index As Long = -1) As Long
+Attribute SelectItem.VB_Description = "Searches for an item that begins with the characters in a specified string. If a matching item is found, the item is selected. The search is not case sensitive."
+If ComboBoxHandle <> 0 Then
+    If Not SendMessage(ComboBoxHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Or Index = -1 Then
+        SelectItem = SendMessage(ComboBoxHandle, CB_SELECTSTRING, Index, ByVal StrPtr(Text))
+    Else
+        Err.Raise 381
+    End If
+End If
+End Function
+
 Private Sub CheckDropDownHeight(ByVal Calculate As Boolean)
 Static LastCount As Long, ItemHeight As Long
 If ComboBoxHandle <> 0 And ComboBoxDropDownHeightState = False Then
