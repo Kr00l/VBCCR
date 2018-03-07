@@ -1,5 +1,8 @@
 List of revisions:
 
+07-Mar-2018
+- Included the SelectItem function in the ComboBoxW control.
+
 04-Mar-2018
 - Bugfix in VTableHandle.bas related to 25-Feb-2018 update. (concerns unload stability in IDE only)
 - Fixed constant TVIS_STATEIMAGEMASK in the TreeView control. (like in ListView on 27-Feb-2018 update)
