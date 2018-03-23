@@ -21,6 +21,7 @@ Option Explicit
 Private MciFormatMilliseconds, MciFormatHms, MciFormatMsf, MciFormatFrames, MciFormatSmpte24, MciFormatSmpte25, MciFormatSmpte30, MciFormatSmpte30Drop, MciFormatBytes, MciFormatSamples, MciFormatTmsf
 Private MciModeNotReady, MciModeStop, MciModePlay, MciModeRecord, MciModeSeek, MciModePause, MciModeOpen
 Private MciNotifySuccessful, MciNotifySuperseded, MciNotifyAborted, MciNotifyFailure
+Private MciCaptionNone, MciCaptionName, MciCaptionNamePos, MciCaptionNameMode, MciCaptionNamePosMode, MciCaptionPos, MciCaptionPosMode, MciCaptionMode
 #End If
 Private Const MCI_FORMAT_MILLISECONDS As Long = 0
 Private Const MCI_FORMAT_HMS As Long = 1
@@ -72,6 +73,16 @@ MciNotifySuccessful = MCI_NOTIFY_SUCCESSFUL
 MciNotifySuperseded = MCI_NOTIFY_SUPERSEDED
 MciNotifyAborted = MCI_NOTIFY_ABORTED
 MciNotifyFailure = MCI_NOTIFY_FAILURE
+End Enum
+Public Enum MciCaptionConstants
+MciCaptionNone = 0
+MciCaptionName = 1
+MciCaptionNamePos = 2
+MciCaptionNameMode = 3
+MciCaptionNamePosMode = 4
+MciCaptionPos = 5
+MciCaptionPosMode = 6
+MciCaptionMode = 7
 End Enum
 Private Type RECT
 Left As Long
@@ -143,6 +154,8 @@ Private Declare Function GetProfileString Lib "kernel32" Alias "GetProfileString
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrlenA Lib "kernel32" (ByVal lpString As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
@@ -157,10 +170,12 @@ Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hIns
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetWindow Lib "user32" (ByVal hWnd As Long, ByVal wCmd As Long) As Long
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+Private Const GWL_STYLE As Long = (-16)
 Private Const GW_CHILD As Long = 5
 Private Const GW_HWNDNEXT As Long = 2
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_CAPTION As Long = &HC00000
 Private Const WM_CLOSE As Long = &H10
 Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_SETFOCUS As Long = &H7
@@ -183,6 +198,7 @@ Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_ERASEBKGND As Long = &H14
+Private Const WM_SYSCOMMAND As Long = &H112, SC_MOVE As Long = &HF010&
 Private Const MCIWNDF_NOAUTOSIZEWINDOW As Long = &H1
 Private Const MCIWNDF_NOPLAYBAR As Long = &H2
 Private Const MCIWNDF_NOAUTOSIZEMOVIE As Long = &H4
@@ -302,6 +318,7 @@ Private PropAutoSizeWindow As Boolean
 Private PropAutoSizeMovie As Boolean
 Private PropTimerFreq As Integer
 Private PropZoom As Long
+Private PropCaption As MciCaptionConstants
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -374,6 +391,7 @@ PropAutoSizeWindow = True
 PropAutoSizeMovie = True
 PropTimerFreq = 500
 PropZoom = 100
+PropCaption = MciCaptionNone
 Call CreateMCIWnd
 End Sub
 
@@ -398,6 +416,7 @@ PropAutoSizeWindow = .ReadProperty("AutoSizeWindow", True)
 PropAutoSizeMovie = .ReadProperty("AutoSizeMovie", True)
 PropTimerFreq = .ReadProperty("TimerFreq", 500)
 PropZoom = .ReadProperty("Zoom", 100)
+PropCaption = .ReadProperty("Caption", MciCaptionNone)
 End With
 Call CreateMCIWnd
 End Sub
@@ -422,6 +441,7 @@ With PropBag
 .WriteProperty "AutoSizeMovie", PropAutoSizeMovie, True
 .WriteProperty "TimerFreq", PropTimerFreq, 500
 .WriteProperty "Zoom", PropZoom, 100
+.WriteProperty "Caption", PropCaption, MciCaptionNone
 End With
 End Sub
 
@@ -782,7 +802,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If MCIWndHandle <> 0 Then Call ComCtlsChangeBorderStyle(MCIWndHandle, PropBorderStyle)
+If MCIWndHandle <> 0 And PropCaption = MciCaptionNone Then Call ComCtlsChangeBorderStyle(MCIWndHandle, PropBorderStyle)
 UserControl.PropertyChanged "BorderStyle"
 End Property
 
@@ -972,11 +992,61 @@ End If
 UserControl.PropertyChanged "Zoom"
 End Property
 
+Public Property Get Caption() As MciCaptionConstants
+Attribute Caption.VB_Description = "Returns/sets the information that can be displayed in the caption bar."
+Caption = PropCaption
+End Property
+
+Public Property Let Caption(ByVal Value As MciCaptionConstants)
+Select Case Value
+    Case MciCaptionNone, MciCaptionName, MciCaptionNamePos, MciCaptionNameMode, MciCaptionNamePosMode, MciCaptionPos, MciCaptionPosMode, MciCaptionMode
+        PropCaption = Value
+    Case Else
+        Err.Raise 380
+End Select
+If MCIWndHandle <> 0 Then
+    SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWALL, ByVal 0&
+    Dim dwStyle As Long
+    If PropCaption = MciCaptionNone Then
+        Call ComCtlsChangeBorderStyle(MCIWndHandle, PropBorderStyle)
+        dwStyle = GetWindowLong(MCIWndHandle, GWL_STYLE)
+        If (dwStyle And WS_CAPTION) = WS_CAPTION Then SetWindowLong MCIWndHandle, GWL_STYLE, dwStyle And Not WS_CAPTION
+    Else
+        Call ComCtlsChangeBorderStyle(MCIWndHandle, CCBorderStyleNone)
+        dwStyle = GetWindowLong(MCIWndHandle, GWL_STYLE)
+        If Not (dwStyle And WS_CAPTION) = WS_CAPTION Then SetWindowLong MCIWndHandle, GWL_STYLE, dwStyle Or WS_CAPTION
+    End If
+    Call ComCtlsFrameChanged(MCIWndHandle)
+    Select Case PropCaption
+        Case MciCaptionName
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWNAME, ByVal MCIWNDF_SHOWNAME
+        Case MciCaptionNamePos
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWNAME Or MCIWNDF_SHOWPOS, ByVal MCIWNDF_SHOWNAME Or MCIWNDF_SHOWPOS
+        Case MciCaptionNameMode
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWNAME Or MCIWNDF_SHOWMODE, ByVal MCIWNDF_SHOWNAME Or MCIWNDF_SHOWMODE
+        Case MciCaptionNamePosMode
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWNAME Or MCIWNDF_SHOWPOS Or MCIWNDF_SHOWMODE, ByVal MCIWNDF_SHOWNAME Or MCIWNDF_SHOWPOS Or MCIWNDF_SHOWMODE
+        Case MciCaptionPos
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWPOS, ByVal MCIWNDF_SHOWPOS
+        Case MciCaptionPosMode
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWPOS Or MCIWNDF_SHOWMODE, ByVal MCIWNDF_SHOWPOS Or MCIWNDF_SHOWMODE
+        Case MciCaptionMode
+            SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_SHOWMODE, ByVal MCIWNDF_SHOWMODE
+    End Select
+    Call UserControl_Resize
+End If
+UserControl.PropertyChanged "Caption"
+End Property
+
 Private Sub CreateMCIWnd()
 If MCIWndHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or MCIWNDF_NOTIFYALL
-Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
+If PropCaption = MciCaptionNone Then
+    Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
+Else
+    dwStyle = dwStyle Or WS_CAPTION
+End If
 If PropErrorDlg = False Then dwStyle = dwStyle Or MCIWNDF_NOERRORDLG
 If PropRecord = True Then dwStyle = dwStyle Or MCIWNDF_RECORD
 If PropPlaybar = False Then dwStyle = dwStyle Or MCIWNDF_NOPLAYBAR
@@ -984,6 +1054,22 @@ If PropMenu = False Then dwStyle = dwStyle Or MCIWNDF_NOMENU
 If PropAllowOpen = False Or Ambient.UserMode = False Then dwStyle = dwStyle Or MCIWNDF_NOOPEN
 If PropAutoSizeWindow = False Then dwStyle = dwStyle Or MCIWNDF_NOAUTOSIZEWINDOW
 If PropAutoSizeMovie = False Then dwStyle = dwStyle Or MCIWNDF_NOAUTOSIZEMOVIE
+Select Case PropCaption
+    Case MciCaptionName
+        dwStyle = dwStyle Or MCIWNDF_SHOWNAME
+    Case MciCaptionNamePos
+        dwStyle = dwStyle Or MCIWNDF_SHOWNAME Or MCIWNDF_SHOWPOS
+    Case MciCaptionNameMode
+        dwStyle = dwStyle Or MCIWNDF_SHOWNAME Or MCIWNDF_SHOWMODE
+    Case MciCaptionNamePosMode
+        dwStyle = dwStyle Or MCIWNDF_SHOWNAME Or MCIWNDF_SHOWPOS Or MCIWNDF_SHOWMODE
+    Case MciCaptionPos
+        dwStyle = dwStyle Or MCIWNDF_SHOWPOS
+    Case MciCaptionPosMode
+        dwStyle = dwStyle Or MCIWNDF_SHOWPOS Or MCIWNDF_SHOWMODE
+    Case MciCaptionMode
+        dwStyle = dwStyle Or MCIWNDF_SHOWMODE
+End Select
 MCIWndHandle = CreateWindowEx(dwExStyle, StrPtr("MCIWndClass"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 Me.Enabled = UserControl.Enabled
 Me.VisualStyles = PropVisualStyles
@@ -1422,6 +1508,8 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_SYSCOMMAND
+        If (wParam And &HFFF0&) = SC_MOVE Then Exit Function
     Case MM_MCINOTIFY
         RaiseEvent Notify(wParam)
     Case MM_MCISIGNAL
