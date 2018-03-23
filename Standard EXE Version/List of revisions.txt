@@ -1,5 +1,9 @@
 List of revisions:
 
+23-Mar-2018
+- Included the Caption property in the MCIWnd control.
+- Toolbox bitmap for the HotKey control improved. (cosmetic effect in the IDE)
+
 07-Mar-2018
 - Included the SelectItem function in the ComboBoxW control.
 
