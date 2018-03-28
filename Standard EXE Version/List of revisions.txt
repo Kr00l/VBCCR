@@ -1,5 +1,8 @@
 List of revisions:
 
+28-Mar-2018
+- Internal improvement in ComCtlsBase.bas. (Sub ComCtlsShowAllUIStates)
+
 23-Mar-2018
 - Included the Caption property in the MCIWnd control.
 - Toolbox bitmap for the HotKey control improved. (cosmetic effect in the IDE)
