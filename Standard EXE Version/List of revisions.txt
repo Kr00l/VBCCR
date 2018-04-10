@@ -1,5 +1,8 @@
 List of revisions:
 
+10-Apr-2018
+- Internal improvement in the ComboBoxW control concerning IntegralHeight handling and OwnerDrawVariable.
+
 28-Mar-2018
 - Internal improvement in ComCtlsBase.bas. (Sub ComCtlsShowAllUIStates)
 
