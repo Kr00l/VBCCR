@@ -253,6 +253,7 @@ Private Const EM_SETREADONLY As Long = &HCF
 Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
 Private Const LB_ERR As Long = (-1)
+Private Const LB_SETTOPINDEX As Long = &H197
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
 Private Const CB_DELETESTRING As Long = &H144
@@ -2360,7 +2361,7 @@ WindowProcList = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_MOUSEMOVE
         If (GetMouseStateFromParam(wParam) And vbLeftButton) = vbLeftButton Then Call CheckTopIndex
-    Case WM_MOUSEWHEEL, WM_VSCROLL
+    Case WM_MOUSEWHEEL, WM_VSCROLL, LB_SETTOPINDEX
         Call CheckTopIndex
 End Select
 End Function
