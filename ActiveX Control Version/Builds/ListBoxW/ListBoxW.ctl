@@ -858,8 +858,7 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
         Dim TM As TEXTMETRIC
         If ListBoxFontHandle <> 0 Then SelectObject hDCScreen, ListBoxFontHandle
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
-            TM.TMHeight = TM.TMHeight + (2 * PixelsPerDIP_Y())
-            If TM.TMHeight < (13 * PixelsPerDIP_Y()) Then TM.TMHeight = (13 * PixelsPerDIP_Y())
+            If TM.TMHeight < ListBoxStateImageSize Then TM.TMHeight = ListBoxStateImageSize
             SendMessage ListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
             If PropIntegralHeight = True Then
                 MoveWindow ListBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
@@ -886,8 +885,7 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
         Dim TM As TEXTMETRIC
         If ListBoxFontHandle <> 0 Then SelectObject hDCScreen, ListBoxFontHandle
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
-            TM.TMHeight = TM.TMHeight + (2 * PixelsPerDIP_Y())
-            If TM.TMHeight < (13 * PixelsPerDIP_Y()) Then TM.TMHeight = (13 * PixelsPerDIP_Y())
+            If TM.TMHeight < ListBoxStateImageSize Then TM.TMHeight = ListBoxStateImageSize
             SendMessage ListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
             If PropIntegralHeight = True Then
                 MoveWindow ListBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
