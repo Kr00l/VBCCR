@@ -1,5 +1,11 @@
 List of revisions:
 
+18-Apr-2018
+- Minor internal improvement in the ListBoxW control.
+
+15-Apr-2018
+- Bugfix in the Scroll event in the ComboBoxW and ImageCombo control.
+
 10-Apr-2018
 - Internal improvement in the ComboBoxW control concerning IntegralHeight handling and OwnerDrawVariable.
 
