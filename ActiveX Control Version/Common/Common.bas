@@ -55,6 +55,26 @@ wMinute As Integer
 wSecond As Integer
 wMilliseconds As Integer
 End Type
+Private Type VS_FIXEDFILEINFO
+dwSignature As Long
+dwStrucVersionLo As Integer
+dwStrucVersionHi As Integer
+dwFileVersionMSLo As Integer
+dwFileVersionMSHi As Integer
+dwFileVersionLSLo As Integer
+dwFileVersionLSHi As Integer
+dwProductVersionMSLo As Integer
+dwProductVersionMSHi As Integer
+dwProductVersionLSLo As Integer
+dwProductVersionLSHi As Integer
+dwFileFlagsMask As Long
+dwFileFlags As Long
+dwFileOS As Long
+dwFileType As Long
+dwFileSubtype As Long
+dwFileDateMS As Long
+dwFileDateLS As Long
+End Type
 Private Const LF_FACESIZE As Long = 32
 Private Const FW_NORMAL As Long = 400
 Private Const FW_BOLD As Long = 700
@@ -86,6 +106,9 @@ Private Declare Function GetFileSize Lib "kernel32" (ByVal hFile As Long, ByRef 
 Private Declare Function GetFileTime Lib "kernel32" (ByVal hFile As Long, ByVal lpCreationTime As Long, ByVal lpLastAccessTime As Long, ByVal lpLastWriteTime As Long) As Long
 Private Declare Function FileTimeToLocalFileTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpLocalFileTime As Long) As Long
 Private Declare Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpSystemTime As Long) As Long
+Private Declare Function GetFileVersionInfo Lib "Version" Alias "GetFileVersionInfoW" (ByVal lpFileName As Long, ByVal dwHandle As Long, ByVal dwLen As Long, ByVal lpData As Long) As Long
+Private Declare Function GetFileVersionInfoSize Lib "Version" Alias "GetFileVersionInfoSizeW" (ByVal lpFileName As Long, ByVal lpdwHandle As Long) As Long
+Private Declare Function VerQueryValue Lib "Version" Alias "VerQueryValueW" (ByVal lpBlock As Long, ByVal lpSubBlock As Long, ByRef lplpBuffer As Long, ByRef puLen As Long) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function GetCommandLine Lib "kernel32" Alias "GetCommandLineW" () As Long
 Private Declare Function PathGetArgs Lib "shlwapi" Alias "PathGetArgsW" (ByVal lpszPath As Long) As Long
@@ -98,11 +121,11 @@ Private Declare Function IsClipboardFormatAvailable Lib "user32" (ByVal wFormat 
 Private Declare Function GetClipboardData Lib "user32" (ByVal wFormat As Long) As Long
 Private Declare Function SetClipboardData Lib "user32" (ByVal wFormat As Long, ByVal hMem As Long) As Long
 Private Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
-Private Declare Function GetAsyncKeyState Lib "user32" (ByVal VKey As Long) As Integer
+Private Declare Function GetAsyncKeyState Lib "user32" (ByVal vKey As Long) As Integer
 Private Declare Function GetWindowText Lib "user32" Alias "GetWindowTextW" (ByVal hWnd As Long, ByVal lpString As Long, ByVal cch As Long) As Long
 Private Declare Function GetWindowTextLength Lib "user32" Alias "GetWindowTextLengthW" (ByVal hWnd As Long) As Long
 Private Declare Function GetClassName Lib "user32" Alias "GetClassNameW" (ByVal hWnd As Long, ByVal lpClassName As Long, ByVal nMaxCount As Long) As Long
-Private Declare Function GetWindowsDirectory Lib "kernel32" Alias "GetWindowsDirectoryW" (ByVal lpBuffer As Long, ByVal nSize As Long) As Long
+Private Declare Function GetSystemWindowsDirectory Lib "kernel32" Alias "GetSystemWindowsDirectoryW" (ByVal lpBuffer As Long, ByVal nSize As Long) As Long
 Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirectoryW" (ByVal lpBuffer As Long, ByVal nSize As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetMenu Lib "user32" (ByVal hWnd As Long) As Long
@@ -134,6 +157,7 @@ Private Declare Function OleCreatePictureIndirect Lib "olepro32" (ByRef pPictDes
 Private Declare Function CreateStreamOnHGlobal Lib "ole32" (ByVal hGlobal As Long, ByVal fDeleteOnRelease As Long, ByRef pStream As IUnknown) As Long
 Private Declare Function WideCharToMultiByte Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpWideCharStr As Long, ByVal cchWideChar As Long, ByVal lpMultiByteStr As Long, ByVal cbMultiByte As Long, ByVal lpDefaultChar As Long, ByVal lpUsedDefaultChar As Long) As Long
 Private Declare Function MultiByteToWideChar Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpMultiByteStr As Long, ByVal cbMultiByte As Long, ByVal lpWideCharStr As Long, ByVal cchWideChar As Long) As Long
+Private Const MAX_PATH As Long = 260, MAX_PATH_W As Long = 32767
 
 ' (VB-Overwrite)
 Public Function MsgBox(ByVal Prompt As String, Optional ByVal Buttons As VbMsgBoxStyle = vbOKOnly, Optional ByVal Title As String) As VbMsgBoxResult
@@ -244,15 +268,6 @@ Else
 End If
 End Function
 
-Public Function FileExists(ByVal PathName As String) As Boolean
-On Error Resume Next
-Dim Attributes As VbFileAttribute, ErrVal As Long
-Attributes = GetAttr(PathName)
-ErrVal = Err.Number
-On Error GoTo 0
-If (Attributes And (vbDirectory Or vbVolume)) = 0 And ErrVal = 0 Then FileExists = True
-End Function
-
 ' (VB-Overwrite)
 Public Function Command$()
 If InIDE() = False Then
@@ -263,29 +278,114 @@ Else
 End If
 End Function
 
-Public Function GetEXEName() As String
+Public Function FileExists(ByVal PathName As String) As Boolean
+On Error Resume Next
+Dim Attributes As VbFileAttribute, ErrVal As Long
+Attributes = GetAttr(PathName)
+ErrVal = Err.Number
+On Error GoTo 0
+If (Attributes And (vbDirectory Or vbVolume)) = 0 And ErrVal = 0 Then FileExists = True
+End Function
+
+Public Function AppPath() As String
 If InIDE() = False Then
-    Const MAX_PATH As Long = 260
-    Dim Buffer As String
+    Dim Buffer As String, RetVal As Long
     Buffer = String(MAX_PATH, vbNullChar)
-    Buffer = Left$(Buffer, GetModuleFileName(0, StrPtr(Buffer), MAX_PATH + 1))
-    Buffer = Right$(Buffer, Len(Buffer) - InStrRev(Buffer, "\"))
-    GetEXEName = Left$(Buffer, InStrRev(Buffer, ".") - 1)
+    RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH)
+    If RetVal = MAX_PATH Then ' Path > MAX_PATH
+        Buffer = String(MAX_PATH_W, vbNullChar)
+        RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH_W)
+    End If
+    If RetVal > 0 Then
+        Buffer = Left$(Buffer, RetVal)
+        AppPath = Left$(Buffer, InStrRev(Buffer, "\"))
+    Else
+        AppPath = App.Path & IIf(Right$(App.Path, 1) = "\", "", "\")
+    End If
 Else
-    GetEXEName = App.EXEName
+    AppPath = App.Path & IIf(Right$(App.Path, 1) = "\", "", "\")
 End If
 End Function
 
-Public Function GetAppPath() As String
+Public Function AppEXEName() As String
 If InIDE() = False Then
-    Const MAX_PATH As Long = 260
-    Dim Buffer As String
+    Dim Buffer As String, RetVal As Long
     Buffer = String(MAX_PATH, vbNullChar)
-    Buffer = Left$(Buffer, GetModuleFileName(0, StrPtr(Buffer), MAX_PATH + 1))
-    GetAppPath = Left$(Buffer, InStrRev(Buffer, "\"))
+    RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH)
+    If RetVal = MAX_PATH Then ' Path > MAX_PATH
+        Buffer = String(MAX_PATH_W, vbNullChar)
+        RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH_W)
+    End If
+    If RetVal > 0 Then
+        Buffer = Left$(Buffer, RetVal)
+        Buffer = Right$(Buffer, Len(Buffer) - InStrRev(Buffer, "\"))
+        AppEXEName = Left$(Buffer, InStrRev(Buffer, ".") - 1)
+    Else
+        AppEXEName = App.EXEName
+    End If
 Else
-    GetAppPath = App.Path & IIf(Right$(App.Path, 1) = "\", "", "\")
+    AppEXEName = App.EXEName
 End If
+End Function
+
+Public Function AppMajor() As Integer
+If InIDE() = False Then
+    With GetAppVersionInfo()
+    AppMajor = .dwFileVersionMSHi
+    End With
+Else
+    AppMajor = App.Major
+End If
+End Function
+
+Public Function AppMinor() As Integer
+If InIDE() = False Then
+    With GetAppVersionInfo()
+    AppMinor = .dwFileVersionMSLo
+    End With
+Else
+    AppMinor = App.Minor
+End If
+End Function
+
+Public Function AppRevision() As Integer
+If InIDE() = False Then
+    With GetAppVersionInfo()
+    AppRevision = .dwFileVersionLSLo
+    End With
+Else
+    AppRevision = App.Revision
+End If
+End Function
+
+Private Function GetAppVersionInfo() As VS_FIXEDFILEINFO
+Static Done As Boolean, Value As VS_FIXEDFILEINFO
+If Done = False Then
+    Dim Buffer As String, RetVal As Long
+    Buffer = String(MAX_PATH, vbNullChar)
+    RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH)
+    If RetVal = MAX_PATH Then ' Path > MAX_PATH
+        Buffer = String(MAX_PATH_W, vbNullChar)
+        RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH_W)
+    End If
+    If RetVal > 0 Then
+        Dim ImagePath As String, Length As Long
+        ImagePath = Left$(Buffer, RetVal)
+        Length = GetFileVersionInfoSize(StrPtr(ImagePath), 0)
+        If Length > 0 Then
+            Dim DataBuffer() As Byte
+            ReDim DataBuffer(0 To (Length - 1)) As Byte
+            If GetFileVersionInfo(StrPtr(ImagePath), 0, Length, VarPtr(DataBuffer(0))) <> 0 Then
+                Dim hData As Long
+                If VerQueryValue(VarPtr(DataBuffer(0)), StrPtr("\"), hData, Length) <> 0 Then
+                    If hData <> 0 Then CopyMemory Value, ByVal hData, LenB(Value)
+                End If
+            End If
+        End If
+    End If
+    Done = True
+End If
+LSet GetAppVersionInfo = Value
 End Function
 
 Public Function GetClipboardText() As String
@@ -521,7 +621,22 @@ RetVal = GetClassName(hWnd, StrPtr(Buffer), Len(Buffer))
 If RetVal <> 0 Then GetWindowClassName = Left$(Buffer, RetVal)
 End Function
 
-Public Function GetTitleBarHeight(ByVal Form As VB.Form) As Single
+Public Function GetFormTitleBarHeight(ByVal Form As VB.Form) As Single
+Const SM_CYCAPTION As Long = 4, SM_CYMENU As Long = 15
+Const SM_CYSIZEFRAME As Long = 33, SM_CYFIXEDFRAME As Long = 8
+Dim CY As Long
+CY = GetSystemMetrics(SM_CYCAPTION)
+If GetMenu(Form.hWnd) <> 0 Then CY = CY + GetSystemMetrics(SM_CYMENU)
+Select Case Form.BorderStyle
+    Case vbSizable, vbSizableToolWindow
+        CY = CY + GetSystemMetrics(SM_CYSIZEFRAME)
+    Case vbFixedSingle, vbFixedDialog, vbFixedToolWindow
+        CY = CY + GetSystemMetrics(SM_CYFIXEDFRAME)
+End Select
+If CY > 0 Then GetFormTitleBarHeight = Form.ScaleY(CY, vbPixels, Form.ScaleMode)
+End Function
+
+Public Function GetFormNonScaleHeight(ByVal Form As VB.Form) As Single
 Const SM_CYCAPTION As Long = 4, SM_CYMENU As Long = 15
 Const SM_CYSIZEFRAME As Long = 33, SM_CYFIXEDFRAME As Long = 8
 Dim CY As Long
@@ -533,7 +648,7 @@ Select Case Form.BorderStyle
     Case vbFixedSingle, vbFixedDialog, vbFixedToolWindow
         CY = CY + (GetSystemMetrics(SM_CYFIXEDFRAME) * 2)
 End Select
-If CY > 0 Then GetTitleBarHeight = Form.ScaleY(CY, vbPixels, Form.ScaleMode)
+If CY > 0 Then GetFormNonScaleHeight = Form.ScaleY(CY, vbPixels, Form.ScaleMode)
 End Function
 
 Public Sub SetWindowRedraw(ByVal hWnd As Long, ByVal Enabled As Boolean)
@@ -545,24 +660,32 @@ If Enabled = True Then
 End If
 End Sub
 
-Public Function GetWinPath() As String
-Const MAX_PATH As Long = 260
-Dim Buffer As String
-Buffer = String(MAX_PATH, vbNullChar)
-If GetWindowsDirectory(StrPtr(Buffer), MAX_PATH) <> 0 Then
-    GetWinPath = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-    GetWinPath = GetWinPath & IIf(Right$(GetWinPath, 1) = "\", "", "\")
+Public Function GetWindowsDir() As String
+Static Done As Boolean, Value As String
+If Done = False Then
+    Dim Buffer As String
+    Buffer = String(MAX_PATH, vbNullChar)
+    If GetSystemWindowsDirectory(StrPtr(Buffer), MAX_PATH) <> 0 Then
+        Value = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        Value = Value & IIf(Right$(Value, 1) = "\", "", "\")
+    End If
+    Done = True
 End If
+GetWindowsDir = Value
 End Function
 
-Public Function GetSysPath() As String
-Const MAX_PATH As Long = 260
-Dim Buffer As String
-Buffer = String(MAX_PATH, vbNullChar)
-If GetSystemDirectory(StrPtr(Buffer), MAX_PATH) <> 0 Then
-    GetSysPath = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-    GetSysPath = GetSysPath & IIf(Right$(GetSysPath, 1) = "\", "", "\")
+Public Function GetSystemDir() As String
+Static Done As Boolean, Value As String
+If Done = False Then
+    Dim Buffer As String
+    Buffer = String(MAX_PATH, vbNullChar)
+    If GetSystemDirectory(StrPtr(Buffer), MAX_PATH) <> 0 Then
+        Value = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        Value = Value & IIf(Right$(Value, 1) = "\", "", "\")
+    End If
+    Done = True
 End If
+GetSystemDir = Value
 End Function
 
 Public Function GetShiftStateFromParam(ByVal wParam As Long) As ShiftConstants
