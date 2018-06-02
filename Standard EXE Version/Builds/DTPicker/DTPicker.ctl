@@ -2284,7 +2284,7 @@ Select Case wMsg
                                     If dwStyle <> dwStyleOld Then
                                         SetWindowLong CalendarHandle, GWL_STYLE, dwStyle
                                         Dim WndRect As RECT
-                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, VarPtr(WndRect)
+                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(WndRect)
                                         SetWindowPos CalendarHandle, 0, 0, 0, (WndRect.Right - WndRect.Left), (WndRect.Bottom - WndRect.Top), SWP_NOMOVE
                                     End If
                                 Else
