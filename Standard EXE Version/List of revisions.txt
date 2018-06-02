@@ -1,5 +1,8 @@
 List of revisions:
 
+02-Jun-2018
+- Internal bugfix in the DTPicker control that affects the drop-down on comctl version 5.8x and 6.0. (6.1 and above not concerned)
+
 18-Apr-2018
 - Minor internal improvement in the ListBoxW control.
 
