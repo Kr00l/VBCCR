@@ -1421,6 +1421,7 @@ End Sub
 
 Public Property Get ListCount() As Long
 Attribute ListCount.VB_Description = "Returns the number of items in the list portion of a control."
+Attribute ListCount.VB_MemberFlags = "400"
 If ComboBoxHandle <> 0 Then ListCount = SendMessage(ComboBoxHandle, CB_GETCOUNT, 0, ByVal 0&)
 End Property
 
