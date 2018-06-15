@@ -1,5 +1,9 @@
 List of revisions:
 
+15-Jun-2018
+- Included the AutoSelect property in the ComboBoxW control.
+  If turned on it allows to automatically select items after each user input in the edit portion.
+
 02-Jun-2018
 - Internal bugfix in the DTPicker control that affects the drop-down on comctl version 5.8x and 6.0. (6.1 and above not concerned)
 
