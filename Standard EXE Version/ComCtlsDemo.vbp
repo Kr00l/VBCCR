@@ -1,6 +1,6 @@
 Type=Exe
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\..\..\Windows\system32\stdole2.tlb#OLE Automation
-Reference=*\G{5A2B9220-BF07-11E6-9598-0800200C9A66}#1.0#0#..\..\..\..\..\..\Windows\system32\OLEGuids.tlb#OLE Guid and interface definitions
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\Windows\system32\stdole2.tlb#OLE Automation
+Reference=*\G{5A2B9220-BF07-11E6-9598-0800200C9A66}#1.0#0#..\..\..\..\Windows\system32\OLEGuids.tlb#OLE Guid and interface definitions
 Form=MainForm.frm
 Module=VisualStyles; Common\VisualStyles.bas
 Module=Startup; Common\Startup.bas
@@ -103,6 +103,7 @@ Class=CbrBandProperties; Builds\CoolBar\CbrBandProperties.cls
 Class=SbrPanelProperties; Builds\StatusBar\SbrPanelProperties.cls
 Class=RtfOleCallback; Builds\RichTextBox\RtfOleCallback.cls
 Class=TbrButtonProperties; Builds\ToolBar\TbrButtonProperties.cls
+Form=VirtualControlsForm.frm
 ResFile32="Resources\Resources.res"
 IconForm="MainForm"
 Startup="Sub Main"

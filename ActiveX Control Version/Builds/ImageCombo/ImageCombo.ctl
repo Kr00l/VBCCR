@@ -253,6 +253,7 @@ Private Const EM_SETREADONLY As Long = &HCF
 Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
 Private Const LB_ERR As Long = (-1)
+Private Const LB_SETTOPINDEX As Long = &H197
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
 Private Const CB_DELETESTRING As Long = &H144
@@ -275,11 +276,6 @@ Private Const CB_GETCOMBOBOXINFO As Long = &H164 ' Unsupported on W2K
 Private Const CB_SHOWDROPDOWN As Long = &H14F
 Private Const CB_SETEXTENDEDUI As Long = &H155
 Private Const CB_GETEXTENDEDUI As Long = &H156
-Private Const CBM_FIRST As Long = &H1700
-Private Const CB_SETMINVISIBLE As Long = (CBM_FIRST + 1)
-Private Const CB_GETMINVISIBLE As Long = (CBM_FIRST + 2)
-Private Const CB_SETCUEBANNER As Long = (CBM_FIRST + 3)
-Private Const CB_GETCUEBANNER As Long = (CBM_FIRST + 4)
 Private Const CBS_AUTOHSCROLL As Long = &H40
 Private Const CBS_SIMPLE As Long = &H1
 Private Const CBS_DROPDOWN As Long = &H2
@@ -2100,10 +2096,10 @@ Select Case wMsg
             KeyCode = wParam And &HFF&
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-                ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
+            ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
             wParam = KeyCode
         End If
     Case WM_CHAR
@@ -2243,10 +2239,10 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -2375,7 +2371,7 @@ WindowProcList = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_MOUSEMOVE
         If (GetMouseStateFromParam(wParam) And vbLeftButton) = vbLeftButton Then Call CheckTopIndex
-    Case WM_MOUSEWHEEL, WM_VSCROLL
+    Case WM_MOUSEWHEEL, WM_VSCROLL, LB_SETTOPINDEX
         Call CheckTopIndex
 End Select
 End Function

@@ -274,9 +274,9 @@ InitCommonControlsEx ICCEX
 End Sub
 
 Public Sub ComCtlsShowAllUIStates(ByVal hWnd As Long)
-Const WM_CHANGEUISTATE As Long = &H127
+Const WM_UPDATEUISTATE As Long = &H128
 Const UIS_CLEAR As Long = 2, UISF_HIDEFOCUS As Long = &H1, UISF_HIDEACCEL As Long = &H2
-SendMessage hWnd, WM_CHANGEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
+SendMessage hWnd, WM_UPDATEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
 End Sub
 
 Public Sub ComCtlsInitBorderStyle(ByRef dwStyle As Long, ByRef dwExStyle As Long, ByVal Value As CCBorderStyleConstants)

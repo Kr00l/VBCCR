@@ -110,10 +110,9 @@ Description="VB Common Controls Replacement 1.5 Library"
 CompatibleMode="0"
 MajorVer=1
 MinorVer=5
-RevisionVer=0
+RevisionVer=21
 AutoIncrementVer=0
 ServerSupportFiles=0
-VersionCompanyName="Home"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
@@ -131,6 +130,9 @@ ThreadPerObject=0
 MaxNumberOfThreads=1
 ThreadingModel=1
 DebugStartupOption=0
+
+[VBCompiler]
+LinkSwitches=/OPT:NOWIN98
 
 [MS Transaction Server]
 AutoRefresh=1

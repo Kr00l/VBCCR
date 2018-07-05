@@ -1026,7 +1026,7 @@ If OptionButtonHandle <> 0 Then
     End If
 End If
 UserControl.PropertyChanged "Value"
-If Changed = True Then RaiseEvent Click
+If Changed = True And PropValue = True Then RaiseEvent Click
 End Property
 
 Public Property Get Caption() As String
@@ -1570,10 +1570,10 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            OptionButtonCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        OptionButtonCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

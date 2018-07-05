@@ -848,8 +848,7 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
         Dim TM As TEXTMETRIC
         If ListBoxFontHandle <> 0 Then SelectObject hDCScreen, ListBoxFontHandle
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
-            TM.TMHeight = TM.TMHeight + (2 * PixelsPerDIP_Y())
-            If TM.TMHeight < (13 * PixelsPerDIP_Y()) Then TM.TMHeight = (13 * PixelsPerDIP_Y())
+            If TM.TMHeight < ListBoxStateImageSize Then TM.TMHeight = ListBoxStateImageSize
             SendMessage ListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
             If PropIntegralHeight = True Then
                 MoveWindow ListBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
@@ -876,8 +875,7 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
         Dim TM As TEXTMETRIC
         If ListBoxFontHandle <> 0 Then SelectObject hDCScreen, ListBoxFontHandle
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
-            TM.TMHeight = TM.TMHeight + (2 * PixelsPerDIP_Y())
-            If TM.TMHeight < (13 * PixelsPerDIP_Y()) Then TM.TMHeight = (13 * PixelsPerDIP_Y())
+            If TM.TMHeight < ListBoxStateImageSize Then TM.TMHeight = ListBoxStateImageSize
             SendMessage ListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
             If PropIntegralHeight = True Then
                 MoveWindow ListBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
@@ -1172,7 +1170,7 @@ Select Case Value
                 MsgBox "MultiSelect must be 0 - None when Style is not 0 - Standard", vbCritical + vbOKOnly
                 Exit Property
             Else
-                Err.Raise Number:=383, Description:="MultiSelect must be 0 - None when Style is 1 - Checkbox"
+                Err.Raise Number:=383, Description:="MultiSelect must be 0 - None when Style is not 0 - Standard"
             End If
         End If
         PropMultiSelect = Value
@@ -1927,6 +1925,25 @@ If ListBoxHandle <> 0 Then
 End If
 End Function
 
+Public Function CheckedIndices() As Collection
+Attribute CheckedIndices.VB_Description = "Returns a reference to a collection containing the indexes to the checked items."
+If ListBoxHandle <> 0 Then
+    Set CheckedIndices = New Collection
+    Dim Count As Long
+    Count = SendMessage(ListBoxHandle, LB_GETCOUNT, 0, ByVal 0&)
+    If Count > 0 Then
+        If PropStyle = LstStyleCheckbox Then
+            Dim i As Long
+            For i = 1 To UBound(ListBoxItemChecked())
+                If ListBoxItemChecked(i) = vbChecked Then CheckedIndices.Add (i - 1)
+            Next i
+        ElseIf PropStyle = LstStyleOption Then
+            If ListBoxOptionIndex > -1 Then CheckedIndices.Add ListBoxOptionIndex
+        End If
+    End If
+End If
+End Function
+
 Public Function HitTest(ByVal X As Single, ByVal Y As Single) As Long
 Attribute HitTest.VB_Description = "Returns the index of the item located at the coordinates of X and Y."
 If ListBoxHandle <> 0 Then
@@ -2187,11 +2204,11 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            ListBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
             If PropStyle <> LstStyleStandard And KeyCode = vbKeySpace Then Call SetItemCheck
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        ListBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

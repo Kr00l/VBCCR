@@ -1,4 +1,67 @@
 List of revisions:
 
+02-Jun-2018
+- Revision update. (Version 1.5.21)
+
+05-May-2018
+- Revision update. (Version 1.5.20)
+
+18-Apr-2018
+- Revision update. (Version 1.5.19)
+
+15-Apr-2018
+- Revision update. (Version 1.5.18)
+
+10-Apr-2018
+- Revision update. (Version 1.5.17)
+
+28-Mar-2018
+- Revision update. (Version 1.5.16)
+
+04-Mar-2018
+- Revision update. (Version 1.5.15)
+
+27-Feb-2018
+- Revision update. (Version 1.5.14)
+
+25-Feb-2018
+- Revision update. (Version 1.5.13)
+
+22-Feb-2018
+- Revision update. (Version 1.5.12)
+
+20-Feb-2018
+- Revision update. (Version 1.5.11)
+
+16-Feb-2018
+- Revision update. (Version 1.5.10)
+
+12-Feb-2018
+- Revision update. (Version 1.5.9)
+
+17-Jan-2018
+- Revision update. (Version 1.5.8)
+
+14-Jan-2018
+- Revision update. (Version 1.5.7)
+
+13-Jan-2018
+- Revision update. (Version 1.5.6)
+
+21-Dec-2017
+- Revision update. (Version 1.5.5)
+
+09-Dec-2017
+- Revision update. (Version 1.5.4)
+
+24-Nov-2017
+- Revision update. (Version 1.5.3)
+
+21-Nov-2017
+- Revision update. (Version 1.5.2)
+
+21-Nov-2017
+- Revision update. (Version 1.5.1)
+
 08-Nov-2017
 - First release. (Version 1.5.0)

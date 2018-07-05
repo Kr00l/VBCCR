@@ -1989,14 +1989,14 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            TextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        wParam = KeyCode
-        If wParam = vbKeyInsert And PropAllowOverType = True Then
+        If KeyCode = vbKeyInsert And PropAllowOverType = True Then
             If wMsg = WM_KEYDOWN Then PropOverTypeMode = Not PropOverTypeMode
         End If
+        TextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
         If TextBoxCharCodeCache <> 0 Then

@@ -1939,8 +1939,9 @@ Select Case wMsg
         End If
     Case WM_MOUSEWHEEL
         If PropTabScrollWheel = True Then
-            Dim WheelDelta As Long
-            WheelDelta = HiWord(wParam)
+            Static WheelDelta As Long, LastWheelDelta As Long
+            If Sgn(HiWord(wParam)) <> Sgn(LastWheelDelta) Then WheelDelta = 0
+            WheelDelta = WheelDelta + HiWord(wParam)
             If Abs(WheelDelta) >= 120 Then
                 Dim CurrIndex As Long
                 CurrIndex = SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) + 1
@@ -1949,7 +1950,9 @@ Select Case wMsg
                 Else
                     If CurrIndex > 1 Then Me.Tabs(CurrIndex - 1).Selected = True
                 End If
+                WheelDelta = 0
             End If
+            LastWheelDelta = HiWord(wParam)
             WindowProcControl = 0
             Exit Function
         End If
@@ -1958,10 +1961,10 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            TabStripCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        TabStripCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

@@ -434,7 +434,7 @@ Private Const TVIS_BOLD As Long = &H10
 Private Const TVIS_EXPANDED As Long = &H20
 Private Const TVIS_EXPANDEDONCE As Long = &H40
 Private Const TVIS_OVERLAYMASK As Long = &HF00
-Private Const TVIS_STATEIMAGEMASK As Long = &HF000
+Private Const TVIS_STATEIMAGEMASK As Long = &HF000&
 Private Const TVIS_EX_DISABLED As Long = &H2
 Private Const TVHT_NOWHERE As Long = &H1
 Private Const TVHT_ONITEMICON As Long = &H2
@@ -709,7 +709,7 @@ PropShowTips = .ReadProperty("ShowTips", False)
 PropHideSelection = .ReadProperty("HideSelection", True)
 PropFullRowSelect = .ReadProperty("FullRowSelect", False)
 PropHotTracking = .ReadProperty("HotTracking", False)
-PropIndentation = .ReadProperty("Indentation", 0)
+PropIndentation = (.ReadProperty("Indentation", 0) * PixelsPerDIP_X())
 PropPathSeparator = VarToStr(.ReadProperty("PathSeparator", "\"))
 PropScroll = .ReadProperty("Scroll", True)
 PropSingleSel = .ReadProperty("SingleSel", False)
@@ -765,7 +765,7 @@ With PropBag
 .WriteProperty "HideSelection", PropHideSelection, True
 .WriteProperty "FullRowSelect", PropFullRowSelect, False
 .WriteProperty "HotTracking", PropHotTracking, False
-.WriteProperty "Indentation", PropIndentation, 0
+.WriteProperty "Indentation", (PropIndentation / PixelsPerDIP_X()), 0
 .WriteProperty "PathSeparator", IIf(PropPathSeparator = "\", "\", StrToVar(PropPathSeparator)), "\"
 .WriteProperty "Scroll", PropScroll, True
 .WriteProperty "SingleSel", PropSingleSel, False
@@ -3009,7 +3009,6 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
             If KeyCode = vbKeySpace And PropCheckboxes = True Then
                 Dim TVI As TVITEM
                 With TVI
@@ -3029,6 +3028,7 @@ Select Case wMsg
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -3116,7 +3116,7 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN
+    Case WM_KEYDOWN, WM_KEYUP
         TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
     Case WM_CHAR
         If TreeViewCharCodeCache <> 0 Then

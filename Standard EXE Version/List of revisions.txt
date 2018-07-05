@@ -1,5 +1,94 @@
 List of revisions:
 
+15-Jun-2018
+- Included the AutoSelect property in the ComboBoxW control.
+  If turned on it allows to automatically select items after each user input in the edit portion.
+
+02-Jun-2018
+- Internal bugfix in the DTPicker control that affects the drop-down on comctl version 5.8x and 6.0. (6.1 and above not concerned)
+
+18-Apr-2018
+- Minor internal improvement in the ListBoxW control.
+
+15-Apr-2018
+- Bugfix in the Scroll event in the ComboBoxW and ImageCombo control.
+
+10-Apr-2018
+- Internal improvement in the ComboBoxW control concerning IntegralHeight handling and OwnerDrawVariable.
+
+28-Mar-2018
+- Internal improvement in ComCtlsBase.bas. (Sub ComCtlsShowAllUIStates)
+
+23-Mar-2018
+- Included the Caption property in the MCIWnd control.
+- Toolbox bitmap for the HotKey control improved. (cosmetic effect in the IDE)
+
+07-Mar-2018
+- Included the SelectItem function in the ComboBoxW control.
+
+04-Mar-2018
+- Bugfix in VTableHandle.bas related to 25-Feb-2018 update. (concerns unload stability in IDE only)
+- Fixed constant TVIS_STATEIMAGEMASK in the TreeView control. (like in ListView on 27-Feb-2018 update)
+
+02-Mar-2018
+- Fixed potential crash in GetVirtualItem event in the ListView control.
+  Also removed Count paramter in FindVirtualItem event. (Not needed, ListView.VirtualItemsCount can be used)
+
+01-Mar-2018
+- Included the VirtualMode/VirtualItemCount property and GetVirtualItem/FindVirtualItem event in the ListView control.
+  Also included VirtualDisabledInfos property that allows to disable not needed virtual properties and to increase performance. (less GetVirtualItem event calls)
+  All normal list view events are supported. However, passed ListItem objects are limited in their functionality when VirtualMode is on.
+  Several functions/properties/methods are disabled (error raise) when VirtualMode is on.
+- Added VirtualControlsForm into the demo project to demonstrate the virtual list view.
+
+27-Feb-2018
+- Fixed constant LVIS_STATEIMAGEMASK in the ListView control. (should be &HF000& instead of &HF000)
+  The missing & resulted in a value of -4096 instead of 61440.
+  However, MS ListView was apparently flexible enough and accepted state mask -4096 as 61440 in LVM_GETITEMSTATE.
+  But -4096 would fail in a callback testing situation. (LVN_GETDISPINFO; not used now for that)
+
+25-Feb-2018
+- Major internal improvement in the VTableHandle.bas concerning IOleInPlaceActiveObject.
+
+20-Feb-2018
+- Unicode support when generating ASCII key combos, e.g. ALT + 3333.
+  It affects almost all controls, but most important are the TextBoxW and RichTextBox control.
+
+19-Feb-2018
+- Included the HeaderMousePointer property in the ListView control.
+
+16-Feb-2018
+- Included the MaxTextRows property in the ToolBar control.
+- Bugfix "DPI Aware" in the TreeView control. (Indentation property)
+
+12-Feb-2018
+- Included the CheckedIndices function in the ListBoxW control.
+- Included the CheckedIndices and GhostedIndices function in the ListView control.
+
+17-Jan-2018
+- Minor behavior change in the Click event of the OptionButtonW control.
+
+14-Jan-2018
+- Fixed constant ILD_FOCUS in the ImageList control. (should be &H2 instead of &H4)
+  This impacts the enum value 'ImlDrawFocus'.
+
+13-Jan-2018
+- Modification in the FrameW control so it supports mouse down events and clicks of itself and windowless controls on it.
+  This has been achieved by the expense of the HelpContextID support. It was not practical possible to support both.
+
+21-Dec-2017
+- Improved the WM_MOUSEWHEEL handler for fine-grained wheel changes in the TabStrip, MonthView and DTPicker control.
+
+09-Dec-2017
+- Improved VTableHandle.bas so it does not crash anymore when using VBCCRxx.OCX and VBFLXGRDxx.OCX in paralell. (concerns ActiveX control only)
+
+24-Nov-2017
+- ClipControls property set to True in the Pager control's UserControl properties.
+
+21-Nov-2017
+- Bugfix in the PPStatusBarPanels/PPToolBarButtons/PPCoolBarBands property page that the ForeColor property could perhaps not be applied.
+  It is also necessary to replace SbrPanelProperties/TbrButtonProperties/CbrBandProperties class module.
+
 04-Nov-2017
 - Bugfix "DPI Aware" in the StatusBar control. (Panel.MinWidth)
   Also the StatusBar control does not crash anymore in the VBA environment.

@@ -239,6 +239,7 @@ Private Const EM_SETREADONLY As Long = &HCF
 Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
 Private Const LB_ERR As Long = (-1)
+Private Const LB_SETTOPINDEX As Long = &H197
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
 Private Const CB_ADDSTRING As Long = &H143
@@ -625,9 +626,9 @@ If PropStyle <> CboStyleSimpleCombo Then
 Else
     Dim ListRect As RECT, EditHeight As Long, Height As Long
     If DPICorrectionFactor() <> 1 Then
-        MoveWindow ComboBoxHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels) + IIf(PropIntegralHeight = True, 1, 0), 1
+        MoveWindow ComboBoxHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels) + IIf(GetIntegralHeight() = True, 1, 0), 1
     Else
-        MoveWindow ComboBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
+        MoveWindow ComboBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(GetIntegralHeight() = True, 1, 0), 1
     End If
     GetWindowRect ComboBoxHandle, WndRect
     If ComboBoxListHandle <> 0 Then GetWindowRect ComboBoxListHandle, ListRect
@@ -1430,6 +1431,7 @@ End Sub
 
 Public Property Get ListCount() As Long
 Attribute ListCount.VB_Description = "Returns the number of items in the list portion of a control."
+Attribute ListCount.VB_MemberFlags = "400"
 If ComboBoxHandle <> 0 Then ListCount = SendMessage(ComboBoxHandle, CB_GETCOUNT, 0, ByVal 0&)
 End Property
 
@@ -1521,7 +1523,7 @@ Select Case PropStyle
     Case CboStyleDropDownList
         dwStyle = dwStyle Or CBS_DROPDOWNLIST
 End Select
-If PropIntegralHeight = False Then dwStyle = dwStyle Or CBS_NOINTEGRALHEIGHT
+If GetIntegralHeight() = False Then dwStyle = dwStyle Or CBS_NOINTEGRALHEIGHT
 If PropSorted = True Then dwStyle = dwStyle Or CBS_SORT
 If PropDisableNoScroll = True Then dwStyle = dwStyle Or CBS_DISABLENOSCROLL
 Select Case PropCharacterCasing
@@ -1547,7 +1549,7 @@ If ComboBoxHandle <> 0 Then
         If ComboBoxEditHandle = 0 Then ComboBoxEditHandle = FindWindowEx(ComboBoxHandle, 0, StrPtr("Edit"), 0)
     ElseIf PropStyle = CboStyleSimpleCombo Then
         ComboBoxEditHandle = FindWindowEx(ComboBoxHandle, 0, StrPtr("Edit"), 0)
-        If PropIntegralHeight = False Then MoveWindow ComboBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 2, 1
+        If GetIntegralHeight() = False Then MoveWindow ComboBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 2, 1
     End If
     ComboBoxListHandle = CBI.hWndList
     SendMessage ComboBoxHandle, CB_LIMITTEXT, IIf(PropMaxLength = 0, 255, PropMaxLength), ByVal 0&
@@ -1795,7 +1797,7 @@ If ComboBoxHandle <> 0 Then
         RetVal = SendMessage(ComboBoxHandle, CB_SETITEMHEIGHT, Index, ByVal CLng(UserControl.ScaleY(Value, vbContainerSize, vbPixels)))
     End If
     If Not RetVal = CB_ERR Then
-        If PropIntegralHeight = True Then Call UserControl_Resize
+        If GetIntegralHeight() = True Then Call UserControl_Resize
         Me.Refresh
     Else
         Err.Raise 5
@@ -1873,7 +1875,7 @@ If ComboBoxHandle <> 0 Then
         Dim LngValue As Long
         LngValue = CLng(UserControl.ScaleY(Value, vbContainerSize, vbPixels))
         If LngValue > 0 Then
-            If PropIntegralHeight = True Then
+            If GetIntegralHeight() = True Then
                 PropIntegralHeight = False
                 Call ReCreateComboBox
             End If
@@ -1991,7 +1993,7 @@ If ComboBoxHandle <> 0 And ComboBoxDropDownHeightState = False Then
     End If
     If PropStyle <> CboStyleSimpleCombo Then
         MoveWindow ComboBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
-        If PropIntegralHeight = True And ComCtlsSupportLevel() >= 1 Then SendMessage ComboBoxHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
+        If GetIntegralHeight() = True And ComCtlsSupportLevel() >= 1 Then SendMessage ComboBoxHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
     Else
         RedrawWindow ComboBoxHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
     End If
@@ -2007,6 +2009,14 @@ If TopIndex <> ComboBoxTopIndex Then
     RaiseEvent Scroll
 End If
 End Sub
+
+Private Function GetIntegralHeight() As Boolean
+If PropDrawMode <> CboDrawModeOwnerDrawVariable Then
+    GetIntegralHeight = PropIntegralHeight
+Else
+    GetIntegralHeight = False
+End If
+End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
@@ -2081,10 +2091,10 @@ Select Case wMsg
             KeyCode = wParam And &HFF&
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-                ComboBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
+            ComboBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
             wParam = KeyCode
         End If
     Case WM_CHAR
@@ -2224,10 +2234,10 @@ Select Case wMsg
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            ComboBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_KEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
+        ComboBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -2381,7 +2391,7 @@ WindowProcList = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_MOUSEMOVE
         If (GetMouseStateFromParam(wParam) And vbLeftButton) = vbLeftButton Then Call CheckTopIndex
-    Case WM_MOUSEWHEEL, WM_VSCROLL
+    Case WM_MOUSEWHEEL, WM_VSCROLL, LB_SETTOPINDEX
         Call CheckTopIndex
 End Select
 End Function

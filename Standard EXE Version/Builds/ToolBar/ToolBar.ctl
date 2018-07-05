@@ -639,6 +639,7 @@ Private PropTransparent As Boolean
 Private PropHotTracking As Boolean
 Private PropHideClippedButtons As Boolean
 Private PropAnchorHot As Boolean
+Private PropMaxTextRows As Integer
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
@@ -747,6 +748,7 @@ PropTransparent = False
 PropHotTracking = False
 PropHideClippedButtons = False
 PropAnchorHot = False
+PropMaxTextRows = 1
 Call CreateToolBar
 End Sub
 
@@ -794,6 +796,7 @@ PropTransparent = .ReadProperty("Transparent", False)
 PropHotTracking = .ReadProperty("HotTracking", False)
 PropHideClippedButtons = .ReadProperty("HideClippedButtons", False)
 PropAnchorHot = .ReadProperty("AnchorHot", False)
+PropMaxTextRows = .ReadProperty("MaxTextRows", 1)
 End With
 With New PropertyBag
 On Error Resume Next
@@ -921,6 +924,7 @@ With PropBag
 .WriteProperty "HotTracking", PropHotTracking, False
 .WriteProperty "HideClippedButtons", PropHideClippedButtons, False
 .WriteProperty "AnchorHot", PropAnchorHot, False
+.WriteProperty "MaxTextRows", PropMaxTextRows, 1
 End With
 Dim Count(0 To 1) As Long
 Count(0) = Me.Buttons.Count
@@ -2305,6 +2309,27 @@ If ToolBarHandle <> 0 Then SendMessage ToolBarHandle, TB_SETANCHORHIGHLIGHT, IIf
 UserControl.PropertyChanged "AnchorHot"
 End Property
 
+Public Property Get MaxTextRows() As Integer
+Attribute MaxTextRows.VB_Description = "Returns/sets the maximum number of text rows displayed on a button. Only applicable if the text alignment property is set to bottom and the value of the max button width property is greater than 0."
+MaxTextRows = PropMaxTextRows
+End Property
+
+Public Property Let MaxTextRows(ByVal Value As Integer)
+If Value < 1 Then Err.Raise 380
+If Value > 1 And PropTextAlignment = TbrTextAlignRight Then
+    If Ambient.UserMode = False Then
+        MsgBox "MaxTextRows must be 1 when TextAlignment is 1 - TextAlignRight", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="MaxTextRows must be 1 when TextAlignment is 1 - TextAlignRight"
+    End If
+End If
+PropMaxTextRows = Value
+If ToolBarHandle <> 0 Then SendMessage ToolBarHandle, TB_SETMAXTEXTROWS, PropMaxTextRows, ByVal 0&
+Call UserControl_Resize
+UserControl.PropertyChanged "MaxTextRows"
+End Property
+
 Public Property Get Buttons() As TbrButtons
 Attribute Buttons.VB_Description = "Returns a reference to a collection of the button objects."
 If PropButtons Is Nothing Then
@@ -3037,7 +3062,10 @@ Select Case Align
 End Select
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
 If PropStyle = TbrStyleFlat Then dwStyle = dwStyle Or TBSTYLE_FLAT
-If PropTextAlignment = TbrTextAlignRight Then dwStyle = dwStyle Or TBSTYLE_LIST
+If PropTextAlignment = TbrTextAlignRight Then
+    dwStyle = dwStyle Or TBSTYLE_LIST
+    PropMaxTextRows = 1
+End If
 If PropDivider = False Then dwStyle = dwStyle Or CCS_NODIVIDER
 If PropShowTips = True Then dwStyle = dwStyle Or TBSTYLE_TOOLTIPS
 If PropWrappable = True Then dwStyle = dwStyle Or TBSTYLE_WRAPABLE
@@ -3059,6 +3087,7 @@ If ToolBarHandle <> 0 Then
     ToolBarImageSize = ToolBarDefaultImageSize
     SendMessage ToolBarHandle, TB_SETEXTENDEDSTYLE, 0, ByVal TBSTYLE_EX_DRAWDDARROWS
     SendMessage ToolBarHandle, TB_SETBUTTONWIDTH, 0, ByVal MakeDWord(PropMinButtonWidth, PropMaxButtonWidth)
+    SendMessage ToolBarHandle, TB_SETMAXTEXTROWS, PropMaxTextRows, ByVal 0&
     If PropRightToLeft = True And PropRightToLeftLayout = False Then
         Dim Format As Long
         Format = SendMessage(ToolBarHandle, TB_SETDRAWTEXTFLAGS, 0, ByVal 0&)
