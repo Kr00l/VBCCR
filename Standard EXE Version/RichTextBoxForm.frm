@@ -267,10 +267,12 @@ If (Flags And CdlCFNoScriptSel) = 0 Then RichTextBox1.SelFontCharset = FontChars
 End Sub
 
 Private Sub FontCombo1_Click()
-If FontCombo1.ListIndex > -1 And FontComboFreezeClick = False Then
-    RichTextBox1.SelFontName = FontCombo1.Text
-    If Me.Visible = True Then RichTextBox1.SetFocus
-End If
+If FontComboFreezeClick = True Then Exit Sub
+If FontCombo1.ListIndex > -1 Then RichTextBox1.SelFontName = FontCombo1.Text
+End Sub
+
+Private Sub FontCombo1_CloseUp()
+RichTextBox1.SetFocus
 End Sub
 
 Private Sub RichTextBox1_SelChange(ByVal SelType As Integer, ByVal SelStart As Long, ByVal SelEnd As Long)
