@@ -1,5 +1,8 @@
 List of revisions:
 
+08-Jul-2018
+- Included the FontCombo control. Demo usage implemented into the RichTextBoxForm.
+
 15-Jun-2018
 - Included the AutoSelect property in the ComboBoxW control.
   If turned on it allows to automatically select items after each user input in the edit portion.
