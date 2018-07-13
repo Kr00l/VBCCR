@@ -94,6 +94,7 @@ Private Declare Function SetActiveWindow Lib "user32" (ByVal hWnd As Long) As Lo
 Private LocaleMeasure As Long
 Private FindDialogHandle As Long
 Private FontComboFreezeClick As Boolean
+Private RichTextBoxFreezeSelChange As Boolean
 Private WithEvents CommonDialogPageSetup As CommonDialog
 Attribute CommonDialogPageSetup.VB_VarHelpID = -1
 Private WithEvents CommonDialogPrinter As CommonDialog
@@ -268,7 +269,9 @@ End Sub
 
 Private Sub FontCombo1_Click()
 If FontComboFreezeClick = True Then Exit Sub
+RichTextBoxFreezeSelChange = True
 If FontCombo1.ListIndex > -1 Then RichTextBox1.SelFontName = FontCombo1.Text
+RichTextBoxFreezeSelChange = False
 End Sub
 
 Private Sub FontCombo1_CloseUp()
@@ -276,6 +279,7 @@ RichTextBox1.SetFocus
 End Sub
 
 Private Sub RichTextBox1_SelChange(ByVal SelType As Integer, ByVal SelStart As Long, ByVal SelEnd As Long)
+If RichTextBoxFreezeSelChange = True Then Exit Sub
 If (SelType And RtfSelTypeText) <> 0 Or SelType = RtfSelTypeEmpty Then
     FontComboFreezeClick = True
     If IsNull(RichTextBox1.SelFontName) Then
