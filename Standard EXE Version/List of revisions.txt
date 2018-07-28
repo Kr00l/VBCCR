@@ -1,5 +1,8 @@
 List of revisions:
 
+28-Jul-2018
+- Internal GDI leak fixed in the ListBoxW and FontCombo control. (forgot to restore old font handle in a hDCScreen)
+
 08-Jul-2018
 - Included the FontCombo control. Demo usage implemented into the RichTextBoxForm.
 
