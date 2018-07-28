@@ -872,8 +872,8 @@ If FontComboHandle <> 0 Then
     Dim hDCScreen As Long
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
-        Dim TM As TEXTMETRIC, hFontTemp As Long
-        If FontComboFontHandle <> 0 Then hFontTemp = SelectObject(hDCScreen, FontComboFontHandle)
+        Dim TM As TEXTMETRIC, hFontOld As Long
+        If FontComboFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, FontComboFontHandle)
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
             TM.TMHeight = TM.TMHeight + FontComboLFHeightSpacing
             SendMessage FontComboHandle, CB_SETITEMHEIGHT, -1, ByVal TM.TMHeight
@@ -884,7 +884,7 @@ If FontComboHandle <> 0 Then
                 MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
             End If
         End If
-        If hFontTemp <> 0 Then SelectObject hDCScreen, hFontTemp
+        If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
         ReleaseDC 0, hDCScreen
     End If
 End If
@@ -903,8 +903,8 @@ If FontComboHandle <> 0 Then
     Dim hDCScreen As Long
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
-        Dim TM As TEXTMETRIC, hFontTemp As Long
-        If FontComboFontHandle <> 0 Then hFontTemp = SelectObject(hDCScreen, FontComboFontHandle)
+        Dim TM As TEXTMETRIC, hFontOld As Long
+        If FontComboFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, FontComboFontHandle)
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
             TM.TMHeight = TM.TMHeight + FontComboLFHeightSpacing
             SendMessage FontComboHandle, CB_SETITEMHEIGHT, -1, ByVal TM.TMHeight
@@ -915,7 +915,7 @@ If FontComboHandle <> 0 Then
                 MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
             End If
         End If
-        If hFontTemp <> 0 Then SelectObject hDCScreen, hFontTemp
+        If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
         ReleaseDC 0, hDCScreen
     End If
 End If
