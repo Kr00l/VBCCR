@@ -855,8 +855,8 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
     Dim hDCScreen As Long
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
-        Dim TM As TEXTMETRIC, hFontTemp As Long
-        If ListBoxFontHandle <> 0 Then hFontTemp = SelectObject(hDCScreen, ListBoxFontHandle)
+        Dim TM As TEXTMETRIC, hFontOld As Long
+        If ListBoxFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, ListBoxFontHandle)
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
             If TM.TMHeight < ListBoxStateImageSize Then TM.TMHeight = ListBoxStateImageSize
             SendMessage ListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
@@ -865,7 +865,7 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
                 MoveWindow ListBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
             End If
         End If
-        If hFontTemp <> 0 Then SelectObject hDCScreen, hFontTemp
+        If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
         ReleaseDC 0, hDCScreen
     End If
 End If
@@ -883,8 +883,8 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
     Dim hDCScreen As Long
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
-        Dim TM As TEXTMETRIC, hFontTemp As Long
-        If ListBoxFontHandle <> 0 Then hFontTemp = SelectObject(hDCScreen, ListBoxFontHandle)
+        Dim TM As TEXTMETRIC, hFontOld As Long
+        If ListBoxFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, ListBoxFontHandle)
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
             If TM.TMHeight < ListBoxStateImageSize Then TM.TMHeight = ListBoxStateImageSize
             SendMessage ListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
@@ -893,7 +893,7 @@ If PropStyle <> LstStyleStandard And ListBoxHandle <> 0 Then
                 MoveWindow ListBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
             End If
         End If
-        If hFontTemp <> 0 Then SelectObject hDCScreen, hFontTemp
+        If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
         ReleaseDC 0, hDCScreen
     End If
 End If
