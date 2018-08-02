@@ -1,5 +1,8 @@
 List of revisions:
 
+02-Aug-2018
+- Another internal GDI leak (minor) fixed in the DTPicker and ComboBoxW control.
+
 28-Jul-2018
 - Internal GDI leak fixed in the ListBoxW and FontCombo control. (forgot to restore old font handle in a hDCScreen)
 
