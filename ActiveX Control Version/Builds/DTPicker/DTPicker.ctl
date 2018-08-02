@@ -2386,9 +2386,13 @@ Select Case wMsg
                             RaiseEvent FormatSize(CallbackField, Size)
                             If Size = 0 Then Size = 1
                             hDC = GetDC(DTPickerHandle)
-                            SelectObject hDC, DTPickerFontHandle
-                            GetTextExtentPoint32 hDC, ByVal StrPtr(String(Size, "A")), CLng(Size), .szMax
-                            ReleaseDC DTPickerHandle, hDC
+                            If hDC <> 0 Then
+                                Dim hFontOld As Long
+                                hFontOld = SelectObject(hDC, DTPickerFontHandle)
+                                GetTextExtentPoint32 hDC, ByVal StrPtr(String(Size, "A")), CLng(Size), .szMax
+                                If hFontOld <> 0 Then SelectObject hDC, hFontOld
+                                ReleaseDC DTPickerHandle, hDC
+                            End If
                             End With
                             CopyMemory ByVal lParam, NMDTFQ, LenB(NMDTFQ)
                     End Select
