@@ -1941,7 +1941,8 @@ If ComboBoxHandle <> 0 And ComboBoxListHandle <> 0 Then
             ScrollWidth = GetSystemMetrics(SM_CXVSCROLL)
         End If
         hDC = GetDC(ComboBoxHandle)
-        SelectObject hDC, ComboBoxFontHandle
+        Dim hFontOld As Long
+        hFontOld = SelectObject(hDC, ComboBoxFontHandle)
         For i = 0 To Count - 1
             Length = SendMessage(ComboBoxHandle, CB_GETLBTEXTLEN, i, ByVal 0&)
             If Not Length = CB_ERR Then
@@ -1951,6 +1952,7 @@ If ComboBoxHandle <> 0 And ComboBoxListHandle <> 0 Then
                 If (Size.CX - ScrollWidth) > CX Then CX = (Size.CX - ScrollWidth)
             End If
         Next i
+        If hFontOld <> 0 Then SelectObject hDC, hFontOld
         ReleaseDC ComboBoxHandle, hDC
         If CX > 0 Then GetIdealHorizontalExtent = UserControl.ScaleX(CX + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left)), vbPixels, vbContainerSize)
     End If
