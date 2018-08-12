@@ -63,10 +63,10 @@ TMWeight As Long
 TMOverhang As Long
 TMDigitizedAspectX As Long
 TMDigitizedAspectY As Long
-TMFirstChar As Byte
-TMLastChar As Byte
-TMDefaultChar As Byte
-TMBreakChar As Byte
+TMFirstChar As Integer
+TMLastChar As Integer
+TMDefaultChar As Integer
+TMBreakChar As Integer
 TMItalic As Byte
 TMUnderlined As Byte
 TMStruckOut As Byte
