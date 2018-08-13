@@ -1,5 +1,8 @@
 List of revisions:
 
+13-Aug-2018
+- Included the BuddyControl feature in the FontCombo control.
+
 12-Aug-2018
 - TEXTMETRIC structure was declared as ANSI. Fixed to WIDE version.
   Unicode did not lack due to this bug, but it was a memory risk as WIDE version is larger than ANSI.
