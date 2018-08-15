@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Aug-2018
+- Minor internal improvement in the IPAddress and TextBoxW control.
+
 13-Aug-2018
 - Included the BuddyControl feature in the FontCombo control.
 
