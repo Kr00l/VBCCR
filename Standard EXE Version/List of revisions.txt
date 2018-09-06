@@ -1,5 +1,8 @@
 List of revisions:
 
+06-Sep-2018
+- Minor internal improvement in the Pager, FontCombo and UpDown control concerning BuddyControl.
+
 02-Sep-2018
 - GDI leak fixed when BuddyControl is set in the Pager control.
 
