@@ -383,7 +383,8 @@ Private FontComboResizeFrozen As Boolean
 Private FontComboAutoDragInSel As Boolean, FontComboAutoDragIsActive As Boolean
 Private FontComboAutoDragSelStart As Integer, FontComboAutoDragSelEnd As Integer
 Private FontComboLFHeightSpacing As Long
-Private FontComboBuddyObjectPointer As Long
+Private FontComboBuddyControlHandle As Long
+Private FontComboBuddyObjectPointer As Long, FontComboBuddyShadowObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDBuddyControl As Long, BuddyControlArray() As String
 Private WithEvents PropFont As StdFont
@@ -395,7 +396,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropBuddyName As String, PropBuddyControl As FontCombo, PropBuddyControlInit As Boolean
+Private PropBuddyName As String, PropBuddyControlInit As Boolean
 Private PropStyle As FtcStyleConstants
 Private PropFontType As FtcFontTypeConstants
 Private PropFontPitch As FtcFontPitchConstants
@@ -1189,17 +1190,19 @@ End Property
 Public Property Let BuddyControl(ByVal Value As Variant)
 If Ambient.UserMode = True Then
     If FontComboHandle <> 0 Then
-        Dim Success As Boolean, ShadowFontCombo As FontCombo
+        Dim Success As Boolean, Handle As Long, ShadowFontCombo As FontCombo
         Set ShadowFontCombo = Me
         On Error Resume Next
         If IsObject(Value) Then
             If Not Value Is Extender Then
                 If TypeOf Value Is FontCombo Then
-                    Success = CBool(Err.Number = 0 And FontComboBuddyObjectPointer = 0)
+                    Handle = Value.hWnd
+                    Success = CBool(Err.Number = 0 And Handle <> 0 And FontComboBuddyShadowObjectPointer = 0)
                     If Success = True Then
+                        FontComboBuddyControlHandle = Handle
+                        SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
+                        FontComboBuddyObjectPointer = ObjPtr(Value)
                         PropBuddyName = ProperControlName(Value)
-                        Set PropBuddyControl = Value
-                        SendMessage PropBuddyControl.hWnd, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
                     End If
                 End If
             End If
@@ -1211,11 +1214,13 @@ If Ambient.UserMode = True Then
                         CompareName = ProperControlName(ControlEnum)
                         If CompareName = Value And Not CompareName = vbNullString Then
                             Err.Clear
-                            Success = CBool(Err.Number = 0 And FontComboBuddyObjectPointer = 0)
+                            Handle = ControlEnum.hWnd
+                            Success = CBool(Err.Number = 0 And Handle <> 0 And FontComboBuddyShadowObjectPointer = 0)
                             If Success = True Then
+                                FontComboBuddyControlHandle = Handle
+                                SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
+                                FontComboBuddyObjectPointer = ObjPtr(ControlEnum)
                                 PropBuddyName = Value
-                                Set PropBuddyControl = ControlEnum
-                                SendMessage PropBuddyControl.hWnd, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
                                 Exit For
                             End If
                         End If
@@ -1225,9 +1230,12 @@ If Ambient.UserMode = True Then
         End If
         On Error GoTo 0
         If Success = False Then
+            If FontComboBuddyControlHandle <> 0 Then
+                SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal 0&
+                FontComboBuddyControlHandle = 0
+            End If
+            FontComboBuddyObjectPointer = 0
             PropBuddyName = "(None)"
-            If Not PropBuddyControl Is Nothing Then SendMessage PropBuddyControl.hWnd, UM_SETBUDDY, 0, ByVal 0&
-            Set PropBuddyControl = Nothing
         End If
     End If
 Else
@@ -1600,7 +1608,7 @@ If FontComboHandle <> 0 Then
         SendMessage FontComboHandle, CB_SETCURSEL, -1, ByVal 0&
     End If
     If Changed = True Then
-        If Not PropBuddyControl Is Nothing Then SendMessage PropBuddyControl.hWnd, UM_UPDATEBUDDY, 0, ByVal 0&
+        If FontComboBuddyControlHandle <> 0 Then SendMessage FontComboBuddyControlHandle, UM_UPDATEBUDDY, 0, ByVal 0&
         RaiseEvent Click
     End If
 End If
@@ -2075,7 +2083,7 @@ If FontComboHandle <> 0 Then
         If PropStyle <> FtcStyleDropDownList And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     End If
     Dim hDC As Long, i As Long, LF As LOGFONT
-    If FontComboBuddyObjectPointer = 0 Then
+    If FontComboBuddyShadowObjectPointer = 0 Then
         hDC = GetDC(FontComboHandle)
         If hDC <> 0 Then
             With LF
@@ -2102,7 +2110,7 @@ If FontComboHandle <> 0 Then
         End If
     Else
         Dim ShadowFontCombo As FontCombo, FontName As String
-        ComCtlsPtrToShadowObj ShadowFontCombo, FontComboBuddyObjectPointer
+        ComCtlsPtrToShadowObj ShadowFontCombo, FontComboBuddyShadowObjectPointer
         FontName = Left$(ShadowFontCombo.Text, LF_FACESIZE)
         If Not FontName = vbNullString Then
             hDC = GetDC(0)
@@ -2196,7 +2204,7 @@ End If
 End Sub
 
 Private Function GetRecentMax() As Integer
-If FontComboBuddyObjectPointer = 0 Then
+If FontComboBuddyShadowObjectPointer = 0 Then
     GetRecentMax = PropRecentMax
 Else
     GetRecentMax = 0
@@ -2230,6 +2238,10 @@ If FontTypeMatch = True Then
     End With
 End If
 EnumFontFunction = 1
+End Function
+
+Private Function PropBuddyControl() As Object
+If FontComboBuddyObjectPointer <> 0 Then Set PropBuddyControl = PtrToObj(FontComboBuddyObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
@@ -2362,19 +2374,19 @@ Select Case wMsg
             End With
         End If
     Case UM_SETBUDDY
-        FontComboBuddyObjectPointer = lParam
+        FontComboBuddyShadowObjectPointer = lParam
         Me.RecentMax = PropRecentMax
         Call SetupFontComboItems
         If FontComboEditHandle <> 0 Then
             Dim dwStyle As Long
             dwStyle = GetWindowLong(FontComboEditHandle, GWL_STYLE)
-            If FontComboBuddyObjectPointer <> 0 Then
+            If FontComboBuddyShadowObjectPointer <> 0 Then
                 If Not (dwStyle And ES_NUMBER) = ES_NUMBER Then dwStyle = dwStyle Or ES_NUMBER
             Else
                 If (dwStyle And ES_NUMBER) = ES_NUMBER Then dwStyle = dwStyle And Not ES_NUMBER
             End If
             SetWindowLong FontComboEditHandle, GWL_STYLE, dwStyle
-            If FontComboBuddyObjectPointer <> 0 And PropStyle <> FtcStyleDropDownList Then
+            If FontComboBuddyShadowObjectPointer <> 0 And PropStyle <> FtcStyleDropDownList Then
                 Dim Text As String
                 Text = Me.Text
                 If Not Text = vbNullString Then
@@ -2391,7 +2403,7 @@ Select Case wMsg
         End If
         Exit Function
     Case UM_GETBUDDY
-        WindowProcControl = FontComboBuddyObjectPointer
+        WindowProcControl = FontComboBuddyShadowObjectPointer
         Exit Function
     Case UM_UPDATEBUDDY
         Dim Locked As Boolean
@@ -2544,7 +2556,7 @@ Select Case wMsg
             If Handled = True Then Exit Function
         End If
     Case WM_PASTE
-        If FontComboBuddyObjectPointer <> 0 Then
+        If FontComboBuddyShadowObjectPointer <> 0 Then
             If ComCtlsSupportLevel() <= 1 Then
                 Dim Text As String
                 Text = GetClipboardText()
@@ -2686,7 +2698,7 @@ Select Case wMsg
                     Else
                         FontComboDroppedDownIndex = SelIndex
                     End If
-                    If Not PropBuddyControl Is Nothing Then SendMessage PropBuddyControl.hWnd, UM_UPDATEBUDDY, 0, ByVal 0&
+                    If FontComboBuddyControlHandle <> 0 Then SendMessage FontComboBuddyControlHandle, UM_UPDATEBUDDY, 0, ByVal 0&
                     RaiseEvent Click
                 End If
             Case CBN_DBLCLK
@@ -2737,7 +2749,7 @@ Select Case wMsg
                 Text = String(Length, vbNullChar)
                 SendMessage FontComboHandle, CB_GETLBTEXT, DIS.ItemID, ByVal StrPtr(Text)
                 FontName = Left$(Text, LF_FACESIZE)
-                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyObjectPointer = 0 Then
+                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = 0 Then
                     With LF
                     CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
                     .LFHeight = .LFHeight - FontComboLFHeightSpacing
@@ -2763,7 +2775,7 @@ Select Case wMsg
                     OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.RecentForeColor))
                 End If
                 Dim hFontTemp As Long, hFontOld As Long
-                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyObjectPointer = 0 Then
+                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = 0 Then
                     hFontTemp = CreateFontIndirect(LF)
                     hFontOld = SelectObject(DIS.hDC, hFontTemp)
                 End If
