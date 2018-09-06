@@ -204,11 +204,11 @@ Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private PagerHandle As Long
-Private PagerBuddyControlHandle, PagerBuddyControlPrevParent As Long
 Private PagerIsClick As Boolean
 Private PagerMouseOver As Boolean
 Private PagerHotItemChangePrevFlags As Long
 Private PagerAlignable As Boolean
+Private PagerBuddyControlHandle As Long, PagerBuddyControlPrevParent As Long
 Private PagerBuddyObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDBuddyControl As Long, BuddyControlArray() As String
@@ -758,7 +758,7 @@ If Ambient.UserMode = True Then
         If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
         PropBuddyControlInit = True
     End If
-    Set BuddyControl = ShadowBuddyControl()
+    Set BuddyControl = PropBuddyControl
 Else
     BuddyControl = PropBuddyName
 End If
@@ -821,8 +821,8 @@ If Ambient.UserMode = True Then
                 PagerBuddyControlHandle = 0
                 PagerBuddyControlPrevParent = 0
             End If
-            PropBuddyName = "(None)"
             PagerBuddyObjectPointer = 0
+            PropBuddyName = "(None)"
         End If
     End If
 Else
@@ -1019,7 +1019,7 @@ If Ambient.UserMode = True Then
     Call DestroyPager
     Call CreatePager
     Call UserControl_Resize
-    If Not ShadowBuddyControl() Is Nothing Then Set Me.BuddyControl = ShadowBuddyControl()
+    If Not PropBuddyControl Is Nothing Then Set Me.BuddyControl = PropBuddyControl
     If Locked = True Then LockWindowUpdate 0
     Me.Refresh
 Else
@@ -1115,8 +1115,8 @@ If ControlIsValid = True Then
 End If
 End Function
 
-Private Function ShadowBuddyControl() As Object
-If PagerBuddyObjectPointer <> 0 Then ComCtlsPtrToShadowObj ShadowBuddyControl, PagerBuddyObjectPointer
+Private Function PropBuddyControl() As Object
+If PagerBuddyObjectPointer <> 0 Then Set PropBuddyControl = PtrToObj(PagerBuddyObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
@@ -1224,7 +1224,7 @@ Select Case wMsg
                     Select Case .dwFlag
                         Case PGF_CALCWIDTH
                             If Not Me.BuddyControl Is Nothing Then
-                                Size = ShadowBuddyControl().Width
+                                Size = PropBuddyControl.Width
                             Else
                                 Size = UserControl.ScaleX(.iWidth, vbPixels, vbContainerSize)
                             End If
@@ -1232,7 +1232,7 @@ Select Case wMsg
                             .iWidth = CLng(UserControl.ScaleX(Size, vbContainerSize, vbPixels))
                         Case PGF_CALCHEIGHT
                             If Not Me.BuddyControl Is Nothing Then
-                                Size = ShadowBuddyControl().Height
+                                Size = PropBuddyControl.Height
                             Else
                                 Size = UserControl.ScaleY(.iHeight, vbPixels, vbContainerSize)
                             End If
