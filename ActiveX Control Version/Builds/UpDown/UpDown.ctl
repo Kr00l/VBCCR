@@ -152,13 +152,14 @@ Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private UpDownHandle As Long
 Private UpDownMouseOver As Boolean
+Private UpDownBuddyObjectPointer As Long
 Private DispIDBuddyControl As Long, BuddyControlArray() As String
 Private PropVisualStyles As Boolean
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropBuddyName As String, PropBuddyControl As Object, PropBuddyControlInit As Boolean
+Private PropBuddyName As String, PropBuddyControlInit As Boolean
 Private PropBuddyProperty As String
 Private PropMin As Long, PropMax As Long
 Private PropValue As Long, PropIncrement As Long
@@ -662,7 +663,7 @@ If Ambient.UserMode = True Then
                 If Value.Container Is Extender.Container Then
                     Success = CBool(Err.Number = 0)
                     If Success = True Then
-                        Set PropBuddyControl = Value
+                        UpDownBuddyObjectPointer = ObjPtr(Value)
                         If ProperControlName(Value) <> PropBuddyName Then PropBuddyProperty = vbNullString
                         PropBuddyName = ProperControlName(Value)
                     End If
@@ -678,7 +679,7 @@ If Ambient.UserMode = True Then
                             Err.Clear
                             Success = CBool(Err.Number = 0)
                             If Success = True Then
-                                Set PropBuddyControl = ControlEnum
+                                UpDownBuddyObjectPointer = ObjPtr(ControlEnum)
                                 If Value <> PropBuddyName Then PropBuddyProperty = vbNullString
                                 PropBuddyName = Value
                                 Exit For
@@ -690,9 +691,9 @@ If Ambient.UserMode = True Then
         End If
         On Error GoTo 0
         If Success = False Then
+            UpDownBuddyObjectPointer = 0
             PropBuddyName = "(None)"
             PropBuddyProperty = vbNullString
-            Set PropBuddyControl = Nothing
         End If
     End If
 Else
@@ -1100,6 +1101,10 @@ Dim Container As Object
 Set Container = Control.Container
 ControlIsValid = CBool(Err.Number = 0 And Not Control Is Extender)
 On Error GoTo 0
+End Function
+
+Private Function PropBuddyControl() As Object
+If UpDownBuddyObjectPointer <> 0 Then Set PropBuddyControl = PtrToObj(UpDownBuddyObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
