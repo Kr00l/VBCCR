@@ -1,41 +1,76 @@
 VERSION 5.00
 Begin VB.Form RichTextBoxForm 
    Caption         =   "RichTextBox Demo"
-   ClientHeight    =   5310
+   ClientHeight    =   6345
    ClientLeft      =   120
    ClientTop       =   450
-   ClientWidth     =   9705
+   ClientWidth     =   12780
    KeyPreview      =   -1  'True
-   ScaleHeight     =   5310
-   ScaleWidth      =   9705
+   ScaleHeight     =   6345
+   ScaleWidth      =   12780
    StartUpPosition =   3  'Windows Default
-   Begin ComCtlsDemo.ToolBar ToolBar1 
+   Begin ComCtlsDemo.CoolBar CoolBar1 
       Align           =   1  'Align Top
-      Height          =   360
+      Height          =   420
       Left            =   0
       Top             =   0
-      Width           =   9705
-      _ExtentX        =   17119
-      _ExtentY        =   635
-      TextAlignment   =   1
-      Wrappable       =   0   'False
-      AllowCustomize  =   0   'False
-      ButtonWidth     =   83
-      InitButtons     =   "RichTextBoxForm.frx":0000
+      Width           =   12780
+      _ExtentX        =   22543
+      _ExtentY        =   741
+      FixedOrder      =   -1  'True
+      InitBands       =   "RichTextBoxForm.frx":0000
+      Begin ComCtlsDemo.FontCombo FontCombo2 
+         Height          =   315
+         Left            =   11415
+         TabIndex        =   2
+         Top             =   30
+         Width           =   1335
+         _ExtentX        =   2355
+         _ExtentY        =   556
+         Style           =   0
+         Text            =   "RichTextBoxForm.frx":0290
+         RecentMax       =   3
+      End
+      Begin ComCtlsDemo.ToolBar ToolBar1 
+         Height          =   360
+         Left            =   60
+         Top             =   30
+         Width           =   8640
+         _ExtentX        =   15240
+         _ExtentY        =   635
+         TextAlignment   =   1
+         Wrappable       =   0   'False
+         AllowCustomize  =   0   'False
+         ButtonWidth     =   83
+         InitButtons     =   "RichTextBoxForm.frx":02C4
+      End
+      Begin ComCtlsDemo.FontCombo FontCombo1 
+         Height          =   315
+         Left            =   8955
+         TabIndex        =   1
+         Top             =   30
+         Width           =   2205
+         _ExtentX        =   3889
+         _ExtentY        =   556
+         BuddyControl    =   "FontCombo2"
+         FontType        =   2
+         Text            =   "RichTextBoxForm.frx":06F8
+         RecentMax       =   3
+      End
    End
    Begin ComCtlsDemo.RichTextBox RichTextBox1 
-      Height          =   4695
+      Height          =   5775
       Left            =   120
       TabIndex        =   0
       Top             =   480
-      Width           =   9495
-      _ExtentX        =   16748
-      _ExtentY        =   8281
+      Width           =   12495
+      _ExtentX        =   22040
+      _ExtentY        =   10186
       HideSelection   =   0   'False
       MultiLine       =   -1  'True
       ScrollBars      =   3
-      Text            =   "RichTextBoxForm.frx":0434
-      TextRTF         =   "RichTextBoxForm.frx":046C
+      Text            =   "RichTextBoxForm.frx":072C
+      TextRTF         =   "RichTextBoxForm.frx":0764
    End
 End
 Attribute VB_Name = "RichTextBoxForm"
@@ -71,6 +106,8 @@ Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (By
 Private Declare Function SetActiveWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private LocaleMeasure As Long
 Private FindDialogHandle As Long
+Private FontComboFreezeClick As Boolean
+Private RichTextBoxFreezeSelChange As Boolean
 Private WithEvents CommonDialogPageSetup As CommonDialog
 Attribute CommonDialogPageSetup.VB_VarHelpID = -1
 Private WithEvents CommonDialogPrinter As CommonDialog
@@ -123,6 +160,7 @@ CommonDialogPrinter.PrinterDefaultInit = False
 Set CommonDialogFont = New CommonDialog
 Set CommonDialogFind = New CommonDialog
 CommonDialogFind.Flags = CdlFRDown
+If Not IsNull(RichTextBox1.SelFontName) Then FontCombo1.Text = RichTextBox1.SelFontName
 End Sub
 
 Private Sub Form_Resize()
@@ -240,6 +278,72 @@ If (Flags And CdlCFEffects) = CdlCFEffects Then
     If RichTextBox1.SelColor <> RGBColor Then RichTextBox1.SelColor = RGBColor
 End If
 If (Flags And CdlCFNoScriptSel) = 0 Then RichTextBox1.SelFontCharset = FontCharset
+End Sub
+
+Private Sub FontCombo1_Click()
+If FontComboFreezeClick = True Then Exit Sub
+RichTextBoxFreezeSelChange = True
+If FontCombo1.ListIndex > -1 Then
+    RichTextBox1.SelFontName = FontCombo1.Text
+    If IsNull(RichTextBox1.SelFontSize) Then
+        FontCombo2.ListIndex = -1
+    Else
+        On Error Resume Next
+        FontCombo2.Text = CStr(CLng(RichTextBox1.SelFontSize))
+        On Error GoTo 0
+    End If
+End If
+RichTextBoxFreezeSelChange = False
+End Sub
+
+Private Sub FontCombo1_CloseUp()
+RichTextBox1.SetFocus
+End Sub
+
+Private Sub FontCombo2_Change()
+If FontCombo2.ListIndex = -1 Then
+    RichTextBoxFreezeSelChange = True
+    On Error Resume Next
+    RichTextBox1.SelFontSize = CLng(FontCombo2.Text)
+    On Error GoTo 0
+    RichTextBoxFreezeSelChange = False
+End If
+End Sub
+
+Private Sub FontCombo2_Click()
+If FontComboFreezeClick = True Then Exit Sub
+RichTextBoxFreezeSelChange = True
+If FontCombo2.ListIndex > -1 Then
+    On Error Resume Next
+    RichTextBox1.SelFontSize = CLng(FontCombo2.Text)
+    On Error GoTo 0
+End If
+RichTextBoxFreezeSelChange = False
+End Sub
+
+Private Sub FontCombo2_CloseUp()
+RichTextBox1.SetFocus
+End Sub
+
+Private Sub RichTextBox1_SelChange(ByVal SelType As Integer, ByVal SelStart As Long, ByVal SelEnd As Long)
+If RichTextBoxFreezeSelChange = True Then Exit Sub
+If (SelType And RtfSelTypeText) <> 0 Or SelType = RtfSelTypeEmpty Then
+    FontComboFreezeClick = True
+    If IsNull(RichTextBox1.SelFontName) Then
+        FontCombo1.ListIndex = -1
+        FontCombo2.ListIndex = -1
+    Else
+        FontCombo1.Text = RichTextBox1.SelFontName
+        If IsNull(RichTextBox1.SelFontSize) Then
+            FontCombo2.ListIndex = -1
+        Else
+            On Error Resume Next
+            FontCombo2.Text = CStr(CLng(RichTextBox1.SelFontSize))
+            On Error GoTo 0
+        End If
+    End If
+    FontComboFreezeClick = False
+End If
 End Sub
 
 Private Sub RichTextBox1_OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, hMenu As Long)

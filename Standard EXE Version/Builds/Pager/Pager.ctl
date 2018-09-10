@@ -203,11 +203,12 @@ Private Const PGK_MENU As Long = 4
 Implements ISubclass
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private PagerHandle As Long
-Private PagerBuddyControlHandle, PagerBuddyControlPrevParent As Long
 Private PagerIsClick As Boolean
 Private PagerMouseOver As Boolean
 Private PagerHotItemChangePrevFlags As Long
 Private PagerAlignable As Boolean
+Private PagerBuddyControlHandle As Long, PagerBuddyControlPrevParent As Long
+Private PagerBuddyObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDBuddyControl As Long, BuddyControlArray() As String
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -215,7 +216,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropBuddyName As String, PropBuddyControl As Object, PropBuddyControlInit As Boolean
+Private PropBuddyName As String, PropBuddyControlInit As Boolean
 Private PropBackColor As OLE_COLOR
 Private PropOLEDragDropScroll As Boolean
 Private PropOrientation As PgrOrientationConstants
@@ -301,7 +302,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropBuddyName = "(None)": Set PropBuddyControl = Nothing
+PropBuddyName = "(None)"
 PropOrientation = PgrOrientationVertical
 PropBorderWidth = 0
 PropAutoScroll = False
@@ -743,7 +744,7 @@ End Property
 Public Property Get BuddyControl() As Variant
 Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
 If Ambient.UserMode = True Then
-    If PropBuddyControlInit = False And PropBuddyControl Is Nothing Then
+    If PropBuddyControlInit = False And PagerBuddyObjectPointer = 0 Then
         If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
         PropBuddyControlInit = True
     End If
@@ -774,7 +775,7 @@ If Ambient.UserMode = True Then
                     PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
                     SetParent Handle, PagerHandle
                     SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
-                    Set PropBuddyControl = Value
+                    PagerBuddyObjectPointer = ObjPtr(Value)
                     PropBuddyName = ProperControlName(Value)
                 End If
             End If
@@ -794,7 +795,7 @@ If Ambient.UserMode = True Then
                             PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
                             SetParent Handle, PagerHandle
                             SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
-                            Set PropBuddyControl = ControlEnum
+                            PagerBuddyObjectPointer = ObjPtr(ControlEnum)
                             PropBuddyName = Value
                             Exit For
                         End If
@@ -810,8 +811,8 @@ If Ambient.UserMode = True Then
                 PagerBuddyControlHandle = 0
                 PagerBuddyControlPrevParent = 0
             End If
+            PagerBuddyObjectPointer = 0
             PropBuddyName = "(None)"
-            Set PropBuddyControl = Nothing
         End If
     End If
 Else
@@ -1102,6 +1103,10 @@ If ControlIsValid = True Then
     If Err.Number <> 0 Then Handle = Control.hWnd
     On Error GoTo 0
 End If
+End Function
+
+Private Function PropBuddyControl() As Object
+If PagerBuddyObjectPointer <> 0 Then Set PropBuddyControl = PtrToObj(PagerBuddyObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long

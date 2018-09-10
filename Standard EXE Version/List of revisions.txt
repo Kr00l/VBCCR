@@ -1,5 +1,30 @@
 List of revisions:
 
+06-Sep-2018
+- Minor internal improvement in the Pager, FontCombo and UpDown control concerning BuddyControl.
+
+02-Sep-2018
+- GDI leak fixed when BuddyControl is set in the Pager control.
+
+15-Aug-2018
+- Minor internal improvement in the IPAddress and TextBoxW control.
+
+13-Aug-2018
+- Included the BuddyControl feature in the FontCombo control.
+
+12-Aug-2018
+- TEXTMETRIC structure was declared as ANSI. Fixed to WIDE version.
+  Unicode did not lack due to this bug, but it was a memory risk as WIDE version is larger than ANSI.
+
+02-Aug-2018
+- Another internal GDI leak (minor) fixed in the DTPicker and ComboBoxW control.
+
+28-Jul-2018
+- Internal GDI leak fixed in the ListBoxW and FontCombo control. (forgot to restore old font handle in a hDCScreen)
+
+08-Jul-2018
+- Included the FontCombo control. Demo usage implemented into the RichTextBoxForm.
+
 15-Jun-2018
 - Included the AutoSelect property in the ComboBoxW control.
   If turned on it allows to automatically select items after each user input in the edit portion.

@@ -2091,21 +2091,19 @@ Select Case wMsg
     Case WM_PASTE
         If PropAllowOnlyNumbers = True Then
             If ComCtlsSupportLevel() <= 1 Then
-                If VB.Clipboard.GetFormat(vbCFText) = True Then
-                    Dim Text As String
-                    Text = VB.Clipboard.GetText(vbCFText)
-                    If Not Text = vbNullString Then
-                        Dim i As Long, InvalidText As Boolean
-                        For i = 1 To Len(Text)
-                            If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
-                                InvalidText = True
-                                Exit For
-                            End If
-                        Next i
-                        If InvalidText = True Then
-                            VBA.Interaction.Beep
-                            Exit Function
+                Dim Text As String
+                Text = GetClipboardText()
+                If Not Text = vbNullString Then
+                    Dim i As Long, InvalidText As Boolean
+                    For i = 1 To Len(Text)
+                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
+                            InvalidText = True
+                            Exit For
                         End If
+                    Next i
+                    If InvalidText = True Then
+                        VBA.Interaction.Beep
+                        Exit Function
                     End If
                 End If
             End If
