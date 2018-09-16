@@ -39,7 +39,7 @@ Friend Sub FInit(ByVal Object As CoolBar, ByVal Key As String, ByVal Child As Va
 ShadowObjectPointer = ObjPtr(Object)
 PropKey = Key
 If IsObject(Child) Then
-    Set PropChild = Child
+    If Not Child Is Nothing Then PropChild = ObjPtr(Child)
 ElseIf VarType(Child) = vbString Then
     PropChild = Child
 End If
@@ -104,8 +104,8 @@ End Property
 
 Public Property Get Child() As Object
 Attribute Child.VB_Description = "Returns/sets the control to be moved and sized with the band."
-If IsObject(PropChild) Then
-    Set Child = PropChild
+If VarType(PropChild) = vbLong Then
+    If PropChild <> 0 Then Set Child = PtrToObj(PropChild)
 ElseIf VarType(PropChild) = vbString Then
     If Not PropChild = vbNullString Then
         Dim ControlEnum As Object
@@ -120,13 +120,21 @@ End If
 End Property
 
 Public Property Let Child(ByVal Value As Object)
-Set PropChild = Value
-ShadowCoolBar.FBandChild(PropID) = PropChild
+If Not Value Is Nothing Then
+    PropChild = ObjPtr(Value)
+Else
+    PropChild = Empty
+End If
+ShadowCoolBar.FBandChild(PropID) = Value
 End Property
 
 Public Property Set Child(ByVal Value As Object)
-Set PropChild = Value
-Set ShadowCoolBar.FBandChild(PropID) = PropChild
+If Not Value Is Nothing Then
+    PropChild = ObjPtr(Value)
+Else
+    PropChild = Empty
+End If
+ShadowCoolBar.FBandChild(PropID) = Value
 End Property
 
 Public Property Get Style() As CbrBandStyleConstants
