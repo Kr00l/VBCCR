@@ -1,5 +1,8 @@
 List of revisions:
 
+16-Sep-2018
+- GDI leak fixed when CoolBar is nested in another UserControl and has child controls applied.
+
 06-Sep-2018
 - Minor internal improvement in the Pager, FontCombo and UpDown control concerning BuddyControl.
 
