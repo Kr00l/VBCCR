@@ -365,7 +365,6 @@ Private Const WM_LBUTTONDBLCLK As Long = &H203
 Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_ENTERMENULOOP As Long = &H211
-Private Const WM_SIZE As Long = &H5
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
@@ -594,8 +593,8 @@ Private ToolBarHandle As Long, ToolBarToolTipHandle As Long
 Private ToolBarBackColorBrush As Long
 Private ToolBarTransparentBrush As Long
 Private ToolBarFontHandle As Long
-Private ToolBarCustomizeButtons() As ShadowButtonStruct
 Private ToolBarCustomizeButtonsCount As Long
+Private ToolBarCustomizeButtons() As ShadowButtonStruct
 Private ToolBarIsClick As Boolean
 Private ToolBarMouseOver As Boolean, ToolBarMouseOverIndex As Long
 Private ToolBarResizeFrozen As Boolean
@@ -2374,7 +2373,10 @@ If ToolBarHandle <> 0 Then
     Else
         SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
     End If
-    Call ReCreateButtons
+    Dim Size As Long
+    Size = SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&)
+    PropButtonWidth = LoWord(Size)
+    PropButtonHeight = HiWord(Size)
 End If
 Call UserControl_Resize
 UserControl.PropertyChanged "InitButtons"
@@ -3642,7 +3644,7 @@ If ToolBarHandle <> 0 Then
             With ReButtons(i)
             If .CX > 0 And (.TBB.fsStyle And BTNS_AUTOSIZE) = 0 Then
                 TBBI.CX = .CX
-                SendMessage ToolBarHandle, TB_SETBUTTONINFO, GetButtonID(i), ByVal VarPtr(TBBI)
+                SendMessage ToolBarHandle, TB_SETBUTTONINFO, .TBB.IDCommand, ByVal VarPtr(TBBI)
             End If
             End With
         Next i
@@ -4133,7 +4135,11 @@ Select Case wMsg
                         Dim MenuItem As Long
                         MenuItem = ShowButtonMenuItems(Button, True)
                         If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                        WindowProcUserControl = TBDDRET_DEFAULT
+                    Else
+                        WindowProcUserControl = TBDDRET_NODEFAULT
                     End If
+                    Exit Function
                 Case TBN_HOTITEMCHANGE
                     Dim NMTBHI As NMTBHOTITEM
                     CopyMemory NMTBHI, ByVal lParam, LenB(NMTBHI)
