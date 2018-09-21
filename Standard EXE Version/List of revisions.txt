@@ -1,5 +1,8 @@
 List of revisions:
 
+21-Sep-2018
+- Performance boost when adding very large number of buttons in a ToolBar control.
+
 16-Sep-2018
 - GDI leak fixed when CoolBar is nested in another UserControl and has child controls applied.
 
