@@ -2517,7 +2517,6 @@ If ToolBarHandle <> 0 Then
             SendMessage ToolBarHandle, TB_SETBUTTONINFO, ID, ByVal VarPtr(TBBI)
         End If
         End With
-        Me.Refresh
     End If
     If ToolBarCustomizeButtonsCount > 0 Then
         Dim i As Long
@@ -2740,31 +2739,16 @@ End Property
 Friend Property Let FButtonNoImage(ByVal ID As Long, ByVal ImageIndex As Long, ByVal Value As Boolean)
 If ToolBarHandle <> 0 Then
     If IsButtonAvailable(ID) = True Then
-        If Value = True Then
-            Dim NewButton As ShadowButtonStruct
-            NewButton = GetShadowButton(ID)
-            If (NewButton.TBB.fsStyle And BTNS_SEP) = 0 Then
-                With NewButton
-                .TBB.iBitmap = I_IMAGENONE
-                .Caption = GetButtonText(ID)
-                End With
-                Call ModifyButton(ID, NewButton)
-                Call UserControl_Resize
-            End If
-        Else
-            Dim TBBI As TBBUTTONINFO
-            With TBBI
-            .cbSize = LenB(TBBI)
-            .dwMask = TBIF_STYLE
-            SendMessage ToolBarHandle, TB_GETBUTTONINFO, ID, ByVal VarPtr(TBBI)
-            If (.fsStyle And BTNS_SEP) = 0 Then
-                .dwMask = TBIF_IMAGE
-                .iImage = ImageIndex - 1
-                SendMessage ToolBarHandle, TB_SETBUTTONINFO, ID, ByVal VarPtr(TBBI)
-            End If
+        Dim NewButton As ShadowButtonStruct
+        NewButton = GetShadowButton(ID)
+        If (NewButton.TBB.fsStyle And BTNS_SEP) = 0 Then
+            With NewButton
+            .TBB.iBitmap = IIf(Value, I_IMAGENONE, ImageIndex - 1)
+            .Caption = GetButtonText(ID)
             End With
+            Call ModifyButton(ID, NewButton)
+            Call UserControl_Resize
         End If
-        Me.Refresh
     End If
     If ToolBarCustomizeButtonsCount > 0 Then
         Dim i As Long
