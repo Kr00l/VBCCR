@@ -3607,6 +3607,13 @@ End If
 Set ListItems = PropListItems
 End Property
 
+Public Property Get VirtualListItems() As LvwVirtualListItems
+Attribute VirtualListItems.VB_Description = "Returns a reference to a collection of the virtual list item objects."
+If PropVirtualMode = False Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is off."
+Set VirtualListItems = New LvwVirtualListItems
+VirtualListItems.FInit Me
+End Property
+
 Friend Sub FListItemsAdd(ByVal Ptr As Long, ByVal Index As Long, Optional ByVal Text As String)
 Dim LVI As LVITEM
 With LVI
@@ -3648,6 +3655,17 @@ NoMoreItems = CBool(Index < 0 Or Index >= Me.ListItems.Count)
 If NoMoreItems = False Then Set VNextItem = Me.ListItems(Index + 1)
 End Sub
 
+Friend Sub FVirtualListItemsNextItem(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
+If Control <> ListViewListItemsControl Then Err.Raise Number:=1, Description:="Collection has changed during enumeration"
+Index = Index + 1
+NoMoreItems = CBool(Index < 0 Or Index >= PropVirtualItemCount)
+If NoMoreItems = False Then
+    Dim NewVirtualListItem As New LvwVirtualListItem
+    NewVirtualListItem.FInit Me, Index + 1
+    Set VNextItem = NewVirtualListItem
+End If
+End Sub
+
 Friend Sub FListSubItemsNextItem(ByVal ListItem As LvwListItem, ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
 If Control <> ListViewListItemsControl Then Err.Raise Number:=1, Description:="Collection has changed during enumeration"
 Index = Index + 1
@@ -3668,7 +3686,7 @@ End If
 End Function
 
 Friend Function FListItemVerify(ByVal Ptr As Long, ByRef Index As Long) As Boolean
-If Ptr = Me.FListItemPtr(Index) Then
+If Ptr = Me.FListItemPtr(Index) Or Ptr = 0 Then
     FListItemVerify = True
 Else
     Index = Me.FListItemIndex(Ptr)

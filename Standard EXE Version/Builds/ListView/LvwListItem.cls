@@ -101,8 +101,11 @@ End Property
 Public Property Get Text() As String
 Attribute Text.VB_Description = "Returns/sets the text of the list item."
 Attribute Text.VB_UserMemId = 0
-If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
-Text = PropText
+If PropPtr <> 0 Then
+    Text = PropText
+Else
+    If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Text = ShadowListView.FListItemText(PropIndex, 0)
+End If
 End Property
 
 Public Property Let Text(ByVal Value As String)
@@ -282,7 +285,7 @@ Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
 Public Property Get Visible() As Boolean
-Attribute Visible.VB_Description = "Returns/sets a value that determines whether an object is visible or hidden. Requires comctl32.dll version 6.0 or higher."
+Attribute Visible.VB_Description = "Returns a value that determines whether an object is visible or hidden. Requires comctl32.dll version 6.0 or higher."
 If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Visible = ShadowListView.FListItemVisible(PropIndex)
 End Property
 
@@ -303,7 +306,7 @@ If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then ShadowListView
 End Property
 
 Public Function CreateDragImage(Optional ByRef X As Single, Optional ByRef Y As Single) As Long
-Attribute CreateDragImage.VB_Description = "Retrieves the handle to an image list containing a bitmap that can be used to visualize dragging of this list item.Your application is responsible for destroying the image list when it is no longer needed."
+Attribute CreateDragImage.VB_Description = "Retrieves the handle to an image list containing a bitmap that can be used to visualize dragging of this list item. Your application is responsible for destroying the image list when it is no longer needed."
 If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then CreateDragImage = ShadowListView.FListItemCreateDragImage(PropIndex, X, Y)
 End Function
 
@@ -319,6 +322,7 @@ If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then ShadowListView
 End Property
 
 Public Property Set Group(ByVal Value As LvwGroup)
+If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Set ShadowListView.FListItemGroup(PropIndex) = Value
 End Property
 
@@ -331,7 +335,6 @@ End Property
 
 Public Property Get SubItems(ByVal Index As Integer) As String
 Attribute SubItems.VB_Description = "Returns/sets an array of strings representing the list sub items text."
-If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 If Index < 1 Or Index > (ShadowListView.ColumnHeaders.Count - 1) Then Err.Raise 380
 If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then SubItems = ShadowListView.FListItemText(PropIndex, Index)
 End Property
