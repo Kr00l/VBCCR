@@ -1,5 +1,9 @@
 List of revisions:
 
+27-Sep-2018
+- Included 'VirtualListItems' in the ListView control that returns a collection of virtual list items.
+  New components LvwVirtualListItems.cls/LvwVirtualListItem.cls are included.
+
 21-Sep-2018
 - Performance boost when adding very large number of buttons in a ToolBar control.
 - Bugfix in the NoImage property of a Button in the ToolBar control.
