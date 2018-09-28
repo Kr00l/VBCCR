@@ -716,6 +716,10 @@ Public Function ComCtlsTvwSortingFunctionText(ByVal lParam1 As Long, ByVal lPara
 ComCtlsTvwSortingFunctionText = This.Message(0, 0, lParam1, lParam2, 11)
 End Function
 
+Public Function ComCtlsFtcEnumFontFunction(ByVal lpELF As Long, ByVal lpTM As Long, ByVal FontType As Long, ByVal This As ISubclass) As Long
+ComCtlsFtcEnumFontFunction = This.Message(0, lpELF, lpTM, FontType, 10)
+End Function
+
 Public Function ComCtlsCdlOFN1CallbackProc(ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Dim lCustData As Long
 If wMsg <> WM_INITDIALOG Then
