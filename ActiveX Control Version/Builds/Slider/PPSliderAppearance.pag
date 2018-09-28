@@ -10,7 +10,7 @@ Begin VB.PropertyPage PPSliderAppearance
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3450
    ScaleWidth      =   5925
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   10
@@ -20,7 +20,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   0
       Caption         =   "PPSliderAppearance.pgx":0000
    End
-   Begin VBCCR15.CheckBoxW CheckHideThumb 
+   Begin VBCCR16.CheckBoxW CheckHideThumb 
       Height          =   285
       Left            =   4200
       TabIndex        =   13
@@ -30,7 +30,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   0
       Caption         =   "PPSliderAppearance.pgx":0036
    End
-   Begin VBCCR15.CheckBoxW CheckShowTip 
+   Begin VBCCR16.CheckBoxW CheckShowTip 
       Height          =   285
       Left            =   4200
       TabIndex        =   11
@@ -40,7 +40,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   0
       Caption         =   "PPSliderAppearance.pgx":006A
    End
-   Begin VBCCR15.CheckBoxW CheckTransparent 
+   Begin VBCCR16.CheckBoxW CheckTransparent 
       Height          =   285
       Left            =   4200
       TabIndex        =   12
@@ -50,7 +50,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   0
       Caption         =   "PPSliderAppearance.pgx":009A
    End
-   Begin VBCCR15.ComboBoxW ComboTipSide 
+   Begin VBCCR16.ComboBoxW ComboTipSide 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -60,7 +60,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextTickFrequency 
+   Begin VBCCR16.TextBoxW TextTickFrequency 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -69,7 +69,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.ComboBoxW ComboTickStyle 
+   Begin VBCCR16.ComboBoxW ComboTickStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -79,7 +79,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboOrientation 
+   Begin VBCCR16.ComboBoxW ComboOrientation 
       Height          =   315
       Left            =   1800
       TabIndex        =   3
@@ -89,7 +89,7 @@ Begin VB.PropertyPage PPSliderAppearance
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   1

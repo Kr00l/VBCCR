@@ -1,45 +1,45 @@
 VERSION 5.00
 Begin VB.PropertyPage PPToolBarGeneral 
    Caption         =   "General"
-   ClientHeight    =   4875
+   ClientHeight    =   5625
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   6225
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4875
+   ScaleHeight     =   5625
    ScaleWidth      =   6225
-   Begin VBCCR15.CheckBoxW CheckHideClippedButtons 
+   Begin VBCCR16.CheckBoxW CheckHideClippedButtons 
       Height          =   285
       Left            =   4200
-      TabIndex        =   35
+      TabIndex        =   37
       Top             =   3360
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0000
    End
-   Begin VBCCR15.CheckBoxW CheckHotTracking 
+   Begin VBCCR16.CheckBoxW CheckHotTracking 
       Height          =   285
       Left            =   4200
-      TabIndex        =   34
+      TabIndex        =   36
       Top             =   3000
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0044
    End
-   Begin VBCCR15.CheckBoxW CheckTransparent 
+   Begin VBCCR16.CheckBoxW CheckTransparent 
       Height          =   285
       Left            =   4200
-      TabIndex        =   33
+      TabIndex        =   35
       Top             =   2640
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":007A
    End
-   Begin VBCCR15.ComboBoxW ComboPressedImageList 
+   Begin VBCCR16.ComboBoxW ComboPressedImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   12
@@ -49,7 +49,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboOrientation 
+   Begin VBCCR16.ComboBoxW ComboOrientation 
       Height          =   315
       Left            =   1800
       TabIndex        =   18
@@ -59,7 +59,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextMaxButtonWidth 
+   Begin VBCCR16.TextBoxW TextMaxButtonWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   26
@@ -68,7 +68,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMinButtonWidth 
+   Begin VBCCR16.TextBoxW TextMinButtonWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   24
@@ -77,17 +77,17 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckAltDrag 
+   Begin VBCCR16.CheckBoxW CheckAltDrag 
       Height          =   285
       Left            =   4200
-      TabIndex        =   32
+      TabIndex        =   34
       Top             =   2280
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":00B0
    End
-   Begin VBCCR15.CheckBoxW CheckDoubleBuffer 
+   Begin VBCCR16.CheckBoxW CheckDoubleBuffer 
       Height          =   285
       Left            =   3480
       TabIndex        =   2
@@ -97,7 +97,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":00DE
    End
-   Begin VBCCR15.ComboBoxW ComboDisabledImageList 
+   Begin VBCCR16.ComboBoxW ComboDisabledImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   8
@@ -107,27 +107,27 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckWrappable 
+   Begin VBCCR16.CheckBoxW CheckWrappable 
       Height          =   285
       Left            =   4200
-      TabIndex        =   29
+      TabIndex        =   31
       Top             =   1200
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0116
    End
-   Begin VBCCR15.CheckBoxW CheckDivider 
+   Begin VBCCR16.CheckBoxW CheckDivider 
       Height          =   285
       Left            =   4200
-      TabIndex        =   31
+      TabIndex        =   33
       Top             =   1920
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0148
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -137,7 +137,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboImageList 
+   Begin VBCCR16.ComboBoxW ComboImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   6
@@ -147,7 +147,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboStyle 
+   Begin VBCCR16.ComboBoxW ComboStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   14
@@ -157,7 +157,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboTextAlignment 
+   Begin VBCCR16.ComboBoxW ComboTextAlignment 
       Height          =   315
       Left            =   1800
       TabIndex        =   16
@@ -167,7 +167,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboHotImageList 
+   Begin VBCCR16.ComboBoxW ComboHotImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   10
@@ -177,7 +177,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextButtonWidth 
+   Begin VBCCR16.TextBoxW TextButtonWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   22
@@ -186,7 +186,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextButtonHeight 
+   Begin VBCCR16.TextBoxW TextButtonHeight 
       Height          =   315
       Left            =   1800
       TabIndex        =   20
@@ -195,27 +195,27 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckShowTips 
+   Begin VBCCR16.CheckBoxW CheckShowTips 
       Height          =   285
       Left            =   4200
-      TabIndex        =   30
+      TabIndex        =   32
       Top             =   1560
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0176
    End
-   Begin VBCCR15.CheckBoxW CheckAllowCustomize 
+   Begin VBCCR16.CheckBoxW CheckAllowCustomize 
       Height          =   285
       Left            =   4200
-      TabIndex        =   28
+      TabIndex        =   30
       Top             =   840
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":01A6
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -225,7 +225,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":01E2
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -235,25 +235,42 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0210
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
-      TabIndex        =   27
+      TabIndex        =   29
       Top             =   480
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":0248
    End
-   Begin VBCCR15.CheckBoxW CheckAnchorHot 
+   Begin VBCCR16.CheckBoxW CheckAnchorHot 
       Height          =   285
       Left            =   4200
-      TabIndex        =   36
+      TabIndex        =   38
       Top             =   3720
       Width           =   1920
       _ExtentX        =   0
       _ExtentY        =   0
       Caption         =   "PPToolBarGeneral.pgx":027C
+   End
+   Begin VBCCR16.TextBoxW TextMaxTextRows 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   28
+      Top             =   4800
+      Width           =   2235
+      _ExtentX        =   0
+      _ExtentY        =   0
+   End
+   Begin VB.Label LabelMaxTextRows 
+      Caption         =   "MaxTextRows:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   27
+      Top             =   4800
+      Width           =   1620
    End
    Begin VB.Label LabelPressedImageList 
       Caption         =   "PressedImageList:"
@@ -437,6 +454,7 @@ End Select
 .ButtonWidth = CSng(TextButtonWidth.Text)
 .MinButtonWidth = CSng(TextMinButtonWidth.Text)
 .MaxButtonWidth = CSng(TextMaxButtonWidth.Text)
+.MaxTextRows = CInt(TextMaxTextRows.Text)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .AllowCustomize = CBool(CheckAllowCustomize.Value = vbChecked)
 .Wrappable = CBool(CheckWrappable.Value = vbChecked)
@@ -543,6 +561,7 @@ TextButtonHeight.Text = CStr(.ButtonHeight)
 TextButtonWidth.Text = CStr(.ButtonWidth)
 TextMinButtonWidth.Text = CStr(.MinButtonWidth)
 TextMaxButtonWidth.Text = CStr(.MaxButtonWidth)
+TextMaxTextRows.Text = CStr(.MaxTextRows)
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckAllowCustomize.Value = IIf(.AllowCustomize = True, vbChecked, vbUnchecked)
 CheckWrappable.Value = IIf(.Wrappable = True, vbChecked, vbUnchecked)
@@ -776,6 +795,48 @@ Else
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         TextMaxButtonWidth.Text = PropertyPage.SelectedControls(0).MaxButtonWidth
         TextMaxButtonWidth.SetFocus
+    End If
+End If
+End Sub
+
+Private Sub TextMaxTextRows_GotFocus()
+If Not TextMaxTextRows.SelStart = 0 Then Exit Sub
+TextMaxTextRows.SelLength = Len(TextMaxTextRows.Text)
+End Sub
+
+Private Sub TextMaxTextRows_LostFocus()
+TextMaxTextRows.SelStart = 0
+End Sub
+
+Private Sub TextMaxTextRows_Change()
+If FreezeChanged = True Then Exit Sub
+If TextMaxTextRows.Text = vbNullString Then
+    TextMaxTextRows.Text = PropertyPage.SelectedControls(0).MaxTextRows
+    TextMaxTextRows.SelStart = 0
+    TextMaxTextRows.SelLength = Len(TextMaxTextRows.Text)
+End If
+PropertyPage.Changed = True
+End Sub
+
+Private Sub TextMaxTextRows_Validate(Cancel As Boolean)
+If Not IsNumeric(TextMaxTextRows.Text) Then
+    MsgBox "Invalid property value", vbCritical + vbOKOnly
+    TextMaxTextRows.Text = PropertyPage.SelectedControls(0).MaxTextRows
+    TextMaxTextRows.SetFocus
+    Cancel = True
+Else
+    Dim IntValue As Integer
+    On Error Resume Next
+    IntValue = CInt(TextMaxTextRows.Text)
+    Cancel = CBool(Err.Number <> 0)
+    On Error GoTo 0
+    If IntValue < 1 Then Cancel = True
+    If Cancel = False Then
+        TextMaxTextRows.Text = IntValue
+    Else
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        TextMaxTextRows.Text = PropertyPage.SelectedControls(0).MaxTextRows
+        TextMaxTextRows.SetFocus
     End If
 End If
 End Sub

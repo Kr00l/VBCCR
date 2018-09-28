@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPTabStripGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4350
    ScaleWidth      =   6075
-   Begin VBCCR15.CheckBoxW CheckTabScrollWheel 
+   Begin VBCCR16.CheckBoxW CheckTabScrollWheel 
       Height          =   285
       Left            =   4200
       TabIndex        =   28
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":0000
    End
-   Begin VBCCR15.ComboBoxW ComboTabAlignment 
+   Begin VBCCR16.ComboBoxW ComboTabAlignment 
       Height          =   315
       Left            =   1800
       TabIndex        =   21
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboPlacement 
+   Begin VBCCR16.ComboBoxW ComboPlacement 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -39,7 +39,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextTabMinWidth 
+   Begin VBCCR16.TextBoxW TextTabMinWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   19
@@ -48,7 +48,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckShowTips 
+   Begin VBCCR16.CheckBoxW CheckShowTips 
       Height          =   285
       Left            =   4200
       TabIndex        =   27
@@ -58,7 +58,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":003C
    End
-   Begin VBCCR15.CheckBoxW CheckMultiSelect 
+   Begin VBCCR16.CheckBoxW CheckMultiSelect 
       Height          =   285
       Left            =   4200
       TabIndex        =   24
@@ -68,7 +68,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":006C
    End
-   Begin VBCCR15.CheckBoxW CheckSeparators 
+   Begin VBCCR16.CheckBoxW CheckSeparators 
       Height          =   285
       Left            =   4200
       TabIndex        =   26
@@ -78,7 +78,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":00A2
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   3
@@ -88,7 +88,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboImageList 
+   Begin VBCCR16.ComboBoxW ComboImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -98,7 +98,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboTabStyle 
+   Begin VBCCR16.ComboBoxW ComboTabStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   11
@@ -108,7 +108,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboTabWidthStyle 
+   Begin VBCCR16.ComboBoxW ComboTabWidthStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   13
@@ -118,7 +118,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboStyle 
+   Begin VBCCR16.ComboBoxW ComboStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -128,7 +128,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextTabFixedHeight 
+   Begin VBCCR16.TextBoxW TextTabFixedHeight 
       Height          =   315
       Left            =   1800
       TabIndex        =   17
@@ -137,7 +137,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextTabFixedWidth 
+   Begin VBCCR16.TextBoxW TextTabFixedWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   15
@@ -146,7 +146,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckHotTracking 
+   Begin VBCCR16.CheckBoxW CheckHotTracking 
       Height          =   285
       Left            =   4200
       TabIndex        =   25
@@ -156,7 +156,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":00D6
    End
-   Begin VBCCR15.CheckBoxW CheckMultiRow 
+   Begin VBCCR16.CheckBoxW CheckMultiRow 
       Height          =   285
       Left            =   4200
       TabIndex        =   23
@@ -166,7 +166,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":010C
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -176,7 +176,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":013C
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -186,7 +186,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentY        =   0
       Caption         =   "PPTabStripGeneral.pgx":016A
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   22
