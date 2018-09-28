@@ -3661,7 +3661,7 @@ Index = Index + 1
 NoMoreItems = CBool(Index < 0 Or Index >= PropVirtualItemCount)
 If NoMoreItems = False Then
     Dim NewVirtualListItem As New LvwVirtualListItem
-    NewVirtualListItem.FInit Me, Index + 1
+    NewVirtualListItem.FInit ObjPtr(Me), Index + 1
     Set VNextItem = NewVirtualListItem
 End If
 End Sub
