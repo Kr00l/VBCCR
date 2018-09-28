@@ -1,5 +1,8 @@
 List of revisions:
 
+28-Sep-2018
+- Bugfix in the For Each...Next Enumeration of 'VirtualListItems' in the ListView control.
+
 27-Sep-2018
 - Included 'VirtualListItems' in the ListView control that returns a collection of virtual list items.
   New components LvwVirtualListItems.cls/LvwVirtualListItem.cls are included.
