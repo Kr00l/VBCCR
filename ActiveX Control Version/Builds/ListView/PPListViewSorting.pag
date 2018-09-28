@@ -16,7 +16,7 @@ Begin VB.PropertyPage PPListViewSorting
       TabIndex        =   0
       Top             =   120
       Width           =   4455
-      Begin VBCCR15.CheckBoxW CheckSorted 
+      Begin VBCCR16.CheckBoxW CheckSorted 
          Height          =   285
          Left            =   240
          TabIndex        =   1
@@ -26,7 +26,7 @@ Begin VB.PropertyPage PPListViewSorting
          _ExtentY        =   0
          Caption         =   "PPListViewSorting.pgx":0000
       End
-      Begin VBCCR15.TextBoxW TextSortKey 
+      Begin VBCCR16.TextBoxW TextSortKey 
          Height          =   315
          Left            =   1920
          TabIndex        =   3
@@ -35,7 +35,7 @@ Begin VB.PropertyPage PPListViewSorting
          _ExtentX        =   0
          _ExtentY        =   0
       End
-      Begin VBCCR15.ComboBoxW ComboSortType 
+      Begin VBCCR16.ComboBoxW ComboSortType 
          Height          =   315
          Left            =   1920
          TabIndex        =   7
@@ -45,7 +45,7 @@ Begin VB.PropertyPage PPListViewSorting
          _ExtentY        =   556
          Style           =   2
       End
-      Begin VBCCR15.ComboBoxW ComboSortOrder 
+      Begin VBCCR16.ComboBoxW ComboSortOrder 
          Height          =   315
          Left            =   1920
          TabIndex        =   5
@@ -117,6 +117,14 @@ PropertyPage.ValidateControls
 If Err.Number = 380 Then Exit Sub
 On Error GoTo 0
 With PropertyPage.SelectedControls(0)
+If CheckSorted.Value = vbChecked Then
+    If .VirtualMode = True Then
+        MsgBox "Sorted must be False when VirtualMode is True", vbExclamation + vbOKOnly
+        CheckSorted.SetFocus
+        PropertyPage.Changed = True
+        Exit Sub
+    End If
+End If
 .Sorted = CBool(CheckSorted.Value = vbChecked)
 .SortKey = CInt(TextSortKey.Text)
 .SortOrder = ComboSortOrder.ItemData(ComboSortOrder.ListIndex)

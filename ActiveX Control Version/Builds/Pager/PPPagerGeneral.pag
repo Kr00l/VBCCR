@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPPagerGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3450
    ScaleWidth      =   6075
-   Begin VBCCR15.ComboBoxW ComboBuddyControl 
+   Begin VBCCR16.ComboBoxW ComboBuddyControl 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextButtonSize 
+   Begin VBCCR16.TextBoxW TextButtonSize 
       Height          =   315
       Left            =   1800
       TabIndex        =   10
@@ -28,7 +28,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextBorderWidth 
+   Begin VBCCR16.TextBoxW TextBorderWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   8
@@ -37,7 +37,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckAutoScroll 
+   Begin VBCCR16.CheckBoxW CheckAutoScroll 
       Height          =   285
       Left            =   4200
       TabIndex        =   13
@@ -47,7 +47,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentY        =   0
       Caption         =   "PPPagerGeneral.pgx":0000
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   2
@@ -57,7 +57,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboOrientation 
+   Begin VBCCR16.ComboBoxW ComboOrientation 
       Height          =   315
       Left            =   1800
       TabIndex        =   6
@@ -67,7 +67,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckOLEDragDropScroll 
+   Begin VBCCR16.CheckBoxW CheckOLEDragDropScroll 
       Height          =   285
       Left            =   4200
       TabIndex        =   12
@@ -77,7 +77,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentY        =   0
       Caption         =   "PPPagerGeneral.pgx":0034
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -87,7 +87,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentY        =   0
       Caption         =   "PPPagerGeneral.pgx":0076
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   11
