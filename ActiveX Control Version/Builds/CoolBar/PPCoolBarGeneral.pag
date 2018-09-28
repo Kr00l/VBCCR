@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4875
    ScaleWidth      =   6225
-   Begin VBCCR15.CheckBoxW CheckShowTips 
+   Begin VBCCR16.CheckBoxW CheckShowTips 
       Height          =   285
       Left            =   4200
       TabIndex        =   14
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":0000
    End
-   Begin VBCCR15.CheckBoxW CheckVerticalGripper 
+   Begin VBCCR16.CheckBoxW CheckVerticalGripper 
       Height          =   285
       Left            =   4200
       TabIndex        =   13
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":0030
    End
-   Begin VBCCR15.CheckBoxW CheckDblClickToggle 
+   Begin VBCCR16.CheckBoxW CheckDblClickToggle 
       Height          =   285
       Left            =   4200
       TabIndex        =   12
@@ -39,7 +39,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":006E
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   8
@@ -49,7 +49,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":00AA
    End
-   Begin VBCCR15.CheckBoxW CheckFixedOrder 
+   Begin VBCCR16.CheckBoxW CheckFixedOrder 
       Height          =   285
       Left            =   4200
       TabIndex        =   10
@@ -59,7 +59,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":00DE
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   3
@@ -69,7 +69,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboImageList 
+   Begin VBCCR16.ComboBoxW ComboImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -79,7 +79,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboOrientation 
+   Begin VBCCR16.ComboBoxW ComboOrientation 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -89,7 +89,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckVariantHeight 
+   Begin VBCCR16.CheckBoxW CheckVariantHeight 
       Height          =   285
       Left            =   4200
       TabIndex        =   11
@@ -99,7 +99,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":0112
    End
-   Begin VBCCR15.CheckBoxW CheckBandBorders 
+   Begin VBCCR16.CheckBoxW CheckBandBorders 
       Height          =   285
       Left            =   4200
       TabIndex        =   9
@@ -109,7 +109,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":014C
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -119,7 +119,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":0182
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -129,7 +129,7 @@ Begin VB.PropertyPage PPCoolBarGeneral
       _ExtentY        =   0
       Caption         =   "PPCoolBarGeneral.pgx":01B0
    End
-   Begin VBCCR15.CheckBoxW CheckDoubleBuffer 
+   Begin VBCCR16.CheckBoxW CheckDoubleBuffer 
       Height          =   285
       Left            =   3480
       TabIndex        =   15

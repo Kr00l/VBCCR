@@ -347,6 +347,7 @@ Private PropCharacterCasing As CboCharacterCasingConstants
 Private PropDrawMode As CboDrawModeConstants
 Private PropIMEMode As CCIMEModeConstants
 Private PropScrollTrack As Boolean
+Private PropAutoSelect As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -450,6 +451,7 @@ PropCharacterCasing = CboCharacterCasingNormal
 PropDrawMode = CboDrawModeNormal
 PropIMEMode = CCIMEModeNoControl
 PropScrollTrack = True
+PropAutoSelect = False
 Call CreateComboBox
 End Sub
 
@@ -490,6 +492,7 @@ PropCharacterCasing = .ReadProperty("CharacterCasing", CboCharacterCasingNormal)
 PropDrawMode = .ReadProperty("DrawMode", CboDrawModeNormal)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
+PropAutoSelect = .ReadProperty("AutoSelect", False)
 End With
 Call CreateComboBox
 End Sub
@@ -529,6 +532,7 @@ With PropBag
 .WriteProperty "DrawMode", PropDrawMode, CboDrawModeNormal
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "ScrollTrack", PropScrollTrack, True
+.WriteProperty "AutoSelect", PropAutoSelect, False
 End With
 End Sub
 
@@ -1366,6 +1370,16 @@ PropScrollTrack = Value
 UserControl.PropertyChanged "ScrollTrack"
 End Property
 
+Public Property Get AutoSelect() As Boolean
+Attribute AutoSelect.VB_Description = "Returns/sets a value that determines whether or not the items can be selected automatically after an user input in the edit portion of the control."
+AutoSelect = PropAutoSelect
+End Property
+
+Public Property Let AutoSelect(ByVal Value As Boolean)
+PropAutoSelect = Value
+UserControl.PropertyChanged "AutoSelect"
+End Property
+
 Public Sub AddItem(ByVal Item As String, Optional ByVal Index As Variant)
 Attribute AddItem.VB_Description = "Adds an item to the combo box."
 If ComboBoxHandle <> 0 Then
@@ -1959,6 +1973,17 @@ If ComboBoxHandle <> 0 And ComboBoxListHandle <> 0 Then
 End If
 End Function
 
+Public Function SelectItem(ByVal Text As String, Optional ByVal Index As Long = -1) As Long
+Attribute SelectItem.VB_Description = "Searches for an item that begins with the characters in a specified string. If a matching item is found, the item is selected. The search is not case sensitive."
+If ComboBoxHandle <> 0 Then
+    If Not SendMessage(ComboBoxHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Or Index = -1 Then
+        SelectItem = SendMessage(ComboBoxHandle, CB_SELECTSTRING, Index, ByVal StrPtr(Text))
+    Else
+        Err.Raise 381
+    End If
+End If
+End Function
+
 Private Sub CheckDropDownHeight(ByVal Calculate As Boolean)
 Static LastCount As Long, ItemHeight As Long
 If ComboBoxHandle <> 0 And ComboBoxDropDownHeightState = False Then
@@ -2009,6 +2034,22 @@ If ComboBoxHandle <> 0 Then TopIndex = SendMessage(ComboBoxHandle, CB_GETTOPINDE
 If TopIndex <> ComboBoxTopIndex Then
     ComboBoxTopIndex = TopIndex
     RaiseEvent Scroll
+End If
+End Sub
+
+Private Sub CheckAutoSelect()
+If PropAutoSelect = True Then
+    Select Case PropStyle
+        Case CboStyleDropDownCombo, CboStyleSimpleCombo
+            Dim Index As Long
+            If ComboBoxHandle <> 0 Then
+                Index = SendMessage(ComboBoxHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(Me.Text))
+                If Not Index = CB_ERR Then
+                    Me.ListIndex = Index
+                    Me.SelStart = Len(Me.Text)
+                End If
+            End If
+    End Select
 End If
 End Sub
 
@@ -2417,6 +2458,7 @@ Select Case wMsg
                 On Error Resume Next
                 UserControl.Extender.DataChanged = True
                 On Error GoTo 0
+                Call CheckAutoSelect
                 RaiseEvent Change
             Case CBN_DROPDOWN
                 If PropDrawMode = CboDrawModeOwnerDrawVariable Then Call CheckDropDownHeight(True)
