@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPAnimationGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3450
    ScaleWidth      =   5925
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   5
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPAnimationGeneral
       _ExtentY        =   0
       Caption         =   "PPAnimationGeneral.pgx":0000
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   2
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPAnimationGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboBackStyle 
+   Begin VBCCR16.ComboBoxW ComboBackStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -39,7 +39,7 @@ Begin VB.PropertyPage PPAnimationGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckCenter 
+   Begin VBCCR16.CheckBoxW CheckCenter 
       Height          =   285
       Left            =   4200
       TabIndex        =   7
@@ -49,7 +49,7 @@ Begin VB.PropertyPage PPAnimationGeneral
       _ExtentY        =   0
       Caption         =   "PPAnimationGeneral.pgx":0034
    End
-   Begin VBCCR15.CheckBoxW CheckAutoPlay 
+   Begin VBCCR16.CheckBoxW CheckAutoPlay 
       Height          =   285
       Left            =   4200
       TabIndex        =   6
@@ -59,7 +59,7 @@ Begin VB.PropertyPage PPAnimationGeneral
       _ExtentY        =   0
       Caption         =   "PPAnimationGeneral.pgx":0060
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
