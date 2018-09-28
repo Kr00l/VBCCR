@@ -442,15 +442,6 @@ Public Property Let ToolTipText(ByVal Value As String)
 Extender.ToolTipText = Value
 End Property
 
-Public Property Get HelpContextID() As Long
-Attribute HelpContextID.VB_Description = "Specifies the default Help file context ID for an object."
-' HelpContextID = Extender.HelpContextID
-End Property
-
-Public Property Let HelpContextID(ByVal Value As Long)
-' Extender.HelpContextID = Value
-End Property
-
 Public Property Get WhatsThisHelpID() As Long
 Attribute WhatsThisHelpID.VB_Description = "Returns/sets an associated context number for an object."
 Attribute WhatsThisHelpID.VB_MemberFlags = "400"
