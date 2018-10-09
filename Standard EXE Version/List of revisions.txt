@@ -1,5 +1,8 @@
 List of revisions:
 
+09-Oct-2018
+- WM_SYSKEYDOWN/WM_SYSKEYUP considered now for KeyDown/KeyUp events.
+
 28-Sep-2018
 - Bugfix in the For Each...Next Enumeration of 'VirtualListItems' in the ListView control.
 
