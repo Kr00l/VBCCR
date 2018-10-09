@@ -297,6 +297,8 @@ Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
@@ -3004,31 +3006,37 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
-            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            If KeyCode = vbKeySpace And PropCheckboxes = True Then
-                Dim TVI As TVITEM
-                With TVI
-                .Mask = TVIF_HANDLE Or TVIF_STATE Or TVIF_PARAM
-                .hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&)
-                .StateMask = TVIS_STATEIMAGEMASK
-                SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
-                If StateImageMaskToIndex(.State And TVIS_STATEIMAGEMASK) = 0 Then Exit Function
-                If .lParam <> 0 Then
-                    Dim Cancel As Boolean
-                    RaiseEvent NodeBeforeCheck(PtrToObj(.lParam), Cancel)
-                    If Cancel = True Then Exit Function
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If KeyCode = vbKeySpace And PropCheckboxes = True Then
+                    Dim TVI As TVITEM
+                    With TVI
+                    .Mask = TVIF_HANDLE Or TVIF_STATE Or TVIF_PARAM
+                    .hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&)
+                    .StateMask = TVIS_STATEIMAGEMASK
+                    SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
+                    If StateImageMaskToIndex(.State And TVIS_STATEIMAGEMASK) = 0 Then Exit Function
+                    If .lParam <> 0 Then
+                        Dim Cancel As Boolean
+                        RaiseEvent NodeBeforeCheck(PtrToObj(.lParam), Cancel)
+                        If Cancel = True Then Exit Function
+                    End If
+                    PostMessage TreeViewHandle, UM_CHECKSTATECHANGED, 0, ByVal .lParam
+                    End With
                 End If
-                PostMessage TreeViewHandle, UM_CHECKSTATECHANGED, 0, ByVal .lParam
-                End With
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
-        ElseIf wMsg = WM_KEYUP Then
+            TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
+            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

@@ -561,6 +561,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
@@ -6887,30 +6889,36 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
-            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            If PropResizableColumnHeaders = False Then
-                If KeyCode = vbKeyAdd And (GetShiftStateFromMsg() And vbCtrlMask) = vbCtrlMask Then Exit Function
-            End If
-            If PropCheckboxes = True And KeyCode = vbKeySpace And PropVirtualMode = True Then
-                ' A virtual list view where checkboxes are displayed does not generate LVN_ITEMCHANGED upon pressing the space key.
-                Dim iItem As Long
-                iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL Or LVNI_FOCUSED)
-                If iItem > -1 Then
-                    Dim ListItem As LvwListItem
-                    Set ListItem = New LvwListItem
-                    ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
-                    RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
-                    Me.FListItemRedraw iItem + 1
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If PropResizableColumnHeaders = False Then
+                    If KeyCode = vbKeyAdd And (GetShiftStateFromMsg() And vbCtrlMask) = vbCtrlMask Then Exit Function
                 End If
+                If PropCheckboxes = True And KeyCode = vbKeySpace And PropVirtualMode = True Then
+                    ' A virtual list view where checkboxes are displayed does not generate LVN_ITEMCHANGED upon pressing the space key.
+                    Dim iItem As Long
+                    iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL Or LVNI_FOCUSED)
+                    If iItem > -1 Then
+                        Dim ListItem As LvwListItem
+                        Set ListItem = New LvwListItem
+                        ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                        RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
+                        Me.FListItemRedraw iItem + 1
+                    End If
+                End If
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
-        ElseIf wMsg = WM_KEYUP Then
+            ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
+            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
