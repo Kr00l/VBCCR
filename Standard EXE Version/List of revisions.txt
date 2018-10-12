@@ -1,5 +1,8 @@
 List of revisions:
 
+12-Oct-2018
+- Fix on EM_REPLACESEL (wparam = 1) in TextBoxW and RichTextBox control.
+
 09-Oct-2018
 - WM_SYSKEYDOWN/WM_SYSKEYUP considered now for KeyDown/KeyUp events.
 
