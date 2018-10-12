@@ -597,7 +597,7 @@ If PropOLEDropMode = vbOLEDropAutomatic And TextBoxHandle <> 0 Then
                 If GetFocus() <> TextBoxHandle Then SetFocusAPI UserControl.hWnd
             End If
             SendMessage TextBoxHandle, EM_SETSEL, CharPos, ByVal CharPos
-            SendMessage TextBoxHandle, EM_REPLACESEL, 0, ByVal StrPtr(Text)
+            SendMessage TextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Text)
             SendMessage TextBoxHandle, EM_SETSEL, CharPos, ByVal (CharPos + Len(Text))
         End If
     End If
@@ -1680,7 +1680,7 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If TextBoxHandle <> 0 Then SendMessage TextBoxHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+If TextBoxHandle <> 0 Then SendMessage TextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Value)
 End Property
 
 Public Function GetLine(ByVal LineNumber As Long) As String
