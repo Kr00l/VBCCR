@@ -2042,7 +2042,7 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If RichTextBoxHandle <> 0 Then SendMessage RichTextBoxHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+If RichTextBoxHandle <> 0 Then SendMessage RichTextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Value)
 End Property
 
 Public Property Get SelRTF() As String
