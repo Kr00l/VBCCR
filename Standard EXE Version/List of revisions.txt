@@ -1,5 +1,8 @@
 List of revisions:
 
+20-Oct-2018
+- Minor internal improvement in LlbLinks/LlbLink in the LinkLabel control.
+
 12-Oct-2018
 - Fix on EM_REPLACESEL (wparam = 1) in TextBoxW and RichTextBox control.
 
