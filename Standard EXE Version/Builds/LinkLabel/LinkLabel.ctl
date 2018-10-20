@@ -991,6 +991,17 @@ End If
 Set Links = PropLinks
 End Property
 
+Friend Sub FLinksNextItem(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
+If Control <> Me.FLinksCount Then Err.Raise Number:=1, Description:="Collection has changed during enumeration"
+Index = Index + 1
+NoMoreItems = CBool(Index < 0 Or Index >= Me.FLinksCount)
+If NoMoreItems = False Then
+    Dim NewLink As New LlbLink
+    NewLink.FInit ObjPtr(Me), Index + 1
+    Set VNextItem = NewLink
+End If
+End Sub
+
 Friend Function FLinksCount() As Long
 If LinkLabelHandle <> 0 Then
     Dim Item As LITEM

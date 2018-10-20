@@ -13,31 +13,32 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 Private ShadowObjectPointer As Long
-Private PropLink As Collection
+Private WithEvents PropEnumeration As Enumeration
+Attribute PropEnumeration.VB_VarHelpID = -1
 
 Private Function ShadowLinkLabel() As LinkLabel
 ComCtlsPtrToShadowObj ShadowLinkLabel, ShadowObjectPointer
 End Function
 
-Private Sub Class_Terminate()
-Set PropLink = Nothing
+Private Sub PropEnumeration_GetNextItem(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
+ShadowLinkLabel.FLinksNextItem Index, Control, Data, VNextItem, NoMoreItems
+If NoMoreItems = True Then Set PropEnumeration = Nothing
+End Sub
+
+Private Sub PropEnumeration_Reset(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long)
+Index = -1
+Control = ShadowLinkLabel.FLinksCount()
+End Sub
+
+Private Sub PropEnumeration_Skip(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByVal SkipCount As Long, ByRef SkippedAll As Boolean)
+Index = Index + SkipCount
 End Sub
 
 Public Function NewEnum() As IEnumVARIANT
 Attribute NewEnum.VB_UserMemId = -4
 Attribute NewEnum.VB_MemberFlags = "40"
-Set PropLink = New Collection
-Dim Count As Long
-Count = Me.Count
-If Count > 0 Then
-    Dim i As Long, NewLink As LlbLink
-    For i = 1 To Count
-        Set NewLink = New LlbLink
-        NewLink.FInit ShadowLinkLabel, i
-        PropLink.Add NewLink
-    Next i
-End If
-Set NewEnum = PropLink.[_NewEnum]
+Set PropEnumeration = New Enumeration
+Set NewEnum = PropEnumeration.GetEnum(ShadowLinkLabel.FLinksCount())
 End Function
 
 Friend Sub FInit(ByVal Object As LinkLabel)
@@ -49,7 +50,7 @@ Attribute Item.VB_Description = "Returns a link given its index."
 Attribute Item.VB_UserMemId = 0
 If Index > Me.Count Or Index <= 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 Dim NewLink As New LlbLink
-NewLink.FInit ShadowLinkLabel, Index
+NewLink.FInit ShadowObjectPointer, Index
 Set Item = NewLink
 End Property
 
