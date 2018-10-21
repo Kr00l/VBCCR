@@ -1,5 +1,9 @@
 List of revisions:
 
+22-Oct-2018
+- Use of lightweight COM object IPrintDialogCallback instead of a WH_CALLWNDPROCRET hook for ShowPrinterEx in the CommonDialog class.
+  This change only effects when the HookEvents property is True in the CommonDialog class.
+
 20-Oct-2018
 - Minor internal improvement in LlbLinks/LlbLink in the LinkLabel control.
 
