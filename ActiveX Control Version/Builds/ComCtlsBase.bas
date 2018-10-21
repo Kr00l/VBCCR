@@ -50,6 +50,12 @@ lParam As Long
 Time As Long
 PT As POINTAPI
 End Type
+Private Type CLSID
+Data1 As Long
+Data2 As Integer
+Data3 As Integer
+Data4(0 To 7) As Byte
+End Type
 Private Type TLOCALESIGNATURE
 lsUsb(0 To 15) As Byte
 lsCsbDefault(0 To 1) As Long
@@ -66,6 +72,7 @@ lpszText As Long
 lParam As Long
 End Type
 Public Declare Function ComCtlsPtrToShadowObj Lib "msvbvm60.dll" Alias "__vbaObjSetAddref" (ByRef Destination As Any, ByVal lpObject As Long) As Long
+Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TINITCOMMONCONTROLSEX) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -76,6 +83,7 @@ Private Declare Function CallNextHookEx Lib "user32" (ByVal hHook As Long, ByVal
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function GetClassName Lib "user32" Alias "GetClassNameW" (ByVal hWnd As Long, ByVal lpClassName As Long, ByVal nMaxCount As Long) As Long
 Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
+Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function ImmIsIME Lib "imm32" (ByVal hKL As Long) As Long
 Private Declare Function ImmCreateContext Lib "imm32" () As Long
 Private Declare Function ImmDestroyContext Lib "imm32" (ByVal hIMC As Long) As Long
@@ -116,8 +124,12 @@ Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_UAHDESTROYWINDOW As Long = &H90
 Private Const WM_INITDIALOG As Long = &H110
 Private Const WM_USER As Long = &H400
+Private Const E_NOTIMPL As Long = &H80004001
+Private Const E_NOINTERFACE As Long = &H80004002
+Private Const S_FALSE As Long = &H1
+Private Const S_OK As Long = &H0
 Private ShellModHandle As Long, ShellModCount As Long
-Private CdlPDEXHookHandle As Long, CdlPDEXHookCustData As Long
+Private CdlPDEXVTableIPDCB(0 To 5) As Long
 Private CdlFRHookHandle As Long
 Private CdlFRDialogHandle() As Long, CdlFRDialogCount As Long
 
@@ -520,7 +532,6 @@ If Done = False Then
     Dim Version As DLLVERSIONINFO
     On Error Resume Next
     Version.cbSize = LenB(Version)
-    Const S_OK As Long = &H0
     If DllGetVersion(Version) = S_OK Then
         If Version.dwMajor = 6 And Version.dwMinor = 0 Then
             Value = 1
@@ -823,67 +834,107 @@ End If
 End Function
 
 Public Function ComCtlsCdlPDCallbackProc(ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Dim lCustData As Long
 If wMsg <> WM_INITDIALOG Then
-    lCustData = GetProp(hDlg, StrPtr("ComCtlsCdlPDCallbackProcCustData"))
-Else
-    CopyMemory lCustData, ByVal UnsignedAdd(lParam, 38), 4
-    SetProp hDlg, StrPtr("ComCtlsCdlPDCallbackProcCustData"), lCustData
-End If
-If lCustData <> 0 Then
-    Dim This As ISubclass
-    Set This = PtrToObj(lCustData)
-    ComCtlsCdlPDCallbackProc = This.Message(hDlg, wMsg, wParam, lParam, -5)
-Else
     ComCtlsCdlPDCallbackProc = 0
-End If
-End Function
-
-Public Sub ComCtlsCdlPDEXSetHook(ByVal This As ISubclass)
-If CdlPDEXHookHandle = 0 Then
-    CdlPDEXHookCustData = ObjPtr(This)
-    Const WH_CALLWNDPROCRET As Long = 12
-    CdlPDEXHookHandle = SetWindowsHookEx(WH_CALLWNDPROCRET, AddressOf ComCtlsCdlPDEXHookProc, 0, App.ThreadID)
-End If
-End Sub
-
-Public Sub ComCtlsCdlPDEXRemoveHook()
-If CdlPDEXHookHandle <> 0 Then
-    UnhookWindowsHookEx CdlPDEXHookHandle
-    CdlPDEXHookHandle = 0
-    CdlPDEXHookCustData = 0
-End If
-End Sub
-
-Private Function ComCtlsCdlPDEXHookProc(ByVal nCode As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-ComCtlsCdlPDEXHookProc = CallNextHookEx(CdlPDEXHookHandle, nCode, wParam, lParam)
-Const HC_ACTION As Long = 0
-If nCode >= HC_ACTION Then
-    Dim CWPRET As CWPRETSTRUCT
-    CopyMemory CWPRET, ByVal lParam, LenB(CWPRET)
-    If CWPRET.Message = WM_INITDIALOG Then
+Else
+    Dim lCustData As Long
+    CopyMemory lCustData, ByVal UnsignedAdd(lParam, 38), 4
+    If lCustData <> 0 Then
         Dim This As ISubclass
-        If CdlPDEXHookCustData <> 0 Then Set This = PtrToObj(CdlPDEXHookCustData)
-        Call ComCtlsCdlPDEXRemoveHook
-        If Not This Is Nothing Then This.Message CWPRET.hWnd, CWPRET.Message, CWPRET.wParam, CWPRET.lParam, -5
+        Set This = PtrToObj(lCustData)
+        ComCtlsCdlPDCallbackProc = This.Message(hDlg, wMsg, wParam, lParam, -5)
+    Else
+        ComCtlsCdlPDCallbackProc = 0
     End If
 End If
 End Function
 
-Public Function ComCtlsCdlPSDCallbackProc(ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Dim lCustData As Long
-If wMsg <> WM_INITDIALOG Then
-    lCustData = GetProp(hDlg, StrPtr("ComCtlsCdlPSDCallbackProcCustData"))
+Public Function ComCtlsCdlPDEXCallbackPtr(ByVal This As ISubclass) As Long
+Dim VTableData(0 To 2) As Long
+VTableData(0) = GetVTableIPDCB()
+VTableData(1) = 0 ' RefCount is uninstantiated
+VTableData(2) = ObjPtr(This)
+ComCtlsCdlPDEXCallbackPtr = CoTaskMemAlloc(12)
+CopyMemory ByVal ComCtlsCdlPDEXCallbackPtr, VTableData(0), 12
+End Function
+
+Private Function GetVTableIPDCB() As Long
+CdlPDEXVTableIPDCB(0) = ProcPtr(AddressOf IPDCB_QueryInterface)
+CdlPDEXVTableIPDCB(1) = ProcPtr(AddressOf IPDCB_AddRef)
+CdlPDEXVTableIPDCB(2) = ProcPtr(AddressOf IPDCB_Release)
+CdlPDEXVTableIPDCB(3) = ProcPtr(AddressOf IPDCB_InitDone)
+CdlPDEXVTableIPDCB(4) = ProcPtr(AddressOf IPDCB_SelectionChange)
+CdlPDEXVTableIPDCB(5) = ProcPtr(AddressOf IPDCB_HandleMessage)
+GetVTableIPDCB = VarPtr(CdlPDEXVTableIPDCB(0))
+End Function
+
+Private Function IPDCB_QueryInterface(ByVal Ptr As Long, ByRef IID As CLSID, ByRef pvObj As Long) As Long
+' IID_IPrintDialogCallback = {5852A2C3-6530-11D1-B6A3-0000F8757BF9}
+If IID.Data1 = &H5852A2C3 And IID.Data2 = &H6530 And IID.Data3 = &H11D1 Then
+    If IID.Data4(0) = &HB6 And IID.Data4(1) = &HA3 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
+    And IID.Data4(4) = &HF8 And IID.Data4(5) = &H75 And IID.Data4(6) = &H7B And IID.Data4(7) = &HF9 Then
+        pvObj = Ptr
+        IPDCB_AddRef Ptr
+        IPDCB_QueryInterface = S_OK
+    Else
+        IPDCB_QueryInterface = E_NOINTERFACE
+    End If
 Else
-    CopyMemory lCustData, ByVal UnsignedAdd(lParam, 64), 4
-    SetProp hDlg, StrPtr("ComCtlsCdlPSDCallbackProcCustData"), lCustData
+    IPDCB_QueryInterface = E_NOINTERFACE
 End If
-If lCustData <> 0 Then
-    Dim This As ISubclass
-    Set This = PtrToObj(lCustData)
-    ComCtlsCdlPSDCallbackProc = This.Message(hDlg, wMsg, wParam, lParam, -7)
+End Function
+
+Private Function IPDCB_AddRef(ByVal Ptr As Long) As Long
+CopyMemory IPDCB_AddRef, ByVal UnsignedAdd(Ptr, 4), 4
+IPDCB_AddRef = IPDCB_AddRef + 1
+CopyMemory ByVal UnsignedAdd(Ptr, 4), IPDCB_AddRef, 4
+End Function
+
+Private Function IPDCB_Release(ByVal Ptr As Long) As Long
+CopyMemory IPDCB_Release, ByVal UnsignedAdd(Ptr, 4), 4
+IPDCB_Release = IPDCB_Release - 1
+CopyMemory ByVal UnsignedAdd(Ptr, 4), IPDCB_Release, 4
+If IPDCB_Release = 0 Then CoTaskMemFree Ptr
+End Function
+
+Private Function IPDCB_InitDone(ByVal Ptr As Long) As Long
+IPDCB_InitDone = S_FALSE
+End Function
+
+Private Function IPDCB_SelectionChange(ByVal Ptr As Long) As Long
+IPDCB_SelectionChange = S_FALSE
+End Function
+
+Private Function IPDCB_HandleMessage(ByVal Ptr As Long, ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByRef Result As Long) As Long
+If wMsg <> WM_INITDIALOG Then
+    IPDCB_HandleMessage = 0
 Else
+    Dim lCustData As Long
+    CopyMemory lCustData, ByVal UnsignedAdd(Ptr, 8), 4
+    If lCustData <> 0 Then
+        Dim This As ISubclass
+        Set This = PtrToObj(lCustData)
+        IPDCB_HandleMessage = This.Message(hDlg, wMsg, wParam, lParam, -5)
+    Else
+        IPDCB_HandleMessage = 0
+    End If
+End If
+IPDCB_HandleMessage = S_FALSE
+End Function
+
+Public Function ComCtlsCdlPSDCallbackProc(ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+If wMsg <> WM_INITDIALOG Then
     ComCtlsCdlPSDCallbackProc = 0
+Else
+    Dim lCustData As Long
+    CopyMemory lCustData, ByVal UnsignedAdd(lParam, 64), 4
+    If lCustData <> 0 Then
+        Dim This As ISubclass
+        Set This = PtrToObj(lCustData)
+        ComCtlsCdlPSDCallbackProc = This.Message(hDlg, wMsg, wParam, lParam, -7)
+    Else
+        ComCtlsCdlPSDCallbackProc = 0
+    End If
 End If
 End Function
 
