@@ -34,7 +34,6 @@ Private PropIcon As Variant, PropIconIndex As Long
 Private PropSmallIcon As Variant, PropSmallIconIndex As Long
 Private PropShadowListSubItemsCount As Long
 Private PropShadowListSubItems() As ShadowListSubItemStruct
-Private PropShadowDefaultListSubItem As ShadowListSubItemStruct
 
 Private Function ShadowListView() As ListView
 ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
@@ -42,7 +41,6 @@ End Function
 
 Private Sub Class_Initialize()
 PropForeColor = -1
-PropShadowDefaultListSubItem.ForeColor = -1
 End Sub
 
 Private Sub Class_Terminate()
@@ -366,14 +364,16 @@ Else
     SubItemIndex = Index
 End If
 ReDim Preserve PropShadowListSubItems(1 To PropShadowListSubItemsCount) As ShadowListSubItemStruct
+Dim ShadowDefaultListSubItem As ShadowListSubItemStruct
+ShadowDefaultListSubItem.ForeColor = -1
 If SubItemIndex < PropShadowListSubItemsCount Then
     Dim i As Long
     For i = PropShadowListSubItemsCount To (SubItemIndex + 1) Step -1
         LSet PropShadowListSubItems(i) = PropShadowListSubItems(i - 1)
     Next i
-    LSet PropShadowListSubItems(i) = PropShadowDefaultListSubItem
+    LSet PropShadowListSubItems(i) = ShadowDefaultListSubItem
 Else
-    LSet PropShadowListSubItems(SubItemIndex) = PropShadowDefaultListSubItem
+    LSet PropShadowListSubItems(SubItemIndex) = ShadowDefaultListSubItem
 End If
 With PropShadowListSubItems(SubItemIndex)
 .Key = Key
