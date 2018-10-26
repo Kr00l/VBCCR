@@ -420,6 +420,7 @@ Attribute ListImages.VB_Description = "Returns a reference to a collection of th
 If PropListImages Is Nothing Then
     Set PropListImages = New ImlListImages
     PropListImages.FInit Me
+    If ImageListHandle = 0 Then Call CreateImageList
 End If
 Set ListImages = PropListImages
 End Property
@@ -466,12 +467,25 @@ UserControl.PropertyChanged "InitImageLists"
 End Sub
 
 Friend Sub FListImagesRemove(ByVal Index As Long)
-If ImageListHandle <> 0 Then ImageList_Remove ImageListHandle, Index - 1
+If ImageListHandle <> 0 Then
+    ImageList_Remove ImageListHandle, Index - 1
+    If ImageList_GetImageCount(ImageListHandle) = 0 Then
+        PropImageWidth = 0
+        PropImageHeight = 0
+        If ImageListHandle <> 0 Then Call DestroyImageList
+        If ImageListHandle = 0 Then Call CreateImageList
+    End If
+End If
 UserControl.PropertyChanged "InitImageLists"
 End Sub
 
 Friend Sub FListImagesClear()
 If ImageListHandle <> 0 Then Do While ImageList_Remove(ImageListHandle, 0) <> 0: Loop
+PropImageWidth = 0
+PropImageHeight = 0
+If ImageListHandle <> 0 Then Call DestroyImageList
+If ImageListHandle = 0 Then Call CreateImageList
+UserControl.PropertyChanged "InitImageLists"
 End Sub
 
 Friend Sub FListImageDraw(ByVal Index As Long, ByVal hDC As Long, Optional ByVal X As Long, Optional ByVal Y As Long, Optional ByVal Style As ImlDrawConstants)
