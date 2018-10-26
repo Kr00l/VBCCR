@@ -1,5 +1,8 @@
 List of revisions:
 
+27-Oct-2018
+- Internal rare bugfix in the ImageList control.
+
 23-Oct-2018
 - Internal improvement in the LabelW control.
 - Less memory consumption for LvwListItem. (~5MB each 100k items)
