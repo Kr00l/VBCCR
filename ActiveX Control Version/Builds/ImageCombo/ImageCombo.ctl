@@ -607,7 +607,7 @@ If Ambient.UserMode = False And PropertyName = "DisplayName" And PropStyle = Imc
     If ImageComboHandle <> 0 Then
         If SendMessage(ImageComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
             Me.FComboItemsClear
-            Me.FComboItemsAdd , Ambient.DisplayName
+            Me.FComboItemsAdd 1, Ambient.DisplayName
             Me.FComboItemSelected(1) = True
         End If
     End If
@@ -1446,17 +1446,11 @@ End If
 Set ComboItems = PropComboItems
 End Property
 
-Friend Sub FComboItemsAdd(Optional ByVal Index As Long, Optional ByVal Text As String, Optional ByVal ImageIndex As Long, Optional ByVal SelImageIndex As Long, Optional ByVal Indentation As Variant)
-Dim ComboItemIndex As Long
-If Index = 0 Then
-    ComboItemIndex = Me.ComboItems.Count + 1
-Else
-    ComboItemIndex = Index
-End If
+Friend Sub FComboItemsAdd(ByVal Index As Long, Optional ByVal Text As String, Optional ByVal ImageIndex As Long, Optional ByVal SelImageIndex As Long, Optional ByVal Indentation As Variant)
 Dim CBEI As COMBOBOXEXITEM
 With CBEI
 .Mask = CBEIF_TEXT Or CBEIF_IMAGE Or CBEIF_SELECTEDIMAGE Or CBEIF_LPARAM Or CBEIF_INDENT
-.iItem = ComboItemIndex - 1
+.iItem = Index - 1
 .pszText = StrPtr(Text)
 .cchTextMax = Len(Text)
 .iImage = ImageIndex - 1
@@ -1715,7 +1709,7 @@ If Ambient.UserMode = True Then
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
 Else
     If PropStyle = ImcStyleDropDownList Then
-        Me.FComboItemsAdd , Ambient.DisplayName
+        Me.FComboItemsAdd 1, Ambient.DisplayName
         If ImageComboHandle <> 0 Then SendMessage ImageComboHandle, CB_SETCURSEL, 0, ByVal 0&
     End If
 End If
