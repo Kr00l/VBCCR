@@ -1,7 +1,7 @@
 List of revisions:
 
 27-Oct-2018
-- Internal rare bugfix in the ImageList control.
+- Internal bugfix in the ImageList control.
 
 23-Oct-2018
 - Internal improvement in the LabelW control.
