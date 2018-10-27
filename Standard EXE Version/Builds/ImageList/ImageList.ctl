@@ -410,7 +410,6 @@ Attribute ListImages.VB_Description = "Returns a reference to a collection of th
 If PropListImages Is Nothing Then
     Set PropListImages = New ImlListImages
     PropListImages.FInit Me
-    If ImageListHandle = 0 Then Call CreateImageList
 End If
 Set ListImages = PropListImages
 End Property
@@ -508,6 +507,7 @@ End Function
 
 Private Sub CreateImageList()
 If ImageListHandle <> 0 Then Exit Sub
+If PropImageWidth = 0 Or PropImageHeight = 0 Then Exit Sub
 If PropRightToLeftMirror = True And ComCtlsSupportLevel() >= 1 Then
     ImageListHandle = ImageList_Create(PropImageWidth, PropImageHeight, ILC_MASK Or ILC_MIRROR Or PropColorDepth, 4, 4)
 Else
