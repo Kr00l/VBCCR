@@ -1,6 +1,7 @@
 List of revisions:
 
 27-Oct-2018
+- Major performance improvement in the 'ComboItems' collection in the ImageCombo control.
 - Internal bugfix in the ImageList control.
 
 23-Oct-2018
