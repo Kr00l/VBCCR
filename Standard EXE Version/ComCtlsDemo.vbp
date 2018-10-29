@@ -26,7 +26,6 @@ Class=VTableSubclass; Builds\VTableSubclass.cls
 Module=ComCtlsBase; Builds\ComCtlsBase.bas
 Class=ISubclass; Builds\ISubclass.cls
 Module=VTableHandle; Builds\VTableHandle.bas
-Class=Enumeration; Builds\Enumeration.cls
 PropertyPage=Builds\Animation\PPAnimationGeneral.pag
 Class=TbsTabs; Builds\TabStrip\TbsTabs.cls
 Class=TbsTab; Builds\TabStrip\TbsTab.cls
