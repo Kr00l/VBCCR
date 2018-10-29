@@ -3646,35 +3646,6 @@ If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_DELETEALLITEMS, 0, B
 Call CheckItemFocus(0)
 End Sub
 
-Friend Function FListItemsControl() As Long
-FListItemsControl = ListViewListItemsControl
-End Function
-
-Friend Sub FListItemsNextItem(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
-If Control <> ListViewListItemsControl Then Err.Raise Number:=1, Description:="Collection has changed during enumeration"
-Index = Index + 1
-NoMoreItems = CBool(Index < 0 Or Index >= Me.ListItems.Count)
-If NoMoreItems = False Then Set VNextItem = Me.ListItems(Index + 1)
-End Sub
-
-Friend Sub FVirtualListItemsNextItem(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
-If Control <> ListViewListItemsControl Then Err.Raise Number:=1, Description:="Collection has changed during enumeration"
-Index = Index + 1
-NoMoreItems = CBool(Index < 0 Or Index >= PropVirtualItemCount)
-If NoMoreItems = False Then
-    Dim NewVirtualListItem As New LvwVirtualListItem
-    NewVirtualListItem.FInit ObjPtr(Me), Index + 1
-    Set VNextItem = NewVirtualListItem
-End If
-End Sub
-
-Friend Sub FListSubItemsNextItem(ByVal ListItem As LvwListItem, ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
-If Control <> ListViewListItemsControl Then Err.Raise Number:=1, Description:="Collection has changed during enumeration"
-Index = Index + 1
-NoMoreItems = CBool(Index < 0 Or Index >= ListItem.ListSubItems.Count)
-If NoMoreItems = False Then Set VNextItem = ListItem.ListSubItems(Index + 1)
-End Sub
-
 Friend Function FListItemPtr(ByVal Index As Long) As Long
 If ListViewHandle <> 0 Then
     Dim LVI As LVITEM
