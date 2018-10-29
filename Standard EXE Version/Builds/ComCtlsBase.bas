@@ -187,6 +187,7 @@ Private Const WM_INITDIALOG As Long = &H110
 Private Const WM_USER As Long = &H400
 Private Const E_NOTIMPL As Long = &H80004001
 Private Const E_NOINTERFACE As Long = &H80004002
+Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private ShellModHandle As Long, ShellModCount As Long
@@ -984,21 +985,31 @@ Dim VTableData(0 To 2) As Long
 VTableData(0) = GetVTableIPDCB()
 VTableData(1) = 0 ' RefCount is uninstantiated
 VTableData(2) = ObjPtr(This)
-ComCtlsCdlPDEXCallbackPtr = CoTaskMemAlloc(12)
-CopyMemory ByVal ComCtlsCdlPDEXCallbackPtr, VTableData(0), 12
+Dim hMem As Long
+hMem = CoTaskMemAlloc(12)
+If hMem <> 0 Then
+    CopyMemory ByVal hMem, VTableData(0), 12
+    ComCtlsCdlPDEXCallbackPtr = hMem
+End If
 End Function
 
 Private Function GetVTableIPDCB() As Long
-CdlPDEXVTableIPDCB(0) = ProcPtr(AddressOf IPDCB_QueryInterface)
-CdlPDEXVTableIPDCB(1) = ProcPtr(AddressOf IPDCB_AddRef)
-CdlPDEXVTableIPDCB(2) = ProcPtr(AddressOf IPDCB_Release)
-CdlPDEXVTableIPDCB(3) = ProcPtr(AddressOf IPDCB_InitDone)
-CdlPDEXVTableIPDCB(4) = ProcPtr(AddressOf IPDCB_SelectionChange)
-CdlPDEXVTableIPDCB(5) = ProcPtr(AddressOf IPDCB_HandleMessage)
+If CdlPDEXVTableIPDCB(0) = 0 Then
+    CdlPDEXVTableIPDCB(0) = ProcPtr(AddressOf IPDCB_QueryInterface)
+    CdlPDEXVTableIPDCB(1) = ProcPtr(AddressOf IPDCB_AddRef)
+    CdlPDEXVTableIPDCB(2) = ProcPtr(AddressOf IPDCB_Release)
+    CdlPDEXVTableIPDCB(3) = ProcPtr(AddressOf IPDCB_InitDone)
+    CdlPDEXVTableIPDCB(4) = ProcPtr(AddressOf IPDCB_SelectionChange)
+    CdlPDEXVTableIPDCB(5) = ProcPtr(AddressOf IPDCB_HandleMessage)
+End If
 GetVTableIPDCB = VarPtr(CdlPDEXVTableIPDCB(0))
 End Function
 
 Private Function IPDCB_QueryInterface(ByVal Ptr As Long, ByRef IID As CLSID, ByRef pvObj As Long) As Long
+If VarPtr(pvObj) = 0 Then
+    IPDCB_QueryInterface = E_POINTER
+    Exit Function
+End If
 ' IID_IPrintDialogCallback = {5852A2C3-6530-11D1-B6A3-0000F8757BF9}
 If IID.Data1 = &H5852A2C3 And IID.Data2 = &H6530 And IID.Data3 = &H11D1 Then
     If IID.Data4(0) = &HB6 And IID.Data4(1) = &HA3 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
@@ -1188,7 +1199,6 @@ On Error Resume Next
 Call RemoveAllVTableSubclass(VTableInterfaceInPlaceActiveObject)
 Call RemoveAllVTableSubclass(VTableInterfaceControl)
 Call RemoveAllVTableSubclass(VTableInterfacePerPropertyBrowsing)
-Call RemoveAllVTableSubclass(VTableInterfaceEnumeration)
 Dim AppForm As Form, CurrControl As Control
 For Each AppForm In Forms
     For Each CurrControl In AppForm.Controls
