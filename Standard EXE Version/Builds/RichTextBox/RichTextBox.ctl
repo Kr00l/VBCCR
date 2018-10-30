@@ -715,7 +715,6 @@ Private RichTextBoxMouseOver(0 To 1) As Boolean
 Private RichTextBoxFocused As Boolean
 Private RichTextBoxDataObjectValue As Variant
 Private RichTextBoxDataObjectFormat As Variant
-Private RichTextBoxOleCallback As RtfOleCallback
 Private RichTextBoxIsOleCallback As Boolean
 Private RichTextBoxEnabledVisualStyles As Boolean
 Private DispIDMousePointer As Long
@@ -811,9 +810,6 @@ Call RtfLoadRichedMod
 Call SetVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableSubclass(Me, VTableInterfaceControl)
 Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
-Set RichTextBoxOleCallback = New RtfOleCallback
-RichTextBoxOleCallback.FInit Me
-Call SetVTableSubclassIRichEditOleCallback(RichTextBoxOleCallback)
 End Sub
 
 Private Sub UserControl_InitProperties()
@@ -1002,7 +998,6 @@ Private Sub UserControl_Terminate()
 Call RemoveVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
 Call RemoveVTableSubclass(Me, VTableInterfaceControl)
 Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
-Call RemoveVTableSubclassIRichEditOleCallback(RichTextBoxOleCallback)
 Call DestroyRichTextBox
 Call ComCtlsReleaseShellMod
 Call RtfReleaseRichedMod
@@ -1010,7 +1005,6 @@ End Sub
 
 Public Sub IDEStop()
 Attribute IDEStop.VB_MemberFlags = "40"
-Call RemoveVTableSubclassIRichEditOleCallback(RichTextBoxOleCallback)
 Call DestroyRichTextBox
 End Sub
 
@@ -1790,7 +1784,7 @@ If RichTextBoxHandle <> 0 Then
     SendMessage RichTextBoxHandle, EM_SETTYPOGRAPHYOPTIONS, TO_ADVANCEDTYPOGRAPHY, ByVal TO_ADVANCEDTYPOGRAPHY
     If PropTextMode = RtfTextModePlainText Then SendMessage RichTextBoxHandle, EM_SETTEXTMODE, TM_PLAINTEXT, ByVal 0&
     Dim This As OLEGuids.IRichEditOleCallback
-    Set This = RichTextBoxOleCallback
+    Set This = RtfOleCallback(Me)
     If Not This Is Nothing Then
         RichTextBoxIsOleCallback = CBool(SendMessage(RichTextBoxHandle, EM_SETOLECALLBACK, 0, ByVal ObjPtr(This)) <> 0)
     Else
