@@ -100,7 +100,6 @@ UserControl=Builds\CommandLink\CommandLink.ctl
 PropertyPage=Builds\CommandLink\PPCommandLinkGeneral.pag
 Class=CbrBandProperties; Builds\CoolBar\CbrBandProperties.cls
 Class=SbrPanelProperties; Builds\StatusBar\SbrPanelProperties.cls
-Class=RtfOleCallback; Builds\RichTextBox\RtfOleCallback.cls
 Class=TbrButtonProperties; Builds\ToolBar\TbrButtonProperties.cls
 Form=VirtualControlsForm.frm
 UserControl=Builds\FontCombo\FontCombo.ctl

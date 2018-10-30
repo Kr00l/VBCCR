@@ -1,5 +1,11 @@
 List of revisions:
 
+30-Oct-2018
+- Bugfix in VTableHandle.bas concerning 'DeactivateIPAO'.
+  This bug ensures that all kinds of *_Terminate events are fired earlier (on unload) and not on app shutdown.
+- Use of lightweight COM object IRichEditOleCallback in RichTextBoxBase.bas.
+  RtfOleCallback.cls got obselete and was removed.
+
 29-Oct-2018
 - Use of lightweight COM object IEnumVARIANT in VTableHandle.bas.
   Enumeration.cls got obsolete and was removed.
