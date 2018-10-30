@@ -186,7 +186,7 @@ Dim PosRect As OLEGuids.OLERECT
 Dim ClipRect As OLEGuids.OLERECT
 Dim FrameInfo As OLEGuids.OLEINPLACEFRAMEINFO
 Set PropOleObject = This
-If VTableIPAOData.RefCount > 0 Or 1 > 2 Then
+If VTableIPAOData.RefCount > 0 Then
     With VTableIPAOData
     .VTable = GetVTableIPAO()
     Set .OriginalIOleIPAO = This
