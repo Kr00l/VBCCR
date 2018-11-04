@@ -56,7 +56,7 @@ Private Declare Function RemoveProp Lib "user32" Alias "RemovePropW" (ByVal hWnd
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function SysAllocString Lib "oleaut32" (ByVal lpString As Long) As Long
-Private Declare Function DispCallFunc Lib "oleaut32" (ByVal pvInstance As IUnknown, ByVal oVft As Long, ByVal CallConv As Long, ByVal vtReturn As Integer, ByVal cActuals As Long, ByVal prgvt As Long, ByVal prgpvarg As Long, ByRef pvargResult As Variant) As Long
+Private Declare Function DispCallFunc Lib "oleaut32" (ByVal lpvInstance As Long, ByVal oVft As Long, ByVal CallConv As Long, ByVal vtReturn As Integer, ByVal cActuals As Long, ByVal prgvt As Long, ByVal prgpvarg As Long, ByRef pvargResult As Variant) As Long
 Private Declare Function VariantCopyToPtr Lib "oleaut32" Alias "VariantCopy" (ByVal pvargDest As Long, ByRef pvargSrc As Variant) As Long
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 Private Const CC_STDCALL As Long = 4
@@ -133,9 +133,9 @@ End Select
 CATCH_EXCEPTION:
 End Function
 
-Public Function VTableCall(ByVal RetType As VbVarType, ByVal OLEInstance As IUnknown, ByVal Entry As Long, ParamArray ArgList() As Variant) As Variant
+Public Function VTableCall(ByVal RetType As VbVarType, ByVal InterfacePointer As Long, ByVal Entry As Long, ParamArray ArgList() As Variant) As Variant
 Entry = Entry - 1
-Debug.Assert Not (Entry < 0 Or OLEInstance Is Nothing)
+Debug.Assert Not (Entry < 0 Or InterfacePointer = 0)
 Dim VarArgList As Variant, HResult As Long
 VarArgList = ArgList
 If UBound(VarArgList) > -1 Then
@@ -146,9 +146,9 @@ If UBound(VarArgList) > -1 Then
         ArrVarType(i) = VarType(VarArgList(i))
         ArrVarPtr(i) = VarPtr(VarArgList(i))
     Next i
-    HResult = DispCallFunc(OLEInstance, Entry * 4, CC_STDCALL, RetType, i, VarPtr(ArrVarType(0)), VarPtr(ArrVarPtr(0)), VTableCall)
+    HResult = DispCallFunc(InterfacePointer, Entry * 4, CC_STDCALL, RetType, i, VarPtr(ArrVarType(0)), VarPtr(ArrVarPtr(0)), VTableCall)
 Else
-    HResult = DispCallFunc(OLEInstance, Entry * 4, CC_STDCALL, RetType, 0, 0, 0, VTableCall)
+    HResult = DispCallFunc(InterfacePointer, Entry * 4, CC_STDCALL, RetType, 0, 0, 0, VTableCall)
 End If
 Select Case HResult
     Case S_OK
