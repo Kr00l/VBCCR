@@ -974,7 +974,7 @@ If Ambient.UserMode = True And ComCtlsSupportLevel() >= 2 Then
             If Not ProgressBarITaskBarList3 Is Nothing Then
                 Dim hWnd As Long
                 hWnd = GetAncestor(ProgressBarHandle, GA_ROOT)
-                If hWnd <> 0 Then VTableCall vbLong, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressState, hWnd, TBPF_NOPROGRESS
+                If hWnd <> 0 Then VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressState, hWnd, TBPF_NOPROGRESS
             End If
         End If
     End If
@@ -1107,7 +1107,7 @@ If ProgressBarHandle <> 0 Then
                 Case PrbStatePaused
                     TaskBarState = TBPF_PAUSED
             End Select
-            VTableCall vbLong, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, PropValue, 0&, CLng(Me.Max - Me.Min), 0&
+            VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, PropValue, 0&, CLng(Me.Max - Me.Min), 0&
         Else
             If PropMarqueeAnimation = True Then
                 TaskBarState = TBPF_INDETERMINATE
@@ -1115,7 +1115,7 @@ If ProgressBarHandle <> 0 Then
                 TaskBarState = TBPF_NOPROGRESS
             End If
         End If
-        VTableCall vbLong, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressState, hWnd, TaskBarState
+        VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressState, hWnd, TaskBarState
     End If
 End If
 End Sub
@@ -1126,7 +1126,10 @@ On Error Resume Next
 CLSIDFromString StrPtr(CLSID_ITaskBarList), CLSID
 CLSIDFromString StrPtr(IID_ITaskBarList3), IID
 CoCreateInstance CLSID, 0, CLSCTX_INPROC_SERVER, IID, CreateITaskBarList3
-If Not CreateITaskBarList3 Is Nothing Then If VTableCall(vbLong, ObjPtr(CreateITaskBarList3), VTableIndexITaskBarList3HrInit) <> S_OK Then Set CreateITaskBarList3 = Nothing
+If Not CreateITaskBarList3 Is Nothing Then
+    VTableCall vbEmpty, ObjPtr(CreateITaskBarList3), VTableIndexITaskBarList3HrInit
+    If Err.LastDllError <> S_OK Then Set CreateITaskBarList3 = Nothing
+End If
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
