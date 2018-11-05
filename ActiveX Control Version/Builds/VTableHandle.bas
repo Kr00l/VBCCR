@@ -48,6 +48,7 @@ Public Const CTRLINFO_EATS_RETURN As Long = 1
 Public Const CTRLINFO_EATS_ESCAPE As Long = 2
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long)
 Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function SetProp Lib "user32" Alias "SetPropW" (ByVal hWnd As Long, ByVal lpString As Long, ByVal hData As Long) As Long
@@ -134,8 +135,7 @@ CATCH_EXCEPTION:
 End Function
 
 Public Function VTableCall(ByVal RetType As VbVarType, ByVal InterfacePointer As Long, ByVal Entry As Long, ParamArray ArgList() As Variant) As Variant
-Entry = Entry - 1
-Debug.Assert Not (Entry < 0 Or InterfacePointer = 0)
+Debug.Assert Not (Entry < 1 Or InterfacePointer = 0)
 Dim VarArgList As Variant, HResult As Long
 VarArgList = ArgList
 If UBound(VarArgList) > -1 Then
@@ -146,19 +146,11 @@ If UBound(VarArgList) > -1 Then
         ArrVarType(i) = VarType(VarArgList(i))
         ArrVarPtr(i) = VarPtr(VarArgList(i))
     Next i
-    HResult = DispCallFunc(InterfacePointer, Entry * 4, CC_STDCALL, RetType, i, VarPtr(ArrVarType(0)), VarPtr(ArrVarPtr(0)), VTableCall)
+    HResult = DispCallFunc(InterfacePointer, (Entry - 1) * 4, CC_STDCALL, RetType, i, VarPtr(ArrVarType(0)), VarPtr(ArrVarPtr(0)), VTableCall)
 Else
-    HResult = DispCallFunc(InterfacePointer, Entry * 4, CC_STDCALL, RetType, 0, 0, 0, VTableCall)
+    HResult = DispCallFunc(InterfacePointer, (Entry - 1) * 4, CC_STDCALL, RetType, 0, 0, 0, VTableCall)
 End If
-Select Case HResult
-    Case S_OK
-    Case E_INVALIDARG
-        Err.Raise Number:=HResult, Description:="One of the arguments was invalid"
-    Case E_POINTER
-        Err.Raise Number:=HResult, Description:="Function address was null"
-    Case Else
-        Err.Raise HResult
-End Select
+SetLastError HResult ' S_OK will clear the last error code, if any.
 End Function
 
 Public Function VTableInterfaceSupported(ByVal This As OLEGuids.IUnknownUnrestricted, ByVal IIDString As String) As Boolean
