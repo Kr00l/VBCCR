@@ -1,7 +1,7 @@
 List of revisions:
 
-04-Nov-2018
-- Minor internal improvement.
+05-Nov-2018
+- Minor internal improvement in the 'VTableCall' function.
 
 30-Oct-2018
 - Bugfix in VTableHandle.bas concerning 'DeactivateIPAO'.
