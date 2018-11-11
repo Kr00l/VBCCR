@@ -143,6 +143,7 @@ Private LabelAutoSizeFlag As Boolean
 Private LabelDisplayedCaption As String
 Private LabelPaintFrozen As Boolean
 Private LabelMouseOver As Boolean, LabelMouseOverPos As Long
+Private LabelDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -196,6 +197,7 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+LabelDesignMode = Not Ambient.UserMode
 Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -215,6 +217,7 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+LabelDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 If PropFont Is Nothing Then Set PropFont = Ambient.Font
@@ -672,7 +675,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If Ambient.UserMode = True Then
+If LabelDesignMode = False Then
     Select Case PropMousePointer
         Case vbIconPointer, 16, vbCustom
             If PropMousePointer = vbCustom Then
@@ -704,7 +707,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If LabelDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
