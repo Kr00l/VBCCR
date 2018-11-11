@@ -308,6 +308,7 @@ Private DTPickerBackColorBrush As Long
 Private DTPickerCharCodeCache As Long
 Private DTPickerIsClick As Boolean
 Private DTPickerMouseOver As Boolean
+Private DTPickerDesignMode As Boolean, DTPickerTopDesignMode As Boolean
 Private DTPickerIsValueInvalid As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -440,6 +441,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+DTPickerDesignMode = Not Ambient.UserMode
+DTPickerTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 Set PropCalendarFont = Ambient.Font
 PropVisualStyles = True
@@ -478,6 +481,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+DTPickerDesignMode = Not Ambient.UserMode
+DTPickerTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 Set PropCalendarFont = .ReadProperty("CalendarFont", Nothing)
@@ -903,7 +908,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -936,7 +941,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If DTPickerDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If DTPickerHandle <> 0 Then
     Call ComCtlsSetRightToLeft(DTPickerHandle, dwMask)
     If PropRightToLeft = True And PropRightToLeftLayout = True Then
@@ -982,7 +987,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If DTPickerHandle <> 0 And ComCtlsSupportLevel() <= 1 And Ambient.UserMode = True Then
+If DTPickerHandle <> 0 And ComCtlsSupportLevel() <= 1 And DTPickerDesignMode = False Then
     If DTPickerBackColorBrush <> 0 Then DeleteObject DTPickerBackColorBrush
     DTPickerBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -1199,7 +1204,7 @@ Public Property Let MinDate(ByVal Value As Date)
 Select Case Value
     Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
         If Value > Me.MaxDate Then
-            If Ambient.UserMode = False Then
+            If DTPickerDesignMode = True Then
                 MsgBox "A value was specified for the MinDate property that is higher than the current value of MaxDate", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1209,7 +1214,7 @@ Select Case Value
             PropMinDate = Value
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1258,7 +1263,7 @@ Public Property Let MaxDate(ByVal Value As Date)
 Select Case Value
     Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
         If Value < Me.MinDate Then
-            If Ambient.UserMode = False Then
+            If DTPickerDesignMode = True Then
                 MsgBox "A value was specified for the MaxDate property that is lower than the current value of MinDate", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1268,7 +1273,7 @@ Select Case Value
             PropMaxDate = Value
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1330,7 +1335,7 @@ If IsDate(DateValue) Then
         If Changed = False Then Changed = DTPickerIsValueInvalid
         PropValue = DateValue
     Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "A date was specified that does not fall within the MinDate and MaxDate properties", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1342,7 +1347,7 @@ ElseIf IsNull(DateValue) Then
     If PropCheckBox = True Then
         Changed = Not DTPickerIsValueInvalid
     Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Can't set Value to Null when CheckBox property is False", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1350,7 +1355,7 @@ ElseIf IsNull(DateValue) Then
         End If
     End If
 Else
-    If Ambient.UserMode = False Then
+    If DTPickerDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1546,7 +1551,7 @@ End Property
 Public Property Let CustomFormat(ByVal Value As String)
 PropCustomFormat = Value
 If DTPickerHandle <> 0 And PropFormat = DtpFormatCustom Then
-    If Ambient.UserMode = True Then
+    If DTPickerDesignMode = False Then
         If InStr(1, PropCustomFormat, "X") And UserControl.EventsFrozen = True Then
             TimerCustomFormat.Enabled = True
         Else
@@ -1596,7 +1601,7 @@ Public Property Get StartOfWeek() As Integer
 Attribute StartOfWeek.VB_Description = "Returns/sets a value that determines the day of the week [Mon-Sun] displayed in the leftmost column of days."
 Dim CalendarHandle As Long
 CalendarHandle = Me.hWndCalendar
-If CalendarHandle <> 0 And Ambient.UserMode = True Then
+If CalendarHandle <> 0 And DTPickerDesignMode = False Then
     StartOfWeek = LoWord(SendMessage(CalendarHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&)) + 1
 Else
     StartOfWeek = PropStartOfWeek
@@ -1643,7 +1648,7 @@ End Select
 If PropUpDown = True Then dwStyle = dwStyle Or DTS_UPDOWN
 If PropCheckBox = True Then dwStyle = dwStyle Or DTS_SHOWNONE
 If PropAllowUserInput = True Then dwStyle = dwStyle Or DTS_APPCANPARSE
-If Ambient.UserMode = True Then
+If DTPickerDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 4)
@@ -1668,7 +1673,7 @@ Me.MinDate = PropMinDate
 Me.MaxDate = PropMaxDate
 Me.Value = PropValue
 Me.CustomFormat = PropCustomFormat
-If Ambient.UserMode = True Then
+If DTPickerDesignMode = False Then
     If DTPickerHandle <> 0 Then
         If DTPickerBackColorBrush = 0 And ComCtlsSupportLevel() <= 1 Then DTPickerBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(DTPickerHandle, Me, 1)
@@ -1677,7 +1682,7 @@ End If
 End Sub
 
 Private Sub ReCreateDTPicker()
-If Ambient.UserMode = True Then
+If DTPickerDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim Selected As Boolean
@@ -1915,7 +1920,7 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> DTPickerHandle Then
+        If DTPickerTopDesignMode = False And GetFocus() <> DTPickerHandle Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

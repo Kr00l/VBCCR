@@ -514,6 +514,7 @@ Private CoolBarHandle As Long, CoolBarToolTipHandle As Long
 Private CoolBarFontHandle As Long
 Private CoolBarIsClick As Boolean
 Private CoolBarMouseOver As Boolean, CoolBarMouseOverIndex As Long
+Private CoolBarDesignMode As Boolean
 Private CoolBarToolTipIndex As Long
 Private CoolBarDoubleBufferEraseBkgDC As Long
 Private CoolBarAlignable As Boolean
@@ -618,6 +619,7 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then CoolBarAlignable = False Else CoolBarAlignable = True
 On Error GoTo 0
+CoolBarDesignMode = Not Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
@@ -647,7 +649,7 @@ Me.Bands.Add().Width = UserControl.ScaleX((96 * PixelsPerDIP_X()), vbPixels, vbC
 End Sub
 
 Private Sub UserControl_Paint()
-If Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If CoolBarDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
@@ -657,6 +659,7 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then CoolBarAlignable = False Else CoolBarAlignable = True
 On Error GoTo 0
+CoolBarDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -971,7 +974,7 @@ Dim Count As Long
 Count = Me.Bands.Count
 If Count > 0 Then
     Dim i As Long
-    If Ambient.UserMode = True Then
+    If CoolBarDesignMode = False Then
         For i = 1 To Count
             With Me.Bands(i)
             Set .Child = .Child
@@ -1262,7 +1265,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If CoolBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1295,10 +1298,10 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If CoolBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If CoolBarHandle <> 0 Then
     Call ComCtlsSetRightToLeft(CoolBarHandle, dwMask)
-    If Ambient.UserMode = True Then
+    If CoolBarDesignMode = False Then
         Dim Band As CbrBand, Child As Object
         For Each Band In Me.Bands
             Set Child = Band.Child
@@ -1358,7 +1361,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
+If CoolBarDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -1404,9 +1407,9 @@ If CoolBarHandle <> 0 Then
                         RBI.hImageList = Handle
                         SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
+                        If CoolBarDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf CoolBarDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1618,7 +1621,7 @@ Else
     If Value.Type = vbPicTypeBitmap Or Value.Handle = 0 Then
         Set PropPicture = Value
     Else
-        If Ambient.UserMode = False Then
+        If CoolBarDesignMode = True Then
             MsgBox "Invalid picture", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1701,7 +1704,7 @@ End Property
 
 Public Property Let ShowTips(ByVal Value As Boolean)
 PropShowTips = Value
-If CoolBarHandle <> 0 And Ambient.UserMode = True Then
+If CoolBarHandle <> 0 And CoolBarDesignMode = False Then
     If PropShowTips = False Then
         Call DestroyToolTip
     Else
@@ -2585,7 +2588,7 @@ If PropFixedOrder = True Then dwStyle = dwStyle Or RBS_FIXEDORDER
 If PropVariantHeight = True Then dwStyle = dwStyle Or RBS_VARHEIGHT
 If PropDblClickToggle = True Then dwStyle = dwStyle Or RBS_DBLCLKTOGGLE
 If PropVerticalGripper = True Then dwStyle = dwStyle Or RBS_VERTICALGRIPPER
-If Ambient.UserMode = True Then
+If CoolBarDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
@@ -2606,7 +2609,7 @@ If CoolBarHandle <> 0 Then
         SendMessage CoolBarHandle, CCM_SETVERSION, 5, ByVal 0&
     End If
 End If
-If Ambient.UserMode = True Then
+If CoolBarDesignMode = False Then
     If CoolBarHandle <> 0 Then Call ComCtlsSetSubclass(CoolBarHandle, Me, 1)
 Else
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
