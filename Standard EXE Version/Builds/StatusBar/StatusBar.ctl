@@ -357,6 +357,7 @@ Attribute StatusBarParentFormEvents.VB_VarHelpID = -1
 Private StatusBarFontHandle As Long, StatusBarBoldFontHandle As Long
 Private StatusBarIsClick As Boolean
 Private StatusBarMouseOver As Boolean
+Private StatusBarDesignMode As Boolean
 Private StatusBarDoubleBufferEraseBkgDC As Long
 Private StatusBarAlignable As Boolean
 Private DispIDMousePointer As Long
@@ -407,7 +408,7 @@ Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_Show()
-If Ambient.UserMode = False Then
+If StatusBarDesignMode = True Then
     Dim Align As Integer
     If StatusBarAlignable = True Then Align = Extender.Align Else Align = vbAlignNone
     If Align <> vbAlignBottom Then
@@ -424,6 +425,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then StatusBarAlignable = False Else StatusBarAlignable = True
 On Error GoTo 0
+StatusBarDesignMode = Not Ambient.UserMode
 If StatusBarAlignable = True Then Extender.Align = vbAlignBottom
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -440,7 +442,7 @@ PropShowTips = False
 PropBackColor = vbButtonFace
 PropDoubleBuffer = True
 If StatusBarAlignable = True Then StatusBarSizeGripAllowable = CBool((GetWindowLong(UserControl.ContainerHwnd, GWL_STYLE) And WS_THICKFRAME) = WS_THICKFRAME) Else StatusBarSizeGripAllowable = False
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     On Error Resume Next
     With UserControl
     If .ParentControls.Count = 0 Then
@@ -465,6 +467,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then StatusBarAlignable = False Else StatusBarAlignable = True
 On Error GoTo 0
+StatusBarDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -512,7 +515,7 @@ If InitPanelsCount > 0 Then
     Next i
 End If
 End With
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     On Error Resume Next
     With UserControl
     If .ParentControls.Count = 0 Then
@@ -1000,7 +1003,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If StatusBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1033,7 +1036,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If StatusBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If StatusBarHandle <> 0 Then Call ComCtlsSetRightToLeft(StatusBarHandle, dwMask)
 If StatusBarToolTipHandle <> 0 Then
     If PropRightToLeft = True Then
@@ -1127,7 +1130,7 @@ End Property
 
 Public Property Let ShowTips(ByVal Value As Boolean)
 PropShowTips = Value
-If StatusBarHandle <> 0 And Ambient.UserMode = True Then
+If StatusBarHandle <> 0 And StatusBarDesignMode = False Then
     If PropShowTips = False Then
         Call DestroyToolTip
     Else
@@ -1468,7 +1471,7 @@ Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or WS_CLIPSIBLINGS Or CCS_BOTTOM
 If StatusBarSizeGripAllowable = True And PropAllowSizeGrip = True Then dwStyle = dwStyle Or SBARS_SIZEGRIP
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
@@ -1481,7 +1484,7 @@ Me.Style = PropStyle
 Me.SimpleText = PropSimpleText
 Me.ShowTips = PropShowTips
 Me.BackColor = PropBackColor
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     If StatusBarHandle <> 0 Then Call ComCtlsSetSubclass(StatusBarHandle, Me, 1)
 Else
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
