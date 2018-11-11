@@ -1,5 +1,8 @@
 List of revisions:
 
+11-Nov-2018
+- Internal improvement concerning design-mode handling.
+
 05-Nov-2018
 - Minor internal improvement in the 'VTableCall' function.
 
