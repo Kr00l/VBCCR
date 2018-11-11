@@ -159,6 +159,7 @@ Private IPAddressHandle As Long, IPAddressEditHandle(1 To 4) As Long
 Private IPAddressFontHandle As Long
 Private IPAddressCharCodeCache As Long
 Private IPAddressMouseOver(0 To 5) As Boolean
+Private IPAddressDesignMode As Boolean, IPAddressTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -230,6 +231,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+IPAddressDesignMode = Not Ambient.UserMode
+IPAddressTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -240,6 +243,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+IPAddressDesignMode = Not Ambient.UserMode
+IPAddressTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -584,7 +589,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If IPAddressDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -651,7 +656,7 @@ PropMax(4) = 255
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
-If Ambient.UserMode = True Then
+If IPAddressDesignMode = False Then
     If IPAddressHandle <> 0 Then
         Call ComCtlsSetSubclass(IPAddressHandle, Me, 1)
         If IPAddressEditHandle(1) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(1), Me, 2)
@@ -664,7 +669,7 @@ End If
 End Sub
 
 Private Sub ReCreateIPAddress()
-If Ambient.UserMode = True Then
+If IPAddressDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim FieldText(1 To 4) As String, Field As Long
@@ -842,7 +847,7 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If GetFocus() <> IPAddressHandle And (GetFocus() <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (GetFocus() <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (GetFocus() <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (GetFocus() <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
+        If IPAddressTopDesignMode = False And GetFocus() <> IPAddressHandle And (GetFocus() <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (GetFocus() <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (GetFocus() <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (GetFocus() <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

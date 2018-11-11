@@ -380,6 +380,7 @@ Private FontComboDroppedDownIndex As Long
 Private FontComboIMCHandle As Long
 Private FontComboCharCodeCache As Long
 Private FontComboMouseOver(0 To 2) As Boolean
+Private FontComboDesignMode As Boolean, FontComboTopDesignMode As Boolean
 Private FontComboTopIndex As Long
 Private FontComboResizeFrozen As Boolean
 Private FontComboAutoDragInSel As Boolean, FontComboAutoDragIsActive As Boolean
@@ -519,6 +520,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+FontComboDesignMode = Not Ambient.UserMode
+FontComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -552,6 +555,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+FontComboDesignMode = Not Ambient.UserMode
+FontComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -672,7 +677,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If Ambient.UserMode = False And PropertyName = "DisplayName" And PropStyle = FtcStyleDropDownList Then
+If FontComboDesignMode = True And PropertyName = "DisplayName" And PropStyle = FtcStyleDropDownList Then
     If FontComboHandle <> 0 Then
         If SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
             Dim Buffer As String
@@ -1110,7 +1115,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If FontComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1174,7 +1179,7 @@ End Property
 
 Public Property Get BuddyControl() As Variant
 Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     If PropBuddyControlInit = False And PropBuddyControl Is Nothing Then
         If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
         PropBuddyControlInit = True
@@ -1190,7 +1195,7 @@ Me.BuddyControl = Value
 End Property
 
 Public Property Let BuddyControl(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     If FontComboHandle <> 0 Then
         Dim Success As Boolean, Handle As Long, ShadowFontCombo As FontCombo
         Set ShadowFontCombo = Me
@@ -1254,7 +1259,7 @@ End Property
 Public Property Let Style(ByVal Value As FtcStyleConstants)
 Select Case Value
     Case FtcStyleDropDownCombo, FtcStyleSimpleCombo, FtcStyleDropDownList
-        If Ambient.UserMode = True Then
+        If FontComboDesignMode = False Then
             Err.Raise Number:=382, Description:="Style property is read-only at run time"
         Else
             PropStyle = Value
@@ -1326,7 +1331,7 @@ Select Case PropStyle
             Text = PropText
         End If
     Case FtcStyleDropDownList
-        If FontComboHandle <> 0 And Ambient.UserMode = True Then
+        If FontComboHandle <> 0 And FontComboDesignMode = False Then
             Dim SelIndex As Long
             SelIndex = SendMessage(FontComboHandle, CB_GETCURSEL, 0, ByVal 0&)
             If Not SelIndex = CB_ERR Then Text = Me.List(SelIndex)
@@ -1345,7 +1350,7 @@ Select Case PropStyle
         PropText = Value
         If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     Case FtcStyleDropDownList
-        If FontComboHandle <> 0 And Ambient.UserMode = True Then
+        If FontComboHandle <> 0 And FontComboDesignMode = False Then
             Dim Index As Long
             Index = SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(Value))
             If Not Index = CB_ERR Then
@@ -1391,7 +1396,7 @@ Select Case Value
     Case 1 To 30
         PropMaxDropDownItems = Value
     Case Else
-        If Ambient.UserMode = False Then
+        If FontComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1408,7 +1413,7 @@ IntegralHeight = PropIntegralHeight
 End Property
 
 Public Property Let IntegralHeight(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     Err.Raise Number:=382, Description:="IntegralHeight property is read-only at run time"
 Else
     PropIntegralHeight = Value
@@ -1428,7 +1433,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If FontComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1451,7 +1456,7 @@ End Property
 
 Public Property Let HorizontalExtent(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If FontComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1475,7 +1480,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 And Ambient.UserMode = True Then
+If FontComboHandle <> 0 And FontComboEditHandle <> 0 And FontComboDesignMode = False Then
     If GetFocus() = FontComboEditHandle Then Call ComCtlsSetIMEMode(FontComboEditHandle, FontComboIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1523,7 +1528,7 @@ Select Case Value
             Erase FontComboRecentItems()
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If FontComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1540,7 +1545,7 @@ End Property
 
 Public Property Let RecentBackColor(ByVal Value As OLE_COLOR)
 PropRecentBackColor = Value
-If FontComboHandle <> 0 And Ambient.UserMode = True Then
+If FontComboHandle <> 0 And FontComboDesignMode = False Then
     If FontComboRecentBackColorBrush <> 0 Then DeleteObject FontComboRecentBackColorBrush
     FontComboRecentBackColorBrush = CreateSolidBrush(WinColor(PropRecentBackColor))
 End If
@@ -1677,7 +1682,7 @@ If PropLocked = True Then Me.Locked = PropLocked
 Me.ExtendedUI = PropExtendedUI
 Me.MaxDropDownItems = PropMaxDropDownItems
 Me.RecentMax = GetRecentMax()
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     If FontComboHandle <> 0 Then
         If FontComboRecentBackColorBrush = 0 Then FontComboRecentBackColorBrush = CreateSolidBrush(WinColor(PropRecentBackColor))
         Call ComCtlsSetSubclass(FontComboHandle, Me, 1)
@@ -2076,7 +2081,7 @@ End If
 End Sub
 
 Private Sub SetupFontComboItems()
-If Ambient.UserMode = False Then
+If FontComboDesignMode = True Then
     If PropStyle <> FtcStyleSimpleCombo Then Exit Sub
 End If
 If FontComboHandle <> 0 Then
@@ -2272,7 +2277,7 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> FontComboHandle And (GetFocus() <> FontComboEditHandle Or FontComboEditHandle = 0) Then
+        If FontComboTopDesignMode = False And GetFocus() <> FontComboHandle And (GetFocus() <> FontComboEditHandle Or FontComboEditHandle = 0) Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

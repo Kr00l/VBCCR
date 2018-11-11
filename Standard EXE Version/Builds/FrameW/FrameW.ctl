@@ -148,6 +148,7 @@ Private Const BF_MONO As Long = &H8000&
 Implements ISubclass
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private FrameMouseOver As Boolean
+Private FrameDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
 Private WithEvents PropFont As StdFont
@@ -208,6 +209,7 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDBorderStyle = 0 Then DispIDBorderStyle = GetDispID(Me, "BorderStyle")
+FrameDesignMode = Not Ambient.UserMode
 Set Me.Font = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -221,12 +223,13 @@ If PropRightToLeft = False Then PropAlignment = vbLeftJustify Else PropAlignment
 PropTransparent = False
 Set PropPicture = Nothing
 If PropRightToLeft = False Then PropPictureAlignment = CCLeftRightAlignmentLeft Else PropPictureAlignment = CCLeftRightAlignmentRight
-If Ambient.UserMode = True Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
+If FrameDesignMode = False Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDBorderStyle = 0 Then DispIDBorderStyle = GetDispID(Me, "BorderStyle")
+FrameDesignMode = Not Ambient.UserMode
 With PropBag
 Set Me.Font = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -249,7 +252,7 @@ PropTransparent = .ReadProperty("Transparent", False)
 Set PropPicture = .ReadProperty("Picture", Nothing)
 PropPictureAlignment = .ReadProperty("PictureAlignment", CCLeftRightAlignmentLeft)
 End With
-If Ambient.UserMode = True Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
+If FrameDesignMode = False Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
 End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
@@ -603,7 +606,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If Ambient.UserMode = True Then
+If FrameDesignMode = False Then
     Select Case PropMousePointer
         Case vbIconPointer, 16, vbCustom
             If PropMousePointer = vbCustom Then
@@ -635,7 +638,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If FrameDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
