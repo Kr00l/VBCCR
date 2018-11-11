@@ -134,6 +134,7 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private AnimationHandle As Long
 Private AnimationCharCodeCache As Long
 Private AnimationMouseOver As Boolean
+Private AnimationDesignMode As Boolean
 Private AnimationFileName As String
 Private AnimationResID As Integer
 Private AnimationResFileName As String
@@ -215,6 +216,7 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+AnimationDesignMode = Not Ambient.UserMode
 Me.BackColor = Ambient.BackColor
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -226,7 +228,7 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropAutoPlay = True
 PropBackStyle = CCBackStyleTransparent
 PropCenter = False
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     Call CreateAnimation
 Else
     ImageFilm.Visible = True
@@ -235,6 +237,7 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+AnimationDesignMode = Not Ambient.UserMode
 With PropBag
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -250,7 +253,7 @@ PropAutoPlay = .ReadProperty("AutoPlay", True)
 PropBackStyle = .ReadProperty("BackStyle", CCBackStyleTransparent)
 PropCenter = .ReadProperty("Center", False)
 End With
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     Call CreateAnimation
 Else
     ImageFilm.Visible = True
@@ -275,7 +278,7 @@ End With
 End Sub
 
 Private Sub UserControl_Paint()
-If Ambient.UserMode = False Then
+If AnimationDesignMode = True Then
     Dim RC As RECT
     RC.Left = 0
     RC.Top = 0
@@ -351,7 +354,7 @@ If DPICorrectionFactor() <> 1 Then
     .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
 End If
 If AnimationHandle <> 0 Then MoveWindow AnimationHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-If Ambient.UserMode = False Then
+If AnimationDesignMode = True Then
     ImageFilm.Left = (.ScaleWidth / 2) - (ImageFilm.Width / 2)
     ImageFilm.Top = (.ScaleHeight / 2) - (ImageFilm.Height / 2)
 End If
@@ -589,7 +592,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If AnimationDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -621,7 +624,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -707,14 +710,14 @@ If PropBackStyle = CCBackStyleTransparent Then dwStyle = dwStyle Or ACS_TRANSPAR
 If PropCenter = True Then dwStyle = dwStyle Or ACS_CENTER
 AnimationHandle = CreateWindowEx(dwExStyle, StrPtr("SysAnimate32"), StrPtr("Animation"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 Me.Enabled = UserControl.Enabled
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     If AnimationHandle <> 0 Then Call ComCtlsSetSubclass(AnimationHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
 Private Sub ReCreateAnimation()
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim Loaded As Boolean, FileName As String, ResID As Integer, ResFileName As String
