@@ -305,6 +305,7 @@ Private MCIWndCharCodeCache As Long
 Private MCIWndCommand As String
 Private MCIWndIsClick As Boolean
 Private MCIWndMouseOver As Boolean
+Private MCIWndDesignMode As Boolean, MCIWndTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -388,6 +389,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+MCIWndDesignMode = Not Ambient.UserMode
+MCIWndTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -409,6 +412,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+MCIWndDesignMode = Not Ambient.UserMode
+MCIWndTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -764,7 +769,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If MCIWndDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -793,7 +798,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If MCIWndHandle <> 0 And Ambient.UserMode = True Then
+If MCIWndHandle <> 0 And MCIWndDesignMode = False Then
     If MCIWndBackColorBrush <> 0 Then DeleteObject MCIWndBackColorBrush
     MCIWndBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -912,7 +917,7 @@ End Property
 
 Public Property Let AllowOpen(ByVal Value As Boolean)
 PropAllowOpen = Value
-If MCIWndHandle <> 0 And Ambient.UserMode = True Then
+If MCIWndHandle <> 0 And MCIWndDesignMode = False Then
     If PropAllowOpen = False Then
         SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_NOOPEN, ByVal MCIWNDF_NOOPEN
     Else
@@ -966,7 +971,7 @@ End Property
 
 Public Property Let TimerFreq(ByVal Value As Integer)
 If Value <= 0 Then
-    If Ambient.UserMode = False Then
+    If MCIWndDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -989,7 +994,7 @@ End Property
 
 Public Property Let Zoom(ByVal Value As Long)
 If Value <= 0 Then
-    If Ambient.UserMode = False Then
+    If MCIWndDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1063,7 +1068,7 @@ If PropErrorDlg = False Then dwStyle = dwStyle Or MCIWNDF_NOERRORDLG
 If PropRecord = True Then dwStyle = dwStyle Or MCIWNDF_RECORD
 If PropPlaybar = False Then dwStyle = dwStyle Or MCIWNDF_NOPLAYBAR
 If PropMenu = False Then dwStyle = dwStyle Or MCIWNDF_NOMENU
-If PropAllowOpen = False Or Ambient.UserMode = False Then dwStyle = dwStyle Or MCIWNDF_NOOPEN
+If PropAllowOpen = False Or MCIWndDesignMode = True Then dwStyle = dwStyle Or MCIWNDF_NOOPEN
 If PropAutoSizeWindow = False Then dwStyle = dwStyle Or MCIWNDF_NOAUTOSIZEWINDOW
 If PropAutoSizeMovie = False Then dwStyle = dwStyle Or MCIWNDF_NOAUTOSIZEMOVIE
 Select Case PropCaption
@@ -1088,7 +1093,7 @@ Me.VisualStyles = PropVisualStyles
 Me.Repeat = PropRepeat
 Me.TimerFreq = PropTimerFreq
 Me.Zoom = PropZoom
-If Ambient.UserMode = True Then
+If MCIWndDesignMode = False Then
     If MCIWndHandle <> 0 Then
         If MCIWndBackColorBrush = 0 Then MCIWndBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(MCIWndHandle, Me, 1)
@@ -1487,7 +1492,7 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> MCIWndHandle Then
+        If MCIWndTopDesignMode = False And GetFocus() <> MCIWndHandle Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
