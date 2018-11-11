@@ -211,6 +211,7 @@ Private CommandLinkValue As Boolean
 Private CommandLinkFontHandle As Long
 Private CommandLinkCharCodeCache As Long
 Private CommandLinkMouseOver As Boolean
+Private CommandLinkDesignMode As Boolean, CommandLinkTopDesignMode As Boolean
 Private CommandLinkImageListHandle As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -340,6 +341,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+CommandLinkDesignMode = Not Ambient.UserMode
+CommandLinkTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 PropDisplayAsDefault = False
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -355,7 +358,7 @@ PropHint = vbNullString
 Set PropPicture = Nothing
 PropTransparent = False
 Call CreateCommandLink
-If CommandLinkHandle = 0 And ComCtlsSupportLevel() <= 1 And Ambient.UserMode = False Then
+If CommandLinkHandle = 0 And ComCtlsSupportLevel() <= 1 And CommandLinkDesignMode = True Then
     MsgBox "The CommandLink control requires at least version 6.1 of comctl32.dll." & vbLf & _
     "In order to use it, you have to define a manifest file for your application." & vbLf & _
     "For using the control in the VB6 IDE, define a manifest file for VB6.EXE.", vbCritical + vbOKOnly
@@ -365,6 +368,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+CommandLinkDesignMode = Not Ambient.UserMode
+CommandLinkTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 PropDisplayAsDefault = .ReadProperty("Default", False)
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -783,7 +788,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If CommandLinkDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -815,7 +820,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If CommandLinkDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -856,7 +861,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state."
-If Ambient.UserMode = True Then
+If CommandLinkDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -905,9 +910,9 @@ If CommandLinkHandle <> 0 Then
                     If Success = True Then
                         Call SetImageList(Handle)
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
+                        If CommandLinkDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf CommandLinkDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1054,7 +1059,7 @@ Me.Enabled = UserControl.Enabled
 Me.Caption = PropCaption
 Me.Hint = PropHint
 If Not PropPicture Is Nothing Then Set Me.Picture = PropPicture
-If Ambient.UserMode = True Then
+If CommandLinkDesignMode = False Then
     If CommandLinkHandle <> 0 Then Call ComCtlsSetSubclass(CommandLinkHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
@@ -1235,7 +1240,7 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> CommandLinkHandle Then
+        If CommandLinkTopDesignMode = False And GetFocus() <> CommandLinkHandle Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

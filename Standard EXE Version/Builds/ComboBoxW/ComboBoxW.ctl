@@ -311,6 +311,7 @@ Private ComboBoxListBackColorBrush As Long
 Private ComboBoxIMCHandle As Long
 Private ComboBoxCharCodeCache As Long
 Private ComboBoxMouseOver(0 To 2) As Boolean
+Private ComboBoxDesignMode As Boolean, ComboBoxTopDesignMode As Boolean
 Private ComboBoxNewIndex As Long
 Private ComboBoxTopIndex As Long
 Private ComboBoxResizeFrozen As Boolean
@@ -413,6 +414,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+ComboBoxDesignMode = Not Ambient.UserMode
+ComboBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -449,6 +452,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+ComboBoxDesignMode = Not Ambient.UserMode
+ComboBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -576,7 +581,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If Ambient.UserMode = False And PropertyName = "DisplayName" And PropStyle = CboStyleDropDownList Then
+If ComboBoxDesignMode = True And PropertyName = "DisplayName" And PropStyle = CboStyleDropDownList Then
     If ComboBoxHandle <> 0 Then
         If SendMessage(ComboBoxHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
             Dim Buffer As String
@@ -964,7 +969,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ComboBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1033,7 +1038,7 @@ End Property
 
 Public Property Let Redraw(ByVal Value As Boolean)
 PropRedraw = Value
-If ComboBoxHandle <> 0 And Ambient.UserMode = True Then
+If ComboBoxHandle <> 0 And ComboBoxDesignMode = False Then
     SendMessage ComboBoxHandle, WM_SETREDRAW, IIf(PropRedraw = True, 1, 0), ByVal 0&
     If PropRedraw = True Then Me.Refresh
 End If
@@ -1047,7 +1052,7 @@ End Property
 Public Property Let Style(ByVal Value As CboStyleConstants)
 Select Case Value
     Case CboStyleDropDownCombo, CboStyleSimpleCombo, CboStyleDropDownList
-        If Ambient.UserMode = True Then
+        If ComboBoxDesignMode = False Then
             Err.Raise Number:=382, Description:="Style property is read-only at run time"
         Else
             PropStyle = Value
@@ -1083,7 +1088,7 @@ Select Case PropStyle
             Text = PropText
         End If
     Case CboStyleDropDownList
-        If ComboBoxHandle <> 0 And Ambient.UserMode = True Then
+        If ComboBoxHandle <> 0 And ComboBoxDesignMode = False Then
             Dim SelIndex As Long
             SelIndex = SendMessage(ComboBoxHandle, CB_GETCURSEL, 0, ByVal 0&)
             If Not SelIndex = CB_ERR Then Text = Me.List(SelIndex)
@@ -1102,7 +1107,7 @@ Select Case PropStyle
         PropText = Value
         If ComboBoxHandle <> 0 And ComboBoxEditHandle <> 0 Then SendMessage ComboBoxEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     Case CboStyleDropDownList
-        If ComboBoxHandle <> 0 And Ambient.UserMode = True Then
+        If ComboBoxHandle <> 0 And ComboBoxDesignMode = False Then
             Dim Index As Long
             Index = SendMessage(ComboBoxHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(Value))
             If Not Index = CB_ERR Then
@@ -1149,7 +1154,7 @@ Select Case Value
         PropMaxDropDownItems = Value
         ComboBoxDropDownHeightState = False
     Case Else
-        If Ambient.UserMode = False Then
+        If ComboBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1166,7 +1171,7 @@ IntegralHeight = PropIntegralHeight
 End Property
 
 Public Property Let IntegralHeight(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If ComboBoxDesignMode = False Then
     Err.Raise Number:=382, Description:="IntegralHeight property is read-only at run time"
 Else
     PropIntegralHeight = Value
@@ -1182,7 +1187,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ComboBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1275,7 +1280,7 @@ End Property
 
 Public Property Let HorizontalExtent(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ComboBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1322,7 +1327,7 @@ End Property
 Public Property Let DrawMode(ByVal Value As CboDrawModeConstants)
 Select Case Value
     Case CboDrawModeNormal, CboDrawModeOwnerDrawFixed, CboDrawModeOwnerDrawVariable
-        If Ambient.UserMode = True Then
+        If ComboBoxDesignMode = False Then
             Err.Raise Number:=382, Description:="DrawMode property is read-only at run time"
         Else
             PropDrawMode = Value
@@ -1346,7 +1351,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If ComboBoxHandle <> 0 And ComboBoxEditHandle <> 0 And Ambient.UserMode = True Then
+If ComboBoxHandle <> 0 And ComboBoxEditHandle <> 0 And ComboBoxDesignMode = False Then
     If GetFocus() = ComboBoxEditHandle Then Call ComCtlsSetIMEMode(ComboBoxEditHandle, ComboBoxIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1572,7 +1577,7 @@ If PropLocked = True Then Me.Locked = PropLocked
 Me.ExtendedUI = PropExtendedUI
 Me.MaxDropDownItems = PropMaxDropDownItems
 If Not PropCueBanner = vbNullString Then Me.CueBanner = PropCueBanner
-If Ambient.UserMode = True Then
+If ComboBoxDesignMode = False Then
     If ComboBoxHandle <> 0 Then
         ComboBoxInitFieldHeight = SendMessage(ComboBoxHandle, CB_GETITEMHEIGHT, -1, ByVal 0&)
         If ComboBoxListBackColorBrush = 0 Then ComboBoxListBackColorBrush = CreateSolidBrush(WinColor(PropListBackColor))
@@ -1597,7 +1602,7 @@ End If
 End Sub
 
 Private Sub ReCreateComboBox()
-If Ambient.UserMode = True Then
+If ComboBoxDesignMode = False Then
     Dim Locked As Boolean
     With Me
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
@@ -1699,7 +1704,7 @@ Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
-If PropRedraw = True Or Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If PropRedraw = True Or ComboBoxDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Public Property Get SelStart() As Long
@@ -2075,7 +2080,7 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> ComboBoxHandle And (GetFocus() <> ComboBoxEditHandle Or ComboBoxEditHandle = 0) Then
+        If ComboBoxTopDesignMode = False And GetFocus() <> ComboBoxHandle And (GetFocus() <> ComboBoxEditHandle Or ComboBoxEditHandle = 0) Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
