@@ -1018,6 +1018,7 @@ Private ListViewIMCHandle As Long
 Private ListViewCharCodeCache As Long
 Private ListViewIsClick As Boolean
 Private ListViewMouseOver As Boolean
+Private ListViewDesignMode As Boolean, ListViewTopDesignMode As Boolean
 Private ListViewFocusIndex As Long
 Private ListViewLabelInEdit As Boolean
 Private ListViewStartLabelEdit As Boolean
@@ -1219,6 +1220,8 @@ If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
 If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
 If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
 If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
+ListViewDesignMode = Not Ambient.UserMode
+ListViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = LvwVisualThemeStandard
@@ -1286,7 +1289,7 @@ PropVirtualMode = False
 PropVirtualItemCount = 0
 PropVirtualDisabledInfos = 0
 Call CreateListView
-If Ambient.UserMode = False Then
+If ListViewDesignMode = True Then
     Dim LVI As LVITEM, Buffer As String
     With LVI
     .Mask = LVIF_TEXT Or LVIF_INDENT
@@ -1308,6 +1311,8 @@ If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
 If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
 If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
 If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
+ListViewDesignMode = Not Ambient.UserMode
+ListViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -1381,7 +1386,7 @@ PropVirtualItemCount = .ReadProperty("VirtualItemCount", 0)
 PropVirtualDisabledInfos = .ReadProperty("VirtualDisabledInfos", 0)
 End With
 Call CreateListView
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If Not PropIconsName = "(None)" Or Not PropSmallIconsName = "(None)" Or Not PropColumnHeaderIconsName = "(None)" Or Not PropGroupIconsName = "(None)" Then TimerImageList.Enabled = True
 Else
     Dim LVI As LVITEM, Buffer As String
@@ -1572,7 +1577,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If Ambient.UserMode = False And PropertyName = "DisplayName" Then
+If ListViewDesignMode = True And PropertyName = "DisplayName" Then
     If ListViewHandle <> 0 Then
         If SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) > 0 Then Me.FListItemText(1, 0) = Ambient.DisplayName
     End If
@@ -1980,7 +1985,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ListViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -2031,7 +2036,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropHotMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ListViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -2082,7 +2087,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropHeaderMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ListViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -2114,7 +2119,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -2170,7 +2175,7 @@ End Property
 
 Public Property Get Icons() As Variant
 Attribute Icons.VB_Description = "Returns/sets the image list control to be used for the icons."
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If PropIconsInit = False And PropIconsControl Is Nothing Then
         If Not PropIconsName = "(None)" Then Me.Icons = PropIconsName
         PropIconsInit = True
@@ -2186,7 +2191,7 @@ Me.Icons = Value
 End Property
 
 Public Property Let Icons(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If ListViewHandle <> 0 Then
         Dim Success As Boolean, Handle As Long
         On Error Resume Next
@@ -2214,7 +2219,7 @@ If Ambient.UserMode = True Then
                             PropIconsName = Value
                             Set PropIconsControl = ControlEnum
                             Exit For
-                        ElseIf Ambient.UserMode = False Then
+                        ElseIf ListViewDesignMode = True Then
                             PropIconsName = Value
                             Success = True
                             Exit For
@@ -2243,7 +2248,7 @@ End Property
 
 Public Property Get SmallIcons() As Variant
 Attribute SmallIcons.VB_Description = "Returns/sets the image list control to be used for the small icons."
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If PropSmallIconsInit = False And PropSmallIconsControl Is Nothing Then
         If Not PropSmallIconsName = "(None)" Then Me.SmallIcons = PropSmallIconsName
         PropSmallIconsInit = True
@@ -2259,7 +2264,7 @@ Me.SmallIcons = Value
 End Property
 
 Public Property Let SmallIcons(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If ListViewHandle <> 0 Then
         Dim Success As Boolean, Handle As Long, Size As SIZEAPI
         If PropView = LvwViewList Then
@@ -2294,9 +2299,9 @@ If Ambient.UserMode = True Then
                         If Success = True Then
                             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
                             PropSmallIconsName = Value
-                            If Ambient.UserMode = True Then Set PropSmallIconsControl = ControlEnum
+                            If ListViewDesignMode = False Then Set PropSmallIconsControl = ControlEnum
                             Exit For
-                        ElseIf Ambient.UserMode = False Then
+                        ElseIf ListViewDesignMode = True Then
                             PropSmallIconsName = Value
                             Success = True
                             Exit For
@@ -2343,7 +2348,7 @@ End Property
 
 Public Property Get ColumnHeaderIcons() As Variant
 Attribute ColumnHeaderIcons.VB_Description = "Returns/sets the image list control to be used for the column header icons."
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If PropColumnHeaderIconsInit = False And PropColumnHeaderIconsControl Is Nothing Then
         If Not PropColumnHeaderIconsName = "(None)" Then Me.ColumnHeaderIcons = PropColumnHeaderIconsName
         PropColumnHeaderIconsInit = True
@@ -2359,7 +2364,7 @@ Me.ColumnHeaderIcons = Value
 End Property
 
 Public Property Let ColumnHeaderIcons(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
     If ListViewHandle <> 0 And ListViewHeaderHandle <> 0 Then
         Dim Success As Boolean, Handle As Long
@@ -2388,7 +2393,7 @@ If Ambient.UserMode = True Then
                             PropColumnHeaderIconsName = Value
                             Set PropColumnHeaderIconsControl = ControlEnum
                             Exit For
-                        ElseIf Ambient.UserMode = False Then
+                        ElseIf ListViewDesignMode = True Then
                             PropColumnHeaderIconsName = Value
                             Success = True
                             Exit For
@@ -2421,7 +2426,7 @@ End Property
 
 Public Property Get GroupIcons() As Variant
 Attribute GroupIcons.VB_Description = "Returns/sets the image list control to be used for the group header icons. Requires comctl32.dll version 6.1 or higher."
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If PropGroupIconsInit = False And PropGroupIconsControl Is Nothing Then
         If Not PropGroupIconsName = "(None)" Then Me.GroupIcons = PropGroupIconsName
         PropGroupIconsInit = True
@@ -2437,7 +2442,7 @@ Me.GroupIcons = Value
 End Property
 
 Public Property Let GroupIcons(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If ListViewHandle <> 0 Then
         Dim Success As Boolean, Handle As Long
         On Error Resume Next
@@ -2465,7 +2470,7 @@ If Ambient.UserMode = True Then
                             PropGroupIconsName = Value
                             Set PropGroupIconsControl = ControlEnum
                             Exit For
-                        ElseIf Ambient.UserMode = False Then
+                        ElseIf ListViewDesignMode = True Then
                             PropGroupIconsName = Value
                             Success = True
                             Exit For
@@ -2548,7 +2553,7 @@ End Property
 
 Public Property Let Redraw(ByVal Value As Boolean)
 PropRedraw = Value
-If ListViewHandle <> 0 And Ambient.UserMode = True Then
+If ListViewHandle <> 0 And ListViewDesignMode = False Then
     SendMessage ListViewHandle, WM_SETREDRAW, IIf(PropRedraw = True, 1, 0), ByVal 0&
     If PropRedraw = True Then Me.Refresh
 End If
@@ -2564,7 +2569,7 @@ Public Property Let View(ByVal Value As LvwViewConstants)
 Select Case Value
     Case LvwViewIcon, LvwViewSmallIcon, LvwViewList, LvwViewReport, LvwViewTile
         If PropVirtualMode = True And Value = LvwViewTile Then
-            If Ambient.UserMode = False Then
+            If ListViewDesignMode = True Then
                 MsgBox "View must not be 4 - Tile when VirtualMode is True", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -2575,7 +2580,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If ListViewHandle <> 0 And Ambient.UserMode = True Then
+If ListViewHandle <> 0 And ListViewDesignMode = False Then
     If ComCtlsSupportLevel() >= 1 Then
         Dim NewView As Long
         Select Case PropView
@@ -2631,7 +2636,7 @@ Public Property Let Arrange(ByVal Value As LvwArrangeConstants)
 Select Case Value
     Case LvwArrangeNone, LvwArrangeAutoLeft, LvwArrangeAutoTop, LvwArrangeLeft, LvwArrangeTop
         If PropVirtualMode = True And Value <> LvwArrangeNone Then
-            If Ambient.UserMode = False Then
+            If ListViewDesignMode = True Then
                 MsgBox "Arrange must be 0 - None when VirtualMode is True", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -2642,7 +2647,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If ListViewHandle <> 0 And Ambient.UserMode = True Then
+If ListViewHandle <> 0 And ListViewDesignMode = False Then
     Dim dwStyle As Long
     dwStyle = GetWindowLong(ListViewHandle, GWL_STYLE)
     If (dwStyle And LVS_AUTOARRANGE) = LVS_AUTOARRANGE Then dwStyle = dwStyle And Not LVS_AUTOARRANGE
@@ -2824,7 +2829,7 @@ End Property
 
 Public Property Let Sorted(ByVal Value As Boolean)
 If PropVirtualMode = True And Value = True Then
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "Sorted must be False when VirtualMode is True", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2832,7 +2837,7 @@ If PropVirtualMode = True And Value = True Then
     End If
 End If
 PropSorted = Value
-If PropSorted = True And Ambient.UserMode = True Then Call SortListItems
+If PropSorted = True And ListViewDesignMode = False Then Call SortListItems
 UserControl.PropertyChanged "Sorted"
 End Property
 
@@ -2843,7 +2848,7 @@ End Property
 
 Public Property Let SortKey(ByVal Value As Integer)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2851,7 +2856,7 @@ If Value < 0 Then
     End If
 End If
 PropSortKey = Value
-If PropSorted = True And Ambient.UserMode = True Then Call SortListItems
+If PropSorted = True And ListViewDesignMode = False Then Call SortListItems
 UserControl.PropertyChanged "SortKey"
 End Property
 
@@ -2867,7 +2872,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If PropSorted = True And Ambient.UserMode = True Then Call SortListItems
+If PropSorted = True And ListViewDesignMode = False Then Call SortListItems
 UserControl.PropertyChanged "SortOrder"
 End Property
 
@@ -2883,7 +2888,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If PropSorted = True And Ambient.UserMode = True Then Call SortListItems
+If PropSorted = True And ListViewDesignMode = False Then Call SortListItems
 UserControl.PropertyChanged "SortType"
 End Property
 
@@ -3024,7 +3029,7 @@ End Property
 
 Public Property Let HoverSelectionTime(ByVal Value As Long)
 If Value <= 0 And Not Value = -1 Then
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -3334,7 +3339,7 @@ Select Case Value
     Case 0 To 20
         PropTileViewLines = Value
     Case Else
-        If Ambient.UserMode = False Then
+        If ListViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -3378,7 +3383,7 @@ End Property
 
 Public Property Let GroupView(ByVal Value As Boolean)
 If PropVirtualMode = True And Value = True Then
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "GroupView must be False when VirtualMode is True", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -3386,7 +3391,7 @@ If PropVirtualMode = True And Value = True Then
     End If
 End If
 PropGroupView = Value
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If ComCtlsSupportLevel() >= 1 Then
         If ListViewHandle <> 0 Then
             SendMessage ListViewHandle, LVM_ENABLEGROUPVIEW, IIf(PropGroupView = True, 1, 0), ByVal 0&
@@ -3406,7 +3411,7 @@ End Property
 
 Public Property Let GroupSubsetCount(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -3501,7 +3506,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If ListViewHandle <> 0 And Ambient.UserMode = True Then
+If ListViewHandle <> 0 And ListViewDesignMode = False Then
     If GetFocus() = ListViewHandle Then
         Call ComCtlsSetIMEMode(ListViewHandle, ListViewIMCHandle, PropIMEMode)
     ElseIf ListViewFilterEditHandle <> 0 Then
@@ -3523,7 +3528,7 @@ VirtualMode = PropVirtualMode
 End Property
 
 Public Property Let VirtualMode(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     Err.Raise Number:=382, Description:="VirtualMode property is read-only at run time"
 Else
     PropVirtualMode = Value
@@ -3546,7 +3551,7 @@ Public Property Let VirtualItemCount(ByVal Value As Long)
 If Value < 0 Or Value > 100000000 Then
     ' According to MSDN:
     ' There is a 100,000,000 item limit on a virtualized list view.
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -3554,7 +3559,7 @@ If Value < 0 Or Value > 100000000 Then
     End If
 End If
 If PropVirtualMode = True Then
-    If ListViewHandle <> 0 And Ambient.UserMode = True Then
+    If ListViewHandle <> 0 And ListViewDesignMode = False Then
         If SendMessage(ListViewHandle, LVM_SETITEMCOUNT, Value, ByVal 0&) = 0 Then Err.Raise 380
         If ListViewListItemsControl = 0 Then
             Dim LVI As LVITEM
@@ -3585,7 +3590,7 @@ End Property
 
 Public Property Let VirtualDisabledInfos(ByVal Value As LvwVirtualPropertyConstants)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ListViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -5275,7 +5280,7 @@ If PropRightToLeft = True Then
     End If
 End If
 Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If (ComCtlsSupportLevel() = 0 Or PropVirtualMode = True) And PropView = LvwViewTile Then PropView = LvwViewIcon
     Select Case PropView
         Case LvwViewIcon
@@ -5311,7 +5316,7 @@ If PropLabelEdit <> LvwLabelEditDisabled Then dwStyle = dwStyle Or LVS_EDITLABEL
 If PropLabelWrap = False Then dwStyle = dwStyle Or LVS_NOLABELWRAP
 If PropHideSelection = False Then dwStyle = dwStyle Or LVS_SHOWSELALWAYS
 If PropHideColumnHeaders = True Then dwStyle = dwStyle Or LVS_NOCOLUMNHEADER
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If PropVirtualMode = True Then dwStyle = dwStyle Or LVS_OWNERDATA
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
@@ -5327,7 +5332,7 @@ If PropView = LvwViewReport Then
     If ListViewHeaderHandle <> 0 Then Call ComCtlsSetSubclass(ListViewHeaderHandle, Me, 4)
 End If
 If ListViewHandle <> 0 Then
-    If Ambient.UserMode = True Then
+    If ListViewDesignMode = False Then
         If PropView = LvwViewTile Then SendMessage ListViewHandle, LVM_SETVIEW, LV_VIEW_TILE, ByVal 0&
         SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_SUBITEMIMAGES, ByVal LVS_EX_SUBITEMIMAGES
         If PropVirtualMode = True Then
@@ -5381,7 +5386,7 @@ If ListViewHandle <> 0 Then
         SendMessage ListViewHandle, CCM_SETVERSION, 5, ByVal 0&
     End If
 End If
-If Ambient.UserMode = True Then
+If ListViewDesignMode = False Then
     If ListViewHandle <> 0 Then
         Call ComCtlsSetSubclass(ListViewHandle, Me, 1)
         Call ComCtlsCreateIMC(ListViewHandle, ListViewIMCHandle)
@@ -5422,7 +5427,7 @@ Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
-If PropRedraw = True Or Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If PropRedraw = True Or ListViewDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Public Function HitTest(ByVal X As Single, ByVal Y As Single, Optional ByRef SubItemIndex As Variant) As LvwListItem
@@ -6821,7 +6826,7 @@ Select Case wMsg
         Static InProc As Boolean
         Dim LabelEditHandle As Long
         LabelEditHandle = Me.hWndLabelEdit
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> ListViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) And (GetFocus() <> ListViewFilterEditHandle Or ListViewFilterEditHandle = 0) Then
+        If ListViewTopDesignMode = False And GetFocus() <> ListViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) And (GetFocus() <> ListViewFilterEditHandle Or ListViewFilterEditHandle = 0) Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN
