@@ -504,6 +504,7 @@ Private TreeViewIMCHandle As Long
 Private TreeViewCharCodeCache As Long
 Private TreeViewIsClick As Boolean
 Private TreeViewMouseOver As Boolean
+Private TreeViewDesignMode As Boolean, TreeViewTopDesignMode As Boolean
 Private TreeViewLabelInEdit As Boolean
 Private TreeViewStartLabelEdit As Boolean
 Private TreeViewButtonDown As Integer
@@ -637,6 +638,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+TreeViewDesignMode = Not Ambient.UserMode
+TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = TvwVisualThemeStandard
@@ -675,7 +678,7 @@ PropInsertMarkColor = vbBlack
 PropDoubleBuffer = True
 PropIMEMode = CCIMEModeNoControl
 Call CreateTreeView
-If Ambient.UserMode = False Then
+If TreeViewDesignMode = True Then
     TreeViewSampleMode = True
     Dim SampleNode As New TvwNode
     SampleNode.FInit Me, vbNullString, 1, 1, 1, 1
@@ -691,6 +694,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+TreeViewDesignMode = Not Ambient.UserMode
+TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -733,7 +738,7 @@ PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 End With
 Call CreateTreeView
-If Ambient.UserMode = False Then
+If TreeViewDesignMode = True Then
     TreeViewSampleMode = True
     Dim SampleNode As New TvwNode
     SampleNode.FInit Me, vbNullString, 1, 1, 1, 1
@@ -1186,7 +1191,7 @@ End Property
 
 Public Property Let OLEDragExpandTime(ByVal Value As Long)
 If Value < -1 Then
-    If Ambient.UserMode = False Then
+    If TreeViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1243,7 +1248,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If TreeViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1275,7 +1280,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -1323,7 +1328,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -1376,7 +1381,7 @@ If TreeViewHandle <> 0 Then
                         PropImageListName = Value
                         Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf TreeViewDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1456,7 +1461,7 @@ End Property
 
 Public Property Let Redraw(ByVal Value As Boolean)
 PropRedraw = Value
-If TreeViewHandle <> 0 And Ambient.UserMode = True Then
+If TreeViewHandle <> 0 And TreeViewDesignMode = False Then
     SendMessage TreeViewHandle, WM_SETREDRAW, IIf(PropRedraw = True, 1, 0), ByVal 0&
     If PropRedraw = True Then Me.Refresh
 End If
@@ -1686,7 +1691,7 @@ End Property
 
 Public Property Let Indentation(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TreeViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1699,7 +1704,7 @@ LngValue = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
 ErrValue = Err.Number
 On Error GoTo 0
 If LngValue < 0 Or ErrValue <> 0 Then
-    If Ambient.UserMode = False Then
+    If TreeViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1769,7 +1774,7 @@ End Property
 
 Public Property Let Sorted(ByVal Value As Boolean)
 PropSorted = Value
-If PropSorted = True And Ambient.UserMode = True Then Call SortNodes(TVI_ROOT, PropSortType)
+If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
 UserControl.PropertyChanged "Sorted"
 End Property
 
@@ -1785,7 +1790,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If PropSorted = True And Ambient.UserMode = True Then Call SortNodes(TVI_ROOT, PropSortType)
+If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
 End Property
 
 Public Property Get SortType() As TvwSortTypeConstants
@@ -1800,7 +1805,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If PropSorted = True And Ambient.UserMode = True Then Call SortNodes(TVI_ROOT, PropSortType)
+If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
 End Property
 
 Public Property Get InsertMarkColor() As OLE_COLOR
@@ -1843,7 +1848,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If TreeViewHandle <> 0 And Ambient.UserMode = True Then
+If TreeViewHandle <> 0 And TreeViewDesignMode = False Then
     If GetFocus() = TreeViewHandle Then
         Call ComCtlsSetIMEMode(TreeViewHandle, TreeViewIMCHandle, PropIMEMode)
     ElseIf TreeViewLabelInEdit = True Then
@@ -2541,7 +2546,7 @@ If PropFullRowSelect = True Then dwStyle = dwStyle Or TVS_FULLROWSELECT
 If PropHotTracking = True Then dwStyle = dwStyle Or TVS_TRACKSELECT
 If PropScroll = False Then dwStyle = dwStyle Or TVS_NOSCROLL
 If PropSingleSel = True Then dwStyle = dwStyle Or TVS_SINGLEEXPAND
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
@@ -2571,7 +2576,7 @@ If TreeViewHandle <> 0 Then
     End If
     SendMessage TreeViewHandle, TVM_SETINDENT, PropIndentation, ByVal 0&
 End If
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     If TreeViewHandle <> 0 Then
         Call ComCtlsSetSubclass(TreeViewHandle, Me, 1)
         Call ComCtlsCreateIMC(TreeViewHandle, TreeViewIMCHandle)
@@ -2602,7 +2607,7 @@ Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
-If PropRedraw = True Or Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If PropRedraw = True Or TreeViewDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Public Function HitTest(ByVal X As Single, ByVal Y As Single) As TvwNode
@@ -2977,7 +2982,7 @@ Select Case wMsg
         Static InProc As Boolean
         Dim LabelEditHandle As Long
         LabelEditHandle = Me.hWndLabelEdit
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> TreeViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) Then
+        If TreeViewTopDesignMode = False And GetFocus() <> TreeViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN

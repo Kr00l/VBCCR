@@ -349,6 +349,7 @@ Private TextBoxCharCodeCache As Long
 Private TextBoxAutoDragInSel As Boolean, TextBoxAutoDragIsActive As Boolean
 Private TextBoxIsClick As Boolean
 Private TextBoxMouseOver As Boolean
+Private TextBoxDesignMode As Boolean, TextBoxTopDesignMode As Boolean
 Private TextBoxChangeFrozen As Boolean
 Private TextBoxNetAddressFormat As TxtNetAddressFormatConstants
 Private TextBoxNetAddressString As String
@@ -461,6 +462,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+TextBoxDesignMode = Not Ambient.UserMode
+TextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -495,6 +498,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+TextBoxDesignMode = Not Ambient.UserMode
+TextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -1027,7 +1032,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If TextBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1233,7 +1238,7 @@ If Value = vbNullString Or Len(Value) = 0 Then
 ElseIf Len(Value) = 1 Then
     PropPasswordChar = AscW(Value)
 Else
-    If Ambient.UserMode = False Then
+    If TextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1276,7 +1281,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1339,7 +1344,7 @@ If TextBoxHandle <> 0 Then
             dwStyle = dwStyle Or ES_LOWERCASE
     End Select
     SetWindowLong TextBoxHandle, GWL_STYLE, dwStyle
-    If Ambient.UserMode = False Then
+    If TextBoxDesignMode = True Then
         SendMessage TextBoxHandle, WM_SETTEXT, 0, ByVal 0&
         SendMessage TextBoxHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     End If
@@ -1355,7 +1360,7 @@ End Property
 Public Property Let WantReturn(ByVal Value As Boolean)
 If PropWantReturn = Value Then Exit Property
 PropWantReturn = Value
-If TextBoxHandle <> 0 And Ambient.UserMode = True Then
+If TextBoxHandle <> 0 And TextBoxDesignMode = False Then
     ' It is not possible (in VB6) to achieve this when specifying ES_WANTRETURN.
     Call OnControlInfoChanged(Me, CBool(GetFocus() = TextBoxHandle))
 End If
@@ -1374,7 +1379,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If TextBoxHandle <> 0 And Ambient.UserMode = True Then
+If TextBoxHandle <> 0 And TextBoxDesignMode = False Then
     If GetFocus() = TextBoxHandle Then Call ComCtlsSetIMEMode(TextBoxHandle, TextBoxIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1527,7 +1532,7 @@ Me.Enabled = UserControl.Enabled
 Me.Alignment = PropAlignment
 If Not PropCueBanner = vbNullString Then Me.CueBanner = PropCueBanner
 If PropNetAddressValidator = True Then Me.NetAddressType = PropNetAddressType
-If Ambient.UserMode = True Then
+If TextBoxDesignMode = False Then
     If TextBoxHandle <> 0 Then Call ComCtlsSetSubclass(TextBoxHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
     If TextBoxHandle <> 0 Then Call ComCtlsCreateIMC(TextBoxHandle, TextBoxIMCHandle)
@@ -1535,7 +1540,7 @@ End If
 End Sub
 
 Private Sub ReCreateTextBox()
-If Ambient.UserMode = True Then
+If TextBoxDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim SelStart As Long, SelEnd As Long
@@ -1961,7 +1966,7 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> TextBoxHandle Then
+        If TextBoxTopDesignMode = False And GetFocus() <> TextBoxHandle Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
