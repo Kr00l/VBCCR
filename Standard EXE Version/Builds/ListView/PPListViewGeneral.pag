@@ -602,6 +602,7 @@ If CheckVirtualMode.Value = vbChecked Then
     End If
 End If
 With PropertyPage.SelectedControls(0)
+.VirtualMode = CBool(CheckVirtualMode.Value = vbChecked)
 .Enabled = CBool(CheckEnabled.Value = vbChecked)
 .VisualStyles = CBool(CheckVisualStyles.Value = vbChecked)
 .DoubleBuffer = CBool(CheckDoubleBuffer.Value = vbChecked)
@@ -650,7 +651,6 @@ Next i
 .UseColumnChevron = CBool(CheckUseColumnChevron.Value = vbChecked)
 .UseColumnFilterBar = CBool(CheckUseColumnFilterBar.Value = vbChecked)
 .AutoSelectFirstItem = CBool(CheckAutoSelectFirstItem.Value = vbChecked)
-.VirtualMode = CBool(CheckVirtualMode.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub

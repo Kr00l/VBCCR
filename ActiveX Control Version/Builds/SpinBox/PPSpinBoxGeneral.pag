@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3810
    ScaleWidth      =   6075
-   Begin VBCCR15.CheckBoxW CheckHideSelection 
+   Begin VBCCR16.CheckBoxW CheckHideSelection 
       Height          =   285
       Left            =   4200
       TabIndex        =   25
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":0000
    End
-   Begin VBCCR15.ComboBoxW ComboNumberStyle 
+   Begin VBCCR16.ComboBoxW ComboNumberStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   16
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboTextAlignment 
+   Begin VBCCR16.ComboBoxW ComboTextAlignment 
       Height          =   315
       Left            =   1800
       TabIndex        =   18
@@ -39,7 +39,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboAlignment 
+   Begin VBCCR16.ComboBoxW ComboAlignment 
       Height          =   315
       Left            =   1800
       TabIndex        =   14
@@ -49,7 +49,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -59,7 +59,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckAllowOnlyNumbers 
+   Begin VBCCR16.CheckBoxW CheckAllowOnlyNumbers 
       Height          =   285
       Left            =   4200
       TabIndex        =   24
@@ -69,7 +69,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":003A
    End
-   Begin VBCCR15.CheckBoxW CheckArrowKeysChange 
+   Begin VBCCR16.CheckBoxW CheckArrowKeysChange 
       Height          =   285
       Left            =   4200
       TabIndex        =   23
@@ -79,7 +79,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":007A
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   3480
       TabIndex        =   2
@@ -89,7 +89,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":00B8
    End
-   Begin VBCCR15.CheckBoxW CheckThousandsSeparator 
+   Begin VBCCR16.CheckBoxW CheckThousandsSeparator 
       Height          =   285
       Left            =   4200
       TabIndex        =   22
@@ -99,7 +99,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":00F0
    End
-   Begin VBCCR15.CheckBoxW CheckHotTracking 
+   Begin VBCCR16.CheckBoxW CheckHotTracking 
       Height          =   285
       Left            =   4200
       TabIndex        =   21
@@ -109,7 +109,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":0134
    End
-   Begin VBCCR15.TextBoxW TextValue 
+   Begin VBCCR16.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   10
@@ -118,7 +118,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextIncrement 
+   Begin VBCCR16.TextBoxW TextIncrement 
       Height          =   315
       Left            =   1800
       TabIndex        =   12
@@ -127,7 +127,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMax 
+   Begin VBCCR16.TextBoxW TextMax 
       Height          =   315
       Left            =   1800
       TabIndex        =   8
@@ -136,7 +136,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMin 
+   Begin VBCCR16.TextBoxW TextMin 
       Height          =   315
       Left            =   1800
       TabIndex        =   6
@@ -145,7 +145,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckWrap 
+   Begin VBCCR16.CheckBoxW CheckWrap 
       Height          =   285
       Left            =   4200
       TabIndex        =   20
@@ -155,7 +155,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":016A
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -165,7 +165,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":0192
    End
-   Begin VBCCR15.CheckBoxW CheckLocked 
+   Begin VBCCR16.CheckBoxW CheckLocked 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -175,7 +175,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentY        =   0
       Caption         =   "PPSpinBoxGeneral.pgx":01C0
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   19

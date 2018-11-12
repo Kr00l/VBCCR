@@ -393,6 +393,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
@@ -711,10 +713,10 @@ Private RichTextBoxIMCHandle As Long
 Private RichTextBoxCharCodeCache As Long
 Private RichTextBoxIsClick As Boolean
 Private RichTextBoxMouseOver(0 To 1) As Boolean
+Private RichTextBoxDesignMode As Boolean, RichTextBoxTopDesignMode As Boolean
 Private RichTextBoxFocused As Boolean
 Private RichTextBoxDataObjectValue As Variant
 Private RichTextBoxDataObjectFormat As Variant
-Private RichTextBoxOleCallback As RtfOleCallback
 Private RichTextBoxIsOleCallback As Boolean
 Private RichTextBoxEnabledVisualStyles As Boolean
 Private DispIDMousePointer As Long
@@ -819,13 +821,12 @@ Call RtfLoadRichedMod
 Call SetVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableSubclass(Me, VTableInterfaceControl)
 Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
-Set RichTextBoxOleCallback = New RtfOleCallback
-RichTextBoxOleCallback.FInit Me
-Call SetVTableSubclassIRichEditOleCallback(RichTextBoxOleCallback)
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+RichTextBoxDesignMode = Not Ambient.UserMode
+RichTextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragDrop = True
@@ -860,6 +861,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+RichTextBoxDesignMode = Not Ambient.UserMode
+RichTextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -1010,7 +1013,6 @@ Private Sub UserControl_Terminate()
 Call RemoveVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
 Call RemoveVTableSubclass(Me, VTableInterfaceControl)
 Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
-Call RemoveVTableSubclassIRichEditOleCallback(RichTextBoxOleCallback)
 Call DestroyRichTextBox
 Call ComCtlsReleaseShellMod
 Call RtfReleaseRichedMod
@@ -1018,7 +1020,6 @@ End Sub
 
 Public Sub IDEStop()
 Attribute IDEStop.VB_MemberFlags = "40"
-Call RemoveVTableSubclassIRichEditOleCallback(RichTextBoxOleCallback)
 Call DestroyRichTextBox
 End Sub
 
@@ -1277,7 +1278,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If RichTextBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1421,7 +1422,7 @@ If Value = vbNullString Or Len(Value) = 0 Then
 ElseIf Len(Value) = 1 Then
     PropPasswordChar = AscW(Value)
 Else
-    If Ambient.UserMode = False Then
+    If RichTextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1452,7 +1453,7 @@ MultiLine = PropMultiLine
 End Property
 
 Public Property Let MultiLine(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If RichTextBoxDesignMode = False Then
     Err.Raise Number:=382, Description:="MultiLine property is read-only at run time"
 Else
     PropMultiLine = Value
@@ -1468,7 +1469,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If RichTextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1504,7 +1505,7 @@ End Property
 Public Property Let WantReturn(ByVal Value As Boolean)
 If PropWantReturn = Value Then Exit Property
 PropWantReturn = Value
-If RichTextBoxHandle <> 0 And Ambient.UserMode = True Then
+If RichTextBoxHandle <> 0 And RichTextBoxDesignMode = False Then
     ' It is not possible (in VB6) to achieve this when specifying ES_WANTRETURN.
     Dim PropOleObject As OLEGuids.IOleObject
     Dim PropClientSite As OLEGuids.IOleClientSite
@@ -1531,7 +1532,7 @@ DisableNoScroll = PropDisableNoScroll
 End Property
 
 Public Property Let DisableNoScroll(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If RichTextBoxDesignMode = False Then
     Err.Raise Number:=382, Description:="DisableNoScroll property is read-only at run time"
 Else
     PropDisableNoScroll = Value
@@ -1562,7 +1563,7 @@ End Property
 
 Public Property Let BulletIndent(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If RichTextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1577,7 +1578,7 @@ On Error GoTo 0
 If LngValue >= 0 And ErrValue = 0 Then
     PropBulletIndent = LngValue
 Else
-    If Ambient.UserMode = False Then
+    If RichTextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1646,7 +1647,7 @@ Else
             End If
         End If
     Else
-        If Ambient.UserMode = False Then
+        If RichTextBoxDesignMode = True Then
             MsgBox "The specified file name cannot be accessed or is invalid.", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1673,7 +1674,7 @@ End Property
 Public Property Let TextMode(ByVal Value As RtfTextModeConstants)
 Select Case Value
     Case RtfTextModeRichText, RtfTextModePlainText
-        If Ambient.UserMode = False Then PropFileName = vbNullString
+        If RichTextBoxDesignMode = True Then PropFileName = vbNullString
         PropTextMode = Value
     Case Else
         Err.Raise 380
@@ -1692,7 +1693,7 @@ End Property
 
 Public Property Let UndoLimit(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If RichTextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1726,7 +1727,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If RichTextBoxHandle <> 0 And Ambient.UserMode = True Then
+If RichTextBoxHandle <> 0 And RichTextBoxDesignMode = False Then
     If GetFocus() = RichTextBoxHandle Then Call ComCtlsSetIMEMode(RichTextBoxHandle, RichTextBoxIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1750,7 +1751,7 @@ End Property
 
 Public Property Let OverTypeMode(ByVal Value As Boolean)
 If PropOverTypeMode = Value Then Exit Property
-If RichTextBoxHandle <> 0 And Ambient.UserMode = True Then
+If RichTextBoxHandle <> 0 And RichTextBoxDesignMode = False Then
     SendMessage RichTextBoxHandle, WM_KEYDOWN, vbKeyInsert, ByVal 0&
     SendMessage RichTextBoxHandle, WM_KEYUP, vbKeyInsert, ByVal 0&
 Else
@@ -1798,7 +1799,7 @@ If RichTextBoxHandle <> 0 Then
     SendMessage RichTextBoxHandle, EM_SETTYPOGRAPHYOPTIONS, TO_ADVANCEDTYPOGRAPHY, ByVal TO_ADVANCEDTYPOGRAPHY
     If PropTextMode = RtfTextModePlainText Then SendMessage RichTextBoxHandle, EM_SETTEXTMODE, TM_PLAINTEXT, ByVal 0&
     Dim This As OLEGuids.IRichEditOleCallback
-    Set This = RichTextBoxOleCallback
+    Set This = RtfOleCallback(Me)
     If Not This Is Nothing Then
         RichTextBoxIsOleCallback = CBool(SendMessage(RichTextBoxHandle, EM_SETOLECALLBACK, 0, ByVal ObjPtr(This)) <> 0)
     Else
@@ -1811,7 +1812,7 @@ Me.Enabled = UserControl.Enabled
 Me.BackColor = PropBackColor
 Me.AutoURLDetect = PropAutoURLDetect
 If PropUndoLimit <> 100 Then Me.UndoLimit = PropUndoLimit
-If Ambient.UserMode = True Then
+If RichTextBoxDesignMode = False Then
     If RichTextBoxHandle <> 0 Then
         SendMessage RichTextBoxHandle, EM_SETEVENTMASK, 0, ByVal ENM_CHANGE Or ENM_SCROLL Or ENM_SELCHANGE Or ENM_DRAGDROPDONE Or ENM_LINK Or ENM_PROTECTED
         SendMessage RichTextBoxHandle, EM_SETEDITSTYLE, SES_BEEPONMAXTEXT, ByVal SES_BEEPONMAXTEXT
@@ -1829,7 +1830,7 @@ End Sub
 Private Sub ReCreateRichTextBox()
 Dim Buffer As String, Flags As Long
 If Me.TextMode = RtfTextModeRichText Then Flags = SF_RTF Else Flags = SF_TEXT Or SF_UNICODE
-If Ambient.UserMode = True Then
+If RichTextBoxDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim RECR As RECHARRANGE, P As POINTAPI
@@ -2006,7 +2007,7 @@ StreamStringOut Text, SF_TEXT Or SF_UNICODE
 End Property
 
 Public Property Let Text(ByVal Value As String)
-If Ambient.UserMode = False Then PropFileName = vbNullString
+If RichTextBoxDesignMode = True Then PropFileName = vbNullString
 StreamStringIn Value, SF_TEXT Or SF_UNICODE
 UserControl.PropertyChanged "Text"
 End Property
@@ -2050,7 +2051,7 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If RichTextBoxHandle <> 0 Then SendMessage RichTextBoxHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+If RichTextBoxHandle <> 0 Then SendMessage RichTextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Value)
 End Property
 
 Public Property Get SelRTF() As String
@@ -2918,7 +2919,7 @@ If FileExists(FileName) = True Then
     End Select
     StreamFileIn FileName, Flags
 Else
-    If Ambient.UserMode = False Then
+    If RichTextBoxDesignMode = True Then
         MsgBox "The specified file name cannot be accessed or is invalid.", vbCritical + vbOKOnly
         Exit Sub
     Else
@@ -3413,7 +3414,7 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> RichTextBoxHandle Then
+        If RichTextBoxTopDesignMode = False And GetFocus() <> RichTextBoxHandle Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
@@ -3438,20 +3439,25 @@ Select Case wMsg
                     Exit Function
             End Select
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            If KeyCode = vbKeyInsert Then
+                If PropAllowOverType = False And PropOverTypeMode = False Then Exit Function
+                If wMsg = WM_KEYDOWN Then PropOverTypeMode = Not PropOverTypeMode
+            End If
+            RichTextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        If KeyCode = vbKeyInsert Then
-            If PropAllowOverType = False And PropOverTypeMode = False Then Exit Function
-            If wMsg = WM_KEYDOWN Then PropOverTypeMode = Not PropOverTypeMode
-        End If
-        RichTextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

@@ -48,7 +48,7 @@ Else
 End If
 ShadowListView.FColumnHeadersAdd Index, Text, Width, Alignment, IconIndex
 Dim NewColumnHeader As New LvwColumnHeader
-NewColumnHeader.FInit ShadowListView, Key, Icon, IconIndex
+NewColumnHeader.FInit ShadowObjectPointer, Key, Icon, IconIndex
 If Key = vbNullString Then
     If Index > 0 And Index <= PropColumnHeader.Count Then
         PropColumnHeader.Add NewColumnHeader, , Index
@@ -107,8 +107,9 @@ Public Sub Remove(ByVal Index As Variant)
 Attribute Remove.VB_Description = "Removes a column header from the collection."
 ShadowListView.FColumnHeadersRemove PropColumnHeader(Index).Index
 PropColumnHeader.Remove Index
-Dim i As Long
-For i = 1 To PropColumnHeader.Count
-    Me.Item(i).Index = i
-Next i
+Dim Item As LvwColumnHeader, i As Long
+For Each Item In PropColumnHeader
+    i = i + 1
+    Item.Index = i
+Next Item
 End Sub

@@ -183,6 +183,8 @@ Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -267,6 +269,7 @@ Private CheckBoxAcceleratorHandle As Long
 Private CheckBoxFontHandle As Long
 Private CheckBoxCharCodeCache As Long
 Private CheckBoxMouseOver As Boolean
+Private CheckBoxDesignMode As Boolean, CheckBoxTopDesignMode As Boolean
 Private CheckBoxImageListHandle As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -358,7 +361,7 @@ End If
 End Sub
 
 Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
-If CheckBoxHandle <> 0 Then
+If CheckBoxHandle <> 0 And wMsg = WM_SYSKEYDOWN Then
     Dim Accel As Long
     Accel = AccelCharCode(Me.Caption)
     If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
@@ -437,6 +440,8 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 If DispIDValue = 0 Then DispIDValue = GetDispID(Me, "Value")
+CheckBoxDesignMode = Not Ambient.UserMode
+CheckBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -469,6 +474,8 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 If DispIDValue = 0 Then DispIDValue = GetDispID(Me, "Value")
+CheckBoxDesignMode = Not Ambient.UserMode
+CheckBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -912,7 +919,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If CheckBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -976,7 +983,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state. Requires comctl32.dll version 6.0 or higher."
-If Ambient.UserMode = True Then
+If CheckBoxDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -1025,9 +1032,9 @@ If CheckBoxHandle <> 0 Then
                     If Success = True Then
                         Call SetImageList(Handle)
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
+                        If CheckBoxDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf CheckBoxDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1077,7 +1084,7 @@ End Property
 
 Public Property Let ImageListMargin(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If CheckBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1381,7 +1388,7 @@ Public Property Let Style(ByVal Value As VBRUN.ButtonConstants)
 Select Case Value
     Case vbButtonStandard, vbButtonGraphical
         If PropDrawMode <> ChkDrawModeNormal And Value = vbButtonGraphical Then
-            If Ambient.UserMode = False Then
+            If CheckBoxDesignMode = True Then
                 MsgBox "Style must be 0 - Standard when DrawMode is not 0 - Normal", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1517,7 +1524,7 @@ Me.Enabled = UserControl.Enabled
 Me.Value = PropValue
 Me.Caption = PropCaption
 If Not PropPicture Is Nothing Then Set Me.Picture = PropPicture
-If Ambient.UserMode = True Then
+If CheckBoxDesignMode = False Then
     If CheckBoxHandle <> 0 Then Call ComCtlsSetSubclass(CheckBoxHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 Else
@@ -1529,7 +1536,7 @@ End If
 End Sub
 
 Private Sub ReCreateCheckBox()
-If Ambient.UserMode = True Then
+If CheckBoxDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyCheckBox
@@ -1681,15 +1688,21 @@ Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            CheckBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        CheckBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -1709,7 +1722,7 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> CheckBoxHandle Then
+        If CheckBoxTopDesignMode = False And GetFocus() <> CheckBoxHandle Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

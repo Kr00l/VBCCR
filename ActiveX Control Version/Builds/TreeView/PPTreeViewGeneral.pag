@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4875
    ScaleWidth      =   5925
-   Begin VBCCR15.ComboBoxW ComboIMEMode 
+   Begin VBCCR16.ComboBoxW ComboIMEMode 
       Height          =   315
       Left            =   1800
       TabIndex        =   26
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboVisualTheme 
+   Begin VBCCR16.ComboBoxW ComboVisualTheme 
       Height          =   315
       Left            =   1800
       TabIndex        =   6
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextOLEDragExpandTime 
+   Begin VBCCR16.TextBoxW TextOLEDragExpandTime 
       Height          =   315
       Left            =   1800
       TabIndex        =   24
@@ -38,7 +38,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.ComboBoxW ComboSortType 
+   Begin VBCCR16.ComboBoxW ComboSortType 
       Height          =   315
       Left            =   1800
       TabIndex        =   22
@@ -48,7 +48,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboSortOrder 
+   Begin VBCCR16.ComboBoxW ComboSortOrder 
       Height          =   315
       Left            =   1800
       TabIndex        =   20
@@ -58,7 +58,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckSorted 
+   Begin VBCCR16.CheckBoxW CheckSorted 
       Height          =   285
       Left            =   4200
       TabIndex        =   35
@@ -68,7 +68,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":0000
    End
-   Begin VBCCR15.CheckBoxW CheckSingleSel 
+   Begin VBCCR16.CheckBoxW CheckSingleSel 
       Height          =   285
       Left            =   4200
       TabIndex        =   34
@@ -78,7 +78,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":002C
    End
-   Begin VBCCR15.CheckBoxW CheckScroll 
+   Begin VBCCR16.CheckBoxW CheckScroll 
       Height          =   285
       Left            =   4200
       TabIndex        =   33
@@ -88,7 +88,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":005E
    End
-   Begin VBCCR15.TextBoxW TextPathSeparator 
+   Begin VBCCR16.TextBoxW TextPathSeparator 
       Height          =   315
       Left            =   1800
       TabIndex        =   18
@@ -97,7 +97,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckHotTracking 
+   Begin VBCCR16.CheckBoxW CheckHotTracking 
       Height          =   285
       Left            =   4200
       TabIndex        =   32
@@ -107,7 +107,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":008A
    End
-   Begin VBCCR15.CheckBoxW CheckFullRowSelect 
+   Begin VBCCR16.CheckBoxW CheckFullRowSelect 
       Height          =   285
       Left            =   4200
       TabIndex        =   31
@@ -117,7 +117,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":00C0
    End
-   Begin VBCCR15.CheckBoxW CheckHideSelection 
+   Begin VBCCR16.CheckBoxW CheckHideSelection 
       Height          =   285
       Left            =   4200
       TabIndex        =   30
@@ -127,7 +127,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":00FA
    End
-   Begin VBCCR15.ComboBoxW ComboLabelEdit 
+   Begin VBCCR16.ComboBoxW ComboLabelEdit 
       Height          =   315
       Left            =   1800
       TabIndex        =   14
@@ -137,7 +137,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboLineStyle 
+   Begin VBCCR16.ComboBoxW ComboLineStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   12
@@ -147,7 +147,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckDoubleBuffer 
+   Begin VBCCR16.CheckBoxW CheckDoubleBuffer 
       Height          =   285
       Left            =   3480
       TabIndex        =   2
@@ -157,7 +157,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":0134
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -167,7 +167,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":016C
    End
-   Begin VBCCR15.CheckBoxW CheckShowTips 
+   Begin VBCCR16.CheckBoxW CheckShowTips 
       Height          =   285
       Left            =   4200
       TabIndex        =   29
@@ -177,7 +177,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":01A4
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -187,7 +187,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboImageList 
+   Begin VBCCR16.ComboBoxW ComboImageList 
       Height          =   315
       Left            =   1800
       TabIndex        =   8
@@ -197,7 +197,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboStyle 
+   Begin VBCCR16.ComboBoxW ComboStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   10
@@ -207,7 +207,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextIndentation 
+   Begin VBCCR16.TextBoxW TextIndentation 
       Height          =   315
       Left            =   1800
       TabIndex        =   16
@@ -216,7 +216,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckCheckboxes 
+   Begin VBCCR16.CheckBoxW CheckCheckboxes 
       Height          =   285
       Left            =   4200
       TabIndex        =   28
@@ -226,7 +226,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":01D4
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -236,7 +236,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       _ExtentY        =   0
       Caption         =   "PPTreeViewGeneral.pgx":0208
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   27

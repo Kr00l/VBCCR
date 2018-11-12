@@ -207,6 +207,8 @@ Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -317,6 +319,7 @@ Private TabStripAcceleratorHandle As Long
 Private TabStripFontHandle As Long
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
+Private TabStripDesignMode As Boolean, TabStripTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -416,7 +419,7 @@ End If
 End Sub
 
 Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
-If TabStripHandle <> 0 Then
+If TabStripHandle <> 0 And wMsg = WM_SYSKEYDOWN Then
     Dim Accel As Long, Count As Long, i As Long
     Count = SendMessage(TabStripHandle, TCM_GETITEMCOUNT, 0, ByVal 0&)
     If Count > 0 Then
@@ -481,6 +484,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+TabStripDesignMode = Not Ambient.UserMode
+TabStripTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -512,6 +517,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+TabStripDesignMode = Not Ambient.UserMode
+TabStripTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -961,7 +968,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If TabStripDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -993,7 +1000,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If TabStripDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -1031,7 +1038,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
+If TabStripDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -1072,9 +1079,9 @@ If TabStripHandle <> 0 Then
                     If Success = True Then
                         SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal Handle
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
+                        If TabStripDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf TabStripDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1200,7 +1207,7 @@ End Property
 
 Public Property Let TabFixedWidth(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1218,7 +1225,7 @@ If IntValue >= 0 And ErrValue = 0 Then
         If TabStripHandle <> 0 Then SendMessage TabStripHandle, TCM_SETITEMSIZE, 0, ByVal MakeDWord(PropTabFixedWidth, PropTabFixedHeight)
     End If
 Else
-    If Ambient.UserMode = False Then
+    If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1235,7 +1242,7 @@ End Property
 
 Public Property Let TabFixedHeight(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1253,7 +1260,7 @@ If IntValue >= 0 And ErrValue = 0 Then
         If TabStripHandle <> 0 Then SendMessage TabStripHandle, TCM_SETITEMSIZE, 0, ByVal MakeDWord(PropTabFixedWidth, PropTabFixedHeight)
     End If
 Else
-    If Ambient.UserMode = False Then
+    If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1270,7 +1277,7 @@ End Property
 
 Public Property Let TabMinWidth(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1286,7 +1293,7 @@ If IntValue >= 0 And ErrValue = 0 Then
     PropTabMinWidth = IntValue
     If TabStripHandle <> 0 Then SendMessage TabStripHandle, TCM_SETMINTABWIDTH, 0, ByVal CLng(PropTabMinWidth)
 Else
-    If Ambient.UserMode = False Then
+    If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1342,7 +1349,7 @@ End Property
 
 Public Property Let ShowTips(ByVal Value As Boolean)
 PropShowTips = Value
-If TabStripHandle <> 0 And Ambient.UserMode = True Then
+If TabStripHandle <> 0 And TabStripDesignMode = False Then
     If PropShowTips = False Then
         SendMessage TabStripHandle, TCM_SETTOOLTIPS, 0, ByVal 0&
     Else
@@ -1361,7 +1368,7 @@ End Property
 Public Property Let DrawMode(ByVal Value As TbsDrawModeConstants)
 Select Case Value
     Case TbsDrawModeNormal, TbsDrawModeOwnerDrawFixed
-        If Ambient.UserMode = True Then
+        If TabStripDesignMode = False Then
             Err.Raise Number:=382, Description:="DrawMode property is read-only at run time"
         Else
             PropDrawMode = Value
@@ -1646,9 +1653,9 @@ If PropTabWidthStyle = TbsTabWidthStyleFixed Then
             dwStyle = dwStyle Or TCS_FORCELABELLEFT
     End Select
 End If
-If PropShowTips = True Then If Ambient.UserMode = True Then dwStyle = dwStyle Or TCS_TOOLTIPS
+If PropShowTips = True Then If TabStripDesignMode = False Then dwStyle = dwStyle Or TCS_TOOLTIPS
 If PropDrawMode = TbsDrawModeOwnerDrawFixed Then dwStyle = dwStyle Or TCS_OWNERDRAWFIXED
-If Ambient.UserMode = True Then
+If TabStripDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
@@ -1665,7 +1672,7 @@ Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Me.Separators = PropSeparators
-If Ambient.UserMode = True Then
+If TabStripDesignMode = False Then
     If TabStripHandle <> 0 Then Call ComCtlsSetSubclass(TabStripHandle, Me, 1)
 End If
 End Sub
@@ -1697,7 +1704,7 @@ If TabStripHandle <> 0 Then CurrIndex = SendMessage(TabStripHandle, TCM_GETCURSE
 Call DestroyTabStrip
 Call CreateTabStrip
 Call UserControl_Resize
-If Ambient.UserMode = True Then
+If TabStripDesignMode = False Then
     If Not PropImageListControl Is Nothing Then Set .ImageList = PropImageListControl
 Else
     If Not PropImageListName = "(None)" Then .ImageList = PropImageListName
@@ -1908,7 +1915,7 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> TabStripHandle Then
+        If TabStripTopDesignMode = False And GetFocus() <> TabStripHandle Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN, WM_MBUTTONDOWN
@@ -1966,15 +1973,21 @@ Select Case wMsg
             WindowProcControl = 0
             Exit Function
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            TabStripCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        TabStripCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

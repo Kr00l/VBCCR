@@ -29,8 +29,8 @@ PropResizable = True
 PropForeColor = vbButtonText
 End Sub
 
-Friend Sub FInit(ByVal Object As ListView, ByVal Key As String, ByVal Icon As Variant, ByVal IconIndex As Long)
-ShadowObjectPointer = ObjPtr(Object)
+Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Key As String, ByVal Icon As Variant, ByVal IconIndex As Long)
+ShadowObjectPointer = ObjectPointer
 PropKey = Key
 PropIcon = Icon
 PropIconIndex = IconIndex

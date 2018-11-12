@@ -202,6 +202,8 @@ Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -306,6 +308,7 @@ Private CommandButtonValue As Boolean
 Private CommandButtonFontHandle As Long
 Private CommandButtonCharCodeCache As Long
 Private CommandButtonMouseOver As Boolean
+Private CommandButtonDesignMode As Boolean, CommandButtonTopDesignMode As Boolean
 Private CommandButtonImageListHandle As Long
 Private CommandButtonImageListGlyphHandle As Long, CommandButtonDefaultImageListGlyphHandle As Long
 Private DispIDMousePointer As Long
@@ -400,7 +403,7 @@ End If
 End Sub
 
 Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
-If CommandButtonHandle <> 0 Then
+If CommandButtonHandle <> 0 And wMsg = WM_SYSKEYDOWN Then
     Dim Accel As Long
     Accel = AccelCharCode(Me.Caption)
     If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
@@ -459,6 +462,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+CommandButtonDesignMode = Not Ambient.UserMode
+CommandButtonTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 PropDisplayAsDefault = False
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -493,6 +498,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+CommandButtonDesignMode = Not Ambient.UserMode
+CommandButtonTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 PropDisplayAsDefault = .ReadProperty("Default", False)
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -974,7 +981,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If CommandButtonDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1040,7 +1047,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state. Requires comctl32.dll version 6.0 or higher."
-If Ambient.UserMode = True Then
+If CommandButtonDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -1089,9 +1096,9 @@ If CommandButtonHandle <> 0 Then
                     If Success = True Then
                         Call SetImageList(Handle)
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
+                        If CommandButtonDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf CommandButtonDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1141,7 +1148,7 @@ End Property
 
 Public Property Let ImageListMargin(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If CommandButtonDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1494,7 +1501,7 @@ Public Property Let Style(ByVal Value As VBRUN.ButtonConstants)
 Select Case Value
     Case vbButtonStandard, vbButtonGraphical
         If PropDrawMode <> CmdDrawModeNormal And Value = vbButtonGraphical Then
-            If Ambient.UserMode = False Then
+            If CommandButtonDesignMode = True Then
                 MsgBox "Style must be 0 - Standard when DrawMode is not 0 - Normal", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1642,7 +1649,7 @@ If Not PropPicture Is Nothing Then Set Me.Picture = PropPicture
 Me.SplitButtonAlignment = PropSplitButtonAlignment
 Me.SplitButtonNoSplit = PropSplitButtonNoSplit
 If Not PropSplitButtonGlyph Is Nothing Then Set Me.SplitButtonGlyph = PropSplitButtonGlyph
-If Ambient.UserMode = True Then
+If CommandButtonDesignMode = False Then
     If CommandButtonHandle <> 0 Then Call ComCtlsSetSubclass(CommandButtonHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 Else
@@ -1654,7 +1661,7 @@ End If
 End Sub
 
 Private Sub ReCreateCommandButton()
-If Ambient.UserMode = True Then
+If CommandButtonDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyCommandButton
@@ -1865,15 +1872,21 @@ Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            CommandButtonCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        CommandButtonCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -1893,7 +1906,7 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> CommandButtonHandle Then
+        If CommandButtonTopDesignMode = False And GetFocus() <> CommandButtonHandle Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

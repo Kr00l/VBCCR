@@ -1,5 +1,50 @@
 List of revisions:
 
+11-Nov-2018
+- Internal improvement concerning design-mode handling.
+
+05-Nov-2018
+- Minor internal improvement in the 'VTableCall' function.
+
+30-Oct-2018
+- Bugfix in VTableHandle.bas concerning 'DeactivateIPAO'.
+  This bug ensures that all kinds of *_Terminate events are fired earlier (on unload) and not on app shutdown.
+- Use of lightweight COM object IRichEditOleCallback in RichTextBoxBase.bas.
+  RtfOleCallback.cls got obselete and was removed.
+
+29-Oct-2018
+- Use of lightweight COM object IEnumVARIANT in VTableHandle.bas.
+  Enumeration.cls got obsolete and was removed.
+
+27-Oct-2018
+- Major performance improvement in the 'ComboItems' collection in the ImageCombo control.
+- Internal bugfix in the ImageList control.
+
+23-Oct-2018
+- Internal improvement in the LabelW control.
+- Less memory consumption for LvwListItem. (~5MB each 100k items)
+- Performance boost for the .Remove method in TvwNodes.
+
+22-Oct-2018
+- Use of lightweight COM object IPrintDialogCallback instead of a WH_CALLWNDPROCRET hook for ShowPrinterEx in the CommonDialog class.
+  This change only effects when the HookEvents property is True in the CommonDialog class.
+
+20-Oct-2018
+- Minor internal improvement in LlbLinks/LlbLink in the LinkLabel control.
+
+12-Oct-2018
+- Fix on EM_REPLACESEL (wparam = 1) in TextBoxW and RichTextBox control.
+
+09-Oct-2018
+- WM_SYSKEYDOWN/WM_SYSKEYUP considered now for KeyDown/KeyUp events.
+
+28-Sep-2018
+- Bugfix in the For Each...Next Enumeration of 'VirtualListItems' in the ListView control.
+
+27-Sep-2018
+- Included 'VirtualListItems' in the ListView control that returns a collection of virtual list items.
+  New components LvwVirtualListItems.cls/LvwVirtualListItem.cls are included.
+
 21-Sep-2018
 - Performance boost when adding very large number of buttons in a ToolBar control.
 - Bugfix in the NoImage property of a Button in the ToolBar control.

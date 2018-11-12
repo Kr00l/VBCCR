@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPTextBoxWText
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3450
    ScaleWidth      =   5925
-   Begin VBCCR15.TextBoxW TextSingleLine 
+   Begin VBCCR16.TextBoxW TextSingleLine 
       Height          =   315
       Left            =   120
       TabIndex        =   0
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPTextBoxWText
       _ExtentX        =   9975
       _ExtentY        =   556
    End
-   Begin VBCCR15.TextBoxW TextMultiLine 
+   Begin VBCCR16.TextBoxW TextMultiLine 
       Height          =   3195
       Left            =   120
       TabIndex        =   1

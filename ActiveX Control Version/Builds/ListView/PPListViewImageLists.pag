@@ -16,7 +16,7 @@ Begin VB.PropertyPage PPListViewImageLists
       TabIndex        =   0
       Top             =   120
       Width           =   4455
-      Begin VBCCR15.ComboBoxW ComboGroup 
+      Begin VBCCR16.ComboBoxW ComboGroup 
          Height          =   315
          Left            =   1920
          TabIndex        =   8
@@ -26,7 +26,7 @@ Begin VB.PropertyPage PPListViewImageLists
          _ExtentY        =   556
          Style           =   2
       End
-      Begin VBCCR15.ComboBoxW ComboColumnHeader 
+      Begin VBCCR16.ComboBoxW ComboColumnHeader 
          Height          =   315
          Left            =   1920
          TabIndex        =   6
@@ -36,7 +36,7 @@ Begin VB.PropertyPage PPListViewImageLists
          _ExtentY        =   556
          Style           =   2
       End
-      Begin VBCCR15.ComboBoxW ComboSmall 
+      Begin VBCCR16.ComboBoxW ComboSmall 
          Height          =   315
          Left            =   1920
          TabIndex        =   4
@@ -46,7 +46,7 @@ Begin VB.PropertyPage PPListViewImageLists
          _ExtentY        =   556
          Style           =   2
       End
-      Begin VBCCR15.ComboBoxW ComboNormal 
+      Begin VBCCR16.ComboBoxW ComboNormal 
          Height          =   315
          Left            =   1920
          TabIndex        =   2

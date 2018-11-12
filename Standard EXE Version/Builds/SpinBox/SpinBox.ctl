@@ -146,6 +146,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -212,6 +214,7 @@ Private SpinBoxUpDownHandle As Long, SpinBoxEditHandle As Long
 Private SpinBoxFontHandle As Long
 Private SpinBoxCharCodeCache As Long
 Private SpinBoxMouseOver(0 To 2) As Boolean
+Private SpinBoxDesignMode As Boolean, SpinBoxTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -289,6 +292,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+SpinBoxDesignMode = Not Ambient.UserMode
+SpinBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -315,6 +320,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+SpinBoxDesignMode = Not Ambient.UserMode
+SpinBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -719,7 +726,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If SpinBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -795,7 +802,7 @@ If Value <= Me.Max Then
     PropMin = Value
     If Me.Value < PropMin Then Me.Value = PropMin
 Else
-    If Ambient.UserMode = False Then
+    If SpinBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -821,7 +828,7 @@ If Value >= Me.Min Then
     PropMax = Value
     If Me.Value > PropMax Then Me.Value = PropMax
 Else
-    If Ambient.UserMode = False Then
+    If SpinBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1100,7 +1107,7 @@ Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Me.Value = PropValue
 Me.Increment = PropIncrement
-If Ambient.UserMode = True Then
+If SpinBoxDesignMode = False Then
     If SpinBoxUpDownHandle <> 0 Then Call ComCtlsSetSubclass(SpinBoxUpDownHandle, Me, 1)
     If SpinBoxEditHandle <> 0 Then Call ComCtlsSetSubclass(SpinBoxEditHandle, Me, 2)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
@@ -1108,7 +1115,7 @@ End If
 End Sub
 
 Private Sub ReCreateSpinBox()
-If Ambient.UserMode = True Then
+If SpinBoxDesignMode = False Then
     Dim Locked As Boolean
     With Me
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
@@ -1393,7 +1400,7 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> SpinBoxUpDownHandle And GetFocus() <> SpinBoxEditHandle Then
+        If SpinBoxTopDesignMode = False And GetFocus() <> SpinBoxUpDownHandle And GetFocus() <> SpinBoxEditHandle Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcEdit = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
@@ -1418,15 +1425,21 @@ Select Case wMsg
                     Exit Function
             End Select
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            SpinBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        SpinBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

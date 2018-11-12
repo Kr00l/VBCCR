@@ -154,6 +154,8 @@ Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -236,6 +238,7 @@ Private SliderTransparentBrush As Long
 Private SliderCharCodeCache As Long
 Private SliderIsClick As Boolean
 Private SliderMouseOver As Boolean
+Private SliderDesignMode As Boolean, SliderTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -313,6 +316,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+SliderDesignMode = Not Ambient.UserMode
+SliderTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -341,6 +346,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+SliderDesignMode = Not Ambient.UserMode
+SliderTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
@@ -714,7 +721,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -746,7 +753,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If SliderDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -800,7 +807,7 @@ If Value < Me.Max Then
         PropSelLength = 0
     End If
 Else
-    If Ambient.UserMode = False Then
+    If SliderDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -837,7 +844,7 @@ If Value > Me.Min Then
         PropSelLength = 0
     End If
 Else
-    If Ambient.UserMode = False Then
+    If SliderDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -895,7 +902,7 @@ Public Property Let TickFrequency(ByVal Value As Long)
 If Value > 0 Then
     PropTickFrequency = Value
 Else
-    If Ambient.UserMode = False Then
+    If SliderDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1058,7 +1065,7 @@ End Property
 
 Public Property Let ShowTip(ByVal Value As Boolean)
 PropShowTip = Value
-If SliderHandle <> 0 And Ambient.UserMode = True Then
+If SliderHandle <> 0 And SliderDesignMode = False Then
     If PropShowTip = False Then
         SendMessage SliderHandle, TBM_SETTOOLTIPS, 0, ByVal 0&
     Else
@@ -1149,7 +1156,7 @@ Select Case Value
     Case Me.Min To Me.Max
         PropSelStart = Value
     Case Else
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1186,7 +1193,7 @@ If PropSelectRange = True Then
     If Value >= 0 And (PropSelStart + Value) <= Me.Max Then
         PropSelLength = Value
     Else
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1199,7 +1206,7 @@ If PropSelectRange = True Then
     End If
 Else
     If Value <> 0 Then
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1311,14 +1318,14 @@ Me.SmallChange = PropSmallChange
 Me.LargeChange = PropLargeChange
 Me.TipSide = PropTipSide
 If PropSelectRange = True Then Me.SelStart = PropSelStart
-If Ambient.UserMode = True Then
+If SliderDesignMode = False Then
     If SliderHandle <> 0 Then Call ComCtlsSetSubclass(SliderHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
 Private Sub ReCreateSlider()
-If Ambient.UserMode = True Then
+If SliderDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroySlider
@@ -1497,7 +1504,7 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> SliderHandle Then
+        If SliderTopDesignMode = False And GetFocus() <> SliderHandle Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN, WM_MBUTTONDOWN
@@ -1536,15 +1543,21 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            SliderCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        SliderCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

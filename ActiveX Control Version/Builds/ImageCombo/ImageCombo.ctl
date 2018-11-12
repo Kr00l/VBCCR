@@ -223,6 +223,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
@@ -348,6 +350,7 @@ Private ImageComboBackColorBrush As Long
 Private ImageComboIMCHandle As Long
 Private ImageComboCharCodeCache As Long
 Private ImageComboMouseOver(0 To 2) As Boolean
+Private ImageComboDesignMode As Boolean, ImageComboTopDesignMode As Boolean
 Private ImageComboTopIndex As Long
 Private ImageComboDragIndexBuffer As Long, ImageComboDragIndex As Long
 Private DispIDMousePointer As Long
@@ -466,6 +469,8 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+ImageComboDesignMode = Not Ambient.UserMode
+ImageComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -496,6 +501,8 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+ImageComboDesignMode = Not Ambient.UserMode
+ImageComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -601,11 +608,11 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If Ambient.UserMode = False And PropertyName = "DisplayName" And PropStyle = ImcStyleDropDownList Then
+If ImageComboDesignMode = True And PropertyName = "DisplayName" And PropStyle = ImcStyleDropDownList Then
     If ImageComboHandle <> 0 Then
         If SendMessage(ImageComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
             Me.FComboItemsClear
-            Me.FComboItemsAdd , Ambient.DisplayName
+            Me.FComboItemsAdd 1, Ambient.DisplayName
             Me.FComboItemSelected(1) = True
         End If
     End If
@@ -999,7 +1006,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ImageComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1031,7 +1038,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If ImageComboDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -1083,7 +1090,7 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
+If ImageComboDesignMode = False Then
     If PropImageListInit = False And PropImageListControl Is Nothing Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
@@ -1124,9 +1131,9 @@ If ImageComboHandle <> 0 Then
                     If Success = True Then
                         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
+                        If ImageComboDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf ImageComboDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1160,7 +1167,7 @@ End Property
 Public Property Let Style(ByVal Value As ImcStyleConstants)
 Select Case Value
     Case ImcStyleDropDownCombo, ImcStyleSimpleCombo, ImcStyleDropDownList
-        If Ambient.UserMode = True Then
+        If ImageComboDesignMode = False Then
             Err.Raise Number:=382, Description:="Style property is read-only at run time"
         Else
             PropStyle = Value
@@ -1196,7 +1203,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If ImageComboHandle <> 0 And Ambient.UserMode = True Then
+If ImageComboHandle <> 0 And ImageComboDesignMode = False Then
     If ImageComboBackColorBrush <> 0 Then DeleteObject ImageComboBackColorBrush
     ImageComboBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -1244,7 +1251,7 @@ Select Case PropStyle
             Text = PropText
         End If
     Case ImcStyleDropDownList
-        If ImageComboComboHandle <> 0 And Ambient.UserMode = True Then
+        If ImageComboComboHandle <> 0 And ImageComboDesignMode = False Then
             Dim iItem As Long
             iItem = SendMessage(ImageComboComboHandle, CB_GETCURSEL, 0, ByVal 0&)
             If Not iItem = CB_ERR Then
@@ -1277,7 +1284,7 @@ Select Case PropStyle
         PropText = Value
         If ImageComboHandle <> 0 And ImageComboEditHandle <> 0 Then SendMessage ImageComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     Case ImcStyleDropDownList
-        If Ambient.UserMode = True Then
+        If ImageComboDesignMode = False Then
             Dim Item As ImcComboItem
             Set Item = Me.FindItem(Value)
             If Not Item Is Nothing Then
@@ -1299,7 +1306,7 @@ End Property
 
 Public Property Let Indentation(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ImageComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1335,7 +1342,7 @@ Select Case Value
     Case 1 To 30
         PropMaxDropDownItems = Value
     Case Else
-        If Ambient.UserMode = False Then
+        If ImageComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1371,7 +1378,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ImageComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1395,7 +1402,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If ImageComboHandle <> 0 And ImageComboEditHandle <> 0 And Ambient.UserMode = True Then
+If ImageComboHandle <> 0 And ImageComboEditHandle <> 0 And ImageComboDesignMode = False Then
     If GetFocus() = ImageComboEditHandle Then Call ComCtlsSetIMEMode(ImageComboEditHandle, ImageComboIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1444,17 +1451,11 @@ End If
 Set ComboItems = PropComboItems
 End Property
 
-Friend Sub FComboItemsAdd(Optional ByVal Index As Long, Optional ByVal Text As String, Optional ByVal ImageIndex As Long, Optional ByVal SelImageIndex As Long, Optional ByVal Indentation As Variant)
-Dim ComboItemIndex As Long
-If Index = 0 Then
-    ComboItemIndex = Me.ComboItems.Count + 1
-Else
-    ComboItemIndex = Index
-End If
+Friend Sub FComboItemsAdd(ByVal Index As Long, Optional ByVal Text As String, Optional ByVal ImageIndex As Long, Optional ByVal SelImageIndex As Long, Optional ByVal Indentation As Variant)
 Dim CBEI As COMBOBOXEXITEM
 With CBEI
 .Mask = CBEIF_TEXT Or CBEIF_IMAGE Or CBEIF_SELECTEDIMAGE Or CBEIF_LPARAM Or CBEIF_INDENT
-.iItem = ComboItemIndex - 1
+.iItem = Index - 1
 .pszText = StrPtr(Text)
 .cchTextMax = Len(Text)
 .iImage = ImageIndex - 1
@@ -1699,7 +1700,7 @@ Me.ExtendedUI = PropExtendedUI
 Me.MaxDropDownItems = PropMaxDropDownItems
 If PropShowImages = False Then Me.ShowImages = PropShowImages
 If PropEllipsisFormat <> ImcEllipsisFormatNone Then Me.EllipsisFormat = PropEllipsisFormat
-If Ambient.UserMode = True Then
+If ImageComboDesignMode = False Then
     If ImageComboHandle <> 0 Then
         If ImageComboBackColorBrush = 0 Then ImageComboBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(ImageComboHandle, Me, 1)
@@ -1713,7 +1714,7 @@ If Ambient.UserMode = True Then
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
 Else
     If PropStyle = ImcStyleDropDownList Then
-        Me.FComboItemsAdd , Ambient.DisplayName
+        Me.FComboItemsAdd 1, Ambient.DisplayName
         If ImageComboHandle <> 0 Then SendMessage ImageComboHandle, CB_SETCURSEL, 0, ByVal 0&
     End If
 End If
@@ -2033,7 +2034,7 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> ImageComboHandle And (GetFocus() <> ImageComboComboHandle Or ImageComboComboHandle = 0) And (GetFocus() <> ImageComboEditHandle Or ImageComboEditHandle = 0) Then
+        If ImageComboTopDesignMode = False And GetFocus() <> ImageComboHandle And (GetFocus() <> ImageComboComboHandle Or ImageComboComboHandle = 0) And (GetFocus() <> ImageComboEditHandle Or ImageComboEditHandle = 0) Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
@@ -2090,16 +2091,22 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         If PropStyle = ImcStyleDropDownList Then
             Dim KeyCode As Integer
             KeyCode = wParam And &HFF&
-            If wMsg = WM_KEYDOWN Then
+            If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+                If wMsg = WM_KEYDOWN Then
+                    RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                ElseIf wMsg = WM_KEYUP Then
+                    RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+                End If
+                ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
+            ElseIf wMsg = WM_SYSKEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            ElseIf wMsg = WM_KEYUP Then
+            ElseIf wMsg = WM_SYSKEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
-            ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
             wParam = KeyCode
         End If
     Case WM_CHAR
@@ -2234,15 +2241,21 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        ImageComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

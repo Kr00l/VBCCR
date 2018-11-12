@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4140
    ScaleWidth      =   5925
-   Begin VBCCR15.CheckBoxW CheckShowTips 
+   Begin VBCCR16.CheckBoxW CheckShowTips 
       Height          =   285
       Left            =   4200
       TabIndex        =   11
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   0
       Caption         =   "PPStatusBarGeneral.pgx":0000
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboStyle 
+   Begin VBCCR16.ComboBoxW ComboStyle 
       Height          =   315
       Left            =   1800
       TabIndex        =   6
@@ -39,7 +39,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextSimpleText 
+   Begin VBCCR16.TextBoxW TextSimpleText 
       Height          =   315
       Left            =   1800
       TabIndex        =   8
@@ -48,7 +48,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckAllowSizeGrip 
+   Begin VBCCR16.CheckBoxW CheckAllowSizeGrip 
       Height          =   285
       Left            =   4200
       TabIndex        =   10
@@ -58,7 +58,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   0
       Caption         =   "PPStatusBarGeneral.pgx":0030
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -68,7 +68,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   0
       Caption         =   "PPStatusBarGeneral.pgx":006A
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -78,7 +78,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   0
       Caption         =   "PPStatusBarGeneral.pgx":0098
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   9
@@ -88,7 +88,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       _ExtentY        =   0
       Caption         =   "PPStatusBarGeneral.pgx":00D0
    End
-   Begin VBCCR15.CheckBoxW CheckDoubleBuffer 
+   Begin VBCCR16.CheckBoxW CheckDoubleBuffer 
       Height          =   285
       Left            =   3480
       TabIndex        =   2

@@ -21,8 +21,8 @@ Private Function ShadowImageList() As ImageList
 ComCtlsPtrToShadowObj ShadowImageList, ShadowObjectPointer
 End Function
 
-Friend Sub FInit(ByVal Object As ImageList, ByVal Key As String, ByVal Picture As IPictureDisp)
-ShadowObjectPointer = ObjPtr(Object)
+Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Key As String, ByVal Picture As IPictureDisp)
+ShadowObjectPointer = ObjectPointer
 PropKey = Key
 Set PropPicture = Picture
 End Sub

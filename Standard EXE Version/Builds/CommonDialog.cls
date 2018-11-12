@@ -1978,9 +1978,8 @@ Dim ErrVal As Long
 If PropHookEvents = False Then
     ErrVal = PrintDialogEx(PDLGEX)
 Else
-    Call ComCtlsCdlPDEXSetHook(Me)
+    PDLGEX.lpCallback = ComCtlsCdlPDEXCallbackPtr(Me)
     ErrVal = PrintDialogEx(PDLGEX)
-    Call ComCtlsCdlPDEXRemoveHook
 End If
 If ErrVal = S_OK Then
     If PDLGEX.dwResultAction <> CdlPDResultCancel Or (PDLGEX.Flags And CdlPDReturnDefault) <> 0 Then

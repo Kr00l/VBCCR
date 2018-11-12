@@ -42,7 +42,7 @@ Attribute Add.VB_Description = "Adds a list image to the list images collection.
 If Index > (PropListImage.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 ShadowImageList.FListImagesAdd Index, Picture
 Dim NewListImage As New ImlListImage
-NewListImage.FInit ShadowImageList, Key, Picture
+NewListImage.FInit ShadowObjectPointer, Key, Picture
 If Key = vbNullString Then
     If Index > 0 And Index <= PropListImage.Count Then
         PropListImage.Add NewListImage, , Index

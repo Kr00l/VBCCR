@@ -256,6 +256,8 @@ Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -360,6 +362,7 @@ Private ListBoxHandle As Long
 Private ListBoxFontHandle As Long
 Private ListBoxCharCodeCache As Long
 Private ListBoxMouseOver As Boolean
+Private ListBoxDesignMode As Boolean, ListBoxTopDesignMode As Boolean
 Private ListBoxNewIndex As Long
 Private ListBoxDragIndexBuffer As Long, ListBoxDragIndex As Long
 Private ListBoxTopIndex As Long
@@ -450,6 +453,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+ListBoxDesignMode = Not Ambient.UserMode
+ListBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -478,6 +483,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+ListBoxDesignMode = Not Ambient.UserMode
+ListBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -623,7 +630,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If Ambient.UserMode = False And PropertyName = "DisplayName" Then
+If ListBoxDesignMode = True And PropertyName = "DisplayName" Then
     If ListBoxHandle <> 0 Then
         If SendMessage(ListBoxHandle, LB_GETCOUNT, 0, ByVal 0&) > 0 Then
             Dim Buffer As String
@@ -1016,7 +1023,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ListBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1076,7 +1083,7 @@ End Property
 
 Public Property Let Redraw(ByVal Value As Boolean)
 PropRedraw = Value
-If ListBoxHandle <> 0 And Ambient.UserMode = True Then
+If ListBoxHandle <> 0 And ListBoxDesignMode = False Then
     SendMessage ListBoxHandle, WM_SETREDRAW, IIf(PropRedraw = True, 1, 0), ByVal 0&
     If PropRedraw = True Then Me.Refresh
 End If
@@ -1110,7 +1117,7 @@ End Property
 
 Public Property Let MultiColumn(ByVal Value As Boolean)
 If PropDrawMode = LstDrawModeOwnerDrawVariable And Value = True Then
-    If Ambient.UserMode = False Then
+    If ListBoxDesignMode = True Then
         MsgBox "MultiColumn must be False when DrawMode is 2 - OwnerDrawVariable", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1139,7 +1146,7 @@ IntegralHeight = PropIntegralHeight
 End Property
 
 Public Property Let IntegralHeight(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If ListBoxDesignMode = False Then
     Err.Raise Number:=382, Description:="IntegralHeight property is read-only at run time"
 Else
     PropIntegralHeight = Value
@@ -1168,7 +1175,7 @@ Public Property Let MultiSelect(ByVal Value As VBRUN.MultiSelectConstants)
 Select Case Value
     Case vbMultiSelectNone, vbMultiSelectSimple, vbMultiSelectExtended
         If PropStyle <> LstStyleStandard And Value <> vbMultiSelectNone Then
-            If Ambient.UserMode = False Then
+            If ListBoxDesignMode = True Then
                 MsgBox "MultiSelect must be 0 - None when Style is not 0 - Standard", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1194,7 +1201,7 @@ End Property
 
 Public Property Let HorizontalExtent(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ListBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1223,7 +1230,7 @@ Style = PropStyle
 End Property
 
 Public Property Let Style(ByVal Value As LstStyleConstants)
-If Ambient.UserMode = True Then
+If ListBoxDesignMode = False Then
     Err.Raise Number:=382, Description:="Style property is read-only at run time"
 Else
     Select Case Value
@@ -1261,7 +1268,7 @@ End Property
 Public Property Let DrawMode(ByVal Value As LstDrawModeConstants)
 Select Case Value
     Case LstDrawModeNormal, LstDrawModeOwnerDrawFixed, LstDrawModeOwnerDrawVariable
-        If Ambient.UserMode = True Then
+        If ListBoxDesignMode = False Then
             Err.Raise Number:=382, Description:="DrawMode property is read-only at run time"
         Else
             PropDrawMode = Value
@@ -1605,7 +1612,7 @@ End If
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
-If Ambient.UserMode = True Then
+If ListBoxDesignMode = False Then
     If ListBoxHandle <> 0 Then Call ComCtlsSetSubclass(ListBoxHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 Else
@@ -1623,7 +1630,7 @@ End If
 End Sub
 
 Private Sub ReCreateListBox()
-If Ambient.UserMode = True Then
+If ListBoxDesignMode = False Then
     Dim Locked As Boolean
     With Me
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
@@ -1700,7 +1707,7 @@ Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
-If PropRedraw = True Or Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If PropRedraw = True Or ListBoxDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Public Property Get Text() As String
@@ -2201,16 +2208,22 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If PropStyle <> LstStyleStandard And KeyCode = vbKeySpace Then Call SetItemCheck
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            ListBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            If PropStyle <> LstStyleStandard And KeyCode = vbKeySpace Then Call SetItemCheck
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        ListBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -2230,7 +2243,7 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> ListBoxHandle Then
+        If ListBoxTopDesignMode = False And GetFocus() <> ListBoxHandle Then
             If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

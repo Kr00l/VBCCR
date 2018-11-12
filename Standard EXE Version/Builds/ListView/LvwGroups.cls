@@ -45,7 +45,7 @@ Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, 
 Attribute Add.VB_Description = "Adds a group to the groups collection."
 If Index > (PropGroup.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 Dim NewGroup As New LvwGroup, This As ISubclass
-NewGroup.FInit ShadowListView, Key
+NewGroup.FInit ShadowObjectPointer, Key
 If PropSorted = True Then Set This = Me
 ShadowListView.FGroupsAdd Index, NewGroup, This, Header, HeaderAlignment, Footer, FooterAlignment
 If Key = vbNullString Then

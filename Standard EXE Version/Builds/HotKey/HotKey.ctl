@@ -127,9 +127,9 @@ Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
-Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_SYSKEYDOWN As Long = &H104
 Private Const WM_SYSKEYUP As Long = &H105
+Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
 Private Const WM_LBUTTONUP As Long = &H202
@@ -161,6 +161,7 @@ Private HotKeyBackColorBrush As Long
 Private HotKeyCharCodeCache As Long
 Private HotKeyIsClick As Boolean
 Private HotKeyMouseOver As Boolean
+Private HotKeyDesignMode As Boolean, HotKeyTopDesignMode As Boolean
 Private HotKeyDblClickSupported As Boolean, HotKeyIsDblClick As Boolean
 Private HotKeyDblClickTime As Long, HotKeyDblClickTickCount As Double
 Private HotKeyDblClickCX As Long, HotKeyDblClickCY As Long
@@ -175,7 +176,7 @@ Private PropBackColor As OLE_COLOR
 Private PropBorderStyle As CCBorderStyleConstants
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
-If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Or wMsg = WM_SYSKEYDOWN Or wMsg = WM_SYSKEYUP Then
+If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     Dim KeyCode As Integer, IsInputKey As Boolean
     KeyCode = wParam And &HFF&
     If wMsg = WM_KEYDOWN Then
@@ -235,6 +236,8 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+HotKeyDesignMode = Not Ambient.UserMode
+HotKeyTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -246,6 +249,8 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+HotKeyDesignMode = Not Ambient.UserMode
+HotKeyTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -582,7 +587,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If HotKeyDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -610,7 +615,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If HotKeyHandle <> 0 And Ambient.UserMode = True Then
+If HotKeyHandle <> 0 And HotKeyDesignMode = False Then
     If HotKeyBackColorBrush <> 0 Then DeleteObject HotKeyBackColorBrush
     HotKeyBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -648,7 +653,7 @@ If PropBorderStyle <> CCBorderStyleSunken Then
     ' WS_EX_CLIENTEDGE is predefined when control receives WM_NCCREATE.
     Me.BorderStyle = PropBorderStyle
 End If
-If Ambient.UserMode = True Then
+If HotKeyDesignMode = False Then
     If HotKeyHandle <> 0 Then
         HotKeyDblClickSupported = CBool((GetClassLong(HotKeyHandle, GCL_STYLE) And CS_DBLCLKS) <> 0)
         If HotKeyBackColorBrush = 0 Then HotKeyBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
@@ -743,15 +748,21 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            HotKeyCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        HotKeyCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -771,7 +782,7 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> HotKeyHandle Then
+        If HotKeyTopDesignMode = False And GetFocus() <> HotKeyHandle Then
             If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN

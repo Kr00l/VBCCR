@@ -5,32 +5,27 @@ Option Explicit
 
 ' OLEGuids.tlb (in IDE only)
 
-Private Enum VTableIndexRichEditOleCallbackConstants
-' Ignore : RichEditOleCallbackQueryInterface
-' Ignore : RichEditOleCallbackAddRef
-' Ignore : RichEditOleCallbackRelease
-VTableIndexRichEditOleCallbackGetNewStorage = 4
-VTableIndexRichEditOleCallbackGetInPlaceContext = 5
-VTableIndexRichEditOleCallbackShowContainerUI = 6
-VTableIndexRichEditOleCallbackQueryInsertObject = 7
-VTableIndexRichEditOleCallbackDeleteObject = 8
-VTableIndexRichEditOleCallbackQueryAcceptData = 9
-VTableIndexRichEditOleCallbackContextSensitiveHelp = 10
-VTableIndexRichEditOleCallbackGetClipboardData = 11
-VTableIndexRichEditOleCallbackGetDragDropEffect = 12
-VTableIndexRichEditOleCallbackGetContextMenu = 13
-End Enum
+Private Type VTableIRichEditOleCallbackDataStruct
+VTable As Long
+RefCount As Long
+ShadowObjPtr As Long
+End Type
+Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As Long) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function WriteFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As Long) As Long
 Private Declare Function ReadFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToRead As Long, ByRef NumberOfBytesRead As Long, ByVal lpOverlapped As Long) As Long
+Private Const E_INVALIDARG As Long = &H80070057
 Private Const E_NOTIMPL As Long = &H80004001
+Private Const E_NOINTERFACE As Long = &H80004002
+Private Const E_POINTER As Long = &H80004003
 Private Const S_OK As Long = &H0
 Private RichedModHandle As Long, RichedModCount As Long, RichedClassName As String
 Private StreamStringOut() As Byte, StreamStringOutUBound As Long
 Private StreamStringIn() As Byte, StreamStringInLength As Long, StreamStringInPos As Long
-Private VTableSubclassRichEditOleCallback As VTableSubclass
+Private VTableIRichEditOleCallback(0 To 12) As Long
 
 Public Sub RtfLoadRichedMod()
 If (RichedModHandle Or RichedModCount) = 0 Then
@@ -111,110 +106,134 @@ Public Function RtfStreamCallbackFileIn(ByVal dwCookie As Long, ByVal ByteBuffer
 RtfStreamCallbackFileIn = IIf(ReadFile(dwCookie, ByteBufferPtr, BytesRequested, BytesProcessed, 0) <> 0, 0, 1)
 End Function
 
-Public Sub SetVTableSubclassIRichEditOleCallback(ByVal This As Object)
-If VTableSupported(This) = True Then
-    Dim ShadowIRichEditOleCallback As OLEGuids.IRichEditOleCallback
-    Set ShadowIRichEditOleCallback = This
-    Call ReplaceIRichEditOleCallback(This)
+Public Function RtfOleCallback(ByVal This As RichTextBox) As OLEGuids.IRichEditOleCallback
+Dim VTableIRichEditOleCallbackData As VTableIRichEditOleCallbackDataStruct
+With VTableIRichEditOleCallbackData
+.VTable = GetVTableIRichEditOleCallback()
+.RefCount = 1
+.ShadowObjPtr = ObjPtr(This)
+Dim hMem As Long
+hMem = CoTaskMemAlloc(LenB(VTableIRichEditOleCallbackData))
+If hMem <> 0 Then
+    CopyMemory ByVal hMem, VTableIRichEditOleCallbackData, LenB(VTableIRichEditOleCallbackData)
+    CopyMemory ByVal VarPtr(RtfOleCallback), hMem, 4
 End If
-End Sub
-
-Public Sub RemoveVTableSubclassIRichEditOleCallback(ByVal This As Object)
-Attribute RemoveVTableSubclassIRichEditOleCallback.VB_MemberFlags = "40"
-If VTableSupported(This) = True Then Call RestoreIRichEditOleCallback(This)
-End Sub
-
-Private Function VTableSupported(ByRef This As Object) As Boolean
-On Error GoTo Cancel
-Dim ShadowIRichEditOleCallback As OLEGuids.IRichEditOleCallback
-Set ShadowIRichEditOleCallback = This
-VTableSupported = Not CBool(ShadowIRichEditOleCallback Is Nothing)
-Cancel:
+End With
 End Function
 
-Private Sub ReplaceIRichEditOleCallback(ByVal This As OLEGuids.IRichEditOleCallback)
-If VTableSubclassRichEditOleCallback Is Nothing Then Set VTableSubclassRichEditOleCallback = New VTableSubclass
-If VTableSubclassRichEditOleCallback.RefCount = 0 Then
-    VTableSubclassRichEditOleCallback.Subclass ObjPtr(This), VTableIndexRichEditOleCallbackGetNewStorage, VTableIndexRichEditOleCallbackGetContextMenu, _
-    AddressOf IRichEditOleCallback_GetNewStorage, AddressOf IRichEditOleCallback_GetInPlaceContext, _
-    AddressOf IRichEditOleCallback_ShowContainerUI, AddressOf IRichEditOleCallback_QueryInsertObject, _
-    AddressOf IRichEditOleCallback_DeleteObject, AddressOf IRichEditOleCallback_QueryAcceptData, _
-    AddressOf IRichEditOleCallback_ContextSensitiveHelp, AddressOf IRichEditOleCallback_GetClipboardData, _
-    AddressOf IRichEditOleCallback_GetDragDropEffect, AddressOf IRichEditOleCallback_GetContextMenu
+Private Function GetVTableIRichEditOleCallback() As Long
+If VTableIRichEditOleCallback(0) = 0 Then
+    VTableIRichEditOleCallback(0) = ProcPtr(AddressOf IRichEditOleCallback_QueryInterface)
+    VTableIRichEditOleCallback(1) = ProcPtr(AddressOf IRichEditOleCallback_AddRef)
+    VTableIRichEditOleCallback(2) = ProcPtr(AddressOf IRichEditOleCallback_Release)
+    VTableIRichEditOleCallback(3) = ProcPtr(AddressOf IRichEditOleCallback_GetNewStorage)
+    VTableIRichEditOleCallback(4) = ProcPtr(AddressOf IRichEditOleCallback_GetInPlaceContext)
+    VTableIRichEditOleCallback(5) = ProcPtr(AddressOf IRichEditOleCallback_ShowContainerUI)
+    VTableIRichEditOleCallback(6) = ProcPtr(AddressOf IRichEditOleCallback_QueryInsertObject)
+    VTableIRichEditOleCallback(7) = ProcPtr(AddressOf IRichEditOleCallback_DeleteObject)
+    VTableIRichEditOleCallback(8) = ProcPtr(AddressOf IRichEditOleCallback_QueryAcceptData)
+    VTableIRichEditOleCallback(9) = ProcPtr(AddressOf IRichEditOleCallback_ContextSensitiveHelp)
+    VTableIRichEditOleCallback(10) = ProcPtr(AddressOf IRichEditOleCallback_GetClipboardData)
+    VTableIRichEditOleCallback(11) = ProcPtr(AddressOf IRichEditOleCallback_GetDragDropEffect)
+    VTableIRichEditOleCallback(12) = ProcPtr(AddressOf IRichEditOleCallback_GetContextMenu)
 End If
-VTableSubclassRichEditOleCallback.AddRef
-End Sub
+GetVTableIRichEditOleCallback = VarPtr(VTableIRichEditOleCallback(0))
+End Function
 
-Private Sub RestoreIRichEditOleCallback(ByVal This As OLEGuids.IRichEditOleCallback)
-If Not VTableSubclassRichEditOleCallback Is Nothing Then
-    VTableSubclassRichEditOleCallback.Release
-    If VTableSubclassRichEditOleCallback.RefCount = 0 Then VTableSubclassRichEditOleCallback.UnSubclass
+Private Function IRichEditOleCallback_QueryInterface(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As Long) As Long
+If VarPtr(pvObj) = 0 Then
+    IRichEditOleCallback_QueryInterface = E_POINTER
+    Exit Function
 End If
-End Sub
+' IID_IRichEditOleCallback = {00020D03-0000-0000-C000-000000000046}
+If IID.Data1 = &H20D03 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
+    If IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
+    And IID.Data4(4) = &H0 And IID.Data4(5) = &H0 And IID.Data4(6) = &H0 And IID.Data4(7) = &H46 Then
+        pvObj = VarPtr(This)
+        IRichEditOleCallback_AddRef This
+        IRichEditOleCallback_QueryInterface = S_OK
+    Else
+        IRichEditOleCallback_QueryInterface = E_NOINTERFACE
+    End If
+Else
+    IRichEditOleCallback_QueryInterface = E_NOINTERFACE
+End If
+End Function
 
-Private Function IRichEditOleCallback_GetNewStorage(ByVal This As Object, ByRef ppStorage As OLEGuids.IStorage) As Long
+Private Function IRichEditOleCallback_AddRef(ByRef This As VTableIRichEditOleCallbackDataStruct) As Long
+This.RefCount = This.RefCount + 1
+IRichEditOleCallback_AddRef = This.RefCount
+End Function
+
+Private Function IRichEditOleCallback_Release(ByRef This As VTableIRichEditOleCallbackDataStruct) As Long
+This.RefCount = This.RefCount - 1
+IRichEditOleCallback_Release = This.RefCount
+If IRichEditOleCallback_Release = 0 Then CoTaskMemFree VarPtr(This)
+End Function
+
+Private Function IRichEditOleCallback_GetNewStorage(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef ppStorage As OLEGuids.IStorage) As Long
 On Error GoTo CATCH_EXCEPTION
-Dim ShadowRtfOleCallback As RtfOleCallback
-Set ShadowRtfOleCallback = This
-ShadowRtfOleCallback.ShadowRichTextBox.FIRichEditOleCallback_GetNewStorage IRichEditOleCallback_GetNewStorage, ppStorage
+Dim ShadowRichTextBox As RichTextBox
+ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ShadowRichTextBox.FIRichEditOleCallback_GetNewStorage IRichEditOleCallback_GetNewStorage, ppStorage
 Exit Function
 CATCH_EXCEPTION:
 IRichEditOleCallback_GetNewStorage = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetInPlaceContext(ByVal This As Object, ByRef ppFrame As OLEGuids.IOleInPlaceFrame, ByRef ppDoc As OLEGuids.IOleInPlaceUIWindow, ByRef pFrameInfo As OLEGuids.OLEINPLACEFRAMEINFO) As Long
+Private Function IRichEditOleCallback_GetInPlaceContext(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef ppFrame As OLEGuids.IOleInPlaceFrame, ByRef ppDoc As OLEGuids.IOleInPlaceUIWindow, ByRef pFrameInfo As OLEGuids.OLEINPLACEFRAMEINFO) As Long
 IRichEditOleCallback_GetInPlaceContext = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_ShowContainerUI(ByVal This As Object, ByVal fShow As Long) As Long
+Private Function IRichEditOleCallback_ShowContainerUI(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal fShow As Long) As Long
 IRichEditOleCallback_ShowContainerUI = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_QueryInsertObject(ByVal This As Object, ByRef pCLSID As OLEGuids.OLECLSID, ByVal pStorage As OLEGuids.IStorage, ByVal CharPos As Long) As Long
+Private Function IRichEditOleCallback_QueryInsertObject(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef pCLSID As OLEGuids.OLECLSID, ByVal pStorage As OLEGuids.IStorage, ByVal CharPos As Long) As Long
 IRichEditOleCallback_QueryInsertObject = S_OK
 End Function
 
-Private Function IRichEditOleCallback_DeleteObject(ByVal This As Object, ByVal LpOleObject As Long) As Long
+Private Function IRichEditOleCallback_DeleteObject(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal LpOleObject As Long) As Long
 On Error GoTo CATCH_EXCEPTION
-Dim ShadowRtfOleCallback As RtfOleCallback
-Set ShadowRtfOleCallback = This
-ShadowRtfOleCallback.ShadowRichTextBox.FIRichEditOleCallback_DeleteObject LpOleObject
+Dim ShadowRichTextBox As RichTextBox
+ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ShadowRichTextBox.FIRichEditOleCallback_DeleteObject LpOleObject
 IRichEditOleCallback_DeleteObject = S_OK
 Exit Function
 CATCH_EXCEPTION:
 IRichEditOleCallback_DeleteObject = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_QueryAcceptData(ByVal This As Object, ByVal pDataObject As OLEGuids.IDataObject, ByRef CF As Integer, ByVal RECO As Long, ByVal fReally As Long, ByVal hMetaPict As Long) As Long
+Private Function IRichEditOleCallback_QueryAcceptData(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal pDataObject As OLEGuids.IDataObject, ByRef CF As Integer, ByVal RECO As Long, ByVal fReally As Long, ByVal hMetaPict As Long) As Long
 IRichEditOleCallback_QueryAcceptData = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_ContextSensitiveHelp(ByVal This As Object, ByVal fEnterMode As Long) As Long
+Private Function IRichEditOleCallback_ContextSensitiveHelp(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal fEnterMode As Long) As Long
 IRichEditOleCallback_ContextSensitiveHelp = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetClipboardData(ByVal This As Object, ByVal lpCharRange As Long, ByVal RECO As Long, ByRef ppDataObject As OLEGuids.IDataObject) As Long
+Private Function IRichEditOleCallback_GetClipboardData(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal lpCharRange As Long, ByVal RECO As Long, ByRef ppDataObject As OLEGuids.IDataObject) As Long
 IRichEditOleCallback_GetClipboardData = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetDragDropEffect(ByVal This As Object, ByVal fDrag As Long, ByVal KeyState As Long, ByRef dwEffect As Long) As Long
+Private Function IRichEditOleCallback_GetDragDropEffect(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal fDrag As Long, ByVal KeyState As Long, ByRef dwEffect As Long) As Long
 On Error GoTo CATCH_EXCEPTION
-Dim ShadowRtfOleCallback As RtfOleCallback
-Set ShadowRtfOleCallback = This
-ShadowRtfOleCallback.ShadowRichTextBox.FIRichEditOleCallback_GetDragDropEffect CBool(fDrag <> 0), KeyState, dwEffect
+Dim ShadowRichTextBox As RichTextBox
+ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ShadowRichTextBox.FIRichEditOleCallback_GetDragDropEffect CBool(fDrag <> 0), KeyState, dwEffect
 IRichEditOleCallback_GetDragDropEffect = S_OK
 Exit Function
 CATCH_EXCEPTION:
 IRichEditOleCallback_GetDragDropEffect = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetContextMenu(ByVal This As Object, ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal lpCharRange As Long, ByRef hMenu As Long) As Long
+Private Function IRichEditOleCallback_GetContextMenu(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal lpCharRange As Long, ByRef hMenu As Long) As Long
 On Error GoTo CATCH_EXCEPTION
-Dim ShadowRtfOleCallback As RtfOleCallback
-Set ShadowRtfOleCallback = This
-ShadowRtfOleCallback.ShadowRichTextBox.FIRichEditOleCallback_GetContextMenu SelType, LpOleObject, lpCharRange, hMenu
+Dim ShadowRichTextBox As RichTextBox
+ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ShadowRichTextBox.FIRichEditOleCallback_GetContextMenu SelType, LpOleObject, lpCharRange, hMenu
 If hMenu = 0 Then
-    IRichEditOleCallback_GetContextMenu = E_NOTIMPL
+    IRichEditOleCallback_GetContextMenu = E_INVALIDARG
 Else
     IRichEditOleCallback_GetContextMenu = S_OK
 End If
