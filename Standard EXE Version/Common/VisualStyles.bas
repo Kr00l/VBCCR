@@ -62,6 +62,7 @@ Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TIN
 Private Declare Function SetErrorMode Lib "kernel32" (ByVal wMode As Long) As Long
 Private Declare Function DllGetVersion Lib "comctl32" (ByRef pdvi As DLLVERSIONINFO) As Long
 Private Declare Function IsWindowVisible Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function IsWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
 Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
@@ -238,47 +239,49 @@ Select Case wMsg
         End If
 End Select
 RedirectButton = DefSubclassProc(hWnd, wMsg, wParam, lParam)
-Select Case wMsg
-    Case WM_MOUSEHOVER, WM_LBUTTONDOWN
-        SetProp hWnd, StrPtr("Hot"), 1
-        Button.Refresh
-    Case WM_MOUSELEAVE
-        SetProp hWnd, StrPtr("Hot"), 0
-        Button.Refresh
-    Case WM_KILLFOCUS
-        Dim P As POINTAPI
-        GetCursorPos P
-        If WindowFromPoint(P.X, P.Y) <> hWnd Then SetProp hWnd, StrPtr("Hot"), 0
-        Button.Refresh
-    Case WM_MOUSEMOVE
-        If GetProp(hWnd, StrPtr("Hot")) = 0 Then
-            Dim TME As TRACKMOUSEEVENTSTRUCT
-            With TME
-            .cbSize = LenB(TME)
-            .hWndTrack = hWnd
-            .dwFlags = TME_HOVER Or TME_LEAVE
-            .dwHoverTime = 1
-            End With
-            TrackMouseEvent TME
-        End If
-        If GetProp(hWnd, StrPtr("Painted")) = 0 Then Button.Refresh
-    Case WM_SETFOCUS, WM_ENABLE
-        If SetRedraw = True Then
-            SendMessage hWnd, WM_SETREDRAW, 1, ByVal 0&
-            If wMsg = WM_ENABLE Then
-                SetProp hWnd, StrPtr("Enabled"), 0
-                InvalidateRect hWnd, ByVal 0&, 0
-            Else
-                SetProp hWnd, StrPtr("Enabled"), 1
-                Button.Refresh
+If wMsg = WM_NCDESTROY Then
+    Call RemoveRedirectButton(hWnd, uIdSubclass)
+    RemoveProp hWnd, StrPtr("Enabled"): RemoveProp hWnd, StrPtr("Hot"): RemoveProp hWnd, StrPtr("Painted")
+ElseIf IsWindow(hWnd) <> 0 Then
+    Select Case wMsg
+        Case WM_MOUSEHOVER, WM_LBUTTONDOWN
+            SetProp hWnd, StrPtr("Hot"), 1
+            Button.Refresh
+        Case WM_MOUSELEAVE
+            SetProp hWnd, StrPtr("Hot"), 0
+            Button.Refresh
+        Case WM_KILLFOCUS
+            Dim P As POINTAPI
+            GetCursorPos P
+            If WindowFromPoint(P.X, P.Y) <> hWnd Then SetProp hWnd, StrPtr("Hot"), 0
+            Button.Refresh
+        Case WM_MOUSEMOVE
+            If GetProp(hWnd, StrPtr("Hot")) = 0 Then
+                Dim TME As TRACKMOUSEEVENTSTRUCT
+                With TME
+                .cbSize = LenB(TME)
+                .hWndTrack = hWnd
+                .dwFlags = TME_HOVER Or TME_LEAVE
+                .dwHoverTime = 1
+                End With
+                TrackMouseEvent TME
             End If
-        End If
-    Case WM_LBUTTONUP, WM_RBUTTONUP
-        Button.Refresh
-    Case WM_NCDESTROY
-        Call RemoveRedirectButton(hWnd, uIdSubclass)
-        RemoveProp hWnd, StrPtr("Enabled"): RemoveProp hWnd, StrPtr("Hot"): RemoveProp hWnd, StrPtr("Painted")
-End Select
+            If GetProp(hWnd, StrPtr("Painted")) = 0 Then Button.Refresh
+        Case WM_SETFOCUS, WM_ENABLE
+            If SetRedraw = True Then
+                SendMessage hWnd, WM_SETREDRAW, 1, ByVal 0&
+                If wMsg = WM_ENABLE Then
+                    SetProp hWnd, StrPtr("Enabled"), 0
+                    InvalidateRect hWnd, ByVal 0&, 0
+                Else
+                    SetProp hWnd, StrPtr("Enabled"), 1
+                    Button.Refresh
+                End If
+            End If
+        Case WM_LBUTTONUP, WM_RBUTTONUP
+            Button.Refresh
+    End Select
+End If
 End Function
 
 Private Sub RemoveRedirectButton(ByVal hWnd As Long, ByVal uIdSubclass As Long)
