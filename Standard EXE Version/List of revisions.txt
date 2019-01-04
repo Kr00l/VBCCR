@@ -1,5 +1,9 @@
 List of revisions:
 
+04-Jan-2019
+- Major perfomance boost when reading .Text or .TextRTF in the RichTextBox control.
+  This was achieved by reducing the number of 'ReDim Preserve' in the internal RtfStreamCallbackStringOut function.
+
 11-Nov-2018
 - Internal improvement concerning design-mode handling.
 
