@@ -23,7 +23,7 @@ Private Const E_NOINTERFACE As Long = &H80004002
 Private Const E_POINTER As Long = &H80004003
 Private Const S_OK As Long = &H0
 Private RichedModHandle As Long, RichedModCount As Long, RichedClassName As String
-Private StreamStringOut() As Byte, StreamStringOutUBound As Long
+Private StreamStringOut() As Byte, StreamStringOutUBound As Long, StreamStringOutBufferSize As Long
 Private StreamStringIn() As Byte, StreamStringInLength As Long, StreamStringInPos As Long
 Private VTableIRichEditOleCallback(0 To 12) As Long
 
@@ -53,14 +53,27 @@ RtfGetClassName = RichedClassName
 End Function
 
 Public Function RtfStreamStringOut() As String
+If StreamStringOutUBound > 0 Then ReDim Preserve StreamStringOut(0 To (StreamStringOutUBound - 1)) As Byte
 RtfStreamStringOut = StreamStringOut()
 Erase StreamStringOut()
 StreamStringOutUBound = 0
+StreamStringOutBufferSize = 0
 End Function
 
 Public Function RtfStreamCallbackStringOut(ByVal dwCookie As Long, ByVal ByteBufferPtr As Long, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
 If BytesRequested > 0 Then
-    ReDim Preserve StreamStringOut(0 To (StreamStringOutUBound + BytesRequested - 1)) As Byte
+    If StreamStringOutBufferSize < (StreamStringOutUBound + BytesRequested - 1) Then
+        Dim BufferBump As Long
+        If StreamStringOutBufferSize = 0 Then
+            BufferBump = 16384 ' Initialize at 16 KB
+        Else
+            BufferBump = StreamStringOutBufferSize
+            If BufferBump > 65536 Then BufferBump = 65536 ' Cap at 64 KB
+        End If
+        If BufferBump < BytesRequested Then BufferBump = BytesRequested
+        StreamStringOutBufferSize = StreamStringOutBufferSize + BufferBump
+        ReDim Preserve StreamStringOut(0 To (StreamStringOutBufferSize - 1)) As Byte
+    End If
     CopyMemory StreamStringOut(StreamStringOutUBound), ByVal ByteBufferPtr, BytesRequested
     StreamStringOutUBound = StreamStringOutUBound + BytesRequested
     BytesProcessed = BytesRequested
