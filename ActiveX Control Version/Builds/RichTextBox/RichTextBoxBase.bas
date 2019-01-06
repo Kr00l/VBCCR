@@ -68,7 +68,7 @@ If BytesRequested > 0 Then
             BufferBump = 16384 ' Initialize at 16 KB
         Else
             BufferBump = StreamStringOutBufferSize
-            If BufferBump > 65536 Then BufferBump = 65536 ' Cap at 64 KB
+            If BufferBump > 524288 Then BufferBump = 524288 ' Cap at 512 KB
         End If
         If BufferBump < BytesRequested Then BufferBump = BytesRequested
         StreamStringOutBufferSize = StreamStringOutBufferSize + BufferBump
