@@ -1567,7 +1567,7 @@ If PropShowWeekNumbers = True Then dwStyle = dwStyle Or MCS_WEEKNUMBERS
 If PropShowTrailingDates = False And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or MCS_NOTRAILINGDATES
 If PropMultiSelect = True Then dwStyle = dwStyle Or MCS_MULTISELECT
 If PropDayState = True Then dwStyle = dwStyle Or MCS_DAYSTATE
-If PropUseShortestDayNames = False And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or MCS_SHORTDAYSOFWEEK
+If PropUseShortestDayNames = True And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or MCS_SHORTDAYSOFWEEK
 If MonthViewDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
