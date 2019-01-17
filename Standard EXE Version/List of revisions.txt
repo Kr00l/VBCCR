@@ -2,6 +2,7 @@ List of revisions:
 
 17-Jan-2019
 - Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
+- Bugfix in the UseShortestDayNames property in the MonthView control.
 
 06-Jan-2019
 - Major perfomance boost when reading .Text or .TextRTF in the RichTextBox control.
