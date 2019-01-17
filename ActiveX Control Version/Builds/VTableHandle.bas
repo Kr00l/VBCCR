@@ -213,9 +213,9 @@ Set PropOleInPlaceSite = PropOleObject.GetClientSite
 PropOleInPlaceSite.GetWindowContext PropOleInPlaceFrame, PropOleInPlaceUIWindow, VarPtr(PosRect), VarPtr(ClipRect), VarPtr(FrameInfo)
 PropOleInPlaceFrame.SetActiveObject PropOleInPlaceActiveObject, vbNullString
 If Not PropOleInPlaceUIWindow Is Nothing Then PropOleInPlaceUIWindow.SetActiveObject PropOleInPlaceActiveObject, vbNullString
+CATCH_EXCEPTION:
 Set VTableIPAOData.OriginalIOleIPAO = Nothing
 Set VTableIPAOData.IOleIPAO = Nothing
-CATCH_EXCEPTION:
 End Sub
 
 Private Function GetVTableIPAO() As Long
