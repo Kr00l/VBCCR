@@ -2886,7 +2886,7 @@ If FileExists(FileName) = True Then
         Case RtfLoadSaveFormatText
             Flags = Flags Or SF_TEXT
         Case RtfLoadSaveFormatUnicodeText
-            Flags = Flags Or SF_TEXT Or SF_UNICODE
+            Flags = Flags Or SF_TEXT
             Dim hFile As Long, Length As Long, Text As String
             Dim B1(0 To 1) As Byte, B2() As Byte
             hFile = CreateFile(StrPtr("\\?\" & IIf(Left$(FileName, 2) = "\\", "UNC\" & Mid$(FileName, 3), FileName)), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0)
@@ -2903,6 +2903,7 @@ If FileExists(FileName) = True Then
                 CloseHandle hFile
             End If
             If B1(0) = &HFF And B1(1) = &HFE And Not Text = vbNullString Then
+                Flags = Flags Or SF_UNICODE
                 StreamStringIn Text, Flags
                 Exit Sub
             End If
