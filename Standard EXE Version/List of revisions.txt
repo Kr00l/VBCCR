@@ -1,5 +1,8 @@
 List of revisions:
 
+21-Jan-2019
+- Bugfix when loading a non-unicode file with RtfLoadSaveFormatUnicodeText in the RichTextBox control.
+
 17-Jan-2019
 - Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
 - Bugfix in the UseShortestDayNames property in the MonthView control.
