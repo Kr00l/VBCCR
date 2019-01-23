@@ -341,8 +341,10 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+On Error Resume Next
 CommandLinkDesignMode = Not Ambient.UserMode
 CommandLinkTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 PropDisplayAsDefault = False
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -368,8 +370,10 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+On Error Resume Next
 CommandLinkDesignMode = Not Ambient.UserMode
 CommandLinkTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropDisplayAsDefault = .ReadProperty("Default", False)
 Set PropFont = .ReadProperty("Font", Nothing)

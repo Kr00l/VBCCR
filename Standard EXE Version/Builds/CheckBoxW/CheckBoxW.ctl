@@ -430,8 +430,10 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 If DispIDValue = 0 Then DispIDValue = GetDispID(Me, "Value")
+On Error Resume Next
 CheckBoxDesignMode = Not Ambient.UserMode
 CheckBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -464,8 +466,10 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 If DispIDValue = 0 Then DispIDValue = GetDispID(Me, "Value")
+On Error Resume Next
 CheckBoxDesignMode = Not Ambient.UserMode
 CheckBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
