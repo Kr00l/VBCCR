@@ -379,8 +379,10 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
 MCIWndDesignMode = Not Ambient.UserMode
 MCIWndTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -402,8 +404,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
 MCIWndDesignMode = Not Ambient.UserMode
 MCIWndTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)

@@ -1220,8 +1220,10 @@ If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
 If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
 If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
 If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
+On Error Resume Next
 ListViewDesignMode = Not Ambient.UserMode
 ListViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = LvwVisualThemeStandard
@@ -1311,8 +1313,10 @@ If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
 If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
 If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
 If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
+On Error Resume Next
 ListViewDesignMode = Not Ambient.UserMode
 ListViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
