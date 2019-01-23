@@ -638,8 +638,10 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+On Error Resume Next
 TreeViewDesignMode = Not Ambient.UserMode
 TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = TvwVisualThemeStandard
@@ -694,8 +696,10 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+On Error Resume Next
 TreeViewDesignMode = Not Ambient.UserMode
 TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
