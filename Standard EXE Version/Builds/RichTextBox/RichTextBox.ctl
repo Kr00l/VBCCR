@@ -815,8 +815,10 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
 RichTextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragDrop = True
@@ -851,8 +853,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
 RichTextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
