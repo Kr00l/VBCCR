@@ -1961,7 +1961,7 @@ Select Case wMsg
                             End If
                         Else
                             With ButtonPicture
-                            .Render DIS.hDC Or 0&, X Or 0&, Y + CY Or 0&, CX Or 0&, -CY Or 0&, 0&, 0&, .Width, .Height, ByVal 0&
+                            .Render DIS.hDC Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
                             End With
                         End If
                     Else

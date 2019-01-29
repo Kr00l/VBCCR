@@ -2122,14 +2122,19 @@ Select Case wMsg
                             End If
                         Else
                             With ButtonPicture
-                            .Render DIS.hDC Or 0&, X Or 0&, Y + CY Or 0&, CX Or 0&, -CY Or 0&, 0&, 0&, .Width, .Height, ByVal 0&
+                            .Render DIS.hDC Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
                             End With
                         End If
                     Else
                         If ButtonPicture.Type = vbPicTypeIcon Then
                             DrawState DIS.hDC, 0, 0, ButtonPicture.Handle, 0, X, Y, CX, CY, DST_ICON Or DSS_DISABLED
-                        ElseIf ButtonPicture.Type = vbPicTypeBitmap Then
-                            DrawState DIS.hDC, 0, 0, ButtonPicture.Handle, 0, X, Y, CX, CY, DST_BITMAP Or DSS_DISABLED
+                        Else
+                            Dim hImage As Long
+                            hImage = BitmapHandleFromPicture(ButtonPicture, vbWhite)
+                            ' The DrawState API with DSS_DISABLED will draw white as transparent.
+                            ' This will ensure GIF bitmaps or metafiles are better drawn.
+                            DrawState DIS.hDC, 0, 0, hImage, 0, X, Y, CX, CY, DST_BITMAP Or DSS_DISABLED
+                            DeleteObject hImage
                         End If
                     End If
                 End If
