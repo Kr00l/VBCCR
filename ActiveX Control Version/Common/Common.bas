@@ -12,6 +12,12 @@ dwContextHelpID As Long
 lpfnMsgBoxCallback As Long
 dwLanguageId As Long
 End Type
+Private Type RECT
+Left As Long
+Top As Long
+Right As Long
+Bottom As Long
+End Type
 Private Type BITMAP
 BMType As Long
 BMWidth As Long
@@ -21,12 +27,17 @@ BMPlanes As Integer
 BMBitsPixel As Integer
 BMBits As Long
 End Type
-Private Type ICONINFO
-fIcon As Long
-XHotspot As Long
-YHotspot As Long
-hBMMask As Long
-hBMColor As Long
+Private Type SAFEARRAYBOUND
+cElements As Long
+lLbound As Long
+End Type
+Private Type SAFEARRAY1D
+cDims As Integer
+fFeatures As Integer
+cbElements As Long
+cLocks As Long
+pvData As Long
+Bounds As SAFEARRAYBOUND
 End Type
 Private Type PICTDESC
 cbSizeOfStruct As Long
@@ -96,6 +107,7 @@ LFPitchAndFamily As Byte
 LFFaceName(0 To ((LF_FACESIZE * 2) - 1)) As Byte
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Function ArrPtr Lib "msvbvm60" Alias "VarPtr" (ByRef Var() As Any) As Long
 Private Declare Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
 Private Declare Function GetActiveWindow Lib "user32" () As Long
 Private Declare Function GetForegroundWindow Lib "user32" () As Long
@@ -138,12 +150,12 @@ Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetDeviceCaps Lib "gdi32" (ByVal hDC As Long, ByVal nIndex As Long) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
 Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
-Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal XSrc As Long, ByVal YSrc As Long, ByVal dwRop As Long) As Long
+Private Declare Function GdiAlphaBlend Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal XSrc As Long, ByVal YSrc As Long, ByVal nWidthSrc As Long, ByVal nHeightSrc As Long, ByVal BlendFunc As Long) As Long
 Private Declare Function DrawIconEx Lib "user32" (ByVal hDC As Long, ByVal XLeft As Long, ByVal YTop As Long, ByVal hIcon As Long, ByVal CXWidth As Long, ByVal CYWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As Long, ByVal diFlags As Long) As Long
+Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
-Private Declare Function GetIconInfo Lib "user32" (ByVal hIcon As Long, ByRef pIconInfo As ICONINFO) As Long
 Private Declare Function MulDiv Lib "kernel32" (ByVal nNumber As Long, ByVal nNumerator As Long, ByVal nDenominator As Long) As Long
 Private Declare Function CreateFontIndirect Lib "gdi32" Alias "CreateFontIndirectW" (ByRef lpLogFont As LOGFONT) As Long
 Private Declare Function GlobalAlloc Lib "kernel32" (ByVal uFlags As Long, ByVal dwBytes As Long) As Long
@@ -1019,57 +1031,119 @@ End Function
 
 Public Function BitmapHandleFromPicture(ByVal Picture As IPictureDisp, Optional ByVal BackColor As OLE_COLOR) As Long
 If Picture Is Nothing Then Exit Function
-Dim hDCScreen As Long, hBmp As Long
-Dim hDC1 As Long, hBmpOld1 As Long
-Dim hDC2 As Long, hBmpOld2 As Long
-Dim Bmp As BITMAP, hImage As Long
-If Not Picture.Type = vbPicTypeIcon Then
-    hImage = Picture.Handle
-Else
-    Dim ICOI As ICONINFO
-    GetIconInfo Picture.Handle, ICOI
-    hImage = ICOI.hBMColor
-End If
-If hImage <> 0 Then
-    GetObjectAPI hImage, LenB(Bmp), Bmp
+With Picture
+If .Handle <> 0 Then
+    Dim hDCScreen As Long, hDC As Long, hBmp As Long, hBmpOld As Long
+    Dim CX As Long, CY As Long, Brush As Long
+    CX = CHimetricToPixel_X(.Width)
+    CY = CHimetricToPixel_Y(.Height)
+    Brush = CreateSolidBrush(WinColor(BackColor))
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
-        If Not Picture.Type = vbPicTypeIcon Then
-            hDC1 = CreateCompatibleDC(hDCScreen)
-            If hDC1 <> 0 Then
-                hBmpOld1 = SelectObject(hDC1, hImage)
-                hDC2 = CreateCompatibleDC(hDCScreen)
-                If hDC2 <> 0 Then
-                    hBmp = CreateCompatibleBitmap(hDCScreen, Bmp.BMWidth, Bmp.BMHeight)
-                    If hBmp <> 0 Then
-                        hBmpOld2 = SelectObject(hDC2, hBmp)
-                        BitBlt hDC2, 0, 0, Bmp.BMWidth, Bmp.BMHeight, hDC1, 0, 0, vbSrcCopy
-                        SelectObject hDC2, hBmpOld2
-                        BitmapHandleFromPicture = hBmp
-                    End If
-                    DeleteDC hDC2
-                End If
-                SelectObject hDC1, hBmpOld1
-                DeleteDC hDC1
-            End If
-        Else
-            hDC1 = CreateCompatibleDC(hDCScreen)
-            If hDC1 <> 0 Then
-                hBmp = CreateCompatibleBitmap(hDCScreen, Bmp.BMWidth, Bmp.BMHeight)
-                If hBmp <> 0 Then
-                    hBmpOld1 = SelectObject(hDC1, hBmp)
-                    Dim Brush As Long
-                    Brush = CreateSolidBrush(WinColor(BackColor))
+        hDC = CreateCompatibleDC(hDCScreen)
+        If hDC <> 0 Then
+            hBmp = CreateCompatibleBitmap(hDCScreen, CX, CY)
+            If hBmp <> 0 Then
+                hBmpOld = SelectObject(hDC, hBmp)
+                If .Type = vbPicTypeIcon Then
                     Const DI_NORMAL As Long = &H3
-                    DrawIconEx hDC1, 0, 0, Picture.Handle, Bmp.BMWidth, Bmp.BMHeight, 0, Brush, DI_NORMAL
-                    DeleteObject Brush
-                    BitmapHandleFromPicture = hBmp
+                    DrawIconEx hDC, 0, 0, .Handle, CX, CY, 0, Brush, DI_NORMAL
+                Else
+                    Dim RC As RECT
+                    RC.Right = CX
+                    RC.Bottom = CY
+                    FillRect hDC, RC, Brush
+                    .Render hDC Or 0&, 0&, 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
                 End If
-                SelectObject hDC1, hBmpOld1
-                DeleteDC hDC1
+                SelectObject hDC, hBmpOld
+                BitmapHandleFromPicture = hBmp
             End If
+            DeleteDC hDC
         End If
         ReleaseDC 0, hDCScreen
     End If
+    DeleteObject Brush
 End If
+End With
 End Function
+
+Public Sub RenderPicture(ByVal Picture As IPicture, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, Optional ByVal CX As Long, Optional ByVal CY As Long, Optional ByRef RenderFlag As Long)
+' RenderFlag is passed as a optional parameter ByRef.
+' It is ignored for icons and metafiles.
+' 0 = render method unknown, determine it and update parameter
+' 1 = StdPicture.Render
+' 2 = GdiAlphaBlend
+If Picture Is Nothing Then Exit Sub
+With Picture
+If .Handle <> 0 Then
+    If CX = 0 Then CX = CHimetricToPixel_X(.Width)
+    If CY = 0 Then CY = CHimetricToPixel_Y(.Height)
+    If .Type = vbPicTypeIcon Then
+        Const DI_NORMAL As Long = &H3
+        DrawIconEx hDC, X, Y, .Handle, CX, CY, 0, 0, DI_NORMAL
+    Else
+        Dim HasAlpha As Boolean
+        If .Type = vbPicTypeBitmap Then
+            If RenderFlag = 0 Then
+                Const PICTURE_TRANSPARENT As Long = &H2
+                If (.Attributes And PICTURE_TRANSPARENT) = 0 Then ' Exclude GIF
+                    Dim Bmp As BITMAP
+                    GetObjectAPI .Handle, LenB(Bmp), Bmp
+                    If Bmp.BMBitsPixel = 32 And Bmp.BMBits <> 0 Then
+                        Dim SA1D As SAFEARRAY1D, B() As Byte
+                        With SA1D
+                        .cDims = 1
+                        .fFeatures = 0
+                        .cbElements = 1
+                        .cLocks = 0
+                        .pvData = Bmp.BMBits
+                        .Bounds.lLbound = 0
+                        .Bounds.cElements = Bmp.BMWidthBytes * Bmp.BMHeight
+                        End With
+                        CopyMemory ByVal ArrPtr(B()), VarPtr(SA1D), 4
+                        Dim i As Long, j As Long, Pos As Long
+                        For i = 0 To (Abs(Bmp.BMHeight) - 1)
+                            Pos = i * Bmp.BMWidthBytes
+                            For j = (Pos + 3) To (Pos + Bmp.BMWidthBytes - 1) Step 4
+                                If HasAlpha = False Then HasAlpha = (B(j) > 0)
+                                If HasAlpha = True Then
+                                    If B(j - 1) > B(j) Then
+                                        HasAlpha = False
+                                        i = Abs(Bmp.BMHeight) - 1
+                                        Exit For
+                                    ElseIf B(j - 2) > B(j) Then
+                                        HasAlpha = False
+                                        i = Abs(Bmp.BMHeight) - 1
+                                        Exit For
+                                    ElseIf B(j - 3) > B(j) Then
+                                        HasAlpha = False
+                                        i = Abs(Bmp.BMHeight) - 1
+                                        Exit For
+                                    End If
+                                End If
+                            Next j
+                        Next i
+                        CopyMemory ByVal ArrPtr(B()), 0&, 4
+                    End If
+                End If
+                If HasAlpha = False Then RenderFlag = 1 Else RenderFlag = 2
+            ElseIf RenderFlag = 2 Then
+                HasAlpha = True
+            End If
+        End If
+        If HasAlpha = False Then
+            .Render hDC Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+        Else
+            Dim hDCBmp As Long, hBmpOld As Long
+            hDCBmp = CreateCompatibleDC(0)
+            If hDCBmp <> 0 Then
+                hBmpOld = SelectObject(hDCBmp, .Handle)
+                GdiAlphaBlend hDC, X, Y, CX, CY, hDCBmp, 0, 0, CHimetricToPixel_X(.Width), CHimetricToPixel_Y(.Height), &H1FF0000
+                SelectObject hDCBmp, hBmpOld
+                DeleteDC hDCBmp
+            End If
+        End If
+    End If
+End If
+End With
+End Sub
