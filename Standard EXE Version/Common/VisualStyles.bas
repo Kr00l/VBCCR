@@ -405,6 +405,10 @@ If Not ButtonPicture Is Nothing Then
             DrawState hDC, 0, 0, ButtonPicture.Handle, 0, X, Y, CX, CY, DST_ICON Or DSS_DISABLED
         ElseIf ButtonPicture.Type = vbPicTypeBitmap Then
             DrawState hDC, 0, 0, ButtonPicture.Handle, 0, X, Y, CX, CY, DST_BITMAP Or DSS_DISABLED
+        Else
+            With ButtonPicture
+            .Render hDC Or 0&, X Or 0&, Y + CY Or 0&, CX Or 0&, -CY Or 0&, 0&, 0&, .Width, .Height, ByVal 0&
+            End With
         End If
     End If
 End If
