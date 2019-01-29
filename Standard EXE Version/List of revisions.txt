@@ -1,5 +1,10 @@
 List of revisions:
 
+29-Jan-2019
+- Internal improvement in the BitmapHandleFromPicture function in Common.bas.
+- CommandButtonW/CheckBoxW/OptionButtonW better draws now disabled pictures in vbButtonGraphical style.
+  This has only effect when no DisabledPicture is provided and it draws the normal Picture object as disabled.
+
 23-Jan-2019
 - VBA bugfix.
 
