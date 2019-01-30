@@ -1067,7 +1067,7 @@ End If
 End With
 End Function
 
-Public Sub RenderPicture(ByVal Picture As IPicture, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, Optional ByVal CX As Long, Optional ByVal CY As Long, Optional ByRef RenderFlag As Long)
+Public Sub RenderPicture(ByVal Picture As IPicture, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, Optional ByVal CX As Long, Optional ByVal CY As Long, Optional ByRef RenderFlag As Integer)
 ' RenderFlag is passed as a optional parameter ByRef.
 ' It is ignored for icons and metafiles.
 ' 0 = render method unknown, determine it and update parameter
