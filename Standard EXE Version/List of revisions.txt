@@ -1,5 +1,10 @@
 List of revisions:
 
+02-Feb-2019
+- Picture property in the FrameW control can now render 32bpp alpha bitmaps.
+- Preview in PPImageListImages.pag can now render 32bpp alpha bitmaps.
+  The ImageList control itself already supported this when the ColorDepth property was set to 32bit.
+
 29-Jan-2019
 - Internal improvement in the BitmapHandleFromPicture function in Common.bas.
 - CommandButtonW/CheckBoxW/OptionButtonW better draws now disabled pictures in vbButtonGraphical style.
