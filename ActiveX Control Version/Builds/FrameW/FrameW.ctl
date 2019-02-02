@@ -68,7 +68,6 @@ Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source contro
 Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 Private Declare Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As Long, ByVal lpchText As Long, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
-Private Declare Function DrawIconEx Lib "user32" (ByVal hDC As Long, ByVal XLeft As Long, ByVal YTop As Long, ByVal hIcon As Long, ByVal CXWidth As Long, ByVal CYWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As Long, ByVal diFlags As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
@@ -129,7 +128,6 @@ Private Const HWND_DESKTOP As Long = &H0
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_MOUSELEAVE As Long = &H2A3
-Private Const DI_NORMAL As Long = &H3
 Private Const DT_LEFT As Long = &H0
 Private Const DT_CENTER As Long = &H1
 Private Const DT_RIGHT As Long = &H2
@@ -150,6 +148,7 @@ Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private FrameMouseOver As Boolean
 Private FrameDesignMode As Boolean
+Private FramePictureRenderFlag As Integer
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
 Private WithEvents PropFont As StdFont
@@ -780,6 +779,7 @@ Else
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
 End If
+FramePictureRenderFlag = 0
 Call DrawFrame
 UserControl.PropertyChanged "Picture"
 End Property
@@ -928,13 +928,7 @@ If PropBorderStyle <> vbBSNone Then
                     Else
                         PictureLeft = ExtentRect.Right - PictureWidth
                     End If
-                    With PropPicture
-                    If .Type = vbPicTypeIcon Then
-                        DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-                    Else
-                        .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                    End If
-                    End With
+                    Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
                 End If
                 ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
             ElseIf PictureWidth > 0 And PictureHeight > 0 Then
@@ -952,13 +946,7 @@ If PropBorderStyle <> vbBSNone Then
                         ExtentRect.Right = BoundingRect.Right
                 End Select
                 PictureLeft = ExtentRect.Left
-                With PropPicture
-                If .Type = vbPicTypeIcon Then
-                    DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-                Else
-                    .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                End If
-                End With
+                Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
                 ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
             End If
             If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, GroupBoxState) <> 0 Then DrawThemeParentBackground .hWnd, .hDC, ClientRect
@@ -1027,13 +1015,7 @@ If PropBorderStyle <> vbBSNone Then
                     Else
                         PictureLeft = ExtentRect.Right - PictureWidth
                     End If
-                    With PropPicture
-                    If .Type = vbPicTypeIcon Then
-                        DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-                    Else
-                        .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                    End If
-                    End With
+                    Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
                 End If
                 ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
             ElseIf PictureWidth > 0 And PictureHeight > 0 Then
@@ -1051,13 +1033,7 @@ If PropBorderStyle <> vbBSNone Then
                         ExtentRect.Right = BoundingRect.Right
                 End Select
                 PictureLeft = ExtentRect.Left
-                With PropPicture
-                If .Type = vbPicTypeIcon Then
-                    DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-                Else
-                    .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                End If
-                End With
+                Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
                 ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
             End If
             DrawEdge .hDC, ClientRect, EDGE_ETCHED, BF_RECT Or IIf(.Appearance = CCAppearanceFlat, BF_MONO, 0)
@@ -1127,13 +1103,7 @@ If PropBorderStyle <> vbBSNone Then
                 Else
                     PictureLeft = ExtentRect.Right - PictureWidth
                 End If
-                With PropPicture
-                If .Type = vbPicTypeIcon Then
-                    DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-                Else
-                    .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                End If
-                End With
+                Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
             End If
             ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
         ElseIf PictureWidth > 0 And PictureHeight > 0 Then
@@ -1151,13 +1121,7 @@ If PropBorderStyle <> vbBSNone Then
                     ExtentRect.Right = BoundingRect.Right
             End Select
             PictureLeft = ExtentRect.Left
-            With PropPicture
-            If .Type = vbPicTypeIcon Then
-                DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-            Else
-                .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-            End If
-            End With
+            Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
             ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
         End If
         DrawEdge .hDC, ClientRect, EDGE_ETCHED, BF_RECT Or IIf(.Appearance = CCAppearanceFlat, BF_MONO, 0)
