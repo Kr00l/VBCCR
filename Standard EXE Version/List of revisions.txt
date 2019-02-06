@@ -1,5 +1,12 @@
 List of revisions:
 
+06-Feb-2019
+- CommandButtonW/CheckBoxW/OptionButtonW controls now draw themed on vbButtonGraphical by their own.
+  This way the ForeColor property can be used on vbButtonGraphical even when themed.
+- VisualStyles.bas modified to only consider VB intrinsic CommandButton/CheckBox/OptionButton controls.
+  It also now use WM_QUERYUISTATE to consider if focus rect or accel should be drawn.
+- Minor internal improvement in the RichTextBox control related to theming.
+
 02-Feb-2019
 - Picture property in the FrameW control can now render 32bpp alpha bitmaps.
 - Preview in PPImageListImages.pag can now render 32bpp alpha bitmaps.
