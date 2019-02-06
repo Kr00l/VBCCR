@@ -3610,13 +3610,15 @@ Select Case wMsg
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 RichTextBoxIsClick = True
             Case WM_MOUSEMOVE
-                If RichTextBoxMouseOver(0) = False Then
-                    RichTextBoxMouseOver(0) = True
+                If (RichTextBoxMouseOver(0) = False And PropBorder = True) Or (RichTextBoxMouseOver(1) = False And PropMouseTrack = True) Then
                     
                     #If ImplementThemedBorder = True Then
                     
-                    If PropBorder = True And PropVisualStyles = True Then
-                        If RichTextBoxEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+                    If RichTextBoxMouseOver(0) = False And PropBorder = True Then
+                        If RichTextBoxEnabledVisualStyles = True And PropVisualStyles = True Then
+                            RichTextBoxMouseOver(0) = True
+                            SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+                        End If
                     End If
                     
                     #End If
@@ -3625,7 +3627,7 @@ Select Case wMsg
                         RichTextBoxMouseOver(1) = True
                         RaiseEvent MouseEnter
                     End If
-                    Call ComCtlsRequestMouseLeave(hWnd)
+                    If RichTextBoxMouseOver(0) = True Or RichTextBoxMouseOver(1) = True Then Call ComCtlsRequestMouseLeave(hWnd)
                 End If
                 RaiseEvent MouseMove(GetMouseStateFromParam(wParam), GetShiftStateFromParam(wParam), X, Y)
             Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -3643,12 +3645,12 @@ Select Case wMsg
                 End If
         End Select
     Case WM_MOUSELEAVE
-        RichTextBoxMouseOver(0) = False
         
         #If ImplementThemedBorder = True Then
         
-        If PropBorder = True And PropVisualStyles = True Then
-            If RichTextBoxEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+        If RichTextBoxMouseOver(0) = True Then
+            RichTextBoxMouseOver(0) = False
+            SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
         End If
         
         #End If
