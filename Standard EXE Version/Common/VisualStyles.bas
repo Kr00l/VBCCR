@@ -124,16 +124,15 @@ Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_LBUTTONDOWN As Long = &H201
 Private Const WM_LBUTTONUP As Long = &H202
 Private Const WM_RBUTTONUP As Long = &H205
-Private Const WM_MOUSEHOVER As Long = &H2A1
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_PRINTCLIENT As Long = &H318
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const BST_PUSHED As Long = &H4
 Private Const BST_FOCUS As Long = &H8
 Private Const DT_CENTER As Long = &H1
 Private Const DT_WORDBREAK As Long = &H10
 Private Const DT_CALCRECT As Long = &H400
 Private Const DT_HIDEPREFIX As Long = &H100000
-Private Const TME_HOVER As Long = 1
 Private Const TME_LEAVE As Long = 2
 Private Const RGN_DIFF As Long = 4
 Private Const RGN_COPY As Long = 5
@@ -176,6 +175,7 @@ For Each CurrControl In Form.Controls
             SetWindowSubclass CurrControl.hWnd, AddressOf RedirectFrame, ObjPtr(CurrControl), 0
         Case "CommandButton", "OptionButton", "CheckBox"
             If CurrControl.Style = vbButtonGraphical Then
+                SetProp CurrControl.hWnd, StrPtr("VisualStyles"), GetVisualStyles(CurrControl.hWnd)
                 If CurrControl.Enabled = True Then SetProp CurrControl.hWnd, StrPtr("Enabled"), 1
                 SetWindowSubclass CurrControl.hWnd, AddressOf RedirectButton, ObjPtr(CurrControl), ObjPtr(CurrControl)
             End If
@@ -227,7 +227,7 @@ Select Case wMsg
     Case WM_NCPAINT
         Exit Function
     Case WM_PAINT
-        If IsWindowVisible(hWnd) <> 0 And GetVisualStyles(hWnd) <> 0 Then
+        If IsWindowVisible(hWnd) <> 0 And GetProp(hWnd, StrPtr("VisualStyles")) <> 0 Then
             Dim PS As PAINTSTRUCT
             SetProp hWnd, StrPtr("Painted"), 1
             Call DrawButton(hWnd, BeginPaint(hWnd, PS), Button)
@@ -243,35 +243,33 @@ End Select
 RedirectButton = DefSubclassProc(hWnd, wMsg, wParam, lParam)
 If wMsg = WM_NCDESTROY Then
     Call RemoveRedirectButton(hWnd, uIdSubclass)
+    RemoveProp hWnd, StrPtr("VisualStyles")
     RemoveProp hWnd, StrPtr("Enabled")
     RemoveProp hWnd, StrPtr("Hot")
     RemoveProp hWnd, StrPtr("Painted")
     RemoveProp hWnd, StrPtr("ButtonPart")
 ElseIf IsWindow(hWnd) <> 0 Then
     Select Case wMsg
-        Case WM_MOUSEHOVER, WM_LBUTTONDOWN
-            SetProp hWnd, StrPtr("Hot"), 1
+        Case WM_THEMECHANGED
+            SetProp hWnd, StrPtr("VisualStyles"), GetVisualStyles(hWnd)
             Button.Refresh
         Case WM_MOUSELEAVE
             SetProp hWnd, StrPtr("Hot"), 0
             Button.Refresh
-        Case WM_KILLFOCUS
-            Dim P As POINTAPI
-            GetCursorPos P
-            If WindowFromPoint(P.X, P.Y) <> hWnd Then SetProp hWnd, StrPtr("Hot"), 0
-            Button.Refresh
         Case WM_MOUSEMOVE
             If GetProp(hWnd, StrPtr("Hot")) = 0 Then
+                SetProp hWnd, StrPtr("Hot"), 1
+                InvalidateRect hWnd, ByVal 0&, 0
                 Dim TME As TRACKMOUSEEVENTSTRUCT
                 With TME
                 .cbSize = LenB(TME)
                 .hWndTrack = hWnd
-                .dwFlags = TME_HOVER Or TME_LEAVE
-                .dwHoverTime = 1
+                .dwFlags = TME_LEAVE
                 End With
                 TrackMouseEvent TME
+            ElseIf GetProp(hWnd, StrPtr("Painted")) = 0 Then
+                Button.Refresh
             End If
-            If GetProp(hWnd, StrPtr("Painted")) = 0 Then Button.Refresh
         Case WM_SETFOCUS, WM_ENABLE
             If SetRedraw = True Then
                 SendMessage hWnd, WM_SETREDRAW, 1, ByVal 0&
@@ -283,7 +281,7 @@ ElseIf IsWindow(hWnd) <> 0 Then
                     Button.Refresh
                 End If
             End If
-        Case WM_LBUTTONUP, WM_RBUTTONUP
+        Case WM_LBUTTONDOWN, WM_LBUTTONUP, WM_RBUTTONUP
             Button.Refresh
     End Select
 End If
@@ -298,8 +296,7 @@ Dim Theme As Long, ButtonPart As Long, ButtonState As Long, UIState As Long
 Dim Enabled As Boolean, Checked As Boolean, Default As Boolean, Hot As Boolean, Pushed As Boolean, Focused As Boolean
 Dim hFontOld As Long, ButtonFont As IFont
 Dim ButtonPicture As IPictureDisp, DisabledPictureAvailable As Boolean
-Dim ClientRect As RECT, TextRect As RECT
-Dim RgnClip As Long
+Dim ClientRect As RECT, TextRect As RECT, RgnClip As Long
 Dim CX As Long, CY As Long, X As Long, Y As Long
 ButtonPart = GetProp(hWnd, StrPtr("ButtonPart"))
 If ButtonPart = 0 Then
@@ -367,7 +364,10 @@ Theme = OpenThemeData(hWnd, StrPtr("Button"))
 If Theme <> 0 Then
     GetThemeBackgroundRegion Theme, hDC, ButtonPart, ButtonState, ClientRect, RgnClip
     ExtSelectClipRgn hDC, RgnClip, RGN_DIFF
-    Call DrawRect(hDC, 0, 0, ClientRect.Right, ClientRect.Bottom, Button.BackColor)
+    Dim Brush As Long
+    Brush = CreateSolidBrush(WinColor(Button.BackColor))
+    FillRect hDC, ClientRect, Brush
+    DeleteObject Brush
     If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, ButtonState) <> 0 Then DrawThemeParentBackground hWnd, hDC, ClientRect
     ExtSelectClipRgn hDC, 0, RGN_COPY
     DeleteObject RgnClip
@@ -435,20 +435,6 @@ If Not ButtonPicture Is Nothing Then
         End If
     End If
 End If
-End Sub
-
-Private Sub DrawRect(ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal FillColor As OLE_COLOR)
-Dim RC As RECT
-Dim Brush As Long
-Brush = CreateSolidBrush(WinColor(FillColor))
-With RC
-.Left = X
-.Top = Y
-.Right = X + CX
-.Bottom = Y + CY
-End With
-FillRect hDC, RC, Brush
-DeleteObject Brush
 End Sub
 
 Private Function CoalescePicture(ByVal Picture As IPictureDisp, ByVal DefaultPicture As IPictureDisp) As IPictureDisp
