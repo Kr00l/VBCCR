@@ -1,5 +1,8 @@
 List of revisions:
 
+07-Feb-2019
+- Further improvement of VisualStyles.bas.
+
 06-Feb-2019
 - CommandButtonW/CheckBoxW/OptionButtonW controls now draw themed on vbButtonGraphical by their own.
   This way the ForeColor property can be used on vbButtonGraphical even when themed.
