@@ -183,7 +183,6 @@ Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As L
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
 Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
-Private Declare Function DrawIconEx Lib "user32" (ByVal hDC As Long, ByVal XLeft As Long, ByVal YTop As Long, ByVal hIcon As Long, ByVal CXWidth As Long, ByVal CYWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As Long, ByVal diFlags As Long) As Long
 Private Declare Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As Long, ByVal hBrush As Long, ByVal lpDrawStateProc As Long, ByVal lData As Long, ByVal wData As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
@@ -206,7 +205,6 @@ Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const GWL_STYLE As Long = (-16)
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const TA_RTLREADING = &H100
-Private Const DI_NORMAL As Long = &H3
 Private Const DST_TEXT As Long = &H1
 Private Const DSS_DISABLED As Long = &H20
 Private Const WS_VISIBLE As Long = &H10000000
@@ -346,6 +344,7 @@ Picture As IPictureDisp
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
+PictureRenderFlag As Integer
 End Type
 Private StatusBarHandle As Long, StatusBarToolTipHandle As Long
 Private StatusBarSizeGripAllowable As Boolean
@@ -1404,6 +1403,7 @@ End Property
 Friend Property Set FPanelPicture(ByVal Index As Long, ByVal Value As IPictureDisp)
 If StatusBarHandle <> 0 Then
     Set PropShadowPanels(Index).Picture = Value
+    PropShadowPanels(Index).PictureRenderFlag = 0
     Call SetParts
     Call SetPanels
 End If
@@ -1682,13 +1682,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> 0 Then
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
         PictureLeft = RC.Left - (PictureWidth + (4 * PixelsPerDIP_X()))
-        With .Picture
-        If .Type = vbPicTypeIcon Then
-            DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-        Else
-            .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-        End If
-        End With
+        Call RenderPicture(.Picture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, .PictureRenderFlag)
     End If
     Dim Flags As Long
     Flags = DST_TEXT

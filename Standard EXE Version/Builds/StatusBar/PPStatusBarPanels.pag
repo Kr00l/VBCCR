@@ -35,7 +35,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   37
+      TabIndex        =   38
       Top             =   3360
       Width           =   1215
    End
@@ -55,6 +55,19 @@ Begin VB.PropertyPage PPStatusBarPanels
       TabIndex        =   30
       Top             =   1920
       Width           =   2655
+      Begin VB.PictureBox PictureDraw 
+         Appearance      =   0  'Flat
+         Enabled         =   0   'False
+         ForeColor       =   &H80000008&
+         Height          =   720
+         Left            =   120
+         ScaleHeight     =   690
+         ScaleWidth      =   930
+         TabIndex        =   31
+         TabStop         =   0   'False
+         Top             =   240
+         Width           =   960
+      End
       Begin VB.PictureBox PictureCommandPictureNo 
          BorderStyle     =   0  'None
          Enabled         =   0   'False
@@ -62,7 +75,7 @@ Begin VB.PropertyPage PPStatusBarPanels
          Left            =   1440
          ScaleHeight     =   315
          ScaleWidth      =   1035
-         TabIndex        =   33
+         TabIndex        =   34
          TabStop         =   0   'False
          Top             =   630
          Width           =   1035
@@ -71,7 +84,7 @@ Begin VB.PropertyPage PPStatusBarPanels
             Enabled         =   0   'False
             Height          =   315
             Left            =   0
-            TabIndex        =   34
+            TabIndex        =   35
             Top             =   0
             Width           =   1035
          End
@@ -83,7 +96,7 @@ Begin VB.PropertyPage PPStatusBarPanels
          Left            =   1440
          ScaleHeight     =   315
          ScaleWidth      =   1035
-         TabIndex        =   31
+         TabIndex        =   32
          TabStop         =   0   'False
          Top             =   240
          Width           =   1035
@@ -92,7 +105,7 @@ Begin VB.PropertyPage PPStatusBarPanels
             Enabled         =   0   'False
             Height          =   315
             Left            =   0
-            TabIndex        =   32
+            TabIndex        =   33
             Top             =   0
             Width           =   1035
          End
@@ -104,6 +117,7 @@ Begin VB.PropertyPage PPStatusBarPanels
          Height          =   720
          Left            =   120
          Top             =   240
+         Visible         =   0   'False
          Width           =   960
       End
    End
@@ -112,7 +126,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   35
+      TabIndex        =   36
       Top             =   3030
       Width           =   1215
    End
@@ -121,7 +135,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   4440
-      TabIndex        =   36
+      TabIndex        =   37
       Top             =   3030
       Width           =   1215
    End
@@ -568,6 +582,7 @@ If .Panels.Count > 0 And CurrIndex = 0 Then
     TextMinWidth.Text = CStr(.MinWidth)
     TextActualWidth.Text = CStr(.Width)
     Set ImagePicture.Picture = .Picture
+    PictureDraw.Refresh
     If Not .Picture Is Nothing Then
         If .Picture.Handle <> 0 Then
             PictureCommandPictureNo.Enabled = True
@@ -637,6 +652,7 @@ If CurrIndex > 1 Then
     TextMinWidth.Text = CStr(.MinWidth)
     TextActualWidth.Text = CStr(.Width)
     Set ImagePicture.Picture = .Picture
+    PictureDraw.Refresh
     If Not .Picture Is Nothing Then
         If .Picture.Handle <> 0 Then
             PictureCommandPictureNo.Enabled = True
@@ -706,6 +722,7 @@ If CurrIndex < .Panels.Count Then
     TextMinWidth.Text = CStr(.MinWidth)
     TextActualWidth.Text = CStr(.Width)
     Set ImagePicture.Picture = .Picture
+    PictureDraw.Refresh
     If Not .Picture Is Nothing Then
         If .Picture.Handle <> 0 Then
             PictureCommandPictureNo.Enabled = True
@@ -775,6 +792,7 @@ CommandForeColor.BackColor = vbButtonText
 TextMinWidth.Text = CStr(.MinWidth)
 TextActualWidth.Text = CStr(.Width)
 Set ImagePicture.Picture = Nothing
+PictureDraw.Refresh
 PictureCommandPictureNo.Enabled = False
 CommandPictureNo.Enabled = False
 CheckEnabled.Value = vbChecked
@@ -835,6 +853,7 @@ If CurrIndex > 0 Then
         TextMinWidth.Text = CStr(.MinWidth)
         TextActualWidth.Text = CStr(.Width)
         Set ImagePicture.Picture = .Picture
+        PictureDraw.Refresh
         If Not .Picture Is Nothing Then
             If .Picture.Handle <> 0 Then
                 PictureCommandPictureNo.Enabled = True
@@ -854,6 +873,7 @@ If CurrIndex > 0 Then
         End With
     Else
         Set ImagePicture.Picture = Nothing
+        PictureDraw.Refresh
     End If
     TextIndex.Text = CurrIndex & " of " & .Panels.Count
     End With
@@ -973,6 +993,13 @@ Else
 End If
 End Sub
 
+Private Sub PictureDraw_Paint()
+With PictureDraw
+.Cls
+Call RenderPicture(ImagePicture.Picture, .hDC, 0, 0)
+End With
+End Sub
+
 Private Sub PictureCommandPictureBrowse_GotFocus()
 CommandPictureBrowse.SetFocus
 End Sub
@@ -985,8 +1012,7 @@ If CurrIndex > 0 Then
     .DialogTitle = "Select Picture"
     If .ShowOpen = True Then
         Set ImagePicture.Picture = PictureFromPath(.FileName)
-        ImagePicture.Width = 960
-        ImagePicture.Height = 720
+        PictureDraw.Refresh
         If Not ImagePicture.Picture Is Nothing Then
             If ImagePicture.Picture.Handle <> 0 Then
                 PictureCommandPictureNo.Enabled = True
@@ -1006,8 +1032,7 @@ End Sub
 Private Sub CommandPictureNo_Click()
 If CurrIndex > 0 Then
     Set ImagePicture.Picture = Nothing
-    ImagePicture.Width = 960
-    ImagePicture.Height = 720
+    PictureDraw.Refresh
     CommandPictureBrowse.SetFocus
     PictureCommandPictureNo.Enabled = False
     CommandPictureNo.Enabled = False
@@ -1068,8 +1093,6 @@ If .Panels.Count > 0 Then
     TextMinWidth.Enabled = True
     TextActualWidth.Enabled = True
     ImagePicture.Enabled = True
-    ImagePicture.Width = 960
-    ImagePicture.Height = 720
     PictureCommandPictureBrowse.Enabled = True
     CommandPictureBrowse.Enabled = True
     If Not ImagePicture.Picture Is Nothing Then
@@ -1125,8 +1148,6 @@ Else
     TextActualWidth.Text = vbNullString
     TextActualWidth.Enabled = False
     ImagePicture.Enabled = False
-    ImagePicture.Width = 960
-    ImagePicture.Height = 720
     PictureCommandPictureBrowse.Enabled = False
     CommandPictureBrowse.Enabled = False
     PictureCommandPictureNo.Enabled = False
