@@ -1317,6 +1317,11 @@ If PropShowTip = True Then dwStyle = dwStyle Or TBS_TOOLTIPS
 If PropSelectRange = True Then dwStyle = dwStyle Or TBS_ENABLESELRANGE
 If PropHideThumb = True Then dwStyle = dwStyle Or TBS_NOTHUMB
 If PropReversed = True Then dwStyle = dwStyle Or TBS_REVERSED Or TBS_DOWNISLEFT
+If SliderDesignMode = False Then
+    ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
+    ' Thus it is necessary to subclass the parent before the control is created.
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+End If
 SliderHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_trackbar32"), StrPtr("Slider"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If SliderHandle <> 0 Then
     SliderToolTipHandle = SendMessage(SliderHandle, TBM_GETTOOLTIPS, 0, ByVal 0&)
@@ -1334,7 +1339,6 @@ Me.TipSide = PropTipSide
 If PropSelectRange = True Then Me.SelStart = PropSelStart
 If SliderDesignMode = False Then
     If SliderHandle <> 0 Then Call ComCtlsSetSubclass(SliderHandle, Me, 1)
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
