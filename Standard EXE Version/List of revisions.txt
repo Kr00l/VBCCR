@@ -1,5 +1,9 @@
 List of revisions:
 
+10-Feb-2019
+- Bugfix in the Slider control related to ModifyTipText event.
+- StatusBar control can now render 32bpp alpha bitmaps.
+
 07-Feb-2019
 - Further improvement of VisualStyles.bas.
 
