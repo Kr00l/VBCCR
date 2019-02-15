@@ -1978,7 +1978,10 @@ Public Function SelectItem(ByVal Text As String, Optional ByVal Index As Long = 
 Attribute SelectItem.VB_Description = "Searches for an item that begins with the characters in a specified string. If a matching item is found, the item is selected. The search is not case sensitive."
 If ComboBoxHandle <> 0 Then
     If Not SendMessage(ComboBoxHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Or Index = -1 Then
+        Dim OldIndex As Long
+        OldIndex = SendMessage(ComboBoxHandle, CB_GETCURSEL, 0, ByVal 0&)
         SelectItem = SendMessage(ComboBoxHandle, CB_SELECTSTRING, Index, ByVal StrPtr(Text))
+        If SelectItem <> OldIndex And Not SelectItem = CB_ERR Then RaiseEvent Click
     Else
         Err.Raise 381
     End If
