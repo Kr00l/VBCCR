@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Feb-2019
+- When the SelectItem function changes the index then the Click event will now be fired in the ComboBoxW control.
+
 10-Feb-2019
 - Bugfix in the Slider control related to ModifyTipText event.
 - StatusBar control can now render 32bpp alpha bitmaps.
