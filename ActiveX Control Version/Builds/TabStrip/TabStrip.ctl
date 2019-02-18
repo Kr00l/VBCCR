@@ -320,6 +320,7 @@ Private TabStripFontHandle As Long
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
 Private TabStripDesignMode As Boolean, TabStripTopDesignMode As Boolean
+Private TabStripImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -331,7 +332,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropPlacement As TbsPlacementConstants
 Private PropMultiRow As Boolean
 Private PropMultiSelect As Boolean
@@ -496,7 +497,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropPlacement = TbsPlacementTop
 PropMultiRow = True
 PropMultiSelect = False
@@ -1043,7 +1044,7 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If TabStripDesignMode = False Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+    If PropImageListInit = False And TabStripImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1068,8 +1069,8 @@ If TabStripHandle <> 0 Then
         End If
         If Success = True Then
             SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal Handle
+            TabStripImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1082,8 +1083,8 @@ If TabStripHandle <> 0 Then
                     Success = CBool(Err.Number = 0 And Handle <> 0)
                     If Success = True Then
                         SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal Handle
+                        If TabStripDesignMode = False Then TabStripImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        If TabStripDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
                     ElseIf TabStripDesignMode = True Then
                         PropImageListName = Value
@@ -1097,8 +1098,8 @@ If TabStripHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal 0&
+        TabStripImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal 0&
     End If
@@ -1900,6 +1901,10 @@ If TabStripHandle <> 0 Then
     End If
 End If
 End Sub
+
+Private Function PropImageListControl() As Object
+If TabStripImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(TabStripImageListObjectPointer)
+End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData

@@ -519,6 +519,7 @@ Private CoolBarToolTipIndex As Long
 Private CoolBarDoubleBufferEraseBkgDC As Long
 Private CoolBarAlignable As Boolean
 Private CoolBarTheme As Long
+Private CoolBarImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -531,7 +532,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
 Private PropBorderStyle As Integer
@@ -629,7 +630,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropBackColor = vbButtonFace
 PropForeColor = vbButtonText
 PropBorderStyle = vbFixedSingle
@@ -1362,7 +1363,7 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If CoolBarDesignMode = False Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+    If PropImageListInit = False And CoolBarImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1391,8 +1392,8 @@ If CoolBarHandle <> 0 Then
         If Success = True Then
             RBI.hImageList = Handle
             SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
+            CoolBarImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1406,8 +1407,8 @@ If CoolBarHandle <> 0 Then
                     If Success = True Then
                         RBI.hImageList = Handle
                         SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
+                        If CoolBarDesignMode = False Then CoolBarImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        If CoolBarDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
                     ElseIf CoolBarDesignMode = True Then
                         PropImageListName = Value
@@ -1425,8 +1426,8 @@ If CoolBarHandle <> 0 Then
             RBI.hImageList = 0
             SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
         End If
+        CoolBarImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         SendMessage CoolBarHandle, RB_GETBARINFO, 0, ByVal VarPtr(RBI)
         If RBI.hImageList <> 0 Then
@@ -2840,6 +2841,10 @@ ControlIsValid = CBool(Err.Number = 0 And Not Control Is Extender And Container 
 On Error GoTo 0
 End Function
 
+Private Function PropImageListControl() As Object
+If CoolBarImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(CoolBarImageListObjectPointer)
+End Function
+
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
     Case 1
@@ -3386,5 +3391,10 @@ WindowProcUserControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_DESTROY, WM_NCDESTROY
         Call ComCtlsRemoveSubclass(hWnd)
+    Case WM_STYLECHANGED
+        Dim dwStyleOld As Long, dwStyleNew As Long
+        CopyMemory dwStyleOld, ByVal lParam, 4
+        CopyMemory dwStyleNew, ByVal UnsignedAdd(lParam, 4), 4
+        If dwStyleOld = dwStyleNew Then Call ComCtlsRemoveSubclass(hWnd)
 End Select
 End Function

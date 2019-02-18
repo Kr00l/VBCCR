@@ -353,6 +353,7 @@ Private ImageComboMouseOver(0 To 2) As Boolean
 Private ImageComboDesignMode As Boolean, ImageComboTopDesignMode As Boolean
 Private ImageComboTopIndex As Long
 Private ImageComboDragIndexBuffer As Long, ImageComboDragIndex As Long
+Private ImageComboImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -365,7 +366,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropStyle As ImcStyleConstants
 Private PropLocked As Boolean
 Private PropBackColor As OLE_COLOR
@@ -483,7 +484,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropStyle = ImcStyleDropDownCombo
 PropLocked = False
 PropBackColor = vbWindowBackground
@@ -1095,7 +1096,7 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If ImageComboDesignMode = False Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+    If PropImageListInit = False And ImageComboImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1120,8 +1121,8 @@ If ImageComboHandle <> 0 Then
         End If
         If Success = True Then
             SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
+            ImageComboImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1134,8 +1135,8 @@ If ImageComboHandle <> 0 Then
                     Success = CBool(Err.Number = 0 And Handle <> 0)
                     If Success = True Then
                         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
+                        If ImageComboDesignMode = False Then ImageComboImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        If ImageComboDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
                     ElseIf ImageComboDesignMode = True Then
                         PropImageListName = Value
@@ -1149,8 +1150,8 @@ If ImageComboHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal 0&
+        ImageComboImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal 0&
     End If
@@ -2013,6 +2014,10 @@ If TopIndex <> ImageComboTopIndex Then
     RaiseEvent Scroll
 End If
 End Sub
+
+Private Function PropImageListControl() As Object
+If ImageComboImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(ImageComboImageListObjectPointer)
+End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
