@@ -110,7 +110,7 @@ Private Const S_OK As Long = &H0
 Private Const UIS_CLEAR As Long = 2
 Private Const UISF_HIDEFOCUS As Long = &H1
 Private Const UISF_HIDEACCEL As Long = &H2
-Private Const WM_CHANGEUISTATE As Long = &H127
+Private Const WM_UPDATEUISTATE As Long = &H128
 Private Const WM_QUERYUISTATE As Long = &H129
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -166,7 +166,7 @@ SetErrorMode SEM_NOGPFAULTERRORBOX
 End Function
 
 Public Sub SetupVisualStyles(ByVal Form As VB.Form)
-If GetComCtlVersion() >= 6 Then SendMessage Form.hWnd, WM_CHANGEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
+If GetComCtlVersion() >= 6 Then SendMessage Form.hWnd, WM_UPDATEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
 If EnabledVisualStyles() = False Then Exit Sub
 Dim CurrControl As VB.Control
 For Each CurrControl In Form.Controls
