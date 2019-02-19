@@ -1,5 +1,8 @@
 List of revisions:
 
+19-Feb-2019
+- GDI leak fixed when ListView/TreeView/CommandLink/CommandButtonW/OptionButtonW/CheckBoxW is nested in another UserControl and has the ImageList property set at design-time.
+
 18-Feb-2019
 - Replaced WM_CHANGEUISTATE with WM_UPDATEUISTATE in VisualStyles.bas.
 - GDI leak fixed when ToolBar/CoolBar/TabStrip/ImageCombo is nested in another UserControl and has the ImageList property set at design-time.
