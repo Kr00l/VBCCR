@@ -214,6 +214,7 @@ Private CommandLinkCharCodeCache As Long
 Private CommandLinkMouseOver As Boolean
 Private CommandLinkDesignMode As Boolean, CommandLinkTopDesignMode As Boolean
 Private CommandLinkImageListHandle As Long
+Private CommandLinkImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private PropDisplayAsDefault As Boolean
@@ -225,7 +226,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropCaption As String
 Private PropHint As String
 Private PropPicture As IPictureDisp
@@ -364,7 +365,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropCaption = Ambient.DisplayName
 PropHint = vbNullString
 Set PropPicture = Nothing
@@ -876,7 +877,7 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state."
 If CommandLinkDesignMode = False Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+    If PropImageListInit = False And CommandLinkImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -909,8 +910,8 @@ If CommandLinkHandle <> 0 Then
         End If
         If Success = True Then
             Call SetImageList(Handle)
+            CommandLinkImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -923,8 +924,8 @@ If CommandLinkHandle <> 0 Then
                     Success = CBool(Err.Number = 0 And Handle <> 0)
                     If Success = True Then
                         Call SetImageList(Handle)
+                        If CommandLinkDesignMode = False Then CommandLinkImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        If CommandLinkDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
                     ElseIf CommandLinkDesignMode = True Then
                         PropImageListName = Value
@@ -938,8 +939,8 @@ If CommandLinkHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
+        CommandLinkImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         Call SetImageList(BCCL_NOGLYPH)
     End If
@@ -1206,6 +1207,10 @@ If CommandLinkHandle <> 0 Then
     Me.Refresh
 End If
 End Sub
+
+Private Function PropImageListControl() As Object
+If CommandLinkImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(CommandLinkImageListObjectPointer)
+End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
