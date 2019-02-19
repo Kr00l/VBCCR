@@ -1028,6 +1028,10 @@ Private ListViewDragIndexBuffer As Long, ListViewDragIndex As Long
 Private ListViewDragOffsetX As Long, ListViewDragOffsetY As Long
 Private ListViewMemoryColumnWidth As Long
 Private ListViewFilterEditHandle As Long, ListViewFilterEditIndex As Long
+Private ListViewIconsObjectPointer As Long
+Private ListViewSmallIconsObjectPointer As Long
+Private ListViewColumnHeaderIconsObjectPointer As Long
+Private ListViewGroupIconsObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDHotMousePointer As Long
 Private DispIDHeaderMousePointer As Long
@@ -1051,10 +1055,10 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropIconsName As String, PropIconsControl As Object, PropIconsInit As Boolean
-Private PropSmallIconsName As String, PropSmallIconsControl As Object, PropSmallIconsInit As Boolean
-Private PropColumnHeaderIconsName As String, PropColumnHeaderIconsControl As Object, PropColumnHeaderIconsInit As Boolean
-Private PropGroupIconsName As String, PropGroupIconsControl As Object, PropGroupIconsInit As Boolean
+Private PropIconsName As String, PropIconsInit As Boolean
+Private PropSmallIconsName As String, PropSmallIconsInit As Boolean
+Private PropColumnHeaderIconsName As String, PropColumnHeaderIconsInit As Boolean
+Private PropGroupIconsName As String, PropGroupIconsInit As Boolean
 Private PropBorderStyle As CCBorderStyleConstants
 Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
@@ -1238,10 +1242,10 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropIconsName = "(None)": Set PropIconsControl = Nothing
-PropSmallIconsName = "(None)": Set PropSmallIconsControl = Nothing
-PropColumnHeaderIconsName = "(None)": Set PropColumnHeaderIconsControl = Nothing
-PropGroupIconsName = "(None)": Set PropGroupIconsControl = Nothing
+PropIconsName = "(None)"
+PropSmallIconsName = "(None)"
+PropColumnHeaderIconsName = "(None)"
+PropGroupIconsName = "(None)"
 PropBorderStyle = CCBorderStyleSunken
 PropBackColor = vbWindowBackground
 PropForeColor = vbWindowText
@@ -2180,7 +2184,7 @@ End Property
 Public Property Get Icons() As Variant
 Attribute Icons.VB_Description = "Returns/sets the image list control to be used for the icons."
 If ListViewDesignMode = False Then
-    If PropIconsInit = False And PropIconsControl Is Nothing Then
+    If PropIconsInit = False And ListViewIconsObjectPointer = 0 Then
         If Not PropIconsName = "(None)" Then Me.Icons = PropIconsName
         PropIconsInit = True
     End If
@@ -2206,8 +2210,8 @@ If ListViewDesignMode = False Then
             End If
             If Success = True Then
                 SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
+                ListViewIconsObjectPointer = ObjPtr(Value)
                 PropIconsName = ProperControlName(Value)
-                Set PropIconsControl = Value
             End If
         ElseIf VarType(Value) = vbString Then
             Dim ControlEnum As Object, CompareName As String
@@ -2220,12 +2224,8 @@ If ListViewDesignMode = False Then
                         Success = CBool(Err.Number = 0 And Handle <> 0)
                         If Success = True Then
                             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
+                            ListViewIconsObjectPointer = ObjPtr(ControlEnum)
                             PropIconsName = Value
-                            Set PropIconsControl = ControlEnum
-                            Exit For
-                        ElseIf ListViewDesignMode = True Then
-                            PropIconsName = Value
-                            Success = True
                             Exit For
                         End If
                     End If
@@ -2235,8 +2235,8 @@ If ListViewDesignMode = False Then
         On Error GoTo 0
         If Success = False Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal 0&
+            ListViewIconsObjectPointer = 0
             PropIconsName = "(None)"
-            Set PropIconsControl = Nothing
         ElseIf Handle = 0 Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal 0&
         Else
@@ -2253,7 +2253,7 @@ End Property
 Public Property Get SmallIcons() As Variant
 Attribute SmallIcons.VB_Description = "Returns/sets the image list control to be used for the small icons."
 If ListViewDesignMode = False Then
-    If PropSmallIconsInit = False And PropSmallIconsControl Is Nothing Then
+    If PropSmallIconsInit = False And ListViewSmallIconsObjectPointer = 0 Then
         If Not PropSmallIconsName = "(None)" Then Me.SmallIcons = PropSmallIconsName
         PropSmallIconsInit = True
     End If
@@ -2288,8 +2288,8 @@ If ListViewDesignMode = False Then
             End If
             If Success = True Then
                 SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
+                ListViewSmallIconsObjectPointer = ObjPtr(Value)
                 PropSmallIconsName = ProperControlName(Value)
-                Set PropSmallIconsControl = Value
             End If
         ElseIf VarType(Value) = vbString Then
             Dim ControlEnum As Object, CompareName As String
@@ -2302,12 +2302,8 @@ If ListViewDesignMode = False Then
                         Success = CBool(Err.Number = 0 And Handle <> 0)
                         If Success = True Then
                             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
+                            ListViewSmallIconsObjectPointer = ObjPtr(ControlEnum)
                             PropSmallIconsName = Value
-                            If ListViewDesignMode = False Then Set PropSmallIconsControl = ControlEnum
-                            Exit For
-                        ElseIf ListViewDesignMode = True Then
-                            PropSmallIconsName = Value
-                            Success = True
                             Exit For
                         End If
                     End If
@@ -2317,8 +2313,8 @@ If ListViewDesignMode = False Then
         On Error GoTo 0
         If Success = False Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal 0&
+            ListViewSmallIconsObjectPointer = 0
             PropSmallIconsName = "(None)"
-            Set PropSmallIconsControl = Nothing
         ElseIf Handle = 0 Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal 0&
         Else
@@ -2353,7 +2349,7 @@ End Property
 Public Property Get ColumnHeaderIcons() As Variant
 Attribute ColumnHeaderIcons.VB_Description = "Returns/sets the image list control to be used for the column header icons."
 If ListViewDesignMode = False Then
-    If PropColumnHeaderIconsInit = False And PropColumnHeaderIconsControl Is Nothing Then
+    If PropColumnHeaderIconsInit = False And ListViewColumnHeaderIconsObjectPointer = 0 Then
         If Not PropColumnHeaderIconsName = "(None)" Then Me.ColumnHeaderIcons = PropColumnHeaderIconsName
         PropColumnHeaderIconsInit = True
     End If
@@ -2380,8 +2376,8 @@ If ListViewDesignMode = False Then
             End If
             If Success = True Then
                 SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
+                ListViewColumnHeaderIconsObjectPointer = ObjPtr(Value)
                 PropColumnHeaderIconsName = ProperControlName(Value)
-                Set PropColumnHeaderIconsControl = Value
             End If
         ElseIf VarType(Value) = vbString Then
             Dim ControlEnum As Object, CompareName As String
@@ -2394,12 +2390,8 @@ If ListViewDesignMode = False Then
                         Success = CBool(Err.Number = 0 And Handle <> 0)
                         If Success = True Then
                             SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
+                            ListViewColumnHeaderIconsObjectPointer = ObjPtr(ControlEnum)
                             PropColumnHeaderIconsName = Value
-                            Set PropColumnHeaderIconsControl = ControlEnum
-                            Exit For
-                        ElseIf ListViewDesignMode = True Then
-                            PropColumnHeaderIconsName = Value
-                            Success = True
                             Exit For
                         End If
                     End If
@@ -2409,8 +2401,8 @@ If ListViewDesignMode = False Then
         On Error GoTo 0
         If Success = False Then
             SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal 0&
+            ListViewColumnHeaderIconsObjectPointer = 0
             PropColumnHeaderIconsName = "(None)"
-            Set PropColumnHeaderIconsControl = Nothing
         ElseIf Handle = 0 Then
             SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal 0&
         End If
@@ -2431,7 +2423,7 @@ End Property
 Public Property Get GroupIcons() As Variant
 Attribute GroupIcons.VB_Description = "Returns/sets the image list control to be used for the group header icons. Requires comctl32.dll version 6.1 or higher."
 If ListViewDesignMode = False Then
-    If PropGroupIconsInit = False And PropGroupIconsControl Is Nothing Then
+    If PropGroupIconsInit = False And ListViewGroupIconsObjectPointer = 0 Then
         If Not PropGroupIconsName = "(None)" Then Me.GroupIcons = PropGroupIconsName
         PropGroupIconsInit = True
     End If
@@ -2457,8 +2449,8 @@ If ListViewDesignMode = False Then
             End If
             If Success = True Then
                 If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
+                ListViewGroupIconsObjectPointer = ObjPtr(Value)
                 PropGroupIconsName = ProperControlName(Value)
-                Set PropGroupIconsControl = Value
             End If
         ElseIf VarType(Value) = vbString Then
             Dim ControlEnum As Object, CompareName As String
@@ -2471,12 +2463,8 @@ If ListViewDesignMode = False Then
                         Success = CBool(Err.Number = 0 And Handle <> 0)
                         If Success = True Then
                             If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
+                            ListViewGroupIconsObjectPointer = ObjPtr(ControlEnum)
                             PropGroupIconsName = Value
-                            Set PropGroupIconsControl = ControlEnum
-                            Exit For
-                        ElseIf ListViewDesignMode = True Then
-                            PropGroupIconsName = Value
-                            Success = True
                             Exit For
                         End If
                     End If
@@ -2486,8 +2474,8 @@ If ListViewDesignMode = False Then
         On Error GoTo 0
         If Success = False Then
             If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal 0&
+            ListViewGroupIconsObjectPointer = 0
             PropGroupIconsName = "(None)"
-            Set PropGroupIconsControl = Nothing
         ElseIf Handle = 0 Then
             If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal 0&
         End If
@@ -6782,6 +6770,22 @@ End Function
 
 Private Function StateImageMaskToIndex(ByVal ImgState As Long) As Long
 StateImageMaskToIndex = ImgState / (2 ^ 12)
+End Function
+
+Private Function PropIconsControl() As Object
+If ListViewIconsObjectPointer <> 0 Then Set PropIconsControl = PtrToObj(ListViewIconsObjectPointer)
+End Function
+
+Private Function PropSmallIconsControl() As Object
+If ListViewSmallIconsObjectPointer <> 0 Then Set PropSmallIconsControl = PtrToObj(ListViewSmallIconsObjectPointer)
+End Function
+
+Private Function PropColumnHeaderIconsControl() As Object
+If ListViewColumnHeaderIconsObjectPointer <> 0 Then Set PropColumnHeaderIconsControl = PtrToObj(ListViewColumnHeaderIconsObjectPointer)
+End Function
+
+Private Function PropGroupIconsControl() As Object
+If ListViewGroupIconsObjectPointer <> 0 Then Set PropGroupIconsControl = PtrToObj(ListViewGroupIconsObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long

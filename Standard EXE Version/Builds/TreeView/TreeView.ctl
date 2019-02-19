@@ -445,7 +445,7 @@ Private Const TVHT_ONITEMINDENT As Long = &H8
 Private Const TVHT_ONITEMBUTTON As Long = &H10
 Private Const TVHT_ONITEMRIGHT As Long = &H20
 Private Const TVHT_ONITEMSTATEICON As Long = &H40
-Private Const TVHT_ONITEM As Long = &H46
+Private Const TVHT_ONITEM As Long = TVHT_ONITEMICON Or TVHT_ONITEMLABEL Or TVHT_ONITEMSTATEICON
 Private Const TVHT_ABOVE As Long = &H100
 Private Const TVHT_BELOW As Long = &H200
 Private Const TVHT_TORIGHT As Long = &H400
@@ -455,6 +455,9 @@ Private Const TVE_EXPAND As Long = &H2
 Private Const TVE_TOGGLE As Long = &H3
 Private Const TVE_EXPANDPARTIAL As Long = &H4000
 Private Const TVE_COLLAPSERESET As Long = &H8000&
+Private Const TVNRET_DEFAULT As Long = 0
+Private Const TVNRET_SKIPOLD As Long = 1
+Private Const TVNRET_SKIPNEW As Long = 2
 Private Const TVGN_ROOT As Long = &H0
 Private Const TVGN_NEXT As Long = &H1
 Private Const TVGN_PREVIOUS As Long = &H2
@@ -511,6 +514,7 @@ Private TreeViewDragItemBuffer As Long, TreeViewDragItem As Long
 Private TreeViewInsertMarkItem As Long, TreeViewInsertMarkAfter As Boolean
 Private TreeViewExpandItem As Long, TreeViewPrevExpandItem As Long, TreeViewTickCount As Double
 Private TreeViewSampleMode As Boolean
+Private TreeViewImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -526,7 +530,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropBorderStyle As CCBorderStyleConstants
 Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
@@ -645,7 +649,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropBorderStyle = CCBorderStyleSunken
 PropBackColor = vbWindowBackground
 PropForeColor = vbWindowText
@@ -1323,7 +1327,7 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If TreeViewDesignMode = False Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+    If PropImageListInit = False And TreeViewImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1353,8 +1357,8 @@ If TreeViewHandle <> 0 Then
                 Case Else
                     SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
             End Select
+            TreeViewImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1372,8 +1376,8 @@ If TreeViewHandle <> 0 Then
                             Case Else
                                 SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
                         End Select
+                        If TreeViewDesignMode = False Then TreeViewImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        Set PropImageListControl = ControlEnum
                         Exit For
                     ElseIf TreeViewDesignMode = True Then
                         PropImageListName = Value
@@ -1387,8 +1391,8 @@ If TreeViewHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
+        TreeViewImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
     End If
@@ -2948,6 +2952,10 @@ End Function
 
 Private Function StateImageMaskToIndex(ByVal ImgState As Long) As Long
 StateImageMaskToIndex = ImgState / (2 ^ 12)
+End Function
+
+Private Function PropImageListControl() As Object
+If TreeViewImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(TreeViewImageListObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
