@@ -314,6 +314,7 @@ Private OptionButtonCharCodeCache As Long
 Private OptionButtonMouseOver(0 To 1) As Boolean
 Private OptionButtonDesignMode As Boolean, OptionButtonTopDesignMode As Boolean
 Private OptionButtonImageListHandle As Long
+Private OptionButtonImageListObjectPointer As Long
 Private OptionButtonEnabledVisualStyles As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -324,7 +325,7 @@ Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropImageListAlignment As OptImageListAlignmentConstants
 Private PropImageListMargin As Long
 Private PropValue As OLE_OPTEXCLUSIVE
@@ -430,7 +431,7 @@ PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 If PropRightToLeft = False Then PropImageListAlignment = OptImageListAlignmentLeft Else PropImageListAlignment = OptImageListAlignmentRight
 PropImageListMargin = 0
 PropValue = False
@@ -966,7 +967,7 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state. Requires comctl32.dll version 6.0 or higher."
 If OptionButtonDesignMode = False Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+    If PropImageListInit = False And OptionButtonImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -999,8 +1000,8 @@ If OptionButtonHandle <> 0 Then
         End If
         If Success = True Then
             Call SetImageList(Handle)
+            OptionButtonImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1013,8 +1014,8 @@ If OptionButtonHandle <> 0 Then
                     Success = CBool(Err.Number = 0 And Handle <> 0)
                     If Success = True Then
                         Call SetImageList(Handle)
+                        If OptionButtonDesignMode = False Then OptionButtonImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        If OptionButtonDesignMode = False Then Set PropImageListControl = ControlEnum
                         Exit For
                     ElseIf OptionButtonDesignMode = True Then
                         PropImageListName = Value
@@ -1028,8 +1029,8 @@ If OptionButtonHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
+        OptionButtonImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         Call SetImageList(BCCL_NOGLYPH)
     End If
@@ -1626,6 +1627,10 @@ Else
 End If
 End Function
 
+Private Function PropImageListControl() As Object
+If OptionButtonImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(OptionButtonImageListObjectPointer)
+End Function
+
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
     Case 1
@@ -2155,10 +2160,5 @@ WindowProcUserControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_DESTROY, WM_NCDESTROY
         Call ComCtlsRemoveSubclass(hWnd)
-    Case WM_STYLECHANGED
-        Dim dwStyleOld As Long, dwStyleNew As Long
-        CopyMemory dwStyleOld, ByVal lParam, 4
-        CopyMemory dwStyleNew, ByVal UnsignedAdd(lParam, 4), 4
-        If dwStyleOld = dwStyleNew Then Call ComCtlsRemoveSubclass(hWnd)
 End Select
 End Function
