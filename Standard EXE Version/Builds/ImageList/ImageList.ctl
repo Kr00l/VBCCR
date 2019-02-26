@@ -107,6 +107,7 @@ Private Const BDR_RAISEDOUTER As Long = 1
 Private Const BDR_RAISEDINNER As Long = 4
 Private Const CLR_NONE As Long = -1
 Private Const CLR_DEFAULT As Long = -16777216
+Implements OLEGuids.IObjectSafety
 Private ImageListHandle As Long
 Private ImageListInitListImagesCount As Long
 Private ImageListDesignMode As Boolean
@@ -119,6 +120,15 @@ Private PropUseMaskColor As Boolean
 Private PropMaskColor As OLE_COLOR
 Private PropUseBackColor As Boolean
 Private PropBackColor As OLE_COLOR
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod

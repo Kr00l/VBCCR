@@ -201,6 +201,7 @@ Private Const PGK_SHIFT As Long = 1
 Private Const PGK_CONTROL As Long = 2
 Private Const PGK_MENU As Long = 4
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private PagerHandle As Long
 Private PagerIsClick As Boolean
@@ -224,6 +225,15 @@ Private PropOrientation As PgrOrientationConstants
 Private PropBorderWidth As Long
 Private PropAutoScroll As Boolean
 Private PropButtonSize As Long
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
