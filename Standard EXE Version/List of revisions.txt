@@ -1,7 +1,8 @@
 List of revisions:
 
-25-Feb-2019
+26-Feb-2019
 - Bugfix that the PanelClick event fired two times when double clicking in the StatusBar control.
+- Elimination of difference between StdEXE and OCX version. All UserControls in StdEXE now implements IObjectSafety.
 
 19-Feb-2019
 - GDI leak fixed when ListView/TreeView/CommandLink/CommandButtonW/OptionButtonW/CheckBoxW is nested in another UserControl and has the ImageList property set at design-time.
