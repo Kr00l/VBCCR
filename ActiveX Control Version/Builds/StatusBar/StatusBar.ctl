@@ -200,9 +200,6 @@ Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lp
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function PtInRect Lib "user32" (ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
-Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
-Private Declare Function GetTickCount Lib "kernel32" () As Long
-Private Declare Function GetDoubleClickTime Lib "user32" () As Long
 Private Const ICC_BAR_CLASSES As Long = &H20
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const GWL_STYLE As Long = (-16)
@@ -363,9 +360,6 @@ Private StatusBarMouseOver As Boolean
 Private StatusBarDesignMode As Boolean
 Private StatusBarDoubleBufferEraseBkgDC As Long
 Private StatusBarAlignable As Boolean
-Private StatusBarDblClickTime As Long, StatusBarDblClickTickCount As Double
-Private StatusBarDblClickCX As Long, StatusBarDblClickCY As Long
-Private StatusBarDblClickX As Long, StatusBarDblClickY As Long
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -420,11 +414,6 @@ Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
 Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
-StatusBarDblClickTime = GetDoubleClickTime()
-Const SM_CXDOUBLECLK As Long = 36
-Const SM_CYDOUBLECLK As Long = 37
-StatusBarDblClickCX = GetSystemMetrics(SM_CXDOUBLECLK)
-StatusBarDblClickCY = GetSystemMetrics(SM_CYDOUBLECLK)
 End Sub
 
 Private Sub UserControl_Show()
@@ -2096,40 +2085,23 @@ Select Case wMsg
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = StatusBarHandle Then
-            If NM.Code = SBN_SIMPLEMODECHANGE Then
-                RaiseEvent StyleChange
-            Else
-                Dim NMM As NMMOUSE
-                CopyMemory NMM, ByVal lParam, LenB(NMM)
-                Select Case NM.Code
-                    Case NM_CLICK, NM_RCLICK
-                        Dim IsDblClick As Boolean
-                        If StatusBarDblClickTickCount = 0 Then
-                            StatusBarDblClickTickCount = CLngToULng(GetTickCount())
-                            StatusBarDblClickX = NMM.PT.X
-                            StatusBarDblClickY = NMM.PT.Y
-                        Else
-                            If (CLngToULng(GetTickCount()) - StatusBarDblClickTickCount) <= StatusBarDblClickTime Then
-                                Dim DblClickRect As RECT
-                                With DblClickRect
-                                .Left = StatusBarDblClickX - (StatusBarDblClickCX / 2)
-                                .Right = StatusBarDblClickX + (StatusBarDblClickCX / 2)
-                                .Top = StatusBarDblClickY - (StatusBarDblClickCY / 2)
-                                .Bottom = StatusBarDblClickY + (StatusBarDblClickCY / 2)
-                                End With
-                                If PtInRect(DblClickRect, NMM.PT.X, NMM.PT.Y) <> 0 Then IsDblClick = True
+            Select Case NM.Code
+                Case SBN_SIMPLEMODECHANGE
+                    RaiseEvent StyleChange
+                Case NM_CLICK, NM_RCLICK, NM_DBLCLK, NM_RDBLCLK
+                    Dim NMM As NMMOUSE
+                    CopyMemory NMM, ByVal lParam, LenB(NMM)
+                    With NMM
+                    Select Case NM.Code
+                        Case NM_CLICK, NM_RCLICK
+                            If StatusBarIsClick = True Then
+                                If .dwItemSpec >= 0 Then RaiseEvent PanelClick(Me.Panels(.dwItemSpec + 1), UserControl.ScaleX(.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(.PT.Y, vbPixels, vbContainerPosition))
                             End If
-                            StatusBarDblClickTickCount = CLngToULng(GetTickCount())
-                            StatusBarDblClickX = NMM.PT.X
-                            StatusBarDblClickY = NMM.PT.Y
-                        End If
-                        If IsDblClick = False Then
-                            If NMM.dwItemSpec >= 0 Then RaiseEvent PanelClick(Me.Panels(NMM.dwItemSpec + 1), UserControl.ScaleX(NMM.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(NMM.PT.Y, vbPixels, vbContainerPosition))
-                        End If
-                    Case NM_DBLCLK, NM_RDBLCLK
-                        If NMM.dwItemSpec >= 0 Then RaiseEvent PanelDblClick(Me.Panels(NMM.dwItemSpec + 1), UserControl.ScaleX(NMM.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(NMM.PT.Y, vbPixels, vbContainerPosition))
-                End Select
-            End If
+                        Case NM_DBLCLK, NM_RDBLCLK
+                            If .dwItemSpec >= 0 Then RaiseEvent PanelDblClick(Me.Panels(.dwItemSpec + 1), UserControl.ScaleX(.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(.PT.Y, vbPixels, vbContainerPosition))
+                    End Select
+                    End With
+            End Select
         End If
     Case WM_NOTIFYFORMAT
         Const NF_QUERY As Long = 3
