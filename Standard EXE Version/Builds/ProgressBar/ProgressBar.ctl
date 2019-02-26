@@ -182,6 +182,7 @@ Private Const PBS_VERTICAL As Long = &H4
 Private Const PBS_MARQUEE As Long = &H8
 Private Const PBS_SMOOTHREVERSE As Long = &H10
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private ProgressBarHandle As Long
 Private ProgressBarITaskBarList3 As IUnknown
@@ -212,6 +213,15 @@ Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
 Private PropState As PrbStateConstants
 Private PropShowInTaskBar As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then

@@ -552,6 +552,7 @@ Private Const TBSTYLE_EX_DRAWDDARROWS As Long = &H1
 Private Const TBSTYLE_EX_HIDECLIPPEDBUTTONS As Long = &H10
 Private Const TBSTYLE_EX_DOUBLEBUFFER As Long = &H80
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private Type InitButtonMenuStruct
 Key As String
@@ -644,6 +645,15 @@ Private PropHotTracking As Boolean
 Private PropHideClippedButtons As Boolean
 Private PropAnchorHot As Boolean
 Private PropMaxTextRows As Integer
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then

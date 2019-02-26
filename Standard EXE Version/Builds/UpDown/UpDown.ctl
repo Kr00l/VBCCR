@@ -148,6 +148,7 @@ Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
 Private Const UDM_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private UpDownHandle As Long
 Private UpDownMouseOver As Boolean
@@ -168,6 +169,15 @@ Private PropHotTracking As Boolean
 Private PropOrientation As UdnOrientationConstants
 Private PropThousandsSeparator As Boolean
 Private PropNumberStyle As UdnNumberStyleConstants
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDBuddyControl Then
