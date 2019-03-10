@@ -1,5 +1,8 @@
 List of revisions:
 
+10-Mar-2019
+- Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
+
 26-Feb-2019
 - Bugfix that the PanelClick event fired two times when double clicking in the StatusBar control.
 - Elimination of difference between StdEXE and OCX version. All UserControls in StdEXE now implements IObjectSafety.
