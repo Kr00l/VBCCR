@@ -1,5 +1,8 @@
 List of revisions:
 
+25-Mar-2019
+- Bugfix in the HDN_BEGINFILTEREDIT handler in the ListView control.
+
 10-Mar-2019
 - Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
 
