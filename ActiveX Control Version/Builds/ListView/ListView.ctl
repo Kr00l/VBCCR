@@ -7034,6 +7034,8 @@ Select Case wMsg
                     End If
                 Case HDN_BEGINFILTEREDIT
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
+                    ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
+                    NMHDR.iItem = SendMessage(NMHDR.hdr.hWndFrom, HDM_GETFOCUSEDITEM, 0, ByVal 0&)
                     If NMHDR.iItem > -1 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
                 Case HDN_ENDFILTEREDIT
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
