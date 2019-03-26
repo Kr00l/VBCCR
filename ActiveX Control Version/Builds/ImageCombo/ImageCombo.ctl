@@ -214,7 +214,7 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const SW_HIDE As Long = &H0
 Private Const WS_VSCROLL As Long = &H200000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTVSCROLL As Long = 7
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTVSCROLL As Long = 7
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETFOCUS As Long = &H7
@@ -2044,7 +2044,7 @@ Select Case wMsg
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
         If ImageComboTopDesignMode = False And GetFocus() <> ImageComboHandle And (GetFocus() <> ImageComboComboHandle Or ImageComboComboHandle = 0) And (GetFocus() <> ImageComboEditHandle Or ImageComboEditHandle = 0) Then
-            If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -2054,7 +2054,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE
