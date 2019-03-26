@@ -1,5 +1,8 @@
 List of revisions:
 
+26-Mar-2019
+- Minor bugfix in each WM_MOUSEACTIVATE handler.
+
 25-Mar-2019
 - Bugfix in the HDN_BEGINFILTEREDIT handler in the ListView control.
 
