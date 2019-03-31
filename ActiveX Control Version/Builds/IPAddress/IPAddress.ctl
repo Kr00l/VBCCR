@@ -101,7 +101,6 @@ Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lp
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
-Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
@@ -905,7 +904,6 @@ Select Case wMsg
         If HiWord(wParam) = EN_CHANGE Then RaiseEvent Change
     Case WM_CTLCOLOREDIT
         WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-        SetBkMode wParam, 1
         SetTextColor wParam, WinColor(PropForeColor)
         Exit Function
 End Select
