@@ -188,7 +188,7 @@ Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
-Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
+Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As Long, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
@@ -2084,9 +2084,11 @@ Select Case wMsg
         End If
     Case WM_CTLCOLOREDIT, WM_CTLCOLORSTATIC
         WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-        SetBkMode wParam, 1
         If Me.Enabled = True Then SetTextColor wParam, WinColor(PropForeColor)
-        If ImageComboBackColorBrush <> 0 Then WindowProcControl = ImageComboBackColorBrush
+        If ImageComboBackColorBrush <> 0 Then
+            SetBkColor wParam, WinColor(PropBackColor)
+            WindowProcControl = ImageComboBackColorBrush
+        End If
         Exit Function
     Case WM_CTLCOLORLISTBOX
         If PropStyle = ImcStyleDropDownCombo Then SetFocusAPI ImageComboEditHandle
