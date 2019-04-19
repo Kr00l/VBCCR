@@ -158,17 +158,6 @@ Private Type RECHARRANGE
 Min As Long
 Max As Long
 End Type
-Private Type REGETTEXTEX
-cBytes As Long
-Flags As Long
-CodePage As Long
-lpDefaultChar As Long
-lpUsedDefChar As Long
-End Type
-Private Type RESETTEXTEX
-Flags As Long
-CodePage As Long
-End Type
 Private Type REFINDTEXTEX
 CharRange As RECHARRANGE
 lpstrText As Long
@@ -368,6 +357,9 @@ Private Const SWP_NOMOVE As Long = &H2
 Private Const SWP_NOOWNERZORDER As Long = &H200
 Private Const SWP_NOSIZE As Long = &H1
 Private Const SWP_NOZORDER As Long = &H4
+Private Const DCX_WINDOW As Long = &H1
+Private Const DCX_INTERSECTRGN As Long = &H80
+Private Const DCX_USESTYLE As Long = &H10000
 Private Const GWL_STYLE As Long = (-16)
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
@@ -419,7 +411,6 @@ Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
-Private Const WM_DROPFILES As Long = &H233
 Private Const WM_COPY As Long = &H301
 Private Const WM_CUT As Long = &H300
 Private Const WM_PASTE As Long = &H302
@@ -3527,10 +3518,7 @@ Select Case wMsg
                     If wParam = 1 Then ' Alias for entire window
                         hDC = GetWindowDC(hWnd)
                     Else
-                        Const DCX_WINDOW As Long = &H1
-                        Const DCX_INTERSECTRGN As Long = &H80
-                        ' Additional undocumented flag &H10000 has to be used.
-                        hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or &H10000)
+                        hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
                     End If
                     If hDC <> 0 Then
                         Dim BorderX As Long, BorderY As Long
