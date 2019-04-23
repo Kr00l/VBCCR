@@ -694,7 +694,11 @@ End Function
 
 Public Sub ComCtlsTopParentValidateControls(ByVal UserControl As Object)
 With GetTopUserControl(UserControl)
-If TypeOf .Parent Is VB.Form Then
+If TypeOf .Parent Is VB.MDIForm Then
+    Dim MDIForm As VB.MDIForm
+    Set MDIForm = .Parent
+    MDIForm.ValidateControls
+ElseIf TypeOf .Parent Is VB.Form Then
     Dim Form As VB.Form
     Set Form = .Parent
     Form.ValidateControls
