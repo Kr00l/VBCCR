@@ -1,5 +1,8 @@
 List of revisions:
 
+23-Apr-2019
+- Bugfix in the internal ComCtlsTopParentValidateControls function.
+
 26-Mar-2019
 - Minor bugfix in each WM_MOUSEACTIVATE handler.
 
