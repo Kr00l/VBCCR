@@ -1386,7 +1386,6 @@ End Sub
 
 Private Sub DestroyToolTip()
 If LinkLabelToolTipHandle = 0 Then Exit Sub
-SetParent LinkLabelToolTipHandle, 0
 DestroyWindow LinkLabelToolTipHandle
 LinkLabelToolTipHandle = 0
 End Sub
