@@ -1,5 +1,8 @@
 List of revisions:
 
+11-May-2019
+- Minor internal improvement
+
 23-Apr-2019
 - Bugfix in the internal ComCtlsTopParentValidateControls function.
 
