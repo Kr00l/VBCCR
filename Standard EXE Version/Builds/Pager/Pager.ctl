@@ -161,8 +161,6 @@ Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
-Private Const WM_COMMAND As Long = &H111
-Private Const WM_SHOWWINDOW As Long = &H18
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const PGM_FIRST As Long = &H1400
@@ -178,7 +176,6 @@ Private Const PGM_GETPOS As Long = (PGM_FIRST + 9)
 Private Const PGM_SETBUTTONSIZE As Long = (PGM_FIRST + 10)
 Private Const PGM_GETBUTTONSIZE As Long = (PGM_FIRST + 11)
 Private Const PGM_GETBUTTONSTATE As Long = (PGM_FIRST + 12)
-Private Const PGM_SETSCROLLINFO As Long = (PGM_FIRST + 13)
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_GETDROPTARGET As Long = (CCM_FIRST + 4)
 Private Const PGM_GETDROPTARGET As Long = CCM_GETDROPTARGET

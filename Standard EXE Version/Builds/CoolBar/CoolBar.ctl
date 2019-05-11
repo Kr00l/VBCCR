@@ -2672,7 +2672,6 @@ End Sub
 
 Private Sub DestroyToolTip()
 If CoolBarToolTipHandle = 0 Then Exit Sub
-SetParent CoolBarToolTipHandle, 0
 DestroyWindow CoolBarToolTipHandle
 CoolBarToolTipHandle = 0
 CoolBarToolTipIndex = -1

@@ -1554,7 +1554,6 @@ End Sub
 
 Private Sub DestroyToolTip()
 If StatusBarToolTipHandle = 0 Then Exit Sub
-SetParent StatusBarToolTipHandle, 0
 DestroyWindow StatusBarToolTipHandle
 StatusBarToolTipHandle = 0
 End Sub

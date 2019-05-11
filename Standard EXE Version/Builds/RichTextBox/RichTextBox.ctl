@@ -3663,22 +3663,24 @@ End Function
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_COMMAND
-        Select Case HiWord(wParam)
-            Case EN_CHANGE
-                UserControl.PropertyChanged "Text"
-                UserControl.PropertyChanged "TextRTF"
-                On Error Resume Next
-                UserControl.Extender.DataChanged = True
-                On Error GoTo 0
-                RaiseEvent Change
-            Case EN_MAXTEXT
-                RaiseEvent MaxText
-            Case EN_HSCROLL, EN_VSCROLL
-                ' This notification code is also sent when a keyboard event causes a change in the view area.
-                RaiseEvent Scroll
-            Case 0 ' Alias for menu
-                RaiseEvent OLEContextMenuClick(LoWord(wParam))
-        End Select
+        If HiWord(wParam) = 0 And lParam = 0 Then ' Alias for menu
+            RaiseEvent OLEContextMenuClick(LoWord(wParam))
+        ElseIf lParam <> 0 Then
+            Select Case HiWord(wParam)
+                Case EN_CHANGE
+                    UserControl.PropertyChanged "Text"
+                    UserControl.PropertyChanged "TextRTF"
+                    On Error Resume Next
+                    UserControl.Extender.DataChanged = True
+                    On Error GoTo 0
+                    RaiseEvent Change
+                Case EN_MAXTEXT
+                    RaiseEvent MaxText
+                Case EN_HSCROLL, EN_VSCROLL
+                    ' This notification code is also sent when a keyboard event causes a change in the view area.
+                    RaiseEvent Scroll
+            End Select
+        End If
     Case WM_NOTIFY
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
