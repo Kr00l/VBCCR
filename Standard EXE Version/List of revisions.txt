@@ -1,5 +1,8 @@
 List of revisions:
 
+14-May-2019
+- Minor improvement of the Locked property in the ComboBoxW, FontCombo and ImageCombo control.
+
 11-May-2019
 - Minor internal improvement.
 
@@ -1036,37 +1039,6 @@ List of revisions:
 - ComboBoxW with Style 'CboStyleDropDownCombo' is now working on Windows 2000.
   Message CB_GETCOMBOBOXINFO is not supported on Windows 2000, so little workaround was necessary to solve this.
 - Some other minor internal improvements.
-
-25-Feb-2016
-- Minor adjustment to the BackColor in the ToolBar control so that the Pager control can recognize it.
-
-24-Feb-2016
-- Fixed a bug that the Scroll event fired twice instead of once in the Slider control.
-
-19-Feb-2016
-- The BackColor property in the ToolBar control is now shown/visible at design-time.
-  But it remains ignored when the control paints via double-buffering. (also at run-time)
-
-30-Jan-2016
-- Included the ShowTrailingDates property in the MonthView control.
-- Included the CalendarShowTrailingDates property in the DTPicker control.
-- Forgot to rename the HotTrack property to 'HotTracking' in the property page of the SpinBox control.
-
-28-Jan-2016
-- Fixed a bug in the LVN_ITEMACTIVATE handler in the ListView control.
-  The Shift parameter in the ItemActivate event was not properly set.
-
-19-Jan-2016
-- Renamed the HotTrack property to 'HotTracking' in the SpinBox control.
-  So the wording is in line with the UpDown, TreeView, TabStrip, ListView and LinkLabel control.
-
-07-Jan-2016
-- Included the MaxText event in the TextBoxW and RichTextBox control.
-
-01-Jan-2016
-- Mouse events now again in correct order in the ImageCombo, TreeView and ListView control.
-  Some workaround was necessary to raise them 'After' (refer to update 21-Nov-2015) and keep correct order.
-  Issue was an internal modal message loop on these controls. (DragDetect)
 
 [...]
 
