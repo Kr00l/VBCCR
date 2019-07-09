@@ -7237,6 +7237,10 @@ End Function
 
 Private Function WindowProcHeader(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
+    Case WM_SETFOCUS
+        Call ActivateIPAO(Me)
+    Case WM_KILLFOCUS
+        Call DeActivateIPAO
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             Dim hCursor As Long
