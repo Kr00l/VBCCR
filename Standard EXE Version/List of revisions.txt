@@ -1,5 +1,8 @@
 List of revisions:
 
+09-Jul-2019
+- VTable bugfix in the ListView control. (Unstable condition when internal SysHeader32 control had focus)
+
 14-May-2019
 - Minor improvement of the Locked property in the ComboBoxW, FontCombo and ImageCombo control.
 
