@@ -66,6 +66,19 @@ wMinute As Integer
 wSecond As Integer
 wMilliseconds As Integer
 End Type
+Private Const MAX_PATH As Long = 260
+Private Type WIN32_FIND_DATA
+dwFileAttributes As Long
+FTCreationTime As FILETIME
+FTLastAccessTime As FILETIME
+FTLastWriteTime As FILETIME
+nFileSizeHigh As Long
+nFileSizeLow As Long
+dwReserved0 As Long
+dwReserved1 As Long
+lpszFileName(0 To ((MAX_PATH * 2) - 1)) As Byte
+lpszAlternateFileName(0 To ((14 * 2) - 1)) As Byte
+End Type
 Private Type VS_FIXEDFILEINFO
 dwSignature As Long
 dwStrucVersionLo As Integer
@@ -118,6 +131,14 @@ Private Declare Function GetFileSize Lib "kernel32" (ByVal hFile As Long, ByRef 
 Private Declare Function GetFileTime Lib "kernel32" (ByVal hFile As Long, ByVal lpCreationTime As Long, ByVal lpLastAccessTime As Long, ByVal lpLastWriteTime As Long) As Long
 Private Declare Function FileTimeToLocalFileTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpLocalFileTime As Long) As Long
 Private Declare Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpSystemTime As Long) As Long
+Private Declare Function FindFirstFile Lib "kernel32" Alias "FindFirstFileW" (ByVal lpFileName As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
+Private Declare Function FindNextFile Lib "kernel32" Alias "FindNextFileW" (ByVal hFindFile As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
+Private Declare Function FindClose Lib "kernel32" (ByVal hFindFile As Long) As Long
+Private Declare Function GetVolumePathName Lib "kernel32" Alias "GetVolumePathNameW" (ByVal lpFileName As Long, ByVal lpVolumePathName As Long, ByVal cch As Long) As Long
+Private Declare Function GetVolumeInformation Lib "kernel32" Alias "GetVolumeInformationW" (ByVal lpRootPathName As Long, ByVal lpVolumeNameBuffer As Long, ByVal nVolumeNameSize As Long, ByRef lpVolumeSerialNumber As Long, ByRef lpMaximumComponentLength As Long, ByRef lpFileSystemFlags As Long, ByVal lpFileSystemNameBuffer As Long, ByVal nFileSystemNameSize As Long) As Long
+Private Declare Function CreateDirectory Lib "kernel32" Alias "CreateDirectoryW" (ByVal lpPathName As Long, ByVal lpSecurityAttributes As Long) As Long
+Private Declare Function RemoveDirectory Lib "kernel32" Alias "RemoveDirectoryW" (ByVal lpPathName As Long) As Long
+Private Declare Function GetCurrentDirectory Lib "kernel32" Alias "GetCurrentDirectoryW" (ByVal nBufferLength As Long, ByVal lpBuffer As Long) As Long
 Private Declare Function GetFileVersionInfo Lib "Version" Alias "GetFileVersionInfoW" (ByVal lpFileName As Long, ByVal dwHandle As Long, ByVal dwLen As Long, ByVal lpData As Long) As Long
 Private Declare Function GetFileVersionInfoSize Lib "Version" Alias "GetFileVersionInfoSizeW" (ByVal lpFileName As Long, ByVal lpdwHandle As Long) As Long
 Private Declare Function VerQueryValue Lib "Version" Alias "VerQueryValueW" (ByVal lpBlock As Long, ByVal lpSubBlock As Long, ByRef lplpBuffer As Long, ByRef puLen As Long) As Long
@@ -169,7 +190,6 @@ Private Declare Function OleCreatePictureIndirect Lib "olepro32" (ByRef pPictDes
 Private Declare Function CreateStreamOnHGlobal Lib "ole32" (ByVal hGlobal As Long, ByVal fDeleteOnRelease As Long, ByRef pStream As IUnknown) As Long
 Private Declare Function WideCharToMultiByte Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpWideCharStr As Long, ByVal cchWideChar As Long, ByVal lpMultiByteStr As Long, ByVal cbMultiByte As Long, ByVal lpDefaultChar As Long, ByVal lpUsedDefaultChar As Long) As Long
 Private Declare Function MultiByteToWideChar Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpMultiByteStr As Long, ByVal cbMultiByte As Long, ByVal lpWideCharStr As Long, ByVal cchWideChar As Long) As Long
-Private Const MAX_PATH As Long = 260, MAX_PATH_W As Long = 32767
 
 ' (VB-Overwrite)
 Public Function MsgBox(ByVal Prompt As String, Optional ByVal Buttons As VbMsgBoxStyle = vbOKOnly, Optional ByVal Title As String) As VbMsgBoxResult
@@ -227,6 +247,110 @@ Else
 End If
 If Left$(PathName, 2) = "\\" Then PathName = "UNC\" & Mid$(PathName, 3)
 If SetFileAttributes(StrPtr("\\?\" & PathName), dwAttributes) = 0 Then Err.Raise 53
+End Sub
+
+' (VB-Overwrite)
+Public Function Dir(Optional ByVal PathMask As String, Optional ByVal Attributes As VbFileAttribute = vbNormal) As String
+Const INVALID_HANDLE_VALUE As Long = (-1)
+Const FILE_ATTRIBUTE_NORMAL As Long = &H80
+Static hFindFile As Long, AttributesCache As VbFileAttribute
+If Attributes = vbVolume Then ' Exact match
+    ' If any other attribute is specified, vbVolume is ignored.
+    If hFindFile <> 0 Then
+        FindClose hFindFile
+        hFindFile = 0
+    End If
+    Dim VolumePathBuffer As String, VolumeNameBuffer As String
+    If Len(PathMask) = 0 Then
+        VolumeNameBuffer = String$(MAX_PATH, vbNullChar)
+        If GetVolumeInformation(0, StrPtr(VolumeNameBuffer), Len(VolumeNameBuffer), ByVal 0, ByVal 0, ByVal 0, 0, 0) <> 0 Then Dir = Left$(VolumeNameBuffer, InStr(VolumeNameBuffer, vbNullChar) - 1)
+    Else
+        VolumePathBuffer = String$(MAX_PATH, vbNullChar)
+        If Left$(PathMask, 2) = "\\" Then PathMask = "UNC\" & Mid$(PathMask, 3)
+        If GetVolumePathName(StrPtr("\\?\" & PathMask), StrPtr(VolumePathBuffer), Len(VolumePathBuffer)) <> 0 Then
+            VolumePathBuffer = Left$(VolumePathBuffer, InStr(VolumePathBuffer, vbNullChar) - 1)
+            VolumeNameBuffer = String$(MAX_PATH, vbNullChar)
+            If GetVolumeInformation(StrPtr(VolumePathBuffer), StrPtr(VolumeNameBuffer), Len(VolumeNameBuffer), ByVal 0, ByVal 0, ByVal 0, 0, 0) <> 0 Then Dir = Left$(VolumeNameBuffer, InStr(VolumeNameBuffer, vbNullChar) - 1)
+        End If
+    End If
+Else
+    Dim FD As WIN32_FIND_DATA, dwMask As Long
+    If Len(PathMask) = 0 Then
+        If hFindFile <> 0 Then
+            If FindNextFile(hFindFile, FD) = 0 Then
+                FindClose hFindFile
+                hFindFile = 0
+                Exit Function
+            End If
+        Else
+            Err.Raise 5
+            Exit Function
+        End If
+    Else
+        If hFindFile <> 0 Then
+            FindClose hFindFile
+            hFindFile = 0
+        End If
+        Select Case Right$(PathMask, 1)
+            Case "\", ":", "/"
+                PathMask = PathMask & "*.*"
+        End Select
+        AttributesCache = Attributes
+        If Left$(PathMask, 2) = "\\" Then PathMask = "UNC\" & Mid$(PathMask, 3)
+        hFindFile = FindFirstFile(StrPtr("\\?\" & PathMask), FD)
+        If hFindFile = INVALID_HANDLE_VALUE Then
+            hFindFile = 0
+            If Err.LastDllError > 12 Then Err.Raise 52
+            Exit Function
+        End If
+    End If
+    Do
+        If FD.dwFileAttributes = FILE_ATTRIBUTE_NORMAL Then
+            dwMask = 0 ' Found
+        Else
+            dwMask = FD.dwFileAttributes And (Not AttributesCache) And &H16
+        End If
+        If dwMask = 0 Then
+            Dir = Left$(FD.lpszFileName(), InStr(FD.lpszFileName(), vbNullChar) - 1)
+            If FD.dwFileAttributes And vbDirectory Then
+                If Dir <> "." And Dir <> ".." Then Exit Do ' Exclude self and relative path aliases
+            Else
+                Exit Do
+            End If
+        End If
+        If FindNextFile(hFindFile, FD) = 0 Then
+            FindClose hFindFile
+            hFindFile = 0
+            Exit Do
+        End If
+    Loop
+End If
+End Function
+
+' (VB-Overwrite)
+Public Sub MkDir(ByVal PathName As String)
+If Left$(PathName, 2) = "\\" Then PathName = "UNC\" & Mid$(PathName, 3)
+If CreateDirectory(StrPtr("\\?\" & PathName), 0) = 0 Then
+    Const ERROR_PATH_NOT_FOUND As Long = 3
+    If Err.LastDllError = ERROR_PATH_NOT_FOUND Then
+        Err.Raise 76
+    Else
+        Err.Raise 75
+    End If
+End If
+End Sub
+
+' (VB-Overwrite)
+Public Sub RmDir(ByVal PathName As String)
+If Left$(PathName, 2) = "\\" Then PathName = "UNC\" & Mid$(PathName, 3)
+If RemoveDirectory(StrPtr("\\?\" & PathName)) = 0 Then
+    Const ERROR_FILE_NOT_FOUND As Long = 2
+    If Err.LastDllError = ERROR_FILE_NOT_FOUND Then
+        Err.Raise 76
+    Else
+        Err.Raise 75
+    End If
+End If
 End Sub
 
 ' (VB-Overwrite)
@@ -301,6 +425,7 @@ End Function
 
 Public Function AppPath() As String
 If InIDE() = False Then
+    Const MAX_PATH_W As Long = 32767
     Dim Buffer As String, RetVal As Long
     Buffer = String(MAX_PATH, vbNullChar)
     RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH)
@@ -321,6 +446,7 @@ End Function
 
 Public Function AppEXEName() As String
 If InIDE() = False Then
+    Const MAX_PATH_W As Long = 32767
     Dim Buffer As String, RetVal As Long
     Buffer = String(MAX_PATH, vbNullChar)
     RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH)
@@ -373,6 +499,7 @@ End Function
 Private Function GetAppVersionInfo() As VS_FIXEDFILEINFO
 Static Done As Boolean, Value As VS_FIXEDFILEINFO
 If Done = False Then
+    Const MAX_PATH_W As Long = 32767
     Dim Buffer As String, RetVal As Long
     Buffer = String(MAX_PATH, vbNullChar)
     RetVal = GetModuleFileName(0, StrPtr(Buffer), MAX_PATH)
