@@ -65,9 +65,14 @@ If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Index = PropIn
 End Property
 
 Public Property Get Key() As String
-Attribute Key.VB_Description = "Returns the key used in the collection."
+Attribute Key.VB_Description = "Returns/sets the key used in the collection."
 If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 Key = PropKey
+End Property
+
+Public Property Let Key(ByVal Value As String)
+If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
+ShadowListView.ListItems.FChangeKey PropPtr, PropKey, Value
 End Property
 
 Public Property Get Tag() As Variant
