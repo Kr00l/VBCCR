@@ -1,5 +1,8 @@
 List of revisions:
 
+10-Aug-2019
+- It is now possible for the LvwListItems collection to change the key on a particular LvwListItem in the ListView control.
+
 09-Jul-2019
 - VTable bugfix in the ListView control. (Unstable condition when internal SysHeader32 control had focus)
 
