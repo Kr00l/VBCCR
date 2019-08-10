@@ -37,6 +37,24 @@ Friend Sub FInit(ByVal Object As ListView)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Ptr As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant, i As Long
+For Each Item In PropListItem
+    i = i + 1
+    If ObjPtr(Item) = Ptr Then
+        If NewKey = vbNullString Then
+            PropListItem.Add Item
+            OldKey = vbNullString
+        Else
+            PropListItem.Add Item, NewKey
+            OldKey = NewKey
+        End If
+        PropListItem.Remove i
+        Exit For
+    End If
+Next Item
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Icon As Variant, Optional ByVal SmallIcon As Variant) As LvwListItem
 Attribute Add.VB_Description = "Adds a list item to the list items collection."
 If Index > (PropListItem.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
