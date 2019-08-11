@@ -3132,6 +3132,7 @@ Select Case wMsg
                     Case WM_RBUTTONUP
                         RaiseEvent MouseUp(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 End Select
+                TreeViewButtonDown = 0
                 If TreeViewIsClick = True Then
                     TreeViewIsClick = False
                     If (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then RaiseEvent Click
