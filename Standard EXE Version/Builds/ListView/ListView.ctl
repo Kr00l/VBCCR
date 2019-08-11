@@ -7182,6 +7182,7 @@ Select Case wMsg
                     Case WM_RBUTTONUP
                         RaiseEvent MouseUp(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 End Select
+                ListViewButtonDown = 0
                 If ListViewIsClick = True Then
                     ListViewIsClick = False
                     If (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then RaiseEvent Click
