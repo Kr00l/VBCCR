@@ -2745,6 +2745,44 @@ If RichTextBoxHandle <> 0 Then
 End If
 End Property
 
+Public Property Get SelLink() As Variant
+Attribute SelLink.VB_Description = "Returns/sets a value that determines if the selected text is marked as hyperlink or not."
+Attribute SelLink.VB_MemberFlags = "400"
+If RichTextBoxHandle <> 0 Then
+    Dim RECF2 As RECHARFORMAT2
+    With RECF2
+    .cbSize = LenB(RECF2)
+    .dwMask = CFM_LINK
+    If (SendMessage(RichTextBoxHandle, EM_GETCHARFORMAT, SCF_SELECTION, ByVal VarPtr(RECF2)) And CFM_LINK) <> 0 Then
+        SelLink = CBool((.dwEffects And CFE_LINK) = CFE_LINK)
+    Else
+        SelLink = Null
+    End If
+    End With
+End If
+End Property
+
+Public Property Let SelLink(ByVal Value As Variant)
+If RichTextBoxHandle <> 0 Then
+    Dim RECF2 As RECHARFORMAT2
+    With RECF2
+    .cbSize = LenB(RECF2)
+    .dwMask = CFM_LINK
+    Select Case VarType(Value)
+        Case vbBoolean
+            If Value = True Then .dwEffects = CFE_LINK Else .dwEffects = 0
+        Case vbNull
+            .dwEffects = 0
+        Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+            If CBool(Value) = True Then .dwEffects = CFE_LINK Else .dwEffects = 0
+        Case Else
+            Err.Raise 13
+    End Select
+    End With
+    SendMessage RichTextBoxHandle, EM_SETCHARFORMAT, SCF_SELECTION, ByVal VarPtr(RECF2)
+End If
+End Property
+
 Public Property Get SelTabCount() As Variant
 Attribute SelTabCount.VB_Description = "Returns/sets the number of tabs in the current selected text."
 Attribute SelTabCount.VB_MemberFlags = "400"
