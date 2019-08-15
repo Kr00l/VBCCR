@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Aug-2019
+- Included the SelLink run-time property in the RichTextBox control.
+
 11-Aug-2019
 - Potential double MouseUp event (not on double click; normal click) before and after MouseDown fixed on certain conditions in the ListView/TreeView control.
 
