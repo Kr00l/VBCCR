@@ -1,5 +1,9 @@
 List of revisions:
 
+20-Aug-2019
+- UTF-16 BOM was missing in the internal StreamFileOut function in the RichTextBox control.
+  This fix is only meaningful when using 'RtfLoadSaveFormatUnicodeText' in the SaveFile method.
+
 15-Aug-2019
 - Included the SelLink run-time property in the RichTextBox control.
 
