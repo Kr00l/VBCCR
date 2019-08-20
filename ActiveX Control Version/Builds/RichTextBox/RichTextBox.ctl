@@ -305,6 +305,7 @@ Private Declare Function OleQueryCreateFromData Lib "ole32" (ByVal pSrcDataObjec
 Private Declare Function OleCreateStaticFromData Lib "ole32" (ByVal pSrcDataObject As OLEGuids.IDataObject, ByRef riid As Any, ByVal RenderOpt As Long, ByVal lpFormatEtc As Long, ByVal pClientSite As OLEGuids.IOleClientSite, ByVal pStg As OLEGuids.IStorage, ByRef ppvObj As OLEGuids.IOleObject) As Long
 Private Declare Function OleCreateFromData Lib "ole32" (ByVal pSrcDataObject As OLEGuids.IDataObject, ByRef riid As Any, ByVal RenderOpt As Long, ByVal lpFormatEtc As Long, ByVal pClientSite As OLEGuids.IOleClientSite, ByVal pStg As OLEGuids.IStorage, ByRef ppvObj As OLEGuids.IOleObject) As Long
 Private Declare Function CreateFile Lib "kernel32" Alias "CreateFileW" (ByVal lpFileName As Long, ByVal dwDesiredAccess As Long, ByVal dwShareMode As Long, ByVal lpSecurityAttributes As Long, ByVal dwCreationDisposition As Long, ByVal dwFlagsAndAttributes As Long, ByVal hTemplateFile As Long) As Long
+Private Declare Function WriteFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As Long) As Long
 Private Declare Function GetFileSize Lib "kernel32" (ByVal hFile As Long, ByRef lpFileSizeHigh As Long) As Long
 Private Declare Function ReadFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToRead As Long, ByRef NumberOfBytesRead As Long, ByVal lpOverlapped As Long) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
@@ -3291,6 +3292,12 @@ If RichTextBoxHandle <> 0 Then
         .dwError = 0
         .lpfnCallback = ProcPtr(AddressOf RtfStreamCallbackFileOut)
         End With
+        If (Flags And SF_UNICODE) = SF_UNICODE Then
+            Dim B(0 To 1) As Byte ' UTF-16 BOM
+            B(0) = &HFF
+            B(1) = &HFE
+            WriteFile hFile, VarPtr(B(0)), 2, 0, 0
+        End If
         StreamFileOut = SendMessage(RichTextBoxHandle, EM_STREAMOUT, Flags, ByVal VarPtr(REEDSTR))
         CloseHandle hFile
     End If
