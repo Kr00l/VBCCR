@@ -306,8 +306,9 @@ Private Declare Function OleCreateStaticFromData Lib "ole32" (ByVal pSrcDataObje
 Private Declare Function OleCreateFromData Lib "ole32" (ByVal pSrcDataObject As OLEGuids.IDataObject, ByRef riid As Any, ByVal RenderOpt As Long, ByVal lpFormatEtc As Long, ByVal pClientSite As OLEGuids.IOleClientSite, ByVal pStg As OLEGuids.IStorage, ByRef ppvObj As OLEGuids.IOleObject) As Long
 Private Declare Function CreateFile Lib "kernel32" Alias "CreateFileW" (ByVal lpFileName As Long, ByVal dwDesiredAccess As Long, ByVal dwShareMode As Long, ByVal lpSecurityAttributes As Long, ByVal dwCreationDisposition As Long, ByVal dwFlagsAndAttributes As Long, ByVal hTemplateFile As Long) As Long
 Private Declare Function WriteFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As Long) As Long
-Private Declare Function GetFileSize Lib "kernel32" (ByVal hFile As Long, ByRef lpFileSizeHigh As Long) As Long
 Private Declare Function ReadFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToRead As Long, ByRef NumberOfBytesRead As Long, ByVal lpOverlapped As Long) As Long
+Private Declare Function SetFilePointer Lib "kernel32" (ByVal hFile As Long, ByVal lDistanceToMove As Long, ByRef lpDistanceToMoveHigh As Long, ByVal dwMoveMethod As Long) As Long
+Private Declare Function GetFileSize Lib "kernel32" (ByVal hFile As Long, ByRef lpFileSizeHigh As Long) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function GetDeviceCaps Lib "gdi32" (ByVal hDC As Long, ByVal nIndex As Long) As Long
 Private Declare Function StartDoc Lib "gdi32" Alias "StartDocW" (ByVal hDC As Long, ByRef lpDI As DOCINFO) As Long
@@ -686,6 +687,7 @@ Private Const GENERIC_WRITE As Long = &H40000000
 Private Const GENERIC_READ As Long = &H80000000
 Private Const FILE_SHARE_READ As Long = &H1
 Private Const OPEN_EXISTING As Long = 3
+Private Const FILE_BEGIN As Long = 0
 Private Const PHYSICALWIDTH As Long = 110
 Private Const PHYSICALHEIGHT As Long = 111
 Private Const PHYSICALOFFSETX As Long = 112
@@ -1628,7 +1630,7 @@ Else
             End If
             CloseHandle hFile
         End If
-        If B1(0) = &HFF And B1(1) = &HFE Then
+        If B1(0) = &HFF And B1(1) = &HFE Then ' UTF-16 BOM
             Me.LoadFile PropFileName, RtfLoadSaveFormatUnicodeText
         Else
             If B1(0) = &H7B And B1(1) = &H5C And StrComp(StrConv(B2(), vbUnicode), "rtf", vbTextCompare) = 0 Then
@@ -2930,27 +2932,7 @@ If FileExists(FileName) = True Then
         Case RtfLoadSaveFormatText
             Flags = Flags Or SF_TEXT
         Case RtfLoadSaveFormatUnicodeText
-            Flags = Flags Or SF_TEXT
-            Dim hFile As Long, Length As Long, Text As String
-            Dim B1(0 To 1) As Byte, B2() As Byte
-            hFile = CreateFile(StrPtr("\\?\" & IIf(Left$(FileName, 2) = "\\", "UNC\" & Mid$(FileName, 3), FileName)), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0)
-            If hFile <> INVALID_HANDLE_VALUE Then
-                Length = GetFileSize(hFile, 0) ' File size >= 2^31 not supported.
-                If Length >= 2 Then
-                    ReadFile hFile, VarPtr(B1(0)), 2, 0, 0
-                    If Length >= 3 Then
-                        ReDim B2(0 To Length - 3) As Byte
-                        ReadFile hFile, VarPtr(B2(0)), Length - 2, 0, 0
-                        Text = B2()
-                    End If
-                End If
-                CloseHandle hFile
-            End If
-            If B1(0) = &HFF And B1(1) = &HFE And Not Text = vbNullString Then
-                Flags = Flags Or SF_UNICODE
-                StreamStringIn Text, Flags
-                Exit Sub
-            End If
+            Flags = Flags Or SF_TEXT Or SF_UNICODE
     End Select
     StreamFileIn FileName, Flags
 Else
@@ -3292,7 +3274,7 @@ If RichTextBoxHandle <> 0 Then
         .dwError = 0
         .lpfnCallback = ProcPtr(AddressOf RtfStreamCallbackFileOut)
         End With
-        If (Flags And SF_UNICODE) = SF_UNICODE Then
+        If (Flags And SF_UNICODE) <> 0 Then
             Dim B(0 To 1) As Byte ' UTF-16 BOM
             B(0) = &HFF
             B(1) = &HFE
@@ -3316,6 +3298,14 @@ If RichTextBoxHandle <> 0 Then
         .dwError = 0
         .lpfnCallback = ProcPtr(AddressOf RtfStreamCallbackFileIn)
         End With
+        If (Flags And SF_UNICODE) <> 0 Then
+            Dim B(0 To 1) As Byte, dwRead As Long
+            ReadFile hFile, VarPtr(B(0)), 2, dwRead, 0
+            If B(0) = &HFF And B(1) = &HFE Then ' UTF-16 BOM
+            ElseIf dwRead > 0 Then
+                SetFilePointer hFile, 0, ByVal 0, FILE_BEGIN
+            End If
+        End If
         If (Flags And SF_RTF) <> 0 Then SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal 0&
         StreamFileIn = SendMessage(RichTextBoxHandle, EM_STREAMIN, Flags, ByVal VarPtr(REEDSTR))
         If (Flags And SF_RTF) <> 0 Then SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal 0&
