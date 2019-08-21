@@ -23,7 +23,7 @@ Option Explicit
 
 #If False Then
 Private RtfLoadSaveFormatRTF, RtfLoadSaveFormatText, RtfLoadSaveFormatUnicodeText
-Private RtfFindOptionWholeWord, RtfFindOptionMatchCase, RtfFindOptionNoHighlight
+Private RtfFindOptionWholeWord, RtfFindOptionMatchCase, RtfFindOptionNoHighlight, RtfFindOptionReverse
 Private RtfActionTypeUnknown, RtfActionTypeTyping, RtfActionTypeDelete, RtfActionTypeOLEDragDrop, RtfActionTypeCut, RtfActionTypePaste, RtfActionTypeAutoTable
 Private RtfSelAlignmentLeft, RtfSelAlignmentRight, RtfSelAlignmentCenter, RtfSelAlignmentJustified
 Private RtfSelTypeEmpty, RtfSelTypeText, RtfSelTypeObject, RtfSelTypeMultiChar, RtfSelTypeMultiObject
@@ -40,6 +40,7 @@ Public Enum RtfFindOptionConstants
 RtfFindOptionWholeWord = FR_WHOLEWORD
 RtfFindOptionMatchCase = FR_MATCHCASE
 RtfFindOptionNoHighlight = &H8
+RtfFindOptionReverse = &H10
 End Enum
 Private Const UID_UNKNOWN As Long = 0
 Private Const UID_TYPING As Long = 1
@@ -1990,6 +1991,7 @@ If RichTextBoxHandle <> 0 Then
     dwOptions = FR_DOWN
     If (Options And RtfFindOptionWholeWord) <> 0 Then dwOptions = dwOptions Or FR_WHOLEWORD
     If (Options And RtfFindOptionMatchCase) <> 0 Then dwOptions = dwOptions Or FR_MATCHCASE
+    If (Options And RtfFindOptionReverse) <> 0 Then dwOptions = dwOptions And Not FR_DOWN
     Find = SendMessage(RichTextBoxHandle, EM_FINDTEXTEX, dwOptions, ByVal VarPtr(REFTEX))
     If (Options And RtfFindOptionNoHighlight) = 0 And Find <> -1 Then SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(.CharRangeText)
     End With
