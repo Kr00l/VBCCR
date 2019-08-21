@@ -137,7 +137,8 @@ If (CommonDialogFind.Flags And CdlFRMatchCase) = CdlFRMatchCase Then Options = O
 If (CommonDialogFind.Flags And CdlFRDown) = CdlFRDown Then
     RetVal = RichTextBox1.Find(CommonDialogFind.FindWhat, RichTextBox1.SelStart + RichTextBox1.SelLength, , Options)
 Else
-    RetVal = RichTextBox1.Find(CommonDialogFind.FindWhat, , RichTextBox1.SelStart, Options)
+    Options = Options Or RtfFindOptionReverse
+    RetVal = RichTextBox1.Find(CommonDialogFind.FindWhat, RichTextBox1.SelStart, , Options)
 End If
 If RetVal = -1 Then MsgBox "Could not find '" & CommonDialogFind.FindWhat & "'.", vbInformation + vbOKOnly + vbSystemModal
 End Sub

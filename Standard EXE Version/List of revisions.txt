@@ -1,5 +1,8 @@
 List of revisions:
 
+21-Aug-2019
+- Included enum value 'RtfFindOptionReverse' for the Find method in the RichTextBox control.
+
 20-Aug-2019
 - UTF-16 BOM was missing in the internal StreamFileOut function in the RichTextBox control.
   This fix is only meaningful when using 'RtfLoadSaveFormatUnicodeText' in the SaveFile method.
