@@ -9,7 +9,7 @@ Begin VB.UserControl TabStrip
    ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   160
-   ToolboxBitmap   =   "TabStrip.ctx":004A
+   ToolboxBitmap   =   "TabStrip.ctx":005A
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
       Interval        =   1
@@ -171,6 +171,7 @@ Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal 
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
+Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -180,9 +181,10 @@ Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) 
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
-Private Declare Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function WindowFromDC Lib "user32" (ByVal hDC As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
+Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
@@ -220,8 +222,11 @@ Private Const WM_RBUTTONUP As Long = &H205
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
+Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_PAINT As Long = &HF
+Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
+Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_DRAWITEM As Long = &H2B, ODT_TAB As Long = &H65
 Private Const TCS_SCROLLOPPOSITE As Long = &H1
 Private Const TCS_BOTTOM As Long = &H2
@@ -317,6 +322,7 @@ End Type
 Private TabStripHandle As Long, TabStripToolTipHandle As Long
 Private TabStripAcceleratorHandle As Long
 Private TabStripFontHandle As Long
+Private TabStripBackColorBrush As Long
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
 Private TabStripDesignMode As Boolean, TabStripTopDesignMode As Boolean
@@ -332,6 +338,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
+Private PropBackColor As OLE_COLOR
 Private PropImageListName As String, PropImageListInit As Boolean
 Private PropPlacement As TbsPlacementConstants
 Private PropMultiRow As Boolean
@@ -497,6 +504,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
+PropBackColor = vbButtonFace
 PropImageListName = "(None)"
 PropPlacement = TbsPlacementTop
 PropMultiRow = True
@@ -536,6 +544,7 @@ PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
+PropBackColor = .ReadProperty("BackColor", vbButtonFace)
 PropImageListName = .ReadProperty("ImageList", "(None)")
 PropPlacement = .ReadProperty("Placement", TbsPlacementTop)
 PropMultiRow = .ReadProperty("MultiRow", True)
@@ -608,6 +617,7 @@ With PropBag
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
+.WriteProperty "BackColor", PropBackColor, vbButtonFace
 .WriteProperty "ImageList", PropImageListName, "(None)"
 .WriteProperty "Placement", PropPlacement, TbsPlacementTop
 .WriteProperty "MultiRow", PropMultiRow, True
@@ -1039,6 +1049,22 @@ Select Case Value
 End Select
 Me.RightToLeft = PropRightToLeft
 UserControl.PropertyChanged "RightToLeftMode"
+End Property
+
+Public Property Get BackColor() As OLE_COLOR
+Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object. This property is ignored at design time."
+Attribute BackColor.VB_UserMemId = -501
+BackColor = PropBackColor
+End Property
+
+Public Property Let BackColor(ByVal Value As OLE_COLOR)
+PropBackColor = Value
+If TabStripHandle <> 0 And TabStripDesignMode = False Then
+    If TabStripBackColorBrush <> 0 Then DeleteObject TabStripBackColorBrush
+    TabStripBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
+End If
+Me.Refresh
+UserControl.PropertyChanged "BackColor"
 End Property
 
 Public Property Get ImageList() As Variant
@@ -1678,7 +1704,10 @@ Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Me.Separators = PropSeparators
 If TabStripDesignMode = False Then
-    If TabStripHandle <> 0 Then Call ComCtlsSetSubclass(TabStripHandle, Me, 1)
+    If TabStripHandle <> 0 Then
+        If TabStripBackColorBrush = 0 Then TabStripBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
+        Call ComCtlsSetSubclass(TabStripHandle, Me, 1)
+    End If
 End If
 End Sub
 
@@ -1746,6 +1775,10 @@ End If
 If TabStripAcceleratorHandle <> 0 Then
     DestroyAcceleratorTable TabStripAcceleratorHandle
     TabStripAcceleratorHandle = 0
+End If
+If TabStripBackColorBrush <> 0 Then
+    DeleteObject TabStripBackColorBrush
+    TabStripBackColorBrush = 0
 End If
 End Sub
 
@@ -1833,20 +1866,13 @@ End Property
 Public Sub DrawBackground(ByVal hWnd As Long, ByVal hDC As Long)
 Attribute DrawBackground.VB_Description = "Draws the background to a given device context (DC) to a specified window."
 If TabStripHandle <> 0 And hWnd <> 0 And hDC <> 0 Then
-    Dim WndRect As RECT, P As POINTAPI
-    GetWindowRect hWnd, WndRect
-    MapWindowPoints HWND_DESKTOP, TabStripHandle, WndRect, 2
-    P.X = WndRect.Left
-    P.Y = WndRect.Top
+    Dim RC As RECT, P As POINTAPI
+    GetClientRect hWnd, RC
+    MapWindowPoints hWnd, TabStripHandle, RC, 2
+    P.X = RC.Left
+    P.Y = RC.Top
     SetViewportOrgEx hDC, -P.X, -P.Y, P
-    If ComCtlsSupportLevel() = 0 Or PropVisualStyles = False Then
-        Dim RC As RECT
-        RC.Right = UserControl.ScaleWidth
-        RC.Bottom = UserControl.ScaleHeight
-        Const COLOR_BTNFACE As Long = 15
-        FillRect hDC, RC, GetSysColorBrush(COLOR_BTNFACE)
-    End If
-    SendMessage TabStripHandle, WM_PAINT, hDC, ByVal 0&
+    SendMessage TabStripHandle, WM_PRINT, hDC, ByVal PRF_CLIENT Or PRF_ERASEBKGND
     SetViewportOrgEx hDC, P.X, P.Y, P
 End If
 End Sub
@@ -2102,6 +2128,15 @@ Select Case wMsg
                     End If
                     End With
             End Select
+        End If
+    Case WM_PRINTCLIENT
+        If TabStripHandle <> 0 And TabStripBackColorBrush <> 0 Then
+            If WindowFromDC(wParam) = TabStripHandle Then
+                Dim RC As RECT
+                GetClientRect TabStripHandle, RC
+                FillRect wParam, RC, TabStripBackColorBrush
+                Exit Function
+            End If
         End If
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
