@@ -1,5 +1,11 @@
 List of revisions:
 
+22-Aug-2019
+- Included the BackColor property and improved the DrawBackground method in the TabStrip control.
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - enriched interface IOleObject with more methods.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
 21-Aug-2019
 - Included enum value 'RtfFindOptionReverse' for the Find method in the RichTextBox control.
 
