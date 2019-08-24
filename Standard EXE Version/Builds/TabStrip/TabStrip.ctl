@@ -108,6 +108,14 @@ szText(0 To ((80 * 2) - 1)) As Byte
 hInst As Long
 uFlags As Long
 End Type
+Private Type PAINTSTRUCT
+hDC As Long
+fErase As Long
+RCPaint As RECT
+fRestore As Long
+fIncUpdate As Long
+RGBReserved(0 To 31) As Byte
+End Type
 Private Type DRAWITEMSTRUCT
 CtlType As Long
 CtlID As Long
@@ -181,10 +189,21 @@ Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) 
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
+Private Declare Function BeginPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
+Private Declare Function EndPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare Function WindowFromDC Lib "user32" (ByVal hDC As Long) As Long
+Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As Long
+Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
+Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
+Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal XSrc As Long, ByVal YSrc As Long, ByVal dwRop As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
+Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
+Private Declare Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
+Private Declare Function CombineRgn Lib "gdi32" (ByVal hRgnDest As Long, ByVal hRgnSrc1 As Long, ByVal hRgnSrc2 As Long, ByVal nCombineMode As Long) As Long
+Private Declare Function FillRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long, ByVal hBrush As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
@@ -192,6 +211,9 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const HWND_DESKTOP As Long = &H0
+Private Const COLOR_BTNFACE As Long = 15
+Private Const RGN_OR As Long = 2
+Private Const RGN_DIFF As Long = 4
 Private Const FALT As Long = &H10
 Private Const FVIRTKEY As Long = &H1
 Private Const WS_VISIBLE As Long = &H10000000
@@ -326,6 +348,7 @@ Private TabStripBackColorBrush As Long
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
 Private TabStripDesignMode As Boolean, TabStripTopDesignMode As Boolean
+Private TabStripDoubleBufferEraseBkgDC As Long
 Private TabStripImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -354,6 +377,7 @@ Private PropSeparators As Boolean
 Private PropShowTips As Boolean
 Private PropDrawMode As TbsDrawModeConstants
 Private PropTabScrollWheel As Boolean
+Private PropDoubleBuffer As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -521,6 +545,7 @@ PropSeparators = True
 PropShowTips = False
 PropDrawMode = TbsDrawModeNormal
 PropTabScrollWheel = True
+PropDoubleBuffer = True
 Call CreateTabStrip
 Me.Tabs.Add
 End Sub
@@ -561,6 +586,7 @@ PropSeparators = .ReadProperty("Separators", True)
 PropShowTips = .ReadProperty("ShowTips", False)
 PropDrawMode = .ReadProperty("DrawMode", TbsDrawModeNormal)
 PropTabScrollWheel = .ReadProperty("TabScrollWheel", True)
+PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
 End With
 With New PropertyBag
 On Error Resume Next
@@ -634,6 +660,7 @@ With PropBag
 .WriteProperty "ShowTips", PropShowTips, False
 .WriteProperty "DrawMode", PropDrawMode, TbsDrawModeNormal
 .WriteProperty "TabScrollWheel", PropTabScrollWheel, True
+.WriteProperty "DoubleBuffer", PropDoubleBuffer, True
 End With
 Dim Count As Long
 Count = Me.Tabs.Count
@@ -1421,6 +1448,16 @@ PropTabScrollWheel = Value
 UserControl.PropertyChanged "TabScrollWheel"
 End Property
 
+Public Property Get DoubleBuffer() As Boolean
+Attribute DoubleBuffer.VB_Description = "Returns/sets a value that determines whether the control paints via double-buffering, which reduces flicker."
+DoubleBuffer = PropDoubleBuffer
+End Property
+
+Public Property Let DoubleBuffer(ByVal Value As Boolean)
+PropDoubleBuffer = Value
+UserControl.PropertyChanged "DoubleBuffer"
+End Property
+
 Public Property Get Tabs() As TbsTabs
 Attribute Tabs.VB_Description = "Returns a reference to a collection of the tab objects."
 If PropTabs Is Nothing Then
@@ -1989,6 +2026,93 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_ERASEBKGND
+        If PropDoubleBuffer = True And (TabStripDoubleBufferEraseBkgDC <> wParam Or TabStripDoubleBufferEraseBkgDC = 0) And WindowFromDC(wParam) = hWnd Then
+            WindowProcControl = 0
+        Else
+            Dim ClientRect1 As RECT
+            GetClientRect hWnd, ClientRect1
+            FillRect wParam, ClientRect1, GetSysColorBrush(COLOR_BTNFACE)
+            If TabStripBackColorBrush <> 0 Then
+                Dim Count As Long, i As Long, RC As RECT
+                Count = SendMessage(hWnd, TCM_GETITEMCOUNT, 0, ByVal 0&)
+                Dim hRgn As Long, hRgnTab As Long, hRgnFill As Long
+                hRgn = CreateRectRgn(0, 0, 0, 0)
+                Dim Placement As TbsPlacementConstants
+                If ComCtlsSupportLevel() = 0 Then Placement = PropPlacement Else Placement = TbsPlacementTop
+                If PropStyle = TbsStyleTabs Then
+                    ' Calculate and exclude client area for 'tabs' style only.
+                    Select Case Placement
+                        Case TbsPlacementTop
+                            ClientRect1.Bottom = ClientRect1.Top
+                        Case TbsPlacementBottom
+                            ClientRect1.Top = ClientRect1.Bottom
+                        Case TbsPlacementLeft
+                            ClientRect1.Right = ClientRect1.Left
+                        Case TbsPlacementRight
+                            ClientRect1.Left = ClientRect1.Right
+                    End Select
+                End If
+                For i = 1 To Count
+                    If SendMessage(hWnd, TCM_GETITEMRECT, i - 1, ByVal VarPtr(RC)) <> 0 Then
+                        hRgnTab = CreateRectRgn(RC.Left, RC.Top, RC.Right, RC.Bottom)
+                        If hRgnTab <> 0 Then
+                            CombineRgn hRgn, hRgn, hRgnTab, RGN_OR
+                            DeleteObject hRgnTab
+                            hRgnTab = 0
+                        End If
+                        Select Case Placement
+                            Case TbsPlacementTop
+                                If RC.Bottom > ClientRect1.Bottom Then ClientRect1.Bottom = RC.Bottom
+                            Case TbsPlacementBottom
+                                If RC.Top < ClientRect1.Top Then ClientRect1.Top = RC.Top
+                            Case TbsPlacementLeft
+                                If RC.Right > ClientRect1.Right Then ClientRect1.Right = RC.Right
+                            Case TbsPlacementRight
+                                If RC.Left < ClientRect1.Left Then ClientRect1.Left = RC.Left
+                        End Select
+                    End If
+                Next i
+                hRgnFill = CreateRectRgn(ClientRect1.Left, ClientRect1.Top, ClientRect1.Right, ClientRect1.Bottom)
+                CombineRgn hRgnFill, hRgnFill, hRgn, RGN_DIFF
+                FillRgn wParam, hRgnFill, TabStripBackColorBrush
+                DeleteObject hRgnFill
+                DeleteObject hRgn
+            End If
+            WindowProcControl = 1
+        End If
+        Exit Function
+    Case WM_PAINT
+        If PropDoubleBuffer = True Then
+            Dim ClientRect2 As RECT, hDC As Long
+            Dim hDCBmp As Long
+            Dim hBmp As Long, hBmpOld As Long
+            GetClientRect hWnd, ClientRect2
+            Dim PS As PAINTSTRUCT
+            hDC = BeginPaint(hWnd, PS)
+            With PS
+            If wParam <> 0 Then hDC = wParam
+            hDCBmp = CreateCompatibleDC(hDC)
+            If hDCBmp <> 0 Then
+                hBmp = CreateCompatibleBitmap(hDC, ClientRect2.Right - ClientRect2.Left, ClientRect2.Bottom - ClientRect2.Top)
+                If hBmp <> 0 Then
+                    hBmpOld = SelectObject(hDCBmp, hBmp)
+                    TabStripDoubleBufferEraseBkgDC = hDCBmp
+                    SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
+                    TabStripDoubleBufferEraseBkgDC = 0
+                    With PS.RCPaint
+                    BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
+                    End With
+                    SelectObject hDCBmp, hBmpOld
+                    DeleteObject hBmp
+                End If
+                DeleteDC hDCBmp
+            End If
+            End With
+            EndPaint hWnd, PS
+            WindowProcControl = 0
+            Exit Function
+        End If
     Case WM_MOUSEWHEEL
         If PropTabScrollWheel = True Then
             Static WheelDelta As Long, LastWheelDelta As Long
@@ -2131,7 +2255,7 @@ Select Case wMsg
         End If
     Case WM_PRINTCLIENT
         If TabStripHandle <> 0 And TabStripBackColorBrush <> 0 Then
-            If WindowFromDC(wParam) = TabStripHandle Then
+            If WindowFromDC(wParam) = TabStripHandle Or TabStripDoubleBufferEraseBkgDC = wParam Then
                 Dim RC As RECT
                 GetClientRect TabStripHandle, RC
                 FillRect wParam, RC, TabStripBackColorBrush
