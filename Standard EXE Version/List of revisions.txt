@@ -1,5 +1,9 @@
 List of revisions:
 
+24-Aug-2019
+- BackColor property works now also when VisualStyles is False in the TabStrip control.
+- Included the DoubleBuffer property in the TabStrip control.
+
 22-Aug-2019
 - Included the BackColor property and improved the DrawBackground method in the TabStrip control.
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
