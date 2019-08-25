@@ -2255,7 +2255,7 @@ Select Case wMsg
         End If
     Case WM_PRINTCLIENT
         If TabStripHandle <> 0 And TabStripBackColorBrush <> 0 Then
-            If WindowFromDC(wParam) = TabStripHandle Or TabStripDoubleBufferEraseBkgDC = wParam Then
+            If WindowFromDC(wParam) = TabStripHandle Or (TabStripDoubleBufferEraseBkgDC = wParam And TabStripDoubleBufferEraseBkgDC <> 0) Then
                 Dim RC As RECT
                 GetClientRect TabStripHandle, RC
                 FillRect wParam, RC, TabStripBackColorBrush
