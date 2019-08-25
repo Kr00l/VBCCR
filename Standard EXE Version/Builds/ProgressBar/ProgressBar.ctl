@@ -182,11 +182,13 @@ Private Const PBS_VERTICAL As Long = &H4
 Private Const PBS_MARQUEE As Long = &H8
 Private Const PBS_SMOOTHREVERSE As Long = &H10
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private ProgressBarHandle As Long
 Private ProgressBarITaskBarList3 As IUnknown
 Private ProgressBarIsClick As Boolean
 Private ProgressBarMouseOver As Boolean
+Private ProgressBarDesignMode As Boolean
 Private ProgressBarDblClickSupported As Boolean, ProgressBarIsDblClick As Boolean
 Private ProgressBarDblClickTime As Long, ProgressBarDblClickTickCount As Double
 Private ProgressBarDblClickCX As Long, ProgressBarDblClickCY As Long
@@ -211,6 +213,15 @@ Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
 Private PropState As PrbStateConstants
 Private PropShowInTaskBar As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
@@ -255,6 +266,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ProgressBarAlignable = False Else ProgressBarAlignable = True
 On Error GoTo 0
+ProgressBarDesignMode = Not Ambient.UserMode
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -285,6 +297,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ProgressBarAlignable = False Else ProgressBarAlignable = True
 On Error GoTo 0
+ProgressBarDesignMode = Not Ambient.UserMode
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -647,7 +660,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ProgressBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -680,7 +693,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If ProgressBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If ProgressBarHandle <> 0 Then Call ComCtlsSetRightToLeft(ProgressBarHandle, dwMask)
 UserControl.PropertyChanged "RightToLeft"
 End Property
@@ -727,7 +740,7 @@ If Value < Me.Max Then
     PropRange.Max = Me.Max
     If PropValue < PropRange.Min Then PropValue = PropRange.Min
 Else
-    If Ambient.UserMode = False Then
+    If ProgressBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -753,7 +766,7 @@ If Value > Me.Min Then
     PropRange.Max = Value
     If PropValue > PropRange.Max Then PropValue = PropRange.Max
 Else
-    If Ambient.UserMode = False Then
+    If ProgressBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -841,7 +854,7 @@ Public Property Let MarqueeSpeed(ByVal Value As Long)
 If Value > 0 Then
     PropMarqueeSpeed = Value
 Else
-    If Ambient.UserMode = False Then
+    If ProgressBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -955,7 +968,7 @@ End Property
 
 Public Property Let ShowInTaskBar(ByVal Value As Boolean)
 PropShowInTaskBar = Value
-If Ambient.UserMode = True And ComCtlsSupportLevel() >= 2 Then
+If ProgressBarDesignMode = False And ComCtlsSupportLevel() >= 2 Then
     If ProgressBarITaskBarList3 Is Nothing Then Set ProgressBarITaskBarList3 = CreateITaskBarList3()
     If PropShowInTaskBar = True Then
         Call CheckTaskBarProgress
@@ -964,7 +977,7 @@ If Ambient.UserMode = True And ComCtlsSupportLevel() >= 2 Then
             If Not ProgressBarITaskBarList3 Is Nothing Then
                 Dim hWnd As Long
                 hWnd = GetAncestor(ProgressBarHandle, GA_ROOT)
-                If hWnd <> 0 Then VTableCall vbLong, ProgressBarITaskBarList3, VTableIndexITaskBarList3SetProgressState, hWnd, TBPF_NOPROGRESS
+                If hWnd <> 0 Then VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressState, hWnd, TBPF_NOPROGRESS
             End If
         End If
     End If
@@ -985,7 +998,7 @@ Select Case PropScrolling
         If ComCtlsSupportLevel() >= 1 Then
             dwStyle = dwStyle Or PBS_MARQUEE
         Else
-            If Ambient.UserMode = True Then PropScrolling = PrbScrollingStandard
+            If ProgressBarDesignMode = False Then PropScrolling = PrbScrollingStandard
         End If
 End Select
 If PropSmoothReverse = True Then If ComCtlsSupportLevel() >= 1 Then dwStyle = dwStyle Or PBS_SMOOTHREVERSE
@@ -998,7 +1011,7 @@ Me.MarqueeAnimation = PropMarqueeAnimation
 Me.BackColor = PropBackColor
 Me.ForeColor = PropForeColor
 Me.State = PropState
-If Ambient.UserMode = True Then
+If ProgressBarDesignMode = False Then
     If ProgressBarHandle <> 0 Then
         ProgressBarDblClickSupported = CBool((GetClassLong(ProgressBarHandle, GCL_STYLE) And CS_DBLCLKS) <> 0)
         Call ComCtlsSetSubclass(ProgressBarHandle, Me, 0)
@@ -1007,7 +1020,7 @@ End If
 End Sub
 
 Private Sub ReCreateProgressBar()
-If Ambient.UserMode = True Then
+If ProgressBarDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyProgressBar
@@ -1097,7 +1110,7 @@ If ProgressBarHandle <> 0 Then
                 Case PrbStatePaused
                     TaskBarState = TBPF_PAUSED
             End Select
-            VTableCall vbLong, ProgressBarITaskBarList3, VTableIndexITaskBarList3SetProgressValue, hWnd, PropValue, 0&, CLng(Me.Max - Me.Min), 0&
+            VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, PropValue, 0&, CLng(Me.Max - Me.Min), 0&
         Else
             If PropMarqueeAnimation = True Then
                 TaskBarState = TBPF_INDETERMINATE
@@ -1105,7 +1118,7 @@ If ProgressBarHandle <> 0 Then
                 TaskBarState = TBPF_NOPROGRESS
             End If
         End If
-        VTableCall vbLong, ProgressBarITaskBarList3, VTableIndexITaskBarList3SetProgressState, hWnd, TaskBarState
+        VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressState, hWnd, TaskBarState
     End If
 End If
 End Sub
@@ -1116,7 +1129,10 @@ On Error Resume Next
 CLSIDFromString StrPtr(CLSID_ITaskBarList), CLSID
 CLSIDFromString StrPtr(IID_ITaskBarList3), IID
 CoCreateInstance CLSID, 0, CLSCTX_INPROC_SERVER, IID, CreateITaskBarList3
-If Not CreateITaskBarList3 Is Nothing Then If VTableCall(vbLong, CreateITaskBarList3, VTableIndexITaskBarList3HrInit) <> S_OK Then Set CreateITaskBarList3 = Nothing
+If Not CreateITaskBarList3 Is Nothing Then
+    VTableCall vbEmpty, ObjPtr(CreateITaskBarList3), VTableIndexITaskBarList3HrInit
+    If Err.LastDllError <> S_OK Then Set CreateITaskBarList3 = Nothing
+End If
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long

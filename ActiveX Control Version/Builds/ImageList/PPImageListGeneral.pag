@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPImageListGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4650
    ScaleWidth      =   5790
-   Begin VBCCR15.CheckBoxW CheckRightToLeftMirror 
+   Begin VBCCR16.CheckBoxW CheckRightToLeftMirror 
       Height          =   285
       Left            =   120
       TabIndex        =   10
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPImageListGeneral
       _ExtentY        =   0
       Caption         =   "PPImageListGeneral.pgx":0000
    End
-   Begin VBCCR15.CheckBoxW CheckUseMaskColor 
+   Begin VBCCR16.CheckBoxW CheckUseMaskColor 
       Height          =   285
       Left            =   120
       TabIndex        =   12
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPImageListGeneral
       _ExtentY        =   0
       Caption         =   "PPImageListGeneral.pgx":0042
    End
-   Begin VBCCR15.CheckBoxW CheckUseBackColor 
+   Begin VBCCR16.CheckBoxW CheckUseBackColor 
       Height          =   285
       Left            =   120
       TabIndex        =   11
@@ -71,7 +71,7 @@ Begin VB.PropertyPage PPImageListGeneral
       Top             =   120
       Width           =   975
    End
-   Begin VBCCR15.TextBoxW TextImageWidth 
+   Begin VBCCR16.TextBoxW TextImageWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -80,7 +80,7 @@ Begin VB.PropertyPage PPImageListGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextImageHeight 
+   Begin VBCCR16.TextBoxW TextImageHeight 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -89,7 +89,7 @@ Begin VB.PropertyPage PPImageListGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.ComboBoxW ComboColorDepth 
+   Begin VBCCR16.ComboBoxW ComboColorDepth 
       Height          =   315
       Left            =   1200
       TabIndex        =   9

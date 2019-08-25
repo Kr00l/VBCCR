@@ -201,7 +201,7 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
@@ -212,6 +212,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -297,6 +299,7 @@ Private Const MCM_GETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 16)
 Private Const MCN_FIRST As Long = (-750)
 Private Const MCN_GETDAYSTATE As Long = (MCN_FIRST + 3)
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private DTPickerHandle As Long
@@ -305,6 +308,7 @@ Private DTPickerBackColorBrush As Long
 Private DTPickerCharCodeCache As Long
 Private DTPickerIsClick As Boolean
 Private DTPickerMouseOver As Boolean
+Private DTPickerDesignMode As Boolean, DTPickerTopDesignMode As Boolean
 Private DTPickerIsValueInvalid As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -341,6 +345,15 @@ Private PropUpDown As Boolean
 Private PropCheckBox As Boolean
 Private PropAllowUserInput As Boolean
 Private PropStartOfWeek As Integer
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -428,6 +441,10 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+On Error Resume Next
+DTPickerDesignMode = Not Ambient.UserMode
+DTPickerTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 Set PropCalendarFont = Ambient.Font
 PropVisualStyles = True
@@ -466,6 +483,10 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+On Error Resume Next
+DTPickerDesignMode = Not Ambient.UserMode
+DTPickerTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 Set PropCalendarFont = .ReadProperty("CalendarFont", Nothing)
@@ -891,7 +912,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -924,7 +945,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If DTPickerDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If DTPickerHandle <> 0 Then
     Call ComCtlsSetRightToLeft(DTPickerHandle, dwMask)
     If PropRightToLeft = True And PropRightToLeftLayout = True Then
@@ -970,7 +991,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If DTPickerHandle <> 0 And ComCtlsSupportLevel() <= 1 And Ambient.UserMode = True Then
+If DTPickerHandle <> 0 And ComCtlsSupportLevel() <= 1 And DTPickerDesignMode = False Then
     If DTPickerBackColorBrush <> 0 Then DeleteObject DTPickerBackColorBrush
     DTPickerBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -1187,7 +1208,7 @@ Public Property Let MinDate(ByVal Value As Date)
 Select Case Value
     Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
         If Value > Me.MaxDate Then
-            If Ambient.UserMode = False Then
+            If DTPickerDesignMode = True Then
                 MsgBox "A value was specified for the MinDate property that is higher than the current value of MaxDate", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1197,7 +1218,7 @@ Select Case Value
             PropMinDate = Value
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1246,7 +1267,7 @@ Public Property Let MaxDate(ByVal Value As Date)
 Select Case Value
     Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
         If Value < Me.MinDate Then
-            If Ambient.UserMode = False Then
+            If DTPickerDesignMode = True Then
                 MsgBox "A value was specified for the MaxDate property that is lower than the current value of MinDate", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1256,7 +1277,7 @@ Select Case Value
             PropMaxDate = Value
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1318,7 +1339,7 @@ If IsDate(DateValue) Then
         If Changed = False Then Changed = DTPickerIsValueInvalid
         PropValue = DateValue
     Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "A date was specified that does not fall within the MinDate and MaxDate properties", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1330,7 +1351,7 @@ ElseIf IsNull(DateValue) Then
     If PropCheckBox = True Then
         Changed = Not DTPickerIsValueInvalid
     Else
-        If Ambient.UserMode = False Then
+        If DTPickerDesignMode = True Then
             MsgBox "Can't set Value to Null when CheckBox property is False", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1338,7 +1359,7 @@ ElseIf IsNull(DateValue) Then
         End If
     End If
 Else
-    If Ambient.UserMode = False Then
+    If DTPickerDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1534,7 +1555,7 @@ End Property
 Public Property Let CustomFormat(ByVal Value As String)
 PropCustomFormat = Value
 If DTPickerHandle <> 0 And PropFormat = DtpFormatCustom Then
-    If Ambient.UserMode = True Then
+    If DTPickerDesignMode = False Then
         If InStr(1, PropCustomFormat, "X") And UserControl.EventsFrozen = True Then
             TimerCustomFormat.Enabled = True
         Else
@@ -1584,7 +1605,7 @@ Public Property Get StartOfWeek() As Integer
 Attribute StartOfWeek.VB_Description = "Returns/sets a value that determines the day of the week [Mon-Sun] displayed in the leftmost column of days."
 Dim CalendarHandle As Long
 CalendarHandle = Me.hWndCalendar
-If CalendarHandle <> 0 And Ambient.UserMode = True Then
+If CalendarHandle <> 0 And DTPickerDesignMode = False Then
     StartOfWeek = LoWord(SendMessage(CalendarHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&)) + 1
 Else
     StartOfWeek = PropStartOfWeek
@@ -1631,7 +1652,7 @@ End Select
 If PropUpDown = True Then dwStyle = dwStyle Or DTS_UPDOWN
 If PropCheckBox = True Then dwStyle = dwStyle Or DTS_SHOWNONE
 If PropAllowUserInput = True Then dwStyle = dwStyle Or DTS_APPCANPARSE
-If Ambient.UserMode = True Then
+If DTPickerDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 4)
@@ -1656,7 +1677,7 @@ Me.MinDate = PropMinDate
 Me.MaxDate = PropMaxDate
 Me.Value = PropValue
 Me.CustomFormat = PropCustomFormat
-If Ambient.UserMode = True Then
+If DTPickerDesignMode = False Then
     If DTPickerHandle <> 0 Then
         If DTPickerBackColorBrush = 0 And ComCtlsSupportLevel() <= 1 Then DTPickerBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(DTPickerHandle, Me, 1)
@@ -1665,7 +1686,7 @@ End If
 End Sub
 
 Private Sub ReCreateDTPicker()
-If Ambient.UserMode = True Then
+If DTPickerDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim Selected As Boolean
@@ -1903,8 +1924,8 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> DTPickerHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If DTPickerTopDesignMode = False And GetFocus() <> DTPickerHandle Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -1914,7 +1935,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE
@@ -1959,23 +1980,29 @@ Select Case wMsg
         LastWheelDelta = HiWord(wParam)
         WindowProcControl = 0
         Exit Function
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
-            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            If KeyCode = vbKeySpace Then
-                Select Case Me.Selected
-                    Case True
-                        Me.Value = Null
-                    Case False
-                        Me.Value = PropValue
-                End Select
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If KeyCode = vbKeySpace Then
+                    Select Case Me.Selected
+                        Case True
+                            Me.Value = Null
+                        Case False
+                            Me.Value = PropValue
+                    End Select
+                End If
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
-        ElseIf wMsg = WM_KEYUP Then
+            DTPickerCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
+            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        DTPickerCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -2138,15 +2165,21 @@ Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wP
 Select Case wMsg
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            DTPickerCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        DTPickerCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

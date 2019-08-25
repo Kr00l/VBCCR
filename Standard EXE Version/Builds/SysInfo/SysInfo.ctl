@@ -203,9 +203,19 @@ Private Const PBT_APMRESUMESUSPEND As Long = &H7
 Private Const PBT_APMPOWERSTATUSCHANGE As Long = &HA
 Private Const WM_THEMECHANGED As Long = &H31A
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Private SysInfoMainHandle As Long
 Private SysInfoDevNotifyHandle As Long
 Private SysInfoName As String
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub UserControl_InitProperties()
 If Ambient.UserMode = True Then

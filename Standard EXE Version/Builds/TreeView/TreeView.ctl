@@ -288,7 +288,7 @@ Private Const WM_VSCROLL As Long = &H115
 Private Const WM_HSCROLL As Long = &H114
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
@@ -297,6 +297,8 @@ Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
@@ -443,7 +445,7 @@ Private Const TVHT_ONITEMINDENT As Long = &H8
 Private Const TVHT_ONITEMBUTTON As Long = &H10
 Private Const TVHT_ONITEMRIGHT As Long = &H20
 Private Const TVHT_ONITEMSTATEICON As Long = &H40
-Private Const TVHT_ONITEM As Long = &H46
+Private Const TVHT_ONITEM As Long = TVHT_ONITEMICON Or TVHT_ONITEMLABEL Or TVHT_ONITEMSTATEICON
 Private Const TVHT_ABOVE As Long = &H100
 Private Const TVHT_BELOW As Long = &H200
 Private Const TVHT_TORIGHT As Long = &H400
@@ -453,6 +455,9 @@ Private Const TVE_EXPAND As Long = &H2
 Private Const TVE_TOGGLE As Long = &H3
 Private Const TVE_EXPANDPARTIAL As Long = &H4000
 Private Const TVE_COLLAPSERESET As Long = &H8000&
+Private Const TVNRET_DEFAULT As Long = 0
+Private Const TVNRET_SKIPOLD As Long = 1
+Private Const TVNRET_SKIPNEW As Long = 2
 Private Const TVGN_ROOT As Long = &H0
 Private Const TVGN_NEXT As Long = &H1
 Private Const TVGN_PREVIOUS As Long = &H2
@@ -493,6 +498,7 @@ Private Const TVS_FULLROWSELECT As Long = &H1000
 Private Const TVS_NOSCROLL As Long = &H2000
 Private Const TVS_NONEVENHEIGHT As Long = &H4000
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private TreeViewHandle As Long, TreeViewToolTipHandle As Long
@@ -501,6 +507,7 @@ Private TreeViewIMCHandle As Long
 Private TreeViewCharCodeCache As Long
 Private TreeViewIsClick As Boolean
 Private TreeViewMouseOver As Boolean
+Private TreeViewDesignMode As Boolean, TreeViewTopDesignMode As Boolean
 Private TreeViewLabelInEdit As Boolean
 Private TreeViewStartLabelEdit As Boolean
 Private TreeViewButtonDown As Integer
@@ -508,6 +515,7 @@ Private TreeViewDragItemBuffer As Long, TreeViewDragItem As Long
 Private TreeViewInsertMarkItem As Long, TreeViewInsertMarkAfter As Boolean
 Private TreeViewExpandItem As Long, TreeViewPrevExpandItem As Long, TreeViewTickCount As Double
 Private TreeViewSampleMode As Boolean
+Private TreeViewImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -523,7 +531,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropBorderStyle As CCBorderStyleConstants
 Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
@@ -547,6 +555,15 @@ Private PropSortType As TvwSortTypeConstants
 Private PropInsertMarkColor As OLE_COLOR
 Private PropDoubleBuffer As Boolean
 Private PropIMEMode As CCIMEModeConstants
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -625,6 +642,10 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+On Error Resume Next
+TreeViewDesignMode = Not Ambient.UserMode
+TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = TvwVisualThemeStandard
@@ -638,7 +659,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropBorderStyle = CCBorderStyleSunken
 PropBackColor = vbWindowBackground
 PropForeColor = vbWindowText
@@ -663,7 +684,7 @@ PropInsertMarkColor = vbBlack
 PropDoubleBuffer = True
 PropIMEMode = CCIMEModeNoControl
 Call CreateTreeView
-If Ambient.UserMode = False Then
+If TreeViewDesignMode = True Then
     TreeViewSampleMode = True
     Dim SampleNode As New TvwNode
     SampleNode.FInit Me, vbNullString, 1, 1, 1, 1
@@ -679,6 +700,10 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+On Error Resume Next
+TreeViewDesignMode = Not Ambient.UserMode
+TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -721,7 +746,7 @@ PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 End With
 Call CreateTreeView
-If Ambient.UserMode = False Then
+If TreeViewDesignMode = True Then
     TreeViewSampleMode = True
     Dim SampleNode As New TvwNode
     SampleNode.FInit Me, vbNullString, 1, 1, 1, 1
@@ -1174,7 +1199,7 @@ End Property
 
 Public Property Let OLEDragExpandTime(ByVal Value As Long)
 If Value < -1 Then
-    If Ambient.UserMode = False Then
+    If TreeViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1231,7 +1256,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If TreeViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1263,7 +1288,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -1311,8 +1336,8 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+If TreeViewDesignMode = False Then
+    If PropImageListInit = False And TreeViewImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1342,8 +1367,8 @@ If TreeViewHandle <> 0 Then
                 Case Else
                     SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
             End Select
+            TreeViewImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1361,10 +1386,10 @@ If TreeViewHandle <> 0 Then
                             Case Else
                                 SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
                         End Select
+                        If TreeViewDesignMode = False Then TreeViewImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf TreeViewDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1376,8 +1401,8 @@ If TreeViewHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
+        TreeViewImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
     End If
@@ -1444,7 +1469,7 @@ End Property
 
 Public Property Let Redraw(ByVal Value As Boolean)
 PropRedraw = Value
-If TreeViewHandle <> 0 And Ambient.UserMode = True Then
+If TreeViewHandle <> 0 And TreeViewDesignMode = False Then
     SendMessage TreeViewHandle, WM_SETREDRAW, IIf(PropRedraw = True, 1, 0), ByVal 0&
     If PropRedraw = True Then Me.Refresh
 End If
@@ -1674,7 +1699,7 @@ End Property
 
 Public Property Let Indentation(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TreeViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1687,7 +1712,7 @@ LngValue = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
 ErrValue = Err.Number
 On Error GoTo 0
 If LngValue < 0 Or ErrValue <> 0 Then
-    If Ambient.UserMode = False Then
+    If TreeViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1757,7 +1782,7 @@ End Property
 
 Public Property Let Sorted(ByVal Value As Boolean)
 PropSorted = Value
-If PropSorted = True And Ambient.UserMode = True Then Call SortNodes(TVI_ROOT, PropSortType)
+If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
 UserControl.PropertyChanged "Sorted"
 End Property
 
@@ -1773,7 +1798,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If PropSorted = True And Ambient.UserMode = True Then Call SortNodes(TVI_ROOT, PropSortType)
+If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
 End Property
 
 Public Property Get SortType() As TvwSortTypeConstants
@@ -1788,7 +1813,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If PropSorted = True And Ambient.UserMode = True Then Call SortNodes(TVI_ROOT, PropSortType)
+If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
 End Property
 
 Public Property Get InsertMarkColor() As OLE_COLOR
@@ -1831,7 +1856,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If TreeViewHandle <> 0 And Ambient.UserMode = True Then
+If TreeViewHandle <> 0 And TreeViewDesignMode = False Then
     If GetFocus() = TreeViewHandle Then
         Call ComCtlsSetIMEMode(TreeViewHandle, TreeViewIMCHandle, PropIMEMode)
     ElseIf TreeViewLabelInEdit = True Then
@@ -2529,7 +2554,7 @@ If PropFullRowSelect = True Then dwStyle = dwStyle Or TVS_FULLROWSELECT
 If PropHotTracking = True Then dwStyle = dwStyle Or TVS_TRACKSELECT
 If PropScroll = False Then dwStyle = dwStyle Or TVS_NOSCROLL
 If PropSingleSel = True Then dwStyle = dwStyle Or TVS_SINGLEEXPAND
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
@@ -2559,7 +2584,7 @@ If TreeViewHandle <> 0 Then
     End If
     SendMessage TreeViewHandle, TVM_SETINDENT, PropIndentation, ByVal 0&
 End If
-If Ambient.UserMode = True Then
+If TreeViewDesignMode = False Then
     If TreeViewHandle <> 0 Then
         Call ComCtlsSetSubclass(TreeViewHandle, Me, 1)
         Call ComCtlsCreateIMC(TreeViewHandle, TreeViewIMCHandle)
@@ -2590,7 +2615,7 @@ Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
-If PropRedraw = True Or Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If PropRedraw = True Or TreeViewDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Public Function HitTest(ByVal X As Single, ByVal Y As Single) As TvwNode
@@ -2939,6 +2964,10 @@ Private Function StateImageMaskToIndex(ByVal ImgState As Long) As Long
 StateImageMaskToIndex = ImgState / (2 ^ 12)
 End Function
 
+Private Function PropImageListControl() As Object
+If TreeViewImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(TreeViewImageListObjectPointer)
+End Function
+
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
     Case 1
@@ -2965,8 +2994,8 @@ Select Case wMsg
         Static InProc As Boolean
         Dim LabelEditHandle As Long
         LabelEditHandle = Me.hWndLabelEdit
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> TreeViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If TreeViewTopDesignMode = False And GetFocus() <> TreeViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN
                     On Error Resume Next
@@ -2976,7 +3005,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE
@@ -3004,31 +3033,37 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
-            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-            If KeyCode = vbKeySpace And PropCheckboxes = True Then
-                Dim TVI As TVITEM
-                With TVI
-                .Mask = TVIF_HANDLE Or TVIF_STATE Or TVIF_PARAM
-                .hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&)
-                .StateMask = TVIS_STATEIMAGEMASK
-                SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
-                If StateImageMaskToIndex(.State And TVIS_STATEIMAGEMASK) = 0 Then Exit Function
-                If .lParam <> 0 Then
-                    Dim Cancel As Boolean
-                    RaiseEvent NodeBeforeCheck(PtrToObj(.lParam), Cancel)
-                    If Cancel = True Then Exit Function
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If KeyCode = vbKeySpace And PropCheckboxes = True Then
+                    Dim TVI As TVITEM
+                    With TVI
+                    .Mask = TVIF_HANDLE Or TVIF_STATE Or TVIF_PARAM
+                    .hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&)
+                    .StateMask = TVIS_STATEIMAGEMASK
+                    SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
+                    If StateImageMaskToIndex(.State And TVIS_STATEIMAGEMASK) = 0 Then Exit Function
+                    If .lParam <> 0 Then
+                        Dim Cancel As Boolean
+                        RaiseEvent NodeBeforeCheck(PtrToObj(.lParam), Cancel)
+                        If Cancel = True Then Exit Function
+                    End If
+                    PostMessage TreeViewHandle, UM_CHECKSTATECHANGED, 0, ByVal .lParam
+                    End With
                 End If
-                PostMessage TreeViewHandle, UM_CHECKSTATECHANGED, 0, ByVal .lParam
-                End With
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
-        ElseIf wMsg = WM_KEYUP Then
+            TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
+            RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -3097,6 +3132,7 @@ Select Case wMsg
                     Case WM_RBUTTONUP
                         RaiseEvent MouseUp(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 End Select
+                TreeViewButtonDown = 0
                 If TreeViewIsClick = True Then
                     TreeViewIsClick = False
                     If (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then RaiseEvent Click

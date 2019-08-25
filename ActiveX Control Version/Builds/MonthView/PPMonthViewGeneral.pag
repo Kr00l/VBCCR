@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4200
    ScaleWidth      =   6225
-   Begin VBCCR15.CheckBoxW CheckShowTrailingDates 
+   Begin VBCCR16.CheckBoxW CheckShowTrailingDates 
       Height          =   285
       Left            =   4200
       TabIndex        =   26
@@ -19,7 +19,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":0000
    End
-   Begin VBCCR15.TextBoxW TextMonthRows 
+   Begin VBCCR16.TextBoxW TextMonthRows 
       Height          =   315
       Left            =   1800
       TabIndex        =   17
@@ -28,7 +28,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMonthColumns 
+   Begin VBCCR16.TextBoxW TextMonthColumns 
       Height          =   315
       Left            =   1800
       TabIndex        =   15
@@ -37,7 +37,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMaxSelCount 
+   Begin VBCCR16.TextBoxW TextMaxSelCount 
       Height          =   315
       Left            =   1800
       TabIndex        =   13
@@ -46,7 +46,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.ComboBoxW ComboStartOfWeek 
+   Begin VBCCR16.ComboBoxW ComboStartOfWeek 
       Height          =   315
       Left            =   1800
       TabIndex        =   19
@@ -56,7 +56,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextMaxDate 
+   Begin VBCCR16.TextBoxW TextMaxDate 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -65,7 +65,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMinDate 
+   Begin VBCCR16.TextBoxW TextMinDate 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -74,7 +74,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextValue 
+   Begin VBCCR16.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -83,7 +83,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   3
@@ -93,7 +93,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckShowWeekNumbers 
+   Begin VBCCR16.CheckBoxW CheckShowWeekNumbers 
       Height          =   285
       Left            =   4200
       TabIndex        =   25
@@ -103,7 +103,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":0042
    End
-   Begin VBCCR15.CheckBoxW CheckShowTodayCircle 
+   Begin VBCCR16.CheckBoxW CheckShowTodayCircle 
       Height          =   285
       Left            =   4200
       TabIndex        =   24
@@ -113,7 +113,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":0080
    End
-   Begin VBCCR15.CheckBoxW CheckShowToday 
+   Begin VBCCR16.CheckBoxW CheckShowToday 
       Height          =   285
       Left            =   4200
       TabIndex        =   23
@@ -123,7 +123,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":00BE
    End
-   Begin VBCCR15.TextBoxW TextScrollRate 
+   Begin VBCCR16.TextBoxW TextScrollRate 
       Height          =   315
       Left            =   1800
       TabIndex        =   11
@@ -132,7 +132,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.ComboBoxW ComboView 
+   Begin VBCCR16.ComboBoxW ComboView 
       Height          =   315
       Left            =   1800
       TabIndex        =   21
@@ -142,7 +142,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.CheckBoxW CheckDayState 
+   Begin VBCCR16.CheckBoxW CheckDayState 
       Height          =   285
       Left            =   4200
       TabIndex        =   28
@@ -152,7 +152,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":00F0
    End
-   Begin VBCCR15.CheckBoxW CheckMultiSelect 
+   Begin VBCCR16.CheckBoxW CheckMultiSelect 
       Height          =   285
       Left            =   4200
       TabIndex        =   27
@@ -162,7 +162,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":0120
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -172,7 +172,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":0156
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -182,7 +182,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":0184
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   22
@@ -192,7 +192,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentY        =   0
       Caption         =   "PPMonthViewGeneral.pgx":01BC
    End
-   Begin VBCCR15.CheckBoxW CheckUseShortestDayNames 
+   Begin VBCCR16.CheckBoxW CheckUseShortestDayNames 
       Height          =   285
       Left            =   4200
       TabIndex        =   29

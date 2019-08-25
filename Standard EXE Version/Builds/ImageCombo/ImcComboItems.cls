@@ -12,8 +12,14 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+Private Type TINDEXPTR
+Ptr As Long
+ShadowObjPtr As Long
+End Type
+Private Declare Function PutMem4 Lib "msvbvm60.dll" (ByVal Addr As Long, ByVal Value As Long) As Long
 Private ShadowObjectPointer As Long
 Private PropComboItem As Collection
+Private PropIndexPtrArr() As TINDEXPTR
 
 Private Function ShadowImageCombo() As ImageCombo
 ComCtlsPtrToShadowObj ShadowImageCombo, ShadowObjectPointer
@@ -51,9 +57,9 @@ If IsMissing(SelImage) Then
 Else
     Call ComCtlsImlListImageIndex(ShadowImageCombo, ShadowImageCombo.ImageList, SelImage, SelImageIndex)
 End If
-ShadowImageCombo.FComboItemsAdd Index, Text, ImageIndex, SelImageIndex, Indentation
 Dim NewComboItem As New ImcComboItem
-NewComboItem.FInit ShadowImageCombo, Key, Image, ImageIndex, SelImage, SelImageIndex
+Dim IndexPtr As Long
+NewComboItem.FInit ShadowObjectPointer, IndexPtr, Key, Image, ImageIndex, SelImage, SelImageIndex
 If Key = vbNullString Then
     If Index > 0 And Index <= PropComboItem.Count Then
         PropComboItem.Add NewComboItem, , Index
@@ -67,21 +73,46 @@ Else
         PropComboItem.Add NewComboItem, Key
     End If
 End If
-If Index = 0 Then
-    NewComboItem.Index = PropComboItem.Count
-Else
-    Dim i As Long
-    For i = Index To PropComboItem.Count
-        Me.Item(i).Index = i
+If Index = 0 Then Index = PropComboItem.Count
+ShadowImageCombo.FComboItemsAdd Index, Text, ImageIndex, SelImageIndex, Indentation
+ReDim Preserve PropIndexPtrArr(1 To PropComboItem.Count) As TINDEXPTR
+Dim i As Long
+If Index < PropComboItem.Count Then
+    For i = PropComboItem.Count To Index + 1 Step -1
+        LSet PropIndexPtrArr(i) = PropIndexPtrArr(i - 1)
     Next i
 End If
+PropIndexPtrArr(Index).Ptr = IndexPtr
+PropIndexPtrArr(Index).ShadowObjPtr = ObjPtr(NewComboItem)
+For i = Index To PropComboItem.Count
+    PutMem4 PropIndexPtrArr(i).Ptr, i
+Next i
 Set Add = NewComboItem
 End Function
 
 Public Property Get Item(ByVal Index As Variant) As ImcComboItem
 Attribute Item.VB_Description = "Returns a combo item given its index or key."
 Attribute Item.VB_UserMemId = 0
-Set Item = PropComboItem(Index)
+Select Case VarType(Index)
+    Case vbLong, vbInteger, vbByte
+        If Index > 0 And Index <= PropComboItem.Count Then
+            Set Item = PtrToObj(PropIndexPtrArr(Index).ShadowObjPtr)
+        Else
+            Err.Raise 9
+        End If
+    Case vbString
+        Set Item = PropComboItem(Index)
+    Case vbDouble, vbSingle
+        Dim IndexLong As Long
+        IndexLong = CLng(Index)
+        If IndexLong > 0 And IndexLong <= PropComboItem.Count Then
+            Set Item = PtrToObj(PropIndexPtrArr(IndexLong).ShadowObjPtr)
+        Else
+            Err.Raise 9
+        End If
+    Case Else
+        Err.Raise 13
+End Select
 End Property
 
 Public Function Exists(ByVal Index As Variant) As Boolean
@@ -101,14 +132,38 @@ Public Sub Clear()
 Attribute Clear.VB_Description = "Removes all combo items from the collection."
 ShadowImageCombo.FComboItemsClear
 Set PropComboItem = New Collection
+Erase PropIndexPtrArr()
 End Sub
 
 Public Sub Remove(ByVal Index As Variant)
 Attribute Remove.VB_Description = "Removes a combo item from the collection."
-ShadowImageCombo.FComboItemsRemove PropComboItem(Index).Index
-PropComboItem.Remove Index
-Dim i As Long
-For i = 1 To PropComboItem.Count
-    Me.Item(i).Index = i
-Next i
+Dim IndexLong As Long
+Select Case VarType(Index)
+    Case vbLong, vbInteger, vbByte
+        IndexLong = Index
+    Case vbString
+        IndexLong = PropComboItem(Index).Index
+    Case vbDouble, vbSingle
+        IndexLong = CLng(Index)
+    Case Else
+        Err.Raise 13
+End Select
+If IndexLong > 0 And IndexLong <= PropComboItem.Count Then
+    ShadowImageCombo.FComboItemsRemove IndexLong
+    PropComboItem.Remove Index
+    Dim i As Long
+    For i = IndexLong To PropComboItem.Count
+        LSet PropIndexPtrArr(i) = PropIndexPtrArr(i + 1)
+    Next i
+    If PropComboItem.Count > 0 Then
+        ReDim Preserve PropIndexPtrArr(1 To PropComboItem.Count) As TINDEXPTR
+    Else
+        Erase PropIndexPtrArr()
+    End If
+    For i = 1 To PropComboItem.Count
+        PutMem4 PropIndexPtrArr(i).Ptr, i
+    Next i
+Else
+    Err.Raise 9
+End If
 End Sub

@@ -11,7 +11,7 @@ Begin VB.PropertyPage PPImageListImages
    ScaleHeight     =   310
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   386
-   Begin VBCCR15.CommandButtonW CommandMoveUp 
+   Begin VBCCR16.CommandButtonW CommandMoveUp 
       Height          =   315
       Left            =   3480
       TabIndex        =   13
@@ -22,7 +22,7 @@ Begin VB.PropertyPage PPImageListImages
       _ExtentY        =   0
       Caption         =   "PPImageListImages.pgx":0000
    End
-   Begin VBCCR15.CommandButtonW CommandMoveDown 
+   Begin VBCCR16.CommandButtonW CommandMoveDown 
       Height          =   315
       Left            =   2400
       TabIndex        =   12
@@ -41,7 +41,7 @@ Begin VB.PropertyPage PPImageListImages
       Top             =   2220
       Width           =   5595
    End
-   Begin VBCCR15.CommandButtonW CommandClear 
+   Begin VBCCR16.CommandButtonW CommandClear 
       Height          =   315
       Left            =   4680
       TabIndex        =   14
@@ -52,7 +52,7 @@ Begin VB.PropertyPage PPImageListImages
       _ExtentY        =   0
       Caption         =   "PPImageListImages.pgx":0048
    End
-   Begin VBCCR15.CommandButtonW CommandRemove 
+   Begin VBCCR16.CommandButtonW CommandRemove 
       Height          =   315
       Left            =   1200
       TabIndex        =   11
@@ -63,7 +63,7 @@ Begin VB.PropertyPage PPImageListImages
       _ExtentY        =   0
       Caption         =   "PPImageListImages.pgx":007A
    End
-   Begin VBCCR15.CommandButtonW CommandInsert 
+   Begin VBCCR16.CommandButtonW CommandInsert 
       Height          =   315
       Left            =   120
       TabIndex        =   10
@@ -81,7 +81,7 @@ Begin VB.PropertyPage PPImageListImages
       TabIndex        =   0
       Top             =   120
       Width           =   5655
-      Begin VBCCR15.TextBoxW TextTag 
+      Begin VBCCR16.TextBoxW TextTag 
          Height          =   315
          Left            =   2520
          TabIndex        =   6
@@ -93,7 +93,7 @@ Begin VB.PropertyPage PPImageListImages
          Enabled         =   0   'False
          MaxLength       =   20
       End
-      Begin VBCCR15.TextBoxW TextIndex 
+      Begin VBCCR16.TextBoxW TextIndex 
          Height          =   315
          Left            =   720
          TabIndex        =   2
@@ -106,7 +106,7 @@ Begin VB.PropertyPage PPImageListImages
          Text            =   "PPImageListImages.pgx":00E2
          Locked          =   -1  'True
       End
-      Begin VBCCR15.TextBoxW TextKey 
+      Begin VBCCR16.TextBoxW TextKey 
          Height          =   315
          Left            =   2520
          TabIndex        =   4
@@ -181,14 +181,12 @@ Top As Long
 Right As Long
 Bottom As Long
 End Type
-Private Declare Function DrawIconEx Lib "user32" (ByVal hDC As Long, ByVal XLeft As Long, ByVal YTop As Long, ByVal hIcon As Long, ByVal CXWidth As Long, ByVal CYWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As Long, ByVal diFlags As Long) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function DrawFocusRect Lib "user32" (ByVal hDC As Long, lpRect As RECT) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
-Private Const DI_NORMAL As Long = &H3
 Private Const BF_LEFT As Long = 1
 Private Const BF_TOP As Long = 2
 Private Const BF_RIGHT As Long = 4
@@ -388,13 +386,7 @@ If ImageListHandle <> 0 Then
             TRC.Right = TRC.Left + ImageFrameWidth
             TRC.Bottom = TRC.Top + ImageFrameHeight
             FillRect PictureImages.hDC, TRC, Brush
-            With .ListImages(i).Picture
-            If .Type = vbPicTypeIcon Then
-                DrawIconEx PictureImages.hDC, X + 4, 4, .Handle, 32, 32, 0, 0, DI_NORMAL
-            Else
-                .Render PictureImages.hDC Or 0&, (X + 4&) Or 0&, 4& Or 0&, 32& Or 0&, 32& Or 0&, 0&, .Height, .Width, -.Height, 0&
-            End If
-            End With
+            Call RenderPicture(.ListImages(i).Picture, PictureImages.hDC, X + 4, 4, 32, 32)
             If i = CurrIndex Then
                 DrawEdge PictureImages.hDC, TRC, BDR_RAISEDINNER Or BDR_RAISEDOUTER, BF_RECT
                 If GetFocus() = PictureImages.hWnd Then

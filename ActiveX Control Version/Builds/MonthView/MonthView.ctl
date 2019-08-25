@@ -178,7 +178,7 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
@@ -189,6 +189,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -284,6 +286,7 @@ Private MonthViewFontHandle As Long
 Private MonthViewCharCodeCache As Long
 Private MonthViewIsClick As Boolean
 Private MonthViewMouseOver As Boolean
+Private MonthViewDesignMode As Boolean, MonthViewTopDesignMode As Boolean
 Private MonthViewSelectDate As Date
 Private MonthViewSelChangeStartDate As Date, MonthViewSelChangeEndDate As Date
 Private DispIDMousePointer As Long
@@ -404,6 +407,10 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+On Error Resume Next
+MonthViewDesignMode = Not Ambient.UserMode
+MonthViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -440,6 +447,10 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+On Error Resume Next
+MonthViewDesignMode = Not Ambient.UserMode
+MonthViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -852,7 +863,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -885,7 +896,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If MonthViewDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If MonthViewHandle <> 0 Then Call ComCtlsSetRightToLeft(MonthViewHandle, dwMask)
 UserControl.PropertyChanged "RightToLeft"
 End Property
@@ -1010,7 +1021,7 @@ Public Property Let MinDate(ByVal Value As Date)
 Select Case Value
     Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
         If Int(Value) > Me.MaxDate Then
-            If Ambient.UserMode = False Then
+            If MonthViewDesignMode = True Then
                 MsgBox "A value was specified for the MinDate property that is higher than the current value of MaxDate", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1020,7 +1031,7 @@ Select Case Value
             PropMinDate = Int(Value)
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1059,7 +1070,7 @@ Public Property Let MaxDate(ByVal Value As Date)
 Select Case Value
     Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
         If Int(Value) < Me.MinDate Then
-            If Ambient.UserMode = False Then
+            If MonthViewDesignMode = True Then
                 MsgBox "A value was specified for the MaxDate property that is lower than the current value of MinDate", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -1069,7 +1080,7 @@ Select Case Value
             PropMaxDate = Int(Value)
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1113,7 +1124,7 @@ Public Property Let Value(ByVal NewValue As Date)
 If Int(NewValue) >= Me.MinDate And Int(NewValue) <= Me.MaxDate Then
     PropValue = Int(NewValue)
 Else
-    If Ambient.UserMode = False Then
+    If MonthViewDesignMode = True Then
         MsgBox "A date was specified that does not fall within the MinDate and MaxDate properties", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1340,7 +1351,7 @@ End Property
 
 Public Property Let ScrollRate(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If MonthViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1354,7 +1365,7 @@ End Property
 
 Public Property Get StartOfWeek() As Integer
 Attribute StartOfWeek.VB_Description = "Returns/sets a value that determines the day of the week [Mon-Sun] displayed in the leftmost column of days."
-If MonthViewHandle <> 0 And Ambient.UserMode = True Then
+If MonthViewHandle <> 0 And MonthViewDesignMode = False Then
     StartOfWeek = LoWord(SendMessage(MonthViewHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&)) + 1
 Else
     StartOfWeek = PropStartOfWeek
@@ -1417,7 +1428,7 @@ Public Property Let MaxSelCount(ByVal Value As Integer)
 If Value > 0 Then
     PropMaxSelCount = Value
 Else
-    If Ambient.UserMode = False Then
+    If MonthViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1436,14 +1447,14 @@ End Property
 Public Property Let MonthColumns(ByVal Value As Byte)
 If Value > 0 Then
     If Value > 12 Then
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "A value was specified for MonthRows or MonthColumns that is not between 1 and 12", vbCritical + vbOKOnly
             Exit Property
         Else
             Err.Raise Number:=35776, Description:="A value was specified for MonthRows or MonthColumns that is not between 1 and 12"
         End If
     ElseIf (Value * PropMonthRows) > 12 Then
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "A value was specified for MonthRows or MonthColumns that would cause the total number of months (i.e. MonthRows * MonthColumns) to be greater than 12", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1453,7 +1464,7 @@ If Value > 0 Then
         PropMonthColumns = Value
     End If
 Else
-    If Ambient.UserMode = False Then
+    If MonthViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1475,14 +1486,14 @@ End Property
 Public Property Let MonthRows(ByVal Value As Byte)
 If Value > 0 Then
     If Value > 12 Then
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "A value was specified for MonthRows or MonthColumns that is not between 1 and 12", vbCritical + vbOKOnly
             Exit Property
         Else
             Err.Raise Number:=35776, Description:="A value was specified for MonthRows or MonthColumns that is not between 1 and 12"
         End If
     ElseIf (Value * PropMonthColumns) > 12 Then
-        If Ambient.UserMode = False Then
+        If MonthViewDesignMode = True Then
             MsgBox "A value was specified for MonthRows or MonthColumns that would cause the total number of months (i.e. MonthRows * MonthColumns) to be greater than 12", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1492,7 +1503,7 @@ If Value > 0 Then
         PropMonthRows = Value
     End If
 Else
-    If Ambient.UserMode = False Then
+    If MonthViewDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1560,8 +1571,8 @@ If PropShowWeekNumbers = True Then dwStyle = dwStyle Or MCS_WEEKNUMBERS
 If PropShowTrailingDates = False And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or MCS_NOTRAILINGDATES
 If PropMultiSelect = True Then dwStyle = dwStyle Or MCS_MULTISELECT
 If PropDayState = True Then dwStyle = dwStyle Or MCS_DAYSTATE
-If PropUseShortestDayNames = False And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or MCS_SHORTDAYSOFWEEK
-If Ambient.UserMode = True Then
+If PropUseShortestDayNames = True And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or MCS_SHORTDAYSOFWEEK
+If MonthViewDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
@@ -1584,13 +1595,13 @@ Me.ScrollRate = PropScrollRate
 Me.StartOfWeek = PropStartOfWeek
 Me.MaxSelCount = PropMaxSelCount
 Me.View = PropView
-If Ambient.UserMode = True Then
+If MonthViewDesignMode = False Then
     If MonthViewHandle <> 0 Then Call ComCtlsSetSubclass(MonthViewHandle, Me, 1)
 End If
 End Sub
 
 Private Sub ReCreateMonthView()
-If Ambient.UserMode = True Then
+If MonthViewDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyMonthView
@@ -1983,8 +1994,8 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> MonthViewHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If MonthViewTopDesignMode = False And GetFocus() <> MonthViewHandle Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -1994,7 +2005,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE
@@ -2052,15 +2063,21 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            MonthViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        MonthViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

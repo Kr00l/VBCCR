@@ -21,8 +21,8 @@ Private Function ShadowListView() As ListView
 ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
 End Function
 
-Friend Sub FInit(ByVal Object As ListView, ByVal Key As String)
-ShadowObjectPointer = ObjPtr(Object)
+Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Key As String)
+ShadowObjectPointer = ObjectPointer
 PropKey = Key
 End Sub
 

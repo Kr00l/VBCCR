@@ -1,5 +1,156 @@
 List of revisions:
 
+24-Aug-2019
+- BackColor property works now also when VisualStyles is False in the TabStrip control.
+- Included the DoubleBuffer property in the TabStrip control.
+
+22-Aug-2019
+- Included the BackColor property and improved the DrawBackground method in the TabStrip control.
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - enriched interface IOleObject with more methods.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
+21-Aug-2019
+- Included enum value 'RtfFindOptionReverse' for the Find method in the RichTextBox control.
+
+20-Aug-2019
+- UTF-16 BOM was missing in the internal StreamFileOut function in the RichTextBox control.
+  This fix is only meaningful when using 'RtfLoadSaveFormatUnicodeText' in the SaveFile method.
+
+15-Aug-2019
+- Included the SelLink run-time property in the RichTextBox control.
+
+11-Aug-2019
+- Potential double MouseUp event (not on double click; normal click) before and after MouseDown fixed on certain conditions in the ListView/TreeView control.
+
+10-Aug-2019
+- It is now possible for the LvwListItems collection to change the key on a particular LvwListItem in the ListView control.
+
+09-Jul-2019
+- VTable bugfix in the ListView control. (Unstable condition when internal SysHeader32 control had focus)
+
+14-May-2019
+- Minor improvement of the Locked property in the ComboBoxW, FontCombo and ImageCombo control.
+
+11-May-2019
+- Minor internal improvement.
+
+23-Apr-2019
+- Bugfix in the internal ComCtlsTopParentValidateControls function.
+
+26-Mar-2019
+- Minor bugfix in each WM_MOUSEACTIVATE handler.
+
+25-Mar-2019
+- Bugfix in the HDN_BEGINFILTEREDIT handler in the ListView control.
+
+10-Mar-2019
+- Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
+
+26-Feb-2019
+- Bugfix that the PanelClick event fired two times when double clicking in the StatusBar control.
+- Elimination of difference between StdEXE and OCX version. All UserControls in StdEXE now implements IObjectSafety.
+
+19-Feb-2019
+- GDI leak fixed when ListView/TreeView/CommandLink/CommandButtonW/OptionButtonW/CheckBoxW is nested in another UserControl and has the ImageList property set at design-time.
+
+18-Feb-2019
+- Replaced WM_CHANGEUISTATE with WM_UPDATEUISTATE in VisualStyles.bas.
+- GDI leak fixed when ToolBar/CoolBar/TabStrip/ImageCombo is nested in another UserControl and has the ImageList property set at design-time.
+
+15-Feb-2019
+- When the SelectItem function changes the index then the Click event will now be fired in the ComboBoxW control.
+
+10-Feb-2019
+- Bugfix in the Slider control related to ModifyTipText event.
+- StatusBar control can now render 32bpp alpha bitmaps.
+
+07-Feb-2019
+- Further improvement of VisualStyles.bas.
+
+06-Feb-2019
+- CommandButtonW/CheckBoxW/OptionButtonW controls now draw themed on vbButtonGraphical by their own.
+  This way the ForeColor property can be used on vbButtonGraphical even when themed.
+- VisualStyles.bas modified to only consider VB intrinsic CommandButton/CheckBox/OptionButton controls.
+  It also now use WM_QUERYUISTATE to consider if focus rect or accel should be drawn.
+- Minor internal improvement in the RichTextBox control related to theming.
+
+02-Feb-2019
+- Picture property in the FrameW control can now render 32bpp alpha bitmaps.
+- Preview in PPImageListImages.pag can now render 32bpp alpha bitmaps.
+  The ImageList control itself already supported this when the ColorDepth property was set to 32bit.
+
+29-Jan-2019
+- Internal improvement in the BitmapHandleFromPicture function in Common.bas.
+- CommandButtonW/CheckBoxW/OptionButtonW better draws now disabled pictures in vbButtonGraphical style.
+  This has only effect when no DisabledPicture is provided and it draws the normal Picture object as disabled.
+
+23-Jan-2019
+- VBA bugfix.
+
+21-Jan-2019
+- Bugfix when loading a non-unicode file with RtfLoadSaveFormatUnicodeText in the RichTextBox control.
+
+17-Jan-2019
+- Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
+- Bugfix in the UseShortestDayNames property in the MonthView control.
+
+06-Jan-2019
+- Major perfomance boost when reading .Text or .TextRTF in the RichTextBox control.
+  This was achieved by reducing the number of 'ReDim Preserve' in the internal RtfStreamCallbackStringOut function.
+
+11-Nov-2018
+- Internal improvement concerning design-mode handling.
+
+05-Nov-2018
+- Minor internal improvement in the 'VTableCall' function.
+
+30-Oct-2018
+- Bugfix in VTableHandle.bas concerning 'DeactivateIPAO'.
+  This bug ensures that all kinds of *_Terminate events are fired earlier (on unload) and not on app shutdown.
+- Use of lightweight COM object IRichEditOleCallback in RichTextBoxBase.bas.
+  RtfOleCallback.cls got obselete and was removed.
+
+29-Oct-2018
+- Use of lightweight COM object IEnumVARIANT in VTableHandle.bas.
+  Enumeration.cls got obsolete and was removed.
+
+27-Oct-2018
+- Major performance improvement in the 'ComboItems' collection in the ImageCombo control.
+- Internal bugfix in the ImageList control.
+
+23-Oct-2018
+- Internal improvement in the LabelW control.
+- Less memory consumption for LvwListItem. (~5MB each 100k items)
+- Performance boost for the .Remove method in TvwNodes.
+
+22-Oct-2018
+- Use of lightweight COM object IPrintDialogCallback instead of a WH_CALLWNDPROCRET hook for ShowPrinterEx in the CommonDialog class.
+  This change only effects when the HookEvents property is True in the CommonDialog class.
+
+20-Oct-2018
+- Minor internal improvement in LlbLinks/LlbLink in the LinkLabel control.
+
+12-Oct-2018
+- Fix on EM_REPLACESEL (wparam = 1) in TextBoxW and RichTextBox control.
+
+09-Oct-2018
+- WM_SYSKEYDOWN/WM_SYSKEYUP considered now for KeyDown/KeyUp events.
+
+28-Sep-2018
+- Bugfix in the For Each...Next Enumeration of 'VirtualListItems' in the ListView control.
+
+27-Sep-2018
+- Included 'VirtualListItems' in the ListView control that returns a collection of virtual list items.
+  New components LvwVirtualListItems.cls/LvwVirtualListItem.cls are included.
+
+21-Sep-2018
+- Performance boost when adding very large number of buttons in a ToolBar control.
+- Bugfix in the NoImage property of a Button in the ToolBar control.
+
+16-Sep-2018
+- GDI leak fixed when CoolBar is nested in another UserControl and has child controls applied.
+
 06-Sep-2018
 - Minor internal improvement in the Pager, FontCombo and UpDown control concerning BuddyControl.
 
@@ -917,37 +1068,6 @@ List of revisions:
 - ComboBoxW with Style 'CboStyleDropDownCombo' is now working on Windows 2000.
   Message CB_GETCOMBOBOXINFO is not supported on Windows 2000, so little workaround was necessary to solve this.
 - Some other minor internal improvements.
-
-25-Feb-2016
-- Minor adjustment to the BackColor in the ToolBar control so that the Pager control can recognize it.
-
-24-Feb-2016
-- Fixed a bug that the Scroll event fired twice instead of once in the Slider control.
-
-19-Feb-2016
-- The BackColor property in the ToolBar control is now shown/visible at design-time.
-  But it remains ignored when the control paints via double-buffering. (also at run-time)
-
-30-Jan-2016
-- Included the ShowTrailingDates property in the MonthView control.
-- Included the CalendarShowTrailingDates property in the DTPicker control.
-- Forgot to rename the HotTrack property to 'HotTracking' in the property page of the SpinBox control.
-
-28-Jan-2016
-- Fixed a bug in the LVN_ITEMACTIVATE handler in the ListView control.
-  The Shift parameter in the ItemActivate event was not properly set.
-
-19-Jan-2016
-- Renamed the HotTrack property to 'HotTracking' in the SpinBox control.
-  So the wording is in line with the UpDown, TreeView, TabStrip, ListView and LinkLabel control.
-
-07-Jan-2016
-- Included the MaxText event in the TextBoxW and RichTextBox control.
-
-01-Jan-2016
-- Mouse events now again in correct order in the ImageCombo, TreeView and ListView control.
-  Some workaround was necessary to raise them 'After' (refer to update 21-Nov-2015) and keep correct order.
-  Issue was an internal modal message loop on these controls. (DragDetect)
 
 [...]
 

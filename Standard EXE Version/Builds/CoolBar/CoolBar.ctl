@@ -482,6 +482,7 @@ Private Const RBS_AUTOSIZE As Long = &H2000
 Private Const RBS_VERTICALGRIPPER As Long = &H4000
 Private Const RBS_DBLCLKTOGGLE As Long = &H8000&
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private Type InitBandStruct
 Caption As String
@@ -513,10 +514,12 @@ Private CoolBarHandle As Long, CoolBarToolTipHandle As Long
 Private CoolBarFontHandle As Long
 Private CoolBarIsClick As Boolean
 Private CoolBarMouseOver As Boolean, CoolBarMouseOverIndex As Long
+Private CoolBarDesignMode As Boolean
 Private CoolBarToolTipIndex As Long
 Private CoolBarDoubleBufferEraseBkgDC As Long
 Private CoolBarAlignable As Boolean
 Private CoolBarTheme As Long
+Private CoolBarImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -529,7 +532,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
 Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
 Private PropBorderStyle As Integer
@@ -542,6 +545,15 @@ Private PropDblClickToggle As Boolean
 Private PropVerticalGripper As Boolean
 Private PropShowTips As Boolean
 Private PropDoubleBuffer As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
@@ -608,6 +620,7 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then CoolBarAlignable = False Else CoolBarAlignable = True
 On Error GoTo 0
+CoolBarDesignMode = Not Ambient.UserMode
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
@@ -617,7 +630,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
+PropImageListName = "(None)"
 PropBackColor = vbButtonFace
 PropForeColor = vbButtonText
 PropBorderStyle = vbFixedSingle
@@ -637,7 +650,7 @@ Me.Bands.Add().Width = UserControl.ScaleX((96 * PixelsPerDIP_X()), vbPixels, vbC
 End Sub
 
 Private Sub UserControl_Paint()
-If Ambient.UserMode = False Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+If CoolBarDesignMode = True Then RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
@@ -647,6 +660,7 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then CoolBarAlignable = False Else CoolBarAlignable = True
 On Error GoTo 0
+CoolBarDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -961,7 +975,7 @@ Dim Count As Long
 Count = Me.Bands.Count
 If Count > 0 Then
     Dim i As Long
-    If Ambient.UserMode = True Then
+    If CoolBarDesignMode = False Then
         For i = 1 To Count
             With Me.Bands(i)
             Set .Child = .Child
@@ -1252,7 +1266,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If CoolBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1285,10 +1299,10 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If CoolBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If CoolBarHandle <> 0 Then
     Call ComCtlsSetRightToLeft(CoolBarHandle, dwMask)
-    If Ambient.UserMode = True Then
+    If CoolBarDesignMode = False Then
         Dim Band As CbrBand, Child As Object
         For Each Band In Me.Bands
             Set Child = Band.Child
@@ -1348,8 +1362,8 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+If CoolBarDesignMode = False Then
+    If PropImageListInit = False And CoolBarImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1378,8 +1392,8 @@ If CoolBarHandle <> 0 Then
         If Success = True Then
             RBI.hImageList = Handle
             SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
+            CoolBarImageListObjectPointer = ObjPtr(Value)
             PropImageListName = ProperControlName(Value)
-            Set PropImageListControl = Value
         End If
     ElseIf VarType(Value) = vbString Then
         Dim ControlEnum As Object, CompareName As String
@@ -1393,10 +1407,10 @@ If CoolBarHandle <> 0 Then
                     If Success = True Then
                         RBI.hImageList = Handle
                         SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
+                        If CoolBarDesignMode = False Then CoolBarImageListObjectPointer = ObjPtr(ControlEnum)
                         PropImageListName = Value
-                        If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
                         Exit For
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf CoolBarDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1412,8 +1426,8 @@ If CoolBarHandle <> 0 Then
             RBI.hImageList = 0
             SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
         End If
+        CoolBarImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
     ElseIf Handle = 0 Then
         SendMessage CoolBarHandle, RB_GETBARINFO, 0, ByVal VarPtr(RBI)
         If RBI.hImageList <> 0 Then
@@ -1608,7 +1622,7 @@ Else
     If Value.Type = vbPicTypeBitmap Or Value.Handle = 0 Then
         Set PropPicture = Value
     Else
-        If Ambient.UserMode = False Then
+        If CoolBarDesignMode = True Then
             MsgBox "Invalid picture", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1691,7 +1705,7 @@ End Property
 
 Public Property Let ShowTips(ByVal Value As Boolean)
 PropShowTips = Value
-If CoolBarHandle <> 0 And Ambient.UserMode = True Then
+If CoolBarHandle <> 0 And CoolBarDesignMode = False Then
     If PropShowTips = False Then
         Call DestroyToolTip
     Else
@@ -2575,7 +2589,7 @@ If PropFixedOrder = True Then dwStyle = dwStyle Or RBS_FIXEDORDER
 If PropVariantHeight = True Then dwStyle = dwStyle Or RBS_VARHEIGHT
 If PropDblClickToggle = True Then dwStyle = dwStyle Or RBS_DBLCLKTOGGLE
 If PropVerticalGripper = True Then dwStyle = dwStyle Or RBS_VERTICALGRIPPER
-If Ambient.UserMode = True Then
+If CoolBarDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
@@ -2596,7 +2610,7 @@ If CoolBarHandle <> 0 Then
         SendMessage CoolBarHandle, CCM_SETVERSION, 5, ByVal 0&
     End If
 End If
-If Ambient.UserMode = True Then
+If CoolBarDesignMode = False Then
     If CoolBarHandle <> 0 Then Call ComCtlsSetSubclass(CoolBarHandle, Me, 1)
 Else
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
@@ -2658,7 +2672,6 @@ End Sub
 
 Private Sub DestroyToolTip()
 If CoolBarToolTipHandle = 0 Then Exit Sub
-SetParent CoolBarToolTipHandle, 0
 DestroyWindow CoolBarToolTipHandle
 CoolBarToolTipHandle = 0
 CoolBarToolTipIndex = -1
@@ -2825,6 +2838,10 @@ Dim Container As Object
 Set Container = Control.Container
 ControlIsValid = CBool(Err.Number = 0 And Not Control Is Extender And Container Is Extender)
 On Error GoTo 0
+End Function
+
+Private Function PropImageListControl() As Object
+If CoolBarImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(CoolBarImageListObjectPointer)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long

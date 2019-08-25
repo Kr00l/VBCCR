@@ -19,8 +19,8 @@ Private Function ShadowLinkLabel() As LinkLabel
 ComCtlsPtrToShadowObj ShadowLinkLabel, ShadowObjectPointer
 End Function
 
-Friend Sub FInit(ByVal Object As LinkLabel, ByVal Index As Long)
-ShadowObjectPointer = ObjPtr(Object)
+Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Index As Long)
+ShadowObjectPointer = ObjectPointer
 PropIndex = Index
 End Sub
 

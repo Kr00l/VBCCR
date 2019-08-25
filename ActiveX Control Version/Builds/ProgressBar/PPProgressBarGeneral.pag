@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3810
    ScaleWidth      =   5925
-   Begin VBCCR15.TextBoxW TextMarqueeSpeed 
+   Begin VBCCR16.TextBoxW TextMarqueeSpeed 
       Height          =   315
       Left            =   1800
       TabIndex        =   19
@@ -18,7 +18,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextStep 
+   Begin VBCCR16.TextBoxW TextStep 
       Height          =   315
       Left            =   1800
       TabIndex        =   17
@@ -27,7 +27,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextValue 
+   Begin VBCCR16.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -36,7 +36,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckSmoothReverse 
+   Begin VBCCR16.CheckBoxW CheckSmoothReverse 
       Height          =   285
       Left            =   4200
       TabIndex        =   23
@@ -46,7 +46,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   0
       Caption         =   "PPProgressBarGeneral.pgx":0000
    End
-   Begin VBCCR15.ComboBoxW ComboMousePointer 
+   Begin VBCCR16.ComboBoxW ComboMousePointer 
       Height          =   315
       Left            =   1800
       TabIndex        =   3
@@ -56,7 +56,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboScrolling 
+   Begin VBCCR16.ComboBoxW ComboScrolling 
       Height          =   315
       Left            =   1800
       TabIndex        =   13
@@ -66,7 +66,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboState 
+   Begin VBCCR16.ComboBoxW ComboState 
       Height          =   315
       Left            =   1800
       TabIndex        =   15
@@ -76,7 +76,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.ComboBoxW ComboOrientation 
+   Begin VBCCR16.ComboBoxW ComboOrientation 
       Height          =   315
       Left            =   1800
       TabIndex        =   11
@@ -86,7 +86,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   556
       Style           =   2
    End
-   Begin VBCCR15.TextBoxW TextMax 
+   Begin VBCCR16.TextBoxW TextMax 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -95,7 +95,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.TextBoxW TextMin 
+   Begin VBCCR16.TextBoxW TextMin 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -104,7 +104,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR15.CheckBoxW CheckMarqueeAnimation 
+   Begin VBCCR16.CheckBoxW CheckMarqueeAnimation 
       Height          =   285
       Left            =   4200
       TabIndex        =   22
@@ -114,7 +114,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   0
       Caption         =   "PPProgressBarGeneral.pgx":003A
    End
-   Begin VBCCR15.CheckBoxW CheckStepAutoReset 
+   Begin VBCCR16.CheckBoxW CheckStepAutoReset 
       Height          =   285
       Left            =   4200
       TabIndex        =   21
@@ -124,7 +124,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   0
       Caption         =   "PPProgressBarGeneral.pgx":007A
    End
-   Begin VBCCR15.CheckBoxW CheckEnabled 
+   Begin VBCCR16.CheckBoxW CheckEnabled 
       Height          =   285
       Left            =   120
       TabIndex        =   0
@@ -134,7 +134,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   0
       Caption         =   "PPProgressBarGeneral.pgx":00B4
    End
-   Begin VBCCR15.CheckBoxW CheckVisualStyles 
+   Begin VBCCR16.CheckBoxW CheckVisualStyles 
       Height          =   285
       Left            =   1800
       TabIndex        =   1
@@ -144,7 +144,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   0
       Caption         =   "PPProgressBarGeneral.pgx":00E2
    End
-   Begin VBCCR15.CheckBoxW CheckMouseTrack 
+   Begin VBCCR16.CheckBoxW CheckMouseTrack 
       Height          =   285
       Left            =   4200
       TabIndex        =   20
@@ -154,7 +154,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       _ExtentY        =   0
       Caption         =   "PPProgressBarGeneral.pgx":011A
    End
-   Begin VBCCR15.CheckBoxW CheckShowInTaskBar 
+   Begin VBCCR16.CheckBoxW CheckShowInTaskBar 
       Height          =   285
       Left            =   4200
       TabIndex        =   24

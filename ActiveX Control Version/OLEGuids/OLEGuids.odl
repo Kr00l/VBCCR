@@ -113,6 +113,13 @@ library OLEGuids
 	{
 		HRESULT SetClientSite([in] IOleClientSite *pClientSite);
 		HRESULT GetClientSite([out, retval] IOleClientSite **ppClientSite);
+		HRESULT SetHostNames([in] LPWSTR szContainerApp, [in] LPWSTR szContainerObj);
+		HRESULT Close([in] LONG dwSaveOption);
+		HRESULT SetMoniker([in] LONG dwWhichMoniker, [in] LONG lpmk);
+		HRESULT GetMoniker([in] LONG dwAssign, [in] LONG dwWhichMoniker, [out, retval] LONG *lppmk);
+		HRESULT InitFromData([in] LONG lpDataObject, [in] LONG fCreation, [in] LONG dwReserved);
+		HRESULT GetClipboardData([in] LONG dwReserved, [out, retval] LONG *lppDataObject);
+		HRESULT DoVerb([in] LONG iVerb, [in] LONG lpMsg, [in] IOleClientSite *pActiveSite, [in] LONG Index, [in] LONG hWndParent, [in] LONG lprcPosRect);
 		// Lots more.
 	};
 	[

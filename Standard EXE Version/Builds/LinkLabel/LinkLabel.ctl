@@ -195,11 +195,13 @@ Private Const WS_EX_RTLREADING As Long = &H2000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -257,6 +259,7 @@ Private Const TTN_GETDISPINFOA As Long = (TTN_FIRST - 0)
 Private Const TTN_GETDISPINFOW As Long = (TTN_FIRST - 10)
 Private Const TTN_GETDISPINFO As Long = TTN_GETDISPINFOW
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private LinkLabelHandle As Long, LinkLabelToolTipHandle As Long
@@ -264,6 +267,7 @@ Private LinkLabelTransparentBrush As Long
 Private LinkLabelFontHandle As Long, LinkLabelUnderlineFontHandle As Long
 Private LinkLabelCharCodeCache As Long
 Private LinkLabelMouseOver(0 To 3) As Boolean, LinkLabelMouseOverIndex As Long
+Private LinkLabelDesignMode As Boolean, LinkLabelTopDesignMode As Boolean
 Private LinkLabelIsClick As Boolean
 Private LinkLabelToolTipReady As Boolean
 Private DispIDMousePointer As Long
@@ -284,6 +288,15 @@ Private PropUnderlineCold As Boolean
 Private PropUseMnemonic As Boolean
 Private PropTransparent As Boolean
 Private PropShowTips As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -350,6 +363,10 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+LinkLabelDesignMode = Not Ambient.UserMode
+LinkLabelTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
@@ -368,7 +385,7 @@ PropUseMnemonic = True
 PropTransparent = False
 PropShowTips = False
 Call CreateLinkLabel
-If LinkLabelHandle = 0 And ComCtlsSupportLevel() = 0 And Ambient.UserMode = False Then
+If LinkLabelHandle = 0 And ComCtlsSupportLevel() = 0 And LinkLabelDesignMode = True Then
     MsgBox "The LinkLabel control requires at least version 6.0 of comctl32.dll." & vbLf & _
     "In order to use it, you have to define a manifest file for your application." & vbLf & _
     "For using the control in the VB6 IDE, define a manifest file for VB6.EXE.", vbCritical + vbOKOnly
@@ -377,6 +394,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+LinkLabelDesignMode = Not Ambient.UserMode
+LinkLabelTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -477,7 +498,7 @@ If DPICorrectionFactor() <> 1 Then
 End If
 If LinkLabelHandle <> 0 Then
     MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    If PropShowTips = True And Ambient.UserMode = True Then
+    If PropShowTips = True And LinkLabelDesignMode = False Then
         Call DestroyToolTip
         Call CreateToolTip
     End If
@@ -794,7 +815,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If LinkLabelDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -888,7 +909,7 @@ If LinkLabelHandle <> 0 Then
         UserControl.AccessKeys = ChrW(AccelCharCode(PropCaption))
     End If
     Me.Refresh
-    If PropShowTips = True And Ambient.UserMode = True Then
+    If PropShowTips = True And LinkLabelDesignMode = False Then
         Call DestroyToolTip
         Call CreateToolTip
     End If
@@ -973,7 +994,7 @@ End Property
 
 Public Property Let ShowTips(ByVal Value As Boolean)
 PropShowTips = Value
-If LinkLabelHandle <> 0 And Ambient.UserMode = True Then
+If LinkLabelHandle <> 0 And LinkLabelDesignMode = False Then
     Call DestroyToolTip
     If PropShowTips = True Then Call CreateToolTip
 End If
@@ -1284,7 +1305,7 @@ Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Me.Caption = PropCaption
-If Ambient.UserMode = True Then
+If LinkLabelDesignMode = False Then
     If LinkLabelHandle <> 0 Then Call ComCtlsSetSubclass(LinkLabelHandle, Me, 1)
     If LinkLabelHandle <> 0 Then
         ' This trick allows the usage of the GetLinkRect method at initialization time.
@@ -1329,7 +1350,7 @@ End If
 End Sub
 
 Private Sub ReCreateLinkLabel()
-If Ambient.UserMode = True Then
+If LinkLabelDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyLinkLabel
@@ -1365,7 +1386,6 @@ End Sub
 
 Private Sub DestroyToolTip()
 If LinkLabelToolTipHandle = 0 Then Exit Sub
-SetParent LinkLabelToolTipHandle, 0
 DestroyWindow LinkLabelToolTipHandle
 LinkLabelToolTipHandle = 0
 End Sub
@@ -1546,15 +1566,21 @@ Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            LinkLabelCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        LinkLabelCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -1574,8 +1600,8 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> LinkLabelHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If LinkLabelTopDesignMode = False And GetFocus() <> LinkLabelHandle Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -1585,7 +1611,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE

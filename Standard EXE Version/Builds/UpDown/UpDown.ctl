@@ -148,9 +148,11 @@ Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
 Private Const UDM_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private UpDownHandle As Long
 Private UpDownMouseOver As Boolean
+Private UpDownDesignMode As Boolean
 Private UpDownBuddyObjectPointer As Long
 Private DispIDBuddyControl As Long, BuddyControlArray() As String
 Private PropVisualStyles As Boolean
@@ -167,6 +169,15 @@ Private PropHotTracking As Boolean
 Private PropOrientation As UdnOrientationConstants
 Private PropThousandsSeparator As Boolean
 Private PropNumberStyle As UdnNumberStyleConstants
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDBuddyControl Then
@@ -225,6 +236,7 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+UpDownDesignMode = Not Ambient.UserMode
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
 PropMouseTrack = False
@@ -248,6 +260,7 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+UpDownDesignMode = Not Ambient.UserMode
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -594,7 +607,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If UpDownDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If UpDownHandle <> 0 Then Call ComCtlsSetRightToLeft(UpDownHandle, dwMask)
 UserControl.PropertyChanged "RightToLeft"
 End Property
@@ -628,7 +641,7 @@ End Property
 
 Public Property Get BuddyControl() As Variant
 Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
-If Ambient.UserMode = True Then
+If UpDownDesignMode = False Then
     If PropBuddyControlInit = False And PropBuddyControl Is Nothing Then
         If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
         PropBuddyControlInit = True
@@ -644,7 +657,7 @@ Me.BuddyControl = Value
 End Property
 
 Public Property Let BuddyControl(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If UpDownDesignMode = False Then
     If UpDownHandle <> 0 Then
         Dim Success As Boolean
         On Error Resume Next
@@ -714,7 +727,7 @@ If Not BuddyControl Is Nothing Then
     End Select
     On Error GoTo 0
     If Success = False Then
-        If Ambient.UserMode = False Then
+        If UpDownDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             PropBuddyProperty = vbNullString
             Exit Property
@@ -729,7 +742,7 @@ Else
         Case vbNullString
             PropBuddyProperty = Value
         Case Else
-            If Ambient.UserMode = False Then
+            If UpDownDesignMode = True Then
                 MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
                 Exit Property
             Else
@@ -748,7 +761,7 @@ End Property
 Public Property Let SyncBuddy(ByVal Value As Boolean)
 If Value = True Then
     If GetBuddyControl() Is Nothing Then
-        If Ambient.UserMode = False Then
+        If UpDownDesignMode = True Then
             MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -776,7 +789,7 @@ If Value <= Me.Max Then
     PropMin = Value
     If Me.Value < PropMin Then Me.Value = PropMin
 Else
-    If Ambient.UserMode = False Then
+    If UpDownDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -802,7 +815,7 @@ If Value >= Me.Min Then
     PropMax = Value
     If Me.Value > PropMax Then Me.Value = PropMax
 Else
-    If Ambient.UserMode = False Then
+    If UpDownDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -950,14 +963,14 @@ Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Me.Value = PropValue
 Me.Increment = PropIncrement
-If Ambient.UserMode = True Then
+If UpDownDesignMode = False Then
     If UpDownHandle <> 0 Then Call ComCtlsSetSubclass(UpDownHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
 Private Sub ReCreateUpDown()
-If Ambient.UserMode = True Then
+If UpDownDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyUpDown
@@ -997,7 +1010,7 @@ End Sub
 
 Private Sub SyncProperty(Optional ByVal FromBuddy As Boolean)
 If UpDownHandle = 0 Or PropBuddyProperty = vbNullString Then Exit Sub
-If Ambient.UserMode = True Then
+If UpDownDesignMode = False Then
     Dim VarValue As Variant, LngValue As Long
     If Not PropBuddyControl Is Nothing Then
         On Error Resume Next
@@ -1063,7 +1076,7 @@ End If
 End Sub
 
 Private Function GetBuddyControl() As Object
-If Ambient.UserMode = True Then
+If UpDownDesignMode = False Then
     Set GetBuddyControl = PropBuddyControl
 ElseIf Not PropBuddyName = "(None)" Then
     Dim ControlEnum As Object, CompareName As String, Success As Boolean

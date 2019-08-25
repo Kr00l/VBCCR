@@ -177,12 +177,14 @@ Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_CAPTION As Long = &HC00000
 Private Const WM_CLOSE As Long = &H10
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_LBUTTONDOWN As Long = &H201
@@ -294,6 +296,7 @@ Private Const MCI_SAVE As Long = &H813
 Private Const MM_MCINOTIFY As Long = &H3B9
 Private Const MM_MCISIGNAL As Long = &H3CB
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private MCIWndHandle As Long
@@ -302,6 +305,7 @@ Private MCIWndCharCodeCache As Long
 Private MCIWndCommand As String
 Private MCIWndIsClick As Boolean
 Private MCIWndMouseOver As Boolean
+Private MCIWndDesignMode As Boolean, MCIWndTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -319,6 +323,15 @@ Private PropAutoSizeMovie As Boolean
 Private PropTimerFreq As Integer
 Private PropZoom As Long
 Private PropCaption As MciCaptionConstants
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -376,6 +389,10 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+MCIWndDesignMode = Not Ambient.UserMode
+MCIWndTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -397,6 +414,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+MCIWndDesignMode = Not Ambient.UserMode
+MCIWndTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -752,7 +773,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If MCIWndDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -781,7 +802,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If MCIWndHandle <> 0 And Ambient.UserMode = True Then
+If MCIWndHandle <> 0 And MCIWndDesignMode = False Then
     If MCIWndBackColorBrush <> 0 Then DeleteObject MCIWndBackColorBrush
     MCIWndBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -900,7 +921,7 @@ End Property
 
 Public Property Let AllowOpen(ByVal Value As Boolean)
 PropAllowOpen = Value
-If MCIWndHandle <> 0 And Ambient.UserMode = True Then
+If MCIWndHandle <> 0 And MCIWndDesignMode = False Then
     If PropAllowOpen = False Then
         SendMessage MCIWndHandle, MCIWNDM_CHANGESTYLES, MCIWNDF_NOOPEN, ByVal MCIWNDF_NOOPEN
     Else
@@ -954,7 +975,7 @@ End Property
 
 Public Property Let TimerFreq(ByVal Value As Integer)
 If Value <= 0 Then
-    If Ambient.UserMode = False Then
+    If MCIWndDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -977,7 +998,7 @@ End Property
 
 Public Property Let Zoom(ByVal Value As Long)
 If Value <= 0 Then
-    If Ambient.UserMode = False Then
+    If MCIWndDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1051,7 +1072,7 @@ If PropErrorDlg = False Then dwStyle = dwStyle Or MCIWNDF_NOERRORDLG
 If PropRecord = True Then dwStyle = dwStyle Or MCIWNDF_RECORD
 If PropPlaybar = False Then dwStyle = dwStyle Or MCIWNDF_NOPLAYBAR
 If PropMenu = False Then dwStyle = dwStyle Or MCIWNDF_NOMENU
-If PropAllowOpen = False Or Ambient.UserMode = False Then dwStyle = dwStyle Or MCIWNDF_NOOPEN
+If PropAllowOpen = False Or MCIWndDesignMode = True Then dwStyle = dwStyle Or MCIWNDF_NOOPEN
 If PropAutoSizeWindow = False Then dwStyle = dwStyle Or MCIWNDF_NOAUTOSIZEWINDOW
 If PropAutoSizeMovie = False Then dwStyle = dwStyle Or MCIWNDF_NOAUTOSIZEMOVIE
 Select Case PropCaption
@@ -1076,7 +1097,7 @@ Me.VisualStyles = PropVisualStyles
 Me.Repeat = PropRepeat
 Me.TimerFreq = PropTimerFreq
 Me.Zoom = PropZoom
-If Ambient.UserMode = True Then
+If MCIWndDesignMode = False Then
     If MCIWndHandle <> 0 Then
         If MCIWndBackColorBrush = 0 Then MCIWndBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(MCIWndHandle, Me, 1)
@@ -1441,15 +1462,21 @@ Select Case wMsg
             WindowProcControl = 1
             Exit Function
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            MCIWndCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        MCIWndCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
@@ -1469,8 +1496,8 @@ Select Case wMsg
         Exit Function
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> MCIWndHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If MCIWndTopDesignMode = False And GetFocus() <> MCIWndHandle Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -1480,7 +1507,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE

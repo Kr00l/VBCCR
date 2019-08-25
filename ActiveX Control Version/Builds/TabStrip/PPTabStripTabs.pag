@@ -10,7 +10,7 @@ Begin VB.PropertyPage PPTabStripTabs
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4350
    ScaleWidth      =   5925
-   Begin VBCCR15.TextBoxW TextToolTipText 
+   Begin VBCCR16.TextBoxW TextToolTipText 
       Height          =   315
       Left            =   1200
       TabIndex        =   13
@@ -21,7 +21,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR15.TextBoxW TextTag 
+   Begin VBCCR16.TextBoxW TextTag 
       Height          =   315
       Left            =   1200
       TabIndex        =   11
@@ -32,7 +32,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR15.TextBoxW TextImage 
+   Begin VBCCR16.TextBoxW TextImage 
       Height          =   315
       Left            =   1200
       TabIndex        =   15
@@ -43,7 +43,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR15.TextBoxW TextCaption 
+   Begin VBCCR16.TextBoxW TextCaption 
       Height          =   315
       Left            =   1200
       TabIndex        =   7
@@ -54,7 +54,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR15.TextBoxW TextKey 
+   Begin VBCCR16.TextBoxW TextKey 
       Height          =   315
       Left            =   1200
       TabIndex        =   9
@@ -65,7 +65,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR15.CommandButtonW CommandBack 
+   Begin VBCCR16.CommandButtonW CommandBack 
       Height          =   315
       Left            =   2160
       TabIndex        =   2
@@ -86,7 +86,7 @@ Begin VB.PropertyPage PPTabStripTabs
       Enabled         =   0   'False
       Caption         =   "PPTabStripTabs.pgx":0000
    End
-   Begin VBCCR15.CommandButtonW CommandNext 
+   Begin VBCCR16.CommandButtonW CommandNext 
       Height          =   315
       Left            =   2460
       TabIndex        =   3
@@ -107,7 +107,7 @@ Begin VB.PropertyPage PPTabStripTabs
       Enabled         =   0   'False
       Caption         =   "PPTabStripTabs.pgx":0022
    End
-   Begin VBCCR15.TextBoxW TextIndex 
+   Begin VBCCR16.TextBoxW TextIndex 
       Height          =   315
       Left            =   1200
       TabIndex        =   1
@@ -119,7 +119,7 @@ Begin VB.PropertyPage PPTabStripTabs
       Text            =   "PPTabStripTabs.pgx":0044
       Locked          =   -1  'True
    End
-   Begin VBCCR15.CommandButtonW CommandRemove 
+   Begin VBCCR16.CommandButtonW CommandRemove 
       Height          =   315
       Left            =   4620
       TabIndex        =   5
@@ -130,7 +130,7 @@ Begin VB.PropertyPage PPTabStripTabs
       _ExtentY        =   0
       Caption         =   "PPTabStripTabs.pgx":0070
    End
-   Begin VBCCR15.CommandButtonW CommandInsert 
+   Begin VBCCR16.CommandButtonW CommandInsert 
       Height          =   315
       Left            =   3480
       TabIndex        =   4

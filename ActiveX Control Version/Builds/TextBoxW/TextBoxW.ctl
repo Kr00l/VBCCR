@@ -223,7 +223,7 @@ Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_HORZ As Long = 0, SB_VERT As Long = 1
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -231,6 +231,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
+Private Const WM_SYSKEYDOWN As Long = &H104
+Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
@@ -347,6 +349,7 @@ Private TextBoxCharCodeCache As Long
 Private TextBoxAutoDragInSel As Boolean, TextBoxAutoDragIsActive As Boolean
 Private TextBoxIsClick As Boolean
 Private TextBoxMouseOver As Boolean
+Private TextBoxDesignMode As Boolean, TextBoxTopDesignMode As Boolean
 Private TextBoxChangeFrozen As Boolean
 Private TextBoxNetAddressFormat As TxtNetAddressFormatConstants
 Private TextBoxNetAddressString As String
@@ -459,6 +462,10 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+TextBoxDesignMode = Not Ambient.UserMode
+TextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -493,6 +500,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+TextBoxDesignMode = Not Ambient.UserMode
+TextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -605,7 +616,7 @@ If PropOLEDropMode = vbOLEDropAutomatic And TextBoxHandle <> 0 Then
                 If GetFocus() <> TextBoxHandle Then SetFocusAPI UserControl.hWnd
             End If
             SendMessage TextBoxHandle, EM_SETSEL, CharPos, ByVal CharPos
-            SendMessage TextBoxHandle, EM_REPLACESEL, 0, ByVal StrPtr(Text)
+            SendMessage TextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Text)
             SendMessage TextBoxHandle, EM_SETSEL, CharPos, ByVal (CharPos + Len(Text))
         End If
     End If
@@ -1025,7 +1036,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If TextBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1231,7 +1242,7 @@ If Value = vbNullString Or Len(Value) = 0 Then
 ElseIf Len(Value) = 1 Then
     PropPasswordChar = AscW(Value)
 Else
-    If Ambient.UserMode = False Then
+    If TextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1274,7 +1285,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If TextBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1337,7 +1348,7 @@ If TextBoxHandle <> 0 Then
             dwStyle = dwStyle Or ES_LOWERCASE
     End Select
     SetWindowLong TextBoxHandle, GWL_STYLE, dwStyle
-    If Ambient.UserMode = False Then
+    If TextBoxDesignMode = True Then
         SendMessage TextBoxHandle, WM_SETTEXT, 0, ByVal 0&
         SendMessage TextBoxHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     End If
@@ -1353,7 +1364,7 @@ End Property
 Public Property Let WantReturn(ByVal Value As Boolean)
 If PropWantReturn = Value Then Exit Property
 PropWantReturn = Value
-If TextBoxHandle <> 0 And Ambient.UserMode = True Then
+If TextBoxHandle <> 0 And TextBoxDesignMode = False Then
     ' It is not possible (in VB6) to achieve this when specifying ES_WANTRETURN.
     Call OnControlInfoChanged(Me, CBool(GetFocus() = TextBoxHandle))
 End If
@@ -1372,7 +1383,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If TextBoxHandle <> 0 And Ambient.UserMode = True Then
+If TextBoxHandle <> 0 And TextBoxDesignMode = False Then
     If GetFocus() = TextBoxHandle Then Call ComCtlsSetIMEMode(TextBoxHandle, TextBoxIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1525,7 +1536,7 @@ Me.Enabled = UserControl.Enabled
 Me.Alignment = PropAlignment
 If Not PropCueBanner = vbNullString Then Me.CueBanner = PropCueBanner
 If PropNetAddressValidator = True Then Me.NetAddressType = PropNetAddressType
-If Ambient.UserMode = True Then
+If TextBoxDesignMode = False Then
     If TextBoxHandle <> 0 Then Call ComCtlsSetSubclass(TextBoxHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
     If TextBoxHandle <> 0 Then Call ComCtlsCreateIMC(TextBoxHandle, TextBoxIMCHandle)
@@ -1533,7 +1544,7 @@ End If
 End Sub
 
 Private Sub ReCreateTextBox()
-If Ambient.UserMode = True Then
+If TextBoxDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim SelStart As Long, SelEnd As Long
@@ -1688,7 +1699,7 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If TextBoxHandle <> 0 Then SendMessage TextBoxHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+If TextBoxHandle <> 0 Then SendMessage TextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Value)
 End Property
 
 Public Function GetLine(ByVal LineNumber As Long) As String
@@ -1959,8 +1970,8 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> TextBoxHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If TextBoxTopDesignMode = False And GetFocus() <> TextBoxHandle Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -1970,7 +1981,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE
@@ -1984,18 +1995,24 @@ Select Case wMsg
                     Exit Function
             End Select
         End If
-    Case WM_KEYDOWN, WM_KEYUP
+    Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
-        If wMsg = WM_KEYDOWN Then
+        If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
+            If wMsg = WM_KEYDOWN Then
+                RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+            ElseIf wMsg = WM_KEYUP Then
+                RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
+            End If
+            If KeyCode = vbKeyInsert And PropAllowOverType = True Then
+                If wMsg = WM_KEYDOWN Then PropOverTypeMode = Not PropOverTypeMode
+            End If
+            TextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
+        ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-        ElseIf wMsg = WM_KEYUP Then
+        ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
-        If KeyCode = vbKeyInsert And PropAllowOverType = True Then
-            If wMsg = WM_KEYDOWN Then PropOverTypeMode = Not PropOverTypeMode
-        End If
-        TextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer

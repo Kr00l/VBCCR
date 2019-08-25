@@ -38,6 +38,18 @@ LblEllipsisFormatEnd = 1
 LblEllipsisFormatPath = 2
 LblEllipsisFormatWord = 3
 End Enum
+Private Type POINTAPI
+X As Long
+Y As Long
+End Type
+Private Type TMSG
+hWnd As Long
+Message As Long
+wParam As Long
+lParam As Long
+Time As Long
+PT As POINTAPI
+End Type
 Private Type RECT
 Left As Long
 Top As Long
@@ -78,13 +90,13 @@ Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source contro
 Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 Private Declare Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As Long, ByVal lpchText As Long, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
+Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
+Private Declare Function DispatchMessage Lib "user32" Alias "DispatchMessageW" (ByRef lpMsg As TMSG) As Long
 Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
 Private Declare Function GetCapture Lib "user32" () As Long
 Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
-Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
-Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
@@ -125,11 +137,13 @@ Private Const BF_RIGHT As Long = &H4
 Private Const BF_TOP As Long = &H2
 Private Const BF_BOTTOM As Long = &H8
 Private Const BF_RECT As Long = (BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM)
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private LabelAutoSizeFlag As Boolean
 Private LabelDisplayedCaption As String
 Private LabelPaintFrozen As Boolean
 Private LabelMouseOver As Boolean, LabelMouseOverPos As Long
+Private LabelDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -145,6 +159,15 @@ Private PropAutoSize As Boolean
 Private PropWordWrap As Boolean
 Private PropEllipsisFormat As LblEllipsisFormatConstants
 Private PropVerticalAlignment As CCVerticalAlignmentConstants
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
@@ -174,6 +197,7 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+LabelDesignMode = Not Ambient.UserMode
 Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -193,6 +217,7 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+LabelDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 If PropFont Is Nothing Then Set PropFont = Ambient.Font
@@ -252,8 +277,7 @@ End With
 End Sub
 
 Private Sub UserControl_Paint()
-Static InProc As Boolean
-If InProc = True Or LabelPaintFrozen = True Then Exit Sub
+If LabelPaintFrozen = True Then Exit Sub
 Dim RC As RECT, CalcRect As RECT, Format As Long, Buffer As String
 Dim BorderWidth As Long, BorderHeight As Long
 With UserControl
@@ -386,7 +410,7 @@ If DPICorrectionFactor() <> 1 Then
     .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
     End With
 End If
-Me.Refresh
+Call RedrawLabel
 InProc = False
 End Sub
 
@@ -555,14 +579,14 @@ If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Set PropFont = NewFont
 Set UserControl.Font = PropFont
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "Font"
 End Property
 
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Set UserControl.Font = PropFont
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "Font"
 End Sub
 
@@ -585,7 +609,7 @@ If UserControl.Appearance = CCAppearanceFlat Then
 Else
     If Not PropBorderStyle = CCBorderStyleNone Then PropBorderStyle = CCBorderStyleSunken
 End If
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "Appearance"
 End Property
 
@@ -597,7 +621,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 UserControl.BackColor = Value
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "BackColor"
 End Property
 
@@ -609,7 +633,7 @@ End Property
 
 Public Property Let ForeColor(ByVal Value As OLE_COLOR)
 UserControl.ForeColor = Value
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "ForeColor"
 End Property
 
@@ -651,7 +675,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If Ambient.UserMode = True Then
+If LabelDesignMode = False Then
     Select Case PropMousePointer
         Case vbIconPointer, 16, vbCustom
             If PropMousePointer = vbCustom Then
@@ -683,7 +707,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If LabelDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -715,7 +739,7 @@ Public Property Let RightToLeft(ByVal Value As Boolean)
 PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "RightToLeft"
 End Property
 
@@ -747,7 +771,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "TextAlignment"
 End Property
 
@@ -765,7 +789,7 @@ Select Case Value
         Err.Raise 380
 End Select
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "BorderStyle"
 End Property
 
@@ -782,7 +806,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "BackStyle"
 End Property
 
@@ -796,13 +820,9 @@ End Property
 Public Property Let Caption(ByVal Value As String)
 If PropCaption = Value Then Exit Property
 PropCaption = Value
-If PropUseMnemonic = True Then
-    UserControl.AccessKeys = ChrW(AccelCharCode(PropCaption))
-Else
-    UserControl.AccessKeys = vbNullString
-End If
+If PropUseMnemonic = True Then UserControl.AccessKeys = ChrW(AccelCharCode(PropCaption))
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "Caption"
 On Error Resume Next
 UserControl.Extender.DataChanged = True
@@ -833,7 +853,7 @@ Else
     UserControl.AccessKeys = vbNullString
 End If
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "UseMnemonic"
 End Property
 
@@ -846,7 +866,7 @@ End Property
 Public Property Let AutoSize(ByVal Value As Boolean)
 PropAutoSize = Value
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "AutoSize"
 End Property
 
@@ -858,7 +878,7 @@ End Property
 Public Property Let WordWrap(ByVal Value As Boolean)
 PropWordWrap = Value
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "WordWrap"
 End Property
 
@@ -875,7 +895,7 @@ Select Case Value
         Err.Raise 380
 End Select
 LabelAutoSizeFlag = PropAutoSize
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "EllipsisFormat"
 End Property
 
@@ -891,33 +911,20 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-Me.Refresh
+Call RedrawLabel
 UserControl.PropertyChanged "VerticalAlignment"
 End Property
 
 Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
-If LabelAutoSizeFlag = False Then
-    UserControl.Refresh
-Else
-    Dim hDCScreen As Long, hDC As Long
-    hDCScreen = GetDC(0)
-    If hDCScreen <> 0 Then
-        hDC = CreateCompatibleDC(hDCScreen)
-        If hDC <> 0 Then
-            Dim hFontTemp As Long, hFontOld As Long
-            hFontTemp = CreateGDIFontFromOLEFont(PropFont)
-            hFontOld = SelectObject(hDC, hFontTemp)
-            Call DoAutoSize(hDC)
-            If hFontOld <> 0 Then SelectObject hDC, hFontOld
-            If hFontTemp <> 0 Then DeleteObject hFontTemp
-            DeleteDC hDC
-        End If
-        ReleaseDC 0, hDCScreen
-    End If
-    LabelAutoSizeFlag = False
-End If
+Call RedrawLabel
+Dim Msg As TMSG, hWndContainer As Long
+hWndContainer = UserControl.ContainerHwnd
+Const WM_PAINT As Long = &HF, PM_REMOVE As Long = &H1
+Do While PeekMessage(Msg, hWndContainer, WM_PAINT, WM_PAINT, PM_REMOVE) <> 0
+    DispatchMessage Msg
+Loop
 End Sub
 
 Public Property Get DisplayedCaption() As String
@@ -966,10 +973,6 @@ OldRight = .Extender.Left + .Extender.Width
 OldCenter = .Extender.Left + (.Extender.Width / 2)
 OldBottom = .Extender.Top + .Extender.Height
 OldVCenter = .Extender.Top + (.Extender.Height / 2)
-RC.Left = .ScaleX(.Extender.Left, vbContainerPosition, vbPixels)
-RC.Top = .ScaleY(.Extender.Top, vbContainerPosition, vbPixels)
-RC.Right = RC.Right + RC.Left
-RC.Bottom = RC.Bottom + RC.Top
 .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((CalcRect.Right - CalcRect.Left) + (BorderWidth * 2), vbPixels, vbContainerSize), .ScaleY((CalcRect.Bottom - CalcRect.Top) + (BorderHeight * 2), vbPixels, vbContainerSize)
 LabelPaintFrozen = True
 Select Case PropAlignment
@@ -985,7 +988,29 @@ Select Case PropVerticalAlignment
         If .Extender.Top <> (OldBottom - .Extender.Height) Then .Extender.Top = (OldBottom - .Extender.Height)
 End Select
 LabelPaintFrozen = False
-InvalidateRect .ContainerHwnd, RC, 1
-UpdateWindow .ContainerHwnd
+.Refresh
 End With
+End Sub
+
+Private Sub RedrawLabel()
+If LabelAutoSizeFlag = False Then
+    UserControl.Refresh
+Else
+    Dim hDCScreen As Long, hDC As Long
+    hDCScreen = GetDC(0)
+    If hDCScreen <> 0 Then
+        hDC = CreateCompatibleDC(hDCScreen)
+        If hDC <> 0 Then
+            Dim hFontTemp As Long, hFontOld As Long
+            hFontTemp = CreateGDIFontFromOLEFont(PropFont)
+            hFontOld = SelectObject(hDC, hFontTemp)
+            Call DoAutoSize(hDC)
+            If hFontOld <> 0 Then SelectObject hDC, hFontOld
+            If hFontTemp <> 0 Then DeleteObject hFontTemp
+            DeleteDC hDC
+        End If
+        ReleaseDC 0, hDCScreen
+    End If
+    LabelAutoSizeFlag = False
+End If
 End Sub
