@@ -120,7 +120,7 @@ LFPitchAndFamily As Byte
 LFFaceName(0 To ((LF_FACESIZE * 2) - 1)) As Byte
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
-Private Declare Function ArrPtr Lib "msvbvm60" Alias "VarPtr" (ByRef Var() As Any) As Long
+Private Declare Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As Long
 Private Declare Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
 Private Declare Function GetActiveWindow Lib "user32" () As Long
 Private Declare Function GetForegroundWindow Lib "user32" () As Long
@@ -146,6 +146,7 @@ Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As L
 Private Declare Function GetCommandLine Lib "kernel32" Alias "GetCommandLineW" () As Long
 Private Declare Function PathGetArgs Lib "shlwapi" Alias "PathGetArgsW" (ByVal lpszPath As Long) As Long
 Private Declare Function SysReAllocString Lib "oleaut32" (ByVal pbString As Long, ByVal pszStrPtr As Long) As Long
+Private Declare Function VarDecFromI8 Lib "oleaut32" (ByVal LoDWord As Long, ByVal HiDWord As Long, ByRef pDecOut As Variant) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameW" (ByVal hModule As Long, ByVal lpFileName As Long, ByVal nSize As Long) As Long
 Private Declare Function OpenClipboard Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function EmptyClipboard Lib "user32" () As Long
@@ -361,22 +362,12 @@ Dim hFile As Long
 If Left$(PathName, 2) = "\\" Then PathName = "UNC\" & Mid$(PathName, 3)
 hFile = CreateFile(StrPtr("\\?\" & PathName), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0)
 If hFile <> INVALID_HANDLE_VALUE Then
-    Dim LoDWord As Long, HiDWord As Long, Value As Variant
+    Dim LoDWord As Long, HiDWord As Long
     LoDWord = GetFileSize(hFile, HiDWord)
     CloseHandle hFile
     If LoDWord <> INVALID_FILE_SIZE Then
-        If (LoDWord And &H80000000) Then
-            Value = CDec(LoDWord And &H7FFFFFFF) + CDec(2147483648#)
-        Else
-            Value = CDec(LoDWord)
-        End If
-        If (HiDWord And &H80000000) Then
-            HiDWord = HiDWord And &H7FFFFFFF
-            Value = Value + (CDec(HiDWord) + CDec(2147483648#)) * CDec(4294967296#)
-        Else
-            Value = Value + CDec(HiDWord) * CDec(4294967296#)
-        End If
-        FileLen = Value
+        FileLen = CDec(0)
+        VarDecFromI8 LoDWord, HiDWord, FileLen
     Else
         FileLen = Null
     End If
