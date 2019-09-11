@@ -1,5 +1,8 @@
 List of revisions:
 
+11-Sep-2019
+- Bugfix that the .Tag property of 'TbrButtonMenu' was not restored from the PropertyBag in the ToolBar control.
+
 24-Aug-2019
 - BackColor property works now also when VisualStyles is False in the TabStrip control.
 - Included the DoubleBuffer property in the TabStrip control.
