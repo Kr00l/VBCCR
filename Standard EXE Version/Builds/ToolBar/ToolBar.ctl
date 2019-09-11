@@ -891,6 +891,7 @@ If InitButtonsCount > 0 And ToolBarHandle <> 0 Then
         If InitButtons(i).ButtonMenusCount > 0 Then
             For ii = 1 To InitButtons(i).ButtonMenusCount
                 With .ButtonMenus.Add(ii, InitButtons(i).ButtonMenus(ii).Key, InitButtons(i).ButtonMenus(ii).Text)
+                .Tag = InitButtons(i).ButtonMenus(ii).Tag
                 If InitButtons(i).ButtonMenus(ii).Enabled = False Then .Enabled = False
                 If InitButtons(i).ButtonMenus(ii).Visible = False Then .Visible = False
                 If InitButtons(i).ButtonMenus(ii).Checked = True Then .Checked = True
