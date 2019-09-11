@@ -1,6 +1,6 @@
 Common = 97, 61, 831, 643, C
 VisualStyles = 21, 87, 854, 716, C
-ISubclass = 355, 81, 1055, 768, C
+ISubclass = 100, 8, 800, 695, C
 VTableSubclass = 0, 0, 0, 0, C
 ComCtlsBase = 32, 100, 839, 685, C
 VTableHandle = 44, 58, 840, 566, C
@@ -12,7 +12,7 @@ TreeView = -42, 96, 848, 691, C, 22, 29, 868, 559, C
 TvwNode = 26, 26, 1016, 558, C
 TvwNodes = 132, 174, 978, 704, C
 PPToolBarGeneral = 69, 175, 915, 705, C, 67, 94, 913, 624, C
-ToolBar = -308, 57, 723, 710, C, 23, 113, 869, 643, C
+ToolBar = 90, 43, 904, 696, C, 23, 113, 869, 643, C
 TbrButton = 78, 78, 1068, 610, C
 TbrButtonMenu = 104, 104, 1094, 636, C
 TbrButtonMenus = 130, 130, 1120, 662, C
