@@ -1,5 +1,10 @@
 List of revisions:
 
+05-Oct-2019
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - included interface IOleInPlaceObject.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
 11-Sep-2019
 - Bugfix that the .Tag property of 'TbrButtonMenu' was not restored from the PropertyBag in the ToolBar control.
 
