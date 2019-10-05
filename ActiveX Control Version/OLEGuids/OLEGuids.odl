@@ -126,7 +126,7 @@ library OLEGuids
 		uuid(00000113-0000-0000-C000-000000000046),
 		odl
 	]
-	interface IOleInPlaceObject : IUnknown
+	interface IOleInPlaceObject : IOleWindow
 	{
 		HRESULT InPlaceDeactivate();
 		HRESULT UIDeactivate();
