@@ -1037,7 +1037,7 @@ End Function
 Public Function DPICorrectionFactor() As Single
 Static Done As Boolean, Value As Single
 If Done = False Then
-    Value = Screen.TwipsPerPixelX / ((96 / DPI_X()) * 15)
+    Value = ((96 / DPI_X()) * 15) / Screen.TwipsPerPixelX
     Done = True
 End If
 ' Returns exactly 1 when no corrections are required.
