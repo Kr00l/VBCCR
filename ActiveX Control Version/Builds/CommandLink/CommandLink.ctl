@@ -7,9 +7,9 @@ Begin VB.UserControl CommandLink
    DefaultCancel   =   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "CommandLink.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "CommandLink.ctx":004C
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
@@ -503,10 +503,7 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If CommandLinkHandle <> 0 Then MoveWindow CommandLinkHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False

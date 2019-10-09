@@ -349,10 +349,7 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If AnimationHandle <> 0 Then MoveWindow AnimationHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 If AnimationDesignMode = True Then
     ImageFilm.Left = (.ScaleWidth / 2) - (ImageFilm.Width / 2)
