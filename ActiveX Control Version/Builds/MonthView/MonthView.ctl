@@ -7,9 +7,9 @@ Begin VB.UserControl MonthView
    DataBindingBehavior=   1  'vbSimpleBound
    HasDC           =   0   'False
    PropertyPages   =   "MonthView.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "MonthView.ctx":004A
 End
 Attribute VB_Name = "MonthView"
@@ -560,10 +560,7 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If MonthViewHandle = 0 Then InProc = False: Exit Sub
 If MonthViewReqWidth <> 0 And MonthViewReqHeight <> 0 Then
     Dim ExtraWidth As Long, ExtraHeight As Long
@@ -583,10 +580,7 @@ If MonthViewReqWidth <> 0 And MonthViewReqHeight <> 0 Then
     End If
     .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((MonthViewReqWidth + ExtraWidth), vbPixels, vbContainerSize), .ScaleY((MonthViewReqHeight + ExtraHeight), vbPixels, vbContainerSize)
 End If
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 MoveWindow MonthViewHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
