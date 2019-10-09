@@ -11,9 +11,9 @@ Begin VB.UserControl LabelW
    ForwardFocus    =   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "LabelW.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "LabelW.ctx":0035
    Windowless      =   -1  'True
    Begin VB.Timer TimerMouseTrack 
@@ -404,12 +404,7 @@ Private Sub UserControl_Resize()
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
-If DPICorrectionFactor() <> 1 Then
-    With UserControl
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End With
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call RedrawLabel
 InProc = False
 End Sub

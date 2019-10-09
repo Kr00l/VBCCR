@@ -6,9 +6,9 @@ Begin VB.UserControl IPAddress
    ClientWidth     =   2400
    HasDC           =   0   'False
    PropertyPages   =   "IPAddress.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "IPAddress.ctx":0035
 End
 Attribute VB_Name = "IPAddress"
@@ -318,10 +318,7 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If IPAddressHandle <> 0 Then
     Dim RC As RECT
     GetWindowRect IPAddressHandle, RC
