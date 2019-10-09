@@ -424,10 +424,7 @@ LastWidth = .Width
 LastAlign = .Align
 End With
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If PagerHandle <> 0 Then MoveWindow PagerHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
