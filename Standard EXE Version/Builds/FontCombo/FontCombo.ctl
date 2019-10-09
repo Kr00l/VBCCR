@@ -712,38 +712,20 @@ Static InProc As Boolean
 If InProc = True Or FontComboResizeFrozen = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If FontComboHandle = 0 Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> FtcStyleSimpleCombo Then
-    If DPICorrectionFactor() <> 1 Then
-        If .Extender.Height > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-    Else
-        If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    End If
+    If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect FontComboHandle, WndRect
-    If DPICorrectionFactor() <> 1 Then
-        If (WndRect.Bottom - WndRect.Top) <> CLng(.ScaleY(.Extender.Height, vbContainerSize, vbPixels)) Or (WndRect.Right - WndRect.Left) <> CLng(.ScaleX(.Extender.Width, vbContainerSize, vbPixels)) Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-            .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-            .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-        End If
-    Else
-        If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-        End If
+    If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
+        .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+        If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
     Call CheckDropDownHeight(True)
 Else
     Dim ListRect As RECT, EditHeight As Long, Height As Long
-    If DPICorrectionFactor() <> 1 Then
-        MoveWindow FontComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels) + IIf(PropIntegralHeight = True, 1, 0), 1
-    Else
-        MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
-    End If
+    MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
     GetWindowRect FontComboHandle, WndRect
     If FontComboListHandle <> 0 Then GetWindowRect FontComboListHandle, ListRect
     MapWindowPoints HWND_DESKTOP, FontComboHandle, ListRect, 2
@@ -755,10 +737,7 @@ Else
         Height = EditHeight
     End If
     .Extender.Height = .ScaleY(Height, vbPixels, vbContainerSize)
-    If DPICorrectionFactor() <> 1 Then
-        .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-        .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End If
+    If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     Me.Refresh
 End If
@@ -2395,10 +2374,7 @@ Select Case wMsg
             If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
                 FontComboResizeFrozen = True
                 .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-                If DPICorrectionFactor() <> 1 Then
-                    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-                    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-                End If
+                If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
                 FontComboResizeFrozen = False
             End If
             End With
