@@ -1,5 +1,15 @@
 List of revisions:
 
+09-Oct-2019
+- Change of how to achieve DPI-awareness to the controls for non-integral DPI.
+  It's just a better technique now which reduces the number of resizes.
+  However, the change has no visible impact for the end-user.
+
+08-Oct-2019
+- Cosmetic bugfix in the DPICorrectionFactor() function in Common.bas.
+  It now returns a factor - by definition - in which a result shall be multiplied.
+  Before this bugfix the result must be divided, which was odd.
+
 05-Oct-2019
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
   - included interface IOleInPlaceObject.
