@@ -7,9 +7,9 @@ Begin VB.UserControl CommandButtonW
    DefaultCancel   =   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "CommandButtonW.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "CommandButtonW.ctx":0035
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
@@ -705,7 +705,18 @@ If InProc = True Then Exit Sub
 InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-If CommandButtonHandle <> 0 Then MoveWindow CommandButtonHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+If CommandButtonHandle <> 0 Then
+    If PropTransparent = True Then
+        MoveWindow CommandButtonHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If CommandButtonTransparentBrush <> 0 Then
+            DeleteObject CommandButtonTransparentBrush
+            CommandButtonTransparentBrush = 0
+        End If
+        RedrawWindow CommandButtonHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow CommandButtonHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
+End If
 End With
 InProc = False
 End Sub

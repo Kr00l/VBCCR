@@ -7,9 +7,9 @@ Begin VB.UserControl CheckBoxW
    DataBindingBehavior=   1  'vbSimpleBound
    HasDC           =   0   'False
    PropertyPages   =   "CheckBoxW.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "CheckBoxW.ctx":0035
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
@@ -642,7 +642,18 @@ If InProc = True Then Exit Sub
 InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-If CheckBoxHandle <> 0 Then MoveWindow CheckBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+If CheckBoxHandle <> 0 Then
+    If PropTransparent = True Then
+        MoveWindow CheckBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If CheckBoxTransparentBrush <> 0 Then
+            DeleteObject CheckBoxTransparentBrush
+            CheckBoxTransparentBrush = 0
+        End If
+        RedrawWindow CheckBoxHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow CheckBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
+End If
 End With
 InProc = False
 End Sub
