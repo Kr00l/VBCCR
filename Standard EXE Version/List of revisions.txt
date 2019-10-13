@@ -1,5 +1,10 @@
 List of revisions:
 
+13-Oct-2019
+- Internal improvement for the Transparent property in all affected controls.
+  The internal transparent brush will be reset automatically upon UserControl_Resize.
+  As side-effect it also fixes the cluttered background on non-integral DPI.
+
 09-Oct-2019
 - Change of how to achieve DPI-awareness to the controls for non-integral DPI.
   It's just a better technique now which reduces the number of resizes.
