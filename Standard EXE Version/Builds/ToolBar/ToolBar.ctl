@@ -1108,7 +1108,16 @@ Select Case Align
         End If
 End Select
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+If PropTransparent = True Then
+    MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+    If ToolBarTransparentBrush <> 0 Then
+        DeleteObject ToolBarTransparentBrush
+        ToolBarTransparentBrush = 0
+    End If
+    RedrawWindow ToolBarHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+Else
+    MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+End If
 End With
 InProc = False
 If Count > 0 And PropWrappable = True Then

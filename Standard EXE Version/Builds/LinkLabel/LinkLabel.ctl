@@ -494,7 +494,16 @@ InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If LinkLabelHandle <> 0 Then
-    MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    If PropTransparent = True Then
+        MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If LinkLabelTransparentBrush <> 0 Then
+            DeleteObject LinkLabelTransparentBrush
+            LinkLabelTransparentBrush = 0
+        End If
+        RedrawWindow LinkLabelHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
     If PropShowTips = True And LinkLabelDesignMode = False Then
         Call DestroyToolTip
         Call CreateToolTip

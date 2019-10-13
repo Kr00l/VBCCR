@@ -469,7 +469,18 @@ Select Case PropOrientation
     Case SldOrientationVertical
         If Width > 45 Then Width = 45
 End Select
-If SliderHandle <> 0 Then MoveWindow SliderHandle, 0, 0, Width, Height, 1
+If SliderHandle <> 0 Then
+    If PropTransparent = True Then
+        MoveWindow SliderHandle, 0, 0, Width, Height, 0
+        If SliderTransparentBrush <> 0 Then
+            DeleteObject SliderTransparentBrush
+            SliderTransparentBrush = 0
+        End If
+        RedrawWindow SliderHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow SliderHandle, 0, 0, Width, Height, 1
+    End If
+End If
 .Extender.Move .Extender.Left, .Extender.Top, .ScaleX(Width, vbPixels, vbContainerSize), .ScaleY(Height, vbPixels, vbContainerSize)
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 End With
