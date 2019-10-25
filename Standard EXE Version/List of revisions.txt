@@ -1,5 +1,8 @@
 List of revisions:
 
+25-Oct-2019
+- No crash anymore when getting the Hint property in 'LvwGroup' in the ListView control.
+
 13-Oct-2019
 - Internal improvement for the Transparent property in all affected controls.
   The internal transparent brush will be reset automatically upon UserControl_Resize.
