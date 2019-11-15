@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Nov-2019
+- It is now possible for the TvwNodes collection to change the key on a particular TvwNode in the TreeView control.
+
 25-Oct-2019
 - No crash anymore when getting the Hint property in 'LvwGroup' in the ListView control.
 
