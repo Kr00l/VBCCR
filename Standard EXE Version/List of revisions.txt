@@ -1,5 +1,12 @@
 List of revisions:
 
+26-Dec-2019
+- Minor internal improvement in the..
+  - RestoreRecent property in the FontCombo control.
+  - WorkAreas/ColumnOrder property in the ListView control.
+  - TileViewIndices property of a ListItem in the ListView control.
+  - SetAcceleration method in the SpinBox control.
+
 15-Nov-2019
 - It is now possible for the TvwNodes collection to change the key on a particular TvwNode in the TreeView control.
 
