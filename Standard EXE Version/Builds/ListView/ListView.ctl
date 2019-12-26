@@ -3905,44 +3905,38 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 1 Then
         Dim Ptr As Long
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
         If Ptr <> 0 Then
-            Dim RetVal As Long
-            CopyMemory ByVal VarPtr(RetVal), Ptr, 4
-            If RetVal <> 0 Then
-                Dim DimensionCount As Integer
-                CopyMemory DimensionCount, ByVal Ptr, 2
-                If DimensionCount = 1 Then
-                    Dim Arr() As Long, Count As Long, i As Long
-                    For i = LBound(ArgList) To UBound(ArgList)
-                        Select Case VarType(ArgList(i))
-                            Case vbLong, vbInteger, vbByte
-                                If ArgList(i) > 0 Then
-                                    ReDim Preserve Arr(0 To Count) As Long
-                                    Arr(Count) = ArgList(i)
-                                    Count = Count + 1
-                                End If
-                            Case vbDouble, vbSingle
-                                If CLng(ArgList(i)) > 0 Then
-                                    ReDim Preserve Arr(0 To Count) As Long
-                                    Arr(Count) = CLng(ArgList(i))
-                                    Count = Count + 1
-                                End If
-                        End Select
-                    Next i
-                    If Count > 0 Then
-                        .cColumns = Count
-                        .puColumns = VarPtr(Arr(0))
-                    Else
-                        .cColumns = 0
-                        .puColumns = 0
-                    End If
+            Dim DimensionCount As Integer
+            CopyMemory DimensionCount, ByVal Ptr, 2
+            If DimensionCount = 1 Then
+                Dim Arr() As Long, Count As Long, i As Long
+                For i = LBound(ArgList) To UBound(ArgList)
+                    Select Case VarType(ArgList(i))
+                        Case vbLong, vbInteger, vbByte
+                            If ArgList(i) > 0 Then
+                                ReDim Preserve Arr(0 To Count) As Long
+                                Arr(Count) = ArgList(i)
+                                Count = Count + 1
+                            End If
+                        Case vbDouble, vbSingle
+                            If CLng(ArgList(i)) > 0 Then
+                                ReDim Preserve Arr(0 To Count) As Long
+                                Arr(Count) = CLng(ArgList(i))
+                                Count = Count + 1
+                            End If
+                    End Select
+                Next i
+                If Count > 0 Then
+                    .cColumns = Count
+                    .puColumns = VarPtr(Arr(0))
                 Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    .cColumns = 0
+                    .puColumns = 0
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(ArgList) Then
         .cColumns = 0
@@ -6252,49 +6246,43 @@ If ListViewHandle <> 0 Then
         Dim Ptr As Long
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
         If Ptr <> 0 Then
-            Dim RetVal As Long
-            CopyMemory ByVal VarPtr(RetVal), Ptr, 4
-            If RetVal <> 0 Then
-                Dim DimensionCount As Integer
-                CopyMemory DimensionCount, ByVal Ptr, 2
-                If DimensionCount = 1 Then
-                    Dim Arr() As Long, Count As Long, i As Long
-                    For i = LBound(ArgList) To UBound(ArgList)
-                        Select Case VarType(ArgList(i))
-                            Case vbLong, vbInteger, vbByte
-                                If ArgList(i) >= 0 Then
-                                    ReDim Preserve Arr(0 To Count) As Long
-                                    Arr(Count) = ArgList(i)
-                                    Count = Count + 1
-                                End If
-                            Case vbDouble, vbSingle
-                                If CLng(ArgList(i)) >= 0 Then
-                                    ReDim Preserve Arr(0 To Count) As Long
-                                    Arr(Count) = CLng(ArgList(i))
-                                    Count = Count + 1
-                                End If
-                        End Select
-                    Next i
-                    If Count > 0 Then
-                        If Count Mod 4 = 0 Then
-                            Dim StructCount As Long
-                            StructCount = (Count / 4)
-                            If StructCount > LV_MAX_WORKAREAS Then StructCount = LV_MAX_WORKAREAS
-                            SendMessage ListViewHandle, LVM_SETWORKAREAS, StructCount, ByVal VarPtr(Arr(0))
-                        Else
-                            Err.Raise 5
-                        End If
+            Dim DimensionCount As Integer
+            CopyMemory DimensionCount, ByVal Ptr, 2
+            If DimensionCount = 1 Then
+                Dim Arr() As Long, Count As Long, i As Long
+                For i = LBound(ArgList) To UBound(ArgList)
+                    Select Case VarType(ArgList(i))
+                        Case vbLong, vbInteger, vbByte
+                            If ArgList(i) >= 0 Then
+                                ReDim Preserve Arr(0 To Count) As Long
+                                Arr(Count) = ArgList(i)
+                                Count = Count + 1
+                            End If
+                        Case vbDouble, vbSingle
+                            If CLng(ArgList(i)) >= 0 Then
+                                ReDim Preserve Arr(0 To Count) As Long
+                                Arr(Count) = CLng(ArgList(i))
+                                Count = Count + 1
+                            End If
+                    End Select
+                Next i
+                If Count > 0 Then
+                    If Count Mod 4 = 0 Then
+                        Dim StructCount As Long
+                        StructCount = (Count / 4)
+                        If StructCount > LV_MAX_WORKAREAS Then StructCount = LV_MAX_WORKAREAS
+                        SendMessage ListViewHandle, LVM_SETWORKAREAS, StructCount, ByVal VarPtr(Arr(0))
                     Else
-                        SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
+                        Err.Raise 5
                     End If
                 Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(ArgList) Then
         SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
@@ -6378,40 +6366,34 @@ If ListViewHandle <> 0 Then
         Dim Ptr As Long
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
         If Ptr <> 0 Then
-            Dim RetVal As Long
-            CopyMemory ByVal VarPtr(RetVal), Ptr, 4
-            If RetVal <> 0 Then
-                Dim DimensionCount As Integer
-                CopyMemory DimensionCount, ByVal Ptr, 2
-                If DimensionCount = 1 Then
-                    Dim Arr() As Long, Count As Long, i As Long
-                    For i = LBound(ArgList) To UBound(ArgList)
-                        Select Case VarType(ArgList(i))
-                            Case vbLong, vbInteger, vbByte
-                                If ArgList(i) >= 0 Then
-                                    ReDim Preserve Arr(0 To Count) As Long
-                                    Arr(Count) = ArgList(i)
-                                    Count = Count + 1
-                                End If
-                            Case vbDouble, vbSingle
-                                If CLng(ArgList(i)) >= 0 Then
-                                    ReDim Preserve Arr(0 To Count) As Long
-                                    Arr(Count) = CLng(ArgList(i))
-                                    Count = Count + 1
-                                End If
-                        End Select
-                    Next i
-                    If Count > 0 Then
-                        If SendMessage(ListViewHandle, LVM_SETCOLUMNORDERARRAY, Count, ByVal VarPtr(Arr(0))) = 0 Then Err.Raise 5
-                    End If
-                Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+            Dim DimensionCount As Integer
+            CopyMemory DimensionCount, ByVal Ptr, 2
+            If DimensionCount = 1 Then
+                Dim Arr() As Long, Count As Long, i As Long
+                For i = LBound(ArgList) To UBound(ArgList)
+                    Select Case VarType(ArgList(i))
+                        Case vbLong, vbInteger, vbByte
+                            If ArgList(i) >= 0 Then
+                                ReDim Preserve Arr(0 To Count) As Long
+                                Arr(Count) = ArgList(i)
+                                Count = Count + 1
+                            End If
+                        Case vbDouble, vbSingle
+                            If CLng(ArgList(i)) >= 0 Then
+                                ReDim Preserve Arr(0 To Count) As Long
+                                Arr(Count) = CLng(ArgList(i))
+                                Count = Count + 1
+                            End If
+                    End Select
+                Next i
+                If Count > 0 Then
+                    If SendMessage(ListViewHandle, LVM_SETCOLUMNORDERARRAY, Count, ByVal VarPtr(Arr(0))) = 0 Then Err.Raise 5
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     Else
         If Not IsEmpty(ArgList) Then Err.Raise 380

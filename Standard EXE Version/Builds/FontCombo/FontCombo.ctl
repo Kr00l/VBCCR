@@ -1962,50 +1962,44 @@ If FontComboHandle <> 0 Then
         Dim Ptr As Long
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
         If Ptr <> 0 Then
-            Dim RetVal As Long
-            CopyMemory ByVal VarPtr(RetVal), Ptr, 4
-            If RetVal <> 0 Then
-                Dim DimensionCount As Integer
-                CopyMemory DimensionCount, ByVal Ptr, 2
-                If DimensionCount = 1 Then
-                    Dim Arr() As String, Count As Long, i As Long
-                    For i = LBound(ArgList) To UBound(ArgList)
-                        Select Case VarType(ArgList(i))
-                            Case vbString
-                                If Not ArgList(i) = vbNullString Then
-                                    ReDim Preserve Arr(0 To Count) As String
-                                    Arr(Count) = ArgList(i)
-                                    Count = Count + 1
-                                End If
-                        End Select
-                    Next i
-                    For i = 1 To FontComboRecentCount
-                        SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
-                    Next i
-                    FontComboRecentCount = Count
-                    Me.RecentMax = GetRecentMax()
-                    If FontComboRecentCount > 0 Then
-                        Dim FontName As String, Offset As Integer
-                        For i = 1 To FontComboRecentCount
-                            FontName = Arr(i - 1)
-                            If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
-                                FontComboRecentItems(i - Offset) = FontName
-                                SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
-                            Else
-                                FontComboRecentItems(i) = vbNullString
-                                Offset = Offset + 1
+            Dim DimensionCount As Integer
+            CopyMemory DimensionCount, ByVal Ptr, 2
+            If DimensionCount = 1 Then
+                Dim Arr() As String, Count As Long, i As Long
+                For i = LBound(ArgList) To UBound(ArgList)
+                    Select Case VarType(ArgList(i))
+                        Case vbString
+                            If Not ArgList(i) = vbNullString Then
+                                ReDim Preserve Arr(0 To Count) As String
+                                Arr(Count) = ArgList(i)
+                                Count = Count + 1
                             End If
-                        Next i
-                        FontComboRecentCount = FontComboRecentCount - Offset
-                    End If
-                Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    End Select
+                Next i
+                For i = 1 To FontComboRecentCount
+                    SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
+                Next i
+                FontComboRecentCount = Count
+                Me.RecentMax = GetRecentMax()
+                If FontComboRecentCount > 0 Then
+                    Dim FontName As String, Offset As Integer
+                    For i = 1 To FontComboRecentCount
+                        FontName = Arr(i - 1)
+                        If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
+                            FontComboRecentItems(i - Offset) = FontName
+                            SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
+                        Else
+                            FontComboRecentItems(i) = vbNullString
+                            Offset = Offset + 1
+                        End If
+                    Next i
+                    FontComboRecentCount = FontComboRecentCount - Offset
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(ArgList) Then
         Me.ClearRecent

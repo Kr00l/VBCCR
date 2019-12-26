@@ -1183,44 +1183,37 @@ If SpinBoxUpDownHandle <> 0 Then
         CopyMemory Ptr(0), ByVal UnsignedAdd(VarPtr(Delays), 8), 4
         CopyMemory Ptr(1), ByVal UnsignedAdd(VarPtr(Increments), 8), 4
         If Ptr(0) <> 0 And Ptr(1) <> 0 Then
-            Dim RetVal(0 To 1) As Long
-            CopyMemory ByVal VarPtr(RetVal(0)), Ptr(0), 4
-            CopyMemory ByVal VarPtr(RetVal(1)), Ptr(1), 4
-            If RetVal(0) <> 0 And RetVal(1) <> 0 Then
-                Dim DimensionCount(0 To 1) As Integer
-                CopyMemory DimensionCount(0), ByVal Ptr(0), 2
-                CopyMemory DimensionCount(1), ByVal Ptr(1), 2
-                If DimensionCount(0) = 1 And DimensionCount(1) = 1 Then
-                    If LBound(Delays) = LBound(Increments) And UBound(Delays) = UBound(Increments) Then
-                        Dim AccelArr() As UDACCEL, Count As Long, i As Long
-                        For i = LBound(Delays) To UBound(Delays)
-                            Select Case VarType(Delays(i))
-                                Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                                    ReDim Preserve AccelArr(0 To Count) As UDACCEL
-                                    AccelArr(Count).nSec = CLng(Delays(i))
-                                    Select Case VarType(Increments(i))
-                                        Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                                            AccelArr(Count).nInc = CLng(Increments(i))
-                                    End Select
-                                    Count = Count + 1
-                            End Select
-                        Next i
-                        If Count > 0 Then
-                            SendMessage SpinBoxUpDownHandle, UDM_SETACCEL, Count, ByVal VarPtr(AccelArr(0))
-                        Else
-                            Me.Increment = PropIncrement
-                        End If
+            Dim DimensionCount(0 To 1) As Integer
+            CopyMemory DimensionCount(0), ByVal Ptr(0), 2
+            CopyMemory DimensionCount(1), ByVal Ptr(1), 2
+            If DimensionCount(0) = 1 And DimensionCount(1) = 1 Then
+                If LBound(Delays) = LBound(Increments) And UBound(Delays) = UBound(Increments) Then
+                    Dim AccelArr() As UDACCEL, Count As Long, i As Long
+                    For i = LBound(Delays) To UBound(Delays)
+                        Select Case VarType(Delays(i))
+                            Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+                                ReDim Preserve AccelArr(0 To Count) As UDACCEL
+                                AccelArr(Count).nSec = CLng(Delays(i))
+                                Select Case VarType(Increments(i))
+                                    Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+                                        AccelArr(Count).nInc = CLng(Increments(i))
+                                End Select
+                                Count = Count + 1
+                        End Select
+                    Next i
+                    If Count > 0 Then
+                        SendMessage SpinBoxUpDownHandle, UDM_SETACCEL, Count, ByVal VarPtr(AccelArr(0))
                     Else
-                        Err.Raise Number:=5, Description:="Array boundaries are not equal"
+                        Me.Increment = PropIncrement
                     End If
                 Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    Err.Raise Number:=5, Description:="Array boundaries are not equal"
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(Delays) Then
         Me.Increment = PropIncrement
