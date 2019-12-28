@@ -1,5 +1,8 @@
 List of revisions:
 
+28-Dec-2019
+- Minor internal improvement in the ContainerKeyDown method in the ToolBar control.
+
 26-Dec-2019
 - Minor internal improvement in the..
   - RestoreRecent property in the FontCombo control.
