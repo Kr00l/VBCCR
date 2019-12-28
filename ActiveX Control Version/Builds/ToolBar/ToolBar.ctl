@@ -3082,6 +3082,7 @@ If ToolBarDesignMode = True Then
 End If
 ToolBarHandle = CreateWindowEx(dwExStyle, StrPtr("ToolbarWindow32"), StrPtr("Tool Bar"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If ToolBarHandle <> 0 Then
+    Call ComCtlsShowAllUIStates(ToolBarHandle)
     Dim TBB As TBBUTTON
     SendMessage ToolBarHandle, TB_BUTTONSTRUCTSIZE, LenB(TBB), ByVal 0&
     SendMessage ToolBarHandle, TB_SETUNICODEFORMAT, 1, ByVal 0&
@@ -3336,12 +3337,7 @@ If Count > 0 Then
             SendMessage ToolBarHandle, TB_GETBUTTONINFO, ID, ByVal VarPtr(TBBI)
             If (.fsState And TBSTATE_ENABLED) <> 0 And (.fsStyle And BTNS_NOPREFIX) = 0 Then
                 Accel = AccelCharCode(GetButtonText(ID))
-                If (VkKeyScan(Accel) And &HFF&) = (KeyCode And &HFF&) Then
-                    DoEvents
-                    Exit For
-                Else
-                    ID = 0
-                End If
+                If (VkKeyScan(Accel) And &HFF&) = (KeyCode And &HFF&) Then Exit For Else ID = 0
             Else
                 ID = 0
             End If
@@ -3375,7 +3371,6 @@ If ID > 0 Then
             SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
             If (.fsStyle And BTNS_WHOLEDROPDOWN) = 0 Then
                 UpdateWindow ToolBarHandle
-                DoEvents
                 Sleep 50
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 RaiseEvent ButtonClick(Button)
