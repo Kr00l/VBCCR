@@ -893,10 +893,7 @@ LastWidth = .Width
 LastAlign = Align
 End With
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If CoolBarHandle = 0 Then InProc = False: Exit Sub
 Dim Count As Long, Size As SIZEAPI, WndRect As RECT, Rows As Long
 Count = SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&)
@@ -907,27 +904,14 @@ If Count > 0 Then
     Rows = SendMessage(CoolBarHandle, RB_GETROWCOUNT, 0, ByVal 0&)
     If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
         Size.CY = SendMessage(CoolBarHandle, RB_GETBARHEIGHT, 0, ByVal 0&) + ((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top))
-        If DPICorrectionFactor() <> 1 Then
-            Size.CX = .ScaleX(.Extender.Width, vbContainerSize, vbPixels)
-        Else
-            Size.CX = UserControl.ScaleWidth
-        End If
+        Size.CX = UserControl.ScaleWidth
     Else
         Size.CX = SendMessage(CoolBarHandle, RB_GETBARHEIGHT, 0, ByVal 0&) + ((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top))
-        If DPICorrectionFactor() <> 1 Then
-            Size.CY = .ScaleY(.Extender.Height, vbContainerSize, vbPixels)
-        Else
-            Size.CY = UserControl.ScaleHeight
-        End If
+        Size.CY = UserControl.ScaleHeight
     End If
 Else
-    If DPICorrectionFactor() <> 1 Then
-        Size.CY = .ScaleY(.Extender.Height, vbContainerSize, vbPixels)
-        Size.CX = .ScaleX(.Extender.Width, vbContainerSize, vbPixels)
-    Else
-        Size.CY = UserControl.ScaleHeight
-        Size.CX = UserControl.ScaleWidth
-    End If
+    Size.CY = UserControl.ScaleHeight
+    Size.CX = UserControl.ScaleWidth
 End If
 Select Case Align
     Case vbAlignNone
@@ -937,10 +921,7 @@ Select Case Align
     Case vbAlignLeft, vbAlignRight
         .Extender.Width = .ScaleX(Size.CX, vbPixels, vbContainerSize)
 End Select
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 MoveWindow CoolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False

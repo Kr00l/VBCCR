@@ -665,12 +665,7 @@ LastHeight = .Height
 LastWidth = .Width
 LastAlign = Align
 End With
-If DPICorrectionFactor() <> 1 Then
-    With UserControl
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End With
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call SetMinHeight
 If StatusBarHandle <> 0 Then MoveWindow StatusBarHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 1
 Call SetParts

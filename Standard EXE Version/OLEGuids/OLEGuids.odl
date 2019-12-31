@@ -119,8 +119,19 @@ library OLEGuids
 		HRESULT GetMoniker([in] LONG dwAssign, [in] LONG dwWhichMoniker, [out, retval] LONG *lppmk);
 		HRESULT InitFromData([in] LONG lpDataObject, [in] LONG fCreation, [in] LONG dwReserved);
 		HRESULT GetClipboardData([in] LONG dwReserved, [out, retval] LONG *lppDataObject);
-		HRESULT DoVerb([in] LONG iVerb, [in] LONG lpMsg, [in] IOleClientSite *pActiveSite, [in] LONG Index, [in] LONG hWndParent, [in] LONG lprcPosRect);
+		LONG DoVerb([in] LONG iVerb, [in] LONG lpMsg, [in] IOleClientSite *pActiveSite, [in] LONG Index, [in] LONG hWndParent, [in] LONG lprcPosRect);
 		// Lots more.
+	};
+	[
+		uuid(00000113-0000-0000-C000-000000000046),
+		odl
+	]
+	interface IOleInPlaceObject : IOleWindow
+	{
+		HRESULT InPlaceDeactivate();
+		HRESULT UIDeactivate();
+		HRESULT SetObjectRects([in] LONG lprcPosRect, [in] LONG lprcClipRect);
+		HRESULT ReactivateAndUndo();
 	};
 	[
 		uuid(B196B288-BAB4-101A-B69C-00AA00341D07),
@@ -130,8 +141,8 @@ library OLEGuids
 	{
 		LONG GetControlInfo([out] OLECONTROLINFO *pCI);
 		LONG OnMnemonic([in] OLEACCELMSG *pMsg);
-		LONG OnAmbientPropertyChange([in] LONG DispID);
-		LONG FreezeEvents([in] LONG bFreeze);
+		HRESULT OnAmbientPropertyChange([in] LONG DispID);
+		HRESULT FreezeEvents([in] LONG bFreeze);
 	};
 	[
 		uuid(B196B289-BAB4-101A-B69C-00AA00341D07),

@@ -7,9 +7,9 @@ Begin VB.UserControl ImageCombo
    DataBindingBehavior=   1  'vbSimpleBound
    HasDC           =   0   'False
    PropertyPages   =   "ImageCombo.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "ImageCombo.ctx":004B
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
@@ -632,47 +632,25 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If ImageComboHandle = 0 Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> ImcStyleSimpleCombo Then
-    If DPICorrectionFactor() <> 1 Then
-        MoveWindow ImageComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-    Else
-        MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    End If
+    MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect ImageComboHandle, WndRect
-    If DPICorrectionFactor() <> 1 Then
-        If (WndRect.Bottom - WndRect.Top) <> CLng(.ScaleY(.Extender.Height, vbContainerSize, vbPixels)) Or (WndRect.Right - WndRect.Left) <> CLng(.ScaleX(.Extender.Width, vbContainerSize, vbPixels)) Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-            .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-            .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-        End If
-    Else
-        If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-        End If
+    If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
+        .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+        If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
     ' Call SetDropDownHeight(True) is not needed as 'ImageComboComboHandle' is not touched.
 Else
     Dim ListRect As RECT, EditHeight As Long, ItemHeight As Long
     Dim Height As Long, Temp As Long, Count As Long
-    If DPICorrectionFactor() <> 1 Then
-        MoveWindow ImageComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), 100, 1
-    Else
-        MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, 100, 1
-    End If
+    MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, 100, 1
     GetWindowRect ImageComboHandle, WndRect
     If ImageComboListHandle <> 0 Then GetWindowRect ImageComboListHandle, ListRect
     EditHeight = (WndRect.Bottom - WndRect.Top) - (ListRect.Bottom - ListRect.Top)
-    If DPICorrectionFactor() <> 1 Then
-        MoveWindow ImageComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-    Else
-        MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    End If
+    MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect ImageComboHandle, WndRect
     ItemHeight = SendMessage(ImageComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)
     Temp = (WndRect.Bottom - WndRect.Top) - EditHeight
@@ -693,10 +671,7 @@ Else
         Height = EditHeight
     End If
     .Extender.Height = .ScaleY(Height, vbPixels, vbContainerSize)
-    If DPICorrectionFactor() <> 1 Then
-        .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-        .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End If
+    If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 End If
 MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With

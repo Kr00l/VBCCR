@@ -7,9 +7,9 @@ Begin VB.UserControl RichTextBox
    DataBindingBehavior=   1  'vbSimpleBound
    HasDC           =   0   'False
    PropertyPages   =   "RichTextBox.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "RichTextBox.ctx":004C
 End
 Attribute VB_Name = "RichTextBox"
@@ -23,7 +23,7 @@ Option Explicit
 
 #If False Then
 Private RtfLoadSaveFormatRTF, RtfLoadSaveFormatText, RtfLoadSaveFormatUnicodeText
-Private RtfFindOptionWholeWord, RtfFindOptionMatchCase, RtfFindOptionNoHighlight
+Private RtfFindOptionWholeWord, RtfFindOptionMatchCase, RtfFindOptionNoHighlight, RtfFindOptionReverse
 Private RtfActionTypeUnknown, RtfActionTypeTyping, RtfActionTypeDelete, RtfActionTypeOLEDragDrop, RtfActionTypeCut, RtfActionTypePaste, RtfActionTypeAutoTable
 Private RtfSelAlignmentLeft, RtfSelAlignmentRight, RtfSelAlignmentCenter, RtfSelAlignmentJustified
 Private RtfSelTypeEmpty, RtfSelTypeText, RtfSelTypeObject, RtfSelTypeMultiChar, RtfSelTypeMultiObject
@@ -40,6 +40,7 @@ Public Enum RtfFindOptionConstants
 RtfFindOptionWholeWord = FR_WHOLEWORD
 RtfFindOptionMatchCase = FR_MATCHCASE
 RtfFindOptionNoHighlight = &H8
+RtfFindOptionReverse = &H10
 End Enum
 Private Const UID_UNKNOWN As Long = 0
 Private Const UID_TYPING As Long = 1
@@ -998,10 +999,7 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If RichTextBoxHandle <> 0 Then MoveWindow RichTextBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
@@ -1990,6 +1988,7 @@ If RichTextBoxHandle <> 0 Then
     dwOptions = FR_DOWN
     If (Options And RtfFindOptionWholeWord) <> 0 Then dwOptions = dwOptions Or FR_WHOLEWORD
     If (Options And RtfFindOptionMatchCase) <> 0 Then dwOptions = dwOptions Or FR_MATCHCASE
+    If (Options And RtfFindOptionReverse) <> 0 Then dwOptions = dwOptions And Not FR_DOWN
     Find = SendMessage(RichTextBoxHandle, EM_FINDTEXTEX, dwOptions, ByVal VarPtr(REFTEX))
     If (Options And RtfFindOptionNoHighlight) = 0 And Find <> -1 Then SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(.CharRangeText)
     End With

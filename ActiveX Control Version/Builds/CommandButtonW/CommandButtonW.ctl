@@ -704,11 +704,19 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
+If CommandButtonHandle <> 0 Then
+    If PropTransparent = True Then
+        MoveWindow CommandButtonHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If CommandButtonTransparentBrush <> 0 Then
+            DeleteObject CommandButtonTransparentBrush
+            CommandButtonTransparentBrush = 0
+        End If
+        RedrawWindow CommandButtonHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow CommandButtonHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
 End If
-If CommandButtonHandle <> 0 Then MoveWindow CommandButtonHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
 End Sub

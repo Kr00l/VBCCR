@@ -404,12 +404,7 @@ Private Sub UserControl_Resize()
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
-If DPICorrectionFactor() <> 1 Then
-    With UserControl
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End With
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call RedrawLabel
 InProc = False
 End Sub

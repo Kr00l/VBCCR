@@ -10,9 +10,9 @@ Begin VB.UserControl ProgressBar
    DrawStyle       =   2  'Dot
    HasDC           =   0   'False
    PropertyPages   =   "ProgressBar.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "ProgressBar.ctx":003D
 End
 Attribute VB_Name = "ProgressBar"
@@ -413,10 +413,7 @@ LastWidth = .Width
 LastAlign = Align
 End With
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If ProgressBarHandle <> 0 Then MoveWindow ProgressBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False

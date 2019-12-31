@@ -492,12 +492,18 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If LinkLabelHandle <> 0 Then
-    MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    If PropTransparent = True Then
+        MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If LinkLabelTransparentBrush <> 0 Then
+            DeleteObject LinkLabelTransparentBrush
+            LinkLabelTransparentBrush = 0
+        End If
+        RedrawWindow LinkLabelHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
     If PropShowTips = True And LinkLabelDesignMode = False Then
         Call DestroyToolTip
         Call CreateToolTip

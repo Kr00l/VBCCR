@@ -712,38 +712,20 @@ Static InProc As Boolean
 If InProc = True Or FontComboResizeFrozen = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If FontComboHandle = 0 Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> FtcStyleSimpleCombo Then
-    If DPICorrectionFactor() <> 1 Then
-        If .Extender.Height > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-    Else
-        If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    End If
+    If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect FontComboHandle, WndRect
-    If DPICorrectionFactor() <> 1 Then
-        If (WndRect.Bottom - WndRect.Top) <> CLng(.ScaleY(.Extender.Height, vbContainerSize, vbPixels)) Or (WndRect.Right - WndRect.Left) <> CLng(.ScaleX(.Extender.Width, vbContainerSize, vbPixels)) Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-            .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-            .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-        End If
-    Else
-        If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-        End If
+    If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
+        .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+        If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
     Call CheckDropDownHeight(True)
 Else
     Dim ListRect As RECT, EditHeight As Long, Height As Long
-    If DPICorrectionFactor() <> 1 Then
-        MoveWindow FontComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels) + IIf(PropIntegralHeight = True, 1, 0), 1
-    Else
-        MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
-    End If
+    MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
     GetWindowRect FontComboHandle, WndRect
     If FontComboListHandle <> 0 Then GetWindowRect FontComboListHandle, ListRect
     MapWindowPoints HWND_DESKTOP, FontComboHandle, ListRect, 2
@@ -755,10 +737,7 @@ Else
         Height = EditHeight
     End If
     .Extender.Height = .ScaleY(Height, vbPixels, vbContainerSize)
-    If DPICorrectionFactor() <> 1 Then
-        .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-        .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End If
+    If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     Me.Refresh
 End If
@@ -1983,50 +1962,44 @@ If FontComboHandle <> 0 Then
         Dim Ptr As Long
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
         If Ptr <> 0 Then
-            Dim RetVal As Long
-            CopyMemory ByVal VarPtr(RetVal), Ptr, 4
-            If RetVal <> 0 Then
-                Dim DimensionCount As Integer
-                CopyMemory DimensionCount, ByVal Ptr, 2
-                If DimensionCount = 1 Then
-                    Dim Arr() As String, Count As Long, i As Long
-                    For i = LBound(ArgList) To UBound(ArgList)
-                        Select Case VarType(ArgList(i))
-                            Case vbString
-                                If Not ArgList(i) = vbNullString Then
-                                    ReDim Preserve Arr(0 To Count) As String
-                                    Arr(Count) = ArgList(i)
-                                    Count = Count + 1
-                                End If
-                        End Select
-                    Next i
-                    For i = 1 To FontComboRecentCount
-                        SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
-                    Next i
-                    FontComboRecentCount = Count
-                    Me.RecentMax = GetRecentMax()
-                    If FontComboRecentCount > 0 Then
-                        Dim FontName As String, Offset As Integer
-                        For i = 1 To FontComboRecentCount
-                            FontName = Arr(i - 1)
-                            If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
-                                FontComboRecentItems(i - Offset) = FontName
-                                SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
-                            Else
-                                FontComboRecentItems(i) = vbNullString
-                                Offset = Offset + 1
+            Dim DimensionCount As Integer
+            CopyMemory DimensionCount, ByVal Ptr, 2
+            If DimensionCount = 1 Then
+                Dim Arr() As String, Count As Long, i As Long
+                For i = LBound(ArgList) To UBound(ArgList)
+                    Select Case VarType(ArgList(i))
+                        Case vbString
+                            If Not ArgList(i) = vbNullString Then
+                                ReDim Preserve Arr(0 To Count) As String
+                                Arr(Count) = ArgList(i)
+                                Count = Count + 1
                             End If
-                        Next i
-                        FontComboRecentCount = FontComboRecentCount - Offset
-                    End If
-                Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    End Select
+                Next i
+                For i = 1 To FontComboRecentCount
+                    SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
+                Next i
+                FontComboRecentCount = Count
+                Me.RecentMax = GetRecentMax()
+                If FontComboRecentCount > 0 Then
+                    Dim FontName As String, Offset As Integer
+                    For i = 1 To FontComboRecentCount
+                        FontName = Arr(i - 1)
+                        If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
+                            FontComboRecentItems(i - Offset) = FontName
+                            SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
+                        Else
+                            FontComboRecentItems(i) = vbNullString
+                            Offset = Offset + 1
+                        End If
+                    Next i
+                    FontComboRecentCount = FontComboRecentCount - Offset
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(ArgList) Then
         Me.ClearRecent
@@ -2395,10 +2368,7 @@ Select Case wMsg
             If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
                 FontComboResizeFrozen = True
                 .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-                If DPICorrectionFactor() <> 1 Then
-                    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-                    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-                End If
+                If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
                 FontComboResizeFrozen = False
             End If
             End With

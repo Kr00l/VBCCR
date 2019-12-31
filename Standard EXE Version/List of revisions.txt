@@ -1,5 +1,44 @@
 List of revisions:
 
+28-Dec-2019
+- Minor internal improvement in the ContainerKeyDown method in the ToolBar control.
+
+26-Dec-2019
+- Minor internal improvement in the..
+  - RestoreRecent property in the FontCombo control.
+  - WorkAreas/ColumnOrder property in the ListView control.
+  - TileViewIndices property of a ListItem in the ListView control.
+  - SetAcceleration method in the SpinBox control.
+
+15-Nov-2019
+- It is now possible for the TvwNodes collection to change the key on a particular TvwNode in the TreeView control.
+
+25-Oct-2019
+- No crash anymore when getting the Hint property in 'LvwGroup' in the ListView control.
+
+13-Oct-2019
+- Internal improvement for the Transparent property in all affected controls.
+  The internal transparent brush will be reset automatically upon UserControl_Resize.
+  As side-effect it also fixes the cluttered background on non-integral DPI.
+
+09-Oct-2019
+- Change of how to achieve DPI-awareness to the controls for non-integral DPI.
+  It's just a better technique now which reduces the number of resizes.
+  However, the change has no visible impact for the end-user.
+
+08-Oct-2019
+- Cosmetic bugfix in the DPICorrectionFactor() function in Common.bas.
+  It now returns a factor - by definition - in which a result shall be multiplied.
+  Before this bugfix the result must be divided, which was odd.
+
+05-Oct-2019
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - included interface IOleInPlaceObject.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
+11-Sep-2019
+- Bugfix that the .Tag property of 'TbrButtonMenu' was not restored from the PropertyBag in the ToolBar control.
+
 24-Aug-2019
 - BackColor property works now also when VisualStyles is False in the TabStrip control.
 - Included the DoubleBuffer property in the TabStrip control.

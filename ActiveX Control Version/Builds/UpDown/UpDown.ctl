@@ -7,9 +7,9 @@ Begin VB.UserControl UpDown
    ClientWidth     =   2400
    HasDC           =   0   'False
    PropertyPages   =   "UpDown.ctx":0000
-   ScaleHeight     =   120
+   ScaleHeight     =   150
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleWidth      =   200
    ToolboxBitmap   =   "UpDown.ctx":0028
    Begin VB.Timer TimerBuddyControl 
       Enabled         =   0   'False
@@ -343,32 +343,18 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If UpDownHandle = 0 Then InProc = False: Exit Sub
 Dim WndRect As RECT
 GetWindowRect UpDownHandle, WndRect
 Select Case PropOrientation
     Case UdnOrientationHorizontal
-        If DPICorrectionFactor() <> 1 Then
-            MoveWindow UpDownHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-        Else
-            MoveWindow UpDownHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-        End If
+        MoveWindow UpDownHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     Case UdnOrientationVertical
-        If DPICorrectionFactor() <> 1 Then
-            MoveWindow UpDownHandle, 0, 0, (WndRect.Right - WndRect.Left), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-        Else
-            MoveWindow UpDownHandle, 0, 0, (WndRect.Right - WndRect.Left), .ScaleHeight, 1
-        End If
+        MoveWindow UpDownHandle, 0, 0, (WndRect.Right - WndRect.Left), .ScaleHeight, 1
         .Extender.Width = .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize)
 End Select
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 End With
 InProc = False
 End Sub
