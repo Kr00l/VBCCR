@@ -6,11 +6,11 @@ Option Explicit
 ' OLEGuids.tlb (in IDE only)
 
 #If False Then
-Private VTableInterfaceControl, VTableInterfaceInPlaceActiveObject, VTableInterfacePerPropertyBrowsing
+Private VTableInterfaceInPlaceActiveObject, VTableInterfaceControl, VTableInterfacePerPropertyBrowsing
 #End If
 Public Enum VTableInterfaceConstants
-VTableInterfaceControl = 1
-VTableInterfaceInPlaceActiveObject = 2
+VTableInterfaceInPlaceActiveObject = 1
+VTableInterfaceControl = 2
 VTableInterfacePerPropertyBrowsing = 3
 End Enum
 Private Type VTableIPAODataStruct
@@ -19,15 +19,6 @@ RefCount As Long
 OriginalIOleIPAO As OLEGuids.IOleInPlaceActiveObject
 IOleIPAO As OLEGuids.IOleInPlaceActiveObjectVB
 End Type
-Private Enum VTableIndexControlConstants
-' Ignore : ControlQueryInterface = 1
-' Ignore : ControlAddRef = 2
-' Ignore : ControlRelease = 3
-VTableIndexControlGetControlInfo = 4
-VTableIndexControlOnMnemonic = 5
-' Ignore : ControlOnAmbientPropertyChange = 6
-' Ignore : ControlFreezeEvents = 7
-End Enum
 Private Enum VTableIndexPPBConstants
 ' Ignore : PPBQueryInterface = 1
 ' Ignore : PPBAddRef = 2
@@ -71,45 +62,45 @@ Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private VTableIPAO(0 To 9) As Long, VTableIPAOData As VTableIPAODataStruct
-Private VTableSubclassControl As VTableSubclass
+Private VTableControl(0 To 6) As Long, OriginalVTableControl As Long
 Private VTableSubclassPPB As VTableSubclass, StringsOutArray() As String, CookiesOutArray() As Long
 Private VTableIEnumVARIANT(0 To 6) As Long
 
-Public Sub SetVTableSubclass(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
+Public Sub SetVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        If VTableSubclassSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
     Case VTableInterfaceControl
-        If VTableSubclassSupported(This, VTableInterfaceControl) = True Then Call ReplaceIOleControl(This)
+        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then Call ReplaceIOleControl(This)
     Case VTableInterfacePerPropertyBrowsing
-        If VTableSubclassSupported(This, VTableInterfacePerPropertyBrowsing) = True Then Call ReplaceIPPB(This)
+        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then Call ReplaceIPPB(This)
 End Select
 End Sub
 
-Public Sub RemoveVTableSubclass(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
+Public Sub RemoveVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        If VTableSubclassSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
     Case VTableInterfaceControl
-        If VTableSubclassSupported(This, VTableInterfaceControl) = True Then Call RestoreIOleControl(This)
+        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then Call RestoreIOleControl(This)
     Case VTableInterfacePerPropertyBrowsing
-        If VTableSubclassSupported(This, VTableInterfacePerPropertyBrowsing) = True Then Call RestoreIPPB(This)
+        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then Call RestoreIPPB(This)
 End Select
 End Sub
 
-Public Sub RemoveAllVTableSubclass(ByVal OLEInterface As VTableInterfaceConstants)
+Public Sub StopVTableHandling(ByVal OLEInterface As VTableInterfaceConstants)
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
         VTableIPAOData.RefCount = 0
         If Not VTableIPAOData.OriginalIOleIPAO Is Nothing Then Call ActivateIPAO(VTableIPAOData.OriginalIOleIPAO)
     Case VTableInterfaceControl
-        Set VTableSubclassControl = Nothing
+        OriginalVTableControl = 0
     Case VTableInterfacePerPropertyBrowsing
         Set VTableSubclassPPB = Nothing
 End Select
 End Sub
 
-Private Function VTableSubclassSupported(ByRef This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
+Private Function VTableHandlingSupported(ByRef This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
 On Error GoTo CATCH_EXCEPTION
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
@@ -117,19 +108,19 @@ Select Case OLEInterface
         Dim ShadowIOleInPlaceActiveObjectVB As OLEGuids.IOleInPlaceActiveObjectVB
         Set ShadowIOleIPAO = This
         Set ShadowIOleInPlaceActiveObjectVB = This
-        VTableSubclassSupported = Not CBool(ShadowIOleIPAO Is Nothing Or ShadowIOleInPlaceActiveObjectVB Is Nothing)
+        VTableHandlingSupported = Not CBool(ShadowIOleIPAO Is Nothing Or ShadowIOleInPlaceActiveObjectVB Is Nothing)
     Case VTableInterfaceControl
         Dim ShadowIOleControl As OLEGuids.IOleControl
         Dim ShadowIOleControlVB As OLEGuids.IOleControlVB
         Set ShadowIOleControl = This
         Set ShadowIOleControlVB = This
-        VTableSubclassSupported = Not CBool(ShadowIOleControl Is Nothing Or ShadowIOleControlVB Is Nothing)
+        VTableHandlingSupported = Not CBool(ShadowIOleControl Is Nothing Or ShadowIOleControlVB Is Nothing)
     Case VTableInterfacePerPropertyBrowsing
         Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
         Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB
         Set ShadowIPPB = This
         Set ShadowIPerPropertyBrowsingVB = This
-        VTableSubclassSupported = Not CBool(ShadowIPPB Is Nothing Or ShadowIPerPropertyBrowsingVB Is Nothing)
+        VTableHandlingSupported = Not CBool(ShadowIPPB Is Nothing Or ShadowIPerPropertyBrowsingVB Is Nothing)
 End Select
 CATCH_EXCEPTION:
 End Function
@@ -316,31 +307,12 @@ IOleIPAO_EnableModeless = This.OriginalIOleIPAO.EnableModeless(Enable)
 End Function
 
 Private Sub ReplaceIOleControl(ByVal This As OLEGuids.IOleControl)
-If VTableSubclassControl Is Nothing Then Set VTableSubclassControl = New VTableSubclass
-If VTableSubclassControl.RefCount = 0 Then
-    Dim hMain As Long, Handled As Boolean
-    hMain = GetHiddenMainWindow()
-    If hMain <> 0 Then Handled = CBool(GetProp(hMain, StrPtr("VTableSubclassControlInit")) <> 0)
-    If Handled = False Then
-        VTableSubclassControl.Subclass ObjPtr(This), VTableIndexControlGetControlInfo, VTableIndexControlOnMnemonic, _
-        AddressOf IOleControl_GetControlInfo, _
-        AddressOf IOleControl_OnMnemonic
-        If hMain <> 0 Then SetProp hMain, StrPtr("VTableSubclassControlInit"), 1
-    End If
-End If
-VTableSubclassControl.AddRef
+If OriginalVTableControl = 0 Then CopyMemory OriginalVTableControl, ByVal ObjPtr(This), 4
+CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTableControl()), 4
 End Sub
 
 Private Sub RestoreIOleControl(ByVal This As OLEGuids.IOleControl)
-If Not VTableSubclassControl Is Nothing Then
-    VTableSubclassControl.Release
-    If VTableSubclassControl.RefCount = 0 Then
-        Dim hMain As Long
-        hMain = GetHiddenMainWindow()
-        If hMain <> 0 Then RemoveProp hMain, StrPtr("VTableSubclassControlInit")
-        VTableSubclassControl.UnSubclass
-    End If
-End If
+If OriginalVTableControl <> 0 Then CopyMemory ByVal ObjPtr(This), OriginalVTableControl, 4
 End Sub
 
 Public Sub OnControlInfoChanged(ByVal This As Object, Optional ByVal OnFocus As Boolean)
@@ -354,14 +326,64 @@ If OnFocus = True Then PropOleControlSite.OnFocus 1
 CATCH_EXCEPTION:
 End Sub
 
-Private Function IOleControl_GetControlInfo(ByVal This As Object, ByRef CI As OLEGuids.OLECONTROLINFO) As Long
+Private Function GetVTableControl() As Long
+If VTableControl(0) = 0 Then
+    VTableControl(0) = ProcPtr(AddressOf IOleControl_QueryInterface)
+    VTableControl(1) = ProcPtr(AddressOf IOleControl_AddRef)
+    VTableControl(2) = ProcPtr(AddressOf IOleControl_Release)
+    VTableControl(3) = ProcPtr(AddressOf IOleControl_GetControlInfo)
+    VTableControl(4) = ProcPtr(AddressOf IOleControl_OnMnemonic)
+    VTableControl(5) = ProcPtr(AddressOf IOleControl_OnAmbientPropertyChange)
+    VTableControl(6) = ProcPtr(AddressOf IOleControl_FreezeEvents)
+End If
+GetVTableControl = VarPtr(VTableControl(0))
+End Function
+
+Private Function IOleControl_QueryInterface(ByRef This As Long, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As Long) As Long
+If VarPtr(pvObj) = 0 Then
+    IOleControl_QueryInterface = E_POINTER
+    Exit Function
+End If
+If OriginalVTableControl <> 0 Then
+    Dim IUnk As OLEGuids.IUnknownUnrestricted
+    This = OriginalVTableControl
+    CopyMemory IUnk, VarPtr(This), 4
+    IOleControl_QueryInterface = IUnk.QueryInterface(VarPtr(IID), pvObj)
+    CopyMemory IUnk, 0&, 4
+    This = GetVTableControl()
+End If
+End Function
+
+Private Function IOleControl_AddRef(ByRef This As Long) As Long
+If OriginalVTableControl <> 0 Then
+    Dim IUnk As OLEGuids.IUnknownUnrestricted
+    This = OriginalVTableControl
+    CopyMemory IUnk, VarPtr(This), 4
+    IOleControl_AddRef = IUnk.AddRef()
+    CopyMemory IUnk, 0&, 4
+    This = GetVTableControl()
+End If
+End Function
+
+Private Function IOleControl_Release(ByRef This As Long) As Long
+If OriginalVTableControl <> 0 Then
+    Dim IUnk As OLEGuids.IUnknownUnrestricted
+    This = OriginalVTableControl
+    CopyMemory IUnk, VarPtr(This), 4
+    IOleControl_Release = IUnk.Release()
+    CopyMemory IUnk, 0&, 4
+    This = GetVTableControl()
+End If
+End Function
+
+Private Function IOleControl_GetControlInfo(ByRef This As Long, ByRef CI As OLEGuids.OLECONTROLINFO) As Long
 If VarPtr(CI) = 0 Then
     IOleControl_GetControlInfo = E_POINTER
     Exit Function
 End If
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowIOleControlVB As OLEGuids.IOleControlVB, Handled As Boolean
-Set ShadowIOleControlVB = This
+Set ShadowIOleControlVB = PtrToObj(VarPtr(This))
 CI.cb = LenB(CI)
 ShadowIOleControlVB.GetControlInfo Handled, CI.cAccel, CI.hAccel, CI.dwFlags
 If Handled = False Then
@@ -378,14 +400,14 @@ CATCH_EXCEPTION:
 IOleControl_GetControlInfo = Original_IOleControl_GetControlInfo(This, CI)
 End Function
 
-Private Function IOleControl_OnMnemonic(ByVal This As Object, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
+Private Function IOleControl_OnMnemonic(ByRef This As Long, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
 If VarPtr(Msg) = 0 Then
     IOleControl_OnMnemonic = E_INVALIDARG
     Exit Function
 End If
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowIOleControlVB As OLEGuids.IOleControlVB, Handled As Boolean
-Set ShadowIOleControlVB = This
+Set ShadowIOleControlVB = PtrToObj(VarPtr(This))
 ShadowIOleControlVB.OnMnemonic Handled, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
 If Handled = False Then
     IOleControl_OnMnemonic = Original_IOleControl_OnMnemonic(This, Msg)
@@ -397,16 +419,64 @@ CATCH_EXCEPTION:
 IOleControl_OnMnemonic = Original_IOleControl_OnMnemonic(This, Msg)
 End Function
 
-Private Function Original_IOleControl_GetControlInfo(ByVal This As OLEGuids.IOleControl, ByRef CI As OLEGuids.OLECONTROLINFO) As Long
-VTableSubclassControl.SubclassEntry(VTableIndexControlGetControlInfo) = False
-Original_IOleControl_GetControlInfo = This.GetControlInfo(CI)
-VTableSubclassControl.SubclassEntry(VTableIndexControlGetControlInfo) = True
+Private Function IOleControl_OnAmbientPropertyChange(ByRef This As Long, ByVal DispID As Long) As Long
+IOleControl_OnAmbientPropertyChange = Original_IOleControl_OnAmbientPropertyChange(This, DispID)
 End Function
 
-Private Function Original_IOleControl_OnMnemonic(ByVal This As OLEGuids.IOleControl, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
-VTableSubclassControl.SubclassEntry(VTableIndexControlOnMnemonic) = False
-Original_IOleControl_OnMnemonic = This.OnMnemonic(Msg)
-VTableSubclassControl.SubclassEntry(VTableIndexControlOnMnemonic) = True
+Private Function IOleControl_FreezeEvents(ByRef This As Long, ByVal bFreeze As Long) As Long
+IOleControl_FreezeEvents = Original_IOleControl_FreezeEvents(This, bFreeze)
+End Function
+
+Private Function Original_IOleControl_GetControlInfo(ByRef This As Long, ByRef CI As OLEGuids.OLECONTROLINFO) As Long
+If OriginalVTableControl <> 0 Then
+    Dim ShadowIOleControl As OLEGuids.IOleControl
+    This = OriginalVTableControl
+    CopyMemory ShadowIOleControl, VarPtr(This), 4
+    Original_IOleControl_GetControlInfo = ShadowIOleControl.GetControlInfo(CI)
+    CopyMemory ShadowIOleControl, 0&, 4
+    This = GetVTableControl()
+Else
+    Original_IOleControl_GetControlInfo = E_NOTIMPL
+End If
+End Function
+
+Private Function Original_IOleControl_OnMnemonic(ByRef This As Long, ByRef Msg As OLEGuids.OLEACCELMSG) As Long
+If OriginalVTableControl <> 0 Then
+    Dim ShadowIOleControl As OLEGuids.IOleControl
+    This = OriginalVTableControl
+    CopyMemory ShadowIOleControl, VarPtr(This), 4
+    Original_IOleControl_OnMnemonic = ShadowIOleControl.OnMnemonic(Msg)
+    CopyMemory ShadowIOleControl, 0&, 4
+    This = GetVTableControl()
+Else
+    Original_IOleControl_OnMnemonic = E_NOTIMPL
+End If
+End Function
+
+Private Function Original_IOleControl_OnAmbientPropertyChange(ByRef This As Long, ByVal DispID As Long) As Long
+If OriginalVTableControl <> 0 Then
+    Dim ShadowIOleControl As OLEGuids.IOleControl
+    This = OriginalVTableControl
+    CopyMemory ShadowIOleControl, VarPtr(This), 4
+    ShadowIOleControl.OnAmbientPropertyChange DispID
+    CopyMemory ShadowIOleControl, 0&, 4
+    This = GetVTableControl()
+End If
+' This function returns S_OK in all cases.
+Original_IOleControl_OnAmbientPropertyChange = S_OK
+End Function
+
+Private Function Original_IOleControl_FreezeEvents(ByRef This As Long, ByVal bFreeze As Long) As Long
+If OriginalVTableControl <> 0 Then
+    Dim ShadowIOleControl As OLEGuids.IOleControl
+    This = OriginalVTableControl
+    CopyMemory ShadowIOleControl, VarPtr(This), 4
+    ShadowIOleControl.FreezeEvents bFreeze
+    CopyMemory ShadowIOleControl, 0&, 4
+    This = GetVTableControl()
+End If
+' This function returns S_OK in all cases.
+Original_IOleControl_FreezeEvents = S_OK
 End Function
 
 Private Sub ReplaceIPPB(ByVal This As OLEGuids.IPerPropertyBrowsing)
