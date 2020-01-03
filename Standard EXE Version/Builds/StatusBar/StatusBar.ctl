@@ -413,7 +413,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_Show()
@@ -674,7 +674,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyStatusBar
 Call ComCtlsReleaseShellMod
 End Sub

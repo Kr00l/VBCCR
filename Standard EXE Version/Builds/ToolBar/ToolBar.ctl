@@ -714,7 +714,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
 ReDim DisabledImageListArray(0) As String
 ReDim HotImageListArray(0) As String
@@ -1130,7 +1130,7 @@ If ToolBarDesignMode = True Then Call UserControl_Resize
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyToolBar
 Call ComCtlsReleaseShellMod
 End Sub
