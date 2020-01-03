@@ -1,6 +1,6 @@
 Common = 97, 61, 831, 643, C
 VisualStyles = 21, 87, 854, 716, C
-ISubclass = 100, 8, 800, 695, C
+ISubclass = 118, 55, 818, 742, C
 VTableSubclass = 0, 0, 0, 0, C
 ComCtlsBase = 32, 100, 839, 685, C
 VTableHandle = 44, 58, 840, 566, C
@@ -75,7 +75,7 @@ HotKey = 78, 127, 924, 657, C, -97, 253, 749, 783, C
 FrameW = -165, 233, 892, 894, C, 22, 29, 868, 559, C
 PPDTPickerGeneral = 195, 181, 1077, 711, C, 176, 232, 1022, 762, C
 DTPicker = 37, 137, 957, 739, C, 176, 232, 1022, 762, C
-CoolBar = -210, 97, 905, 760, C, 22, 29, 868, 559, C
+CoolBar = -166, 91, 949, 754, C, 22, 29, 868, 559, C
 CbrBand = 18, 18, 1008, 550, C
 CbrBands = -32, 193, 958, 725, C
 PPCoolBarBands = 110, 145, 956, 675, C, 88, 116, 934, 646, C
