@@ -247,7 +247,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_PROGRESS_CLASS)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ProgressBarDblClickTime = GetDoubleClickTime()
 Const SM_CXDOUBLECLK As Long = 36
 Const SM_CYDOUBLECLK As Long = 37
@@ -420,7 +420,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyProgressBar
 Call ComCtlsReleaseShellMod
 End Sub

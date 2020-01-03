@@ -292,7 +292,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_PAGESCROLLER_CLASS)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim BuddyControlArray(0) As String
 End Sub
 
@@ -431,7 +431,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyPager
 Call ComCtlsReleaseShellMod
 End Sub
