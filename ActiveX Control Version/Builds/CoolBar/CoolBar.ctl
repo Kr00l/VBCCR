@@ -9,9 +9,9 @@ Begin VB.UserControl CoolBar
    ControlContainer=   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "CoolBar.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "CoolBar.ctx":0059
    Begin VB.Timer TimerInitChilds 
       Enabled         =   0   'False
@@ -608,7 +608,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_COOL_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
 CoolBarToolTipIndex = -1
 End Sub
@@ -938,7 +938,7 @@ End With
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyCoolBar
 Call ComCtlsReleaseShellMod
 End Sub
