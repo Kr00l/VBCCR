@@ -1182,12 +1182,12 @@ End Sub
 
 Private Sub ComCtlsIDEStopProtectionHandler()
 On Error Resume Next
-Call RemoveAllVTableSubclass(VTableInterfaceInPlaceActiveObject)
-Call RemoveAllVTableSubclass(VTableInterfaceControl)
-Call RemoveAllVTableSubclass(VTableInterfacePerPropertyBrowsing)
-Dim AppForm As Form, CurrControl As Control
-For Each AppForm In Forms
+Dim AppForm As VB.Form, CurrControl As VB.Control
+For Each AppForm In VB.Forms
     For Each CurrControl In AppForm.Controls
+        Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceInPlaceActiveObject)
+        Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceControl)
+        Call RemoveVTableHandling(CurrControl.Object, VTableInterfacePerPropertyBrowsing)
         Select Case TypeName(CurrControl)
             Case "Animation", "DTPicker", "MonthView", "Slider", "StatusBar", "TabStrip", "ListBoxW", "ListView", "TreeView", "IPAddress", "ToolBar", "UpDown", "SpinBox", "Pager", "OptionButtonW", "CheckBoxW", "CommandButtonW", "TextBoxW", "HotKey", "CoolBar", "LinkLabel", "CommandLink"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
@@ -1210,6 +1210,9 @@ For Each AppForm In Forms
         End Select
     Next CurrControl
 Next AppForm
+Call StopVTableHandling(VTableInterfaceInPlaceActiveObject)
+Call StopVTableHandling(VTableInterfaceControl)
+Call StopVTableHandling(VTableInterfacePerPropertyBrowsing)
 If CdlFRDialogCount > 0 Then
     Dim DialogHandle() As Long
     DialogHandle() = CdlFRDialogHandle()

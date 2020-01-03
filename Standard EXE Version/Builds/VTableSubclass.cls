@@ -41,10 +41,9 @@ FirstEntry = FirstEntry - 1
 Debug.Assert Not (FirstEntry < 0 Or FirstEntry > LastEntry Or LastEntry < 0 Or VTableHeaderPointer <> 0 Or ObjectPointer = 0)
 CopyMemory VTableHeaderPointer, ByVal ObjectPointer, 4
 PropVTableCount = LastEntry
-ReDim VTable(0 To PropVTableCount)
-ReDim VTableOld(0 To PropVTableCount)
-Dim Entry As Long
-Dim EntryPointer As Long
+ReDim VTable(0 To PropVTableCount) As Long
+ReDim VTableOld(0 To PropVTableCount) As Long
+Dim Entry As Long, EntryPointer As Long
 Entry = UBound(NewEntries()) + FirstEntry
 If Entry > PropVTableCount Then Entry = PropVTableCount
 EntryPointer = UnsignedAdd(VTableHeaderPointer, FirstEntry * 4)
