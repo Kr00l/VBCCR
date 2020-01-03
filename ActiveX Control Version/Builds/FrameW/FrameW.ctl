@@ -8,9 +8,9 @@ Begin VB.UserControl FrameW
    ClientWidth     =   2400
    ControlContainer=   -1  'True
    PropertyPages   =   "FrameW.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "FrameW.ctx":0035
 End
 Attribute VB_Name = "FrameW"
@@ -212,7 +212,7 @@ End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
@@ -353,7 +353,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
 Call ComCtlsReleaseShellMod
 End Sub

@@ -11,9 +11,9 @@ Begin VB.UserControl LabelW
    ForwardFocus    =   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "LabelW.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "LabelW.ctx":0035
    Windowless      =   -1  'True
    Begin VB.Timer TimerMouseTrack 
@@ -192,7 +192,7 @@ End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
@@ -414,7 +414,7 @@ If HitResult = vbHitResultOutside Then HitResult = vbHitResultHit
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call ComCtlsReleaseShellMod
 End Sub
 
