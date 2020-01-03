@@ -7,9 +7,9 @@ Begin VB.UserControl UpDown
    ClientWidth     =   2400
    HasDC           =   0   'False
    PropertyPages   =   "UpDown.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "UpDown.ctx":0028
    Begin VB.Timer TimerBuddyControl 
       Enabled         =   0   'False
@@ -230,7 +230,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_UPDOWN_CLASS)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim BuddyControlArray(0) As String
 End Sub
 
@@ -360,7 +360,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyUpDown
 Call ComCtlsReleaseShellMod
 End Sub

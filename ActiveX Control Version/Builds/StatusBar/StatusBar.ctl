@@ -8,9 +8,9 @@ Begin VB.UserControl StatusBar
    ClientWidth     =   2400
    HasDC           =   0   'False
    PropertyPages   =   "StatusBar.ctx":0000
-   ScaleHeight     =   150
+   ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   200
+   ScaleWidth      =   160
    ToolboxBitmap   =   "StatusBar.ctx":005E
    Begin VB.Timer TimerUpdatePanels 
       Enabled         =   0   'False
@@ -413,7 +413,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_Show()
@@ -674,7 +674,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyStatusBar
 Call ComCtlsReleaseShellMod
 End Sub
