@@ -1,5 +1,9 @@
 List of revisions:
 
+03-Jan-2020
+- Improvement in VTableHandle.bas as IOleControl must NOT be subclassed anymore.
+  It is necessary to replace also all controls. (.ctl)
+
 28-Dec-2019
 - Minor internal improvement in the ContainerKeyDown method in the ToolBar control.
 
