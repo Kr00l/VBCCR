@@ -224,12 +224,12 @@ library OLEGuids
 		uuid(376BD3AA-3845-101B-84ED-08002B2EC713),
 		odl
 	]
-	interface IPerPropertyBrowsing : IDispatch
+	interface IPerPropertyBrowsing : IUnknown
 	{
-		HRESULT GetDisplayString([in] LONG DispID, [out] BSTR *DisplayName);
-		HRESULT MapPropertyToPage([in] LONG DispID, [out] OLECLSID *pCLSID);
-		HRESULT GetPredefinedStrings([in] LONG DispID, [out] OLECALPOLESTR *pCaStringsOut, [out] OLECADWORD *pCaCookiesOut);
-		HRESULT GetPredefinedValue([in] LONG DispID, [in] LONG dwCookie, [out] VARIANT *pVarOut);
+		LONG GetDisplayString([in] LONG DispID, [out] LONG *pDisplayName);
+		LONG MapPropertyToPage([in] LONG DispID, [out] OLECLSID *pCLSID);
+		LONG GetPredefinedStrings([in] LONG DispID, [out] OLECALPOLESTR *pCaStringsOut, [out] OLECADWORD *pCaCookiesOut);
+		LONG GetPredefinedValue([in] LONG DispID, [in] LONG dwCookie, [out] VARIANT *pVarOut);
 	};
 	[
 		uuid(B196B28B-BAB4-101A-B69C-00AA00341D07),
