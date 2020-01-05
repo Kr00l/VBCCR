@@ -22,7 +22,6 @@ PropertyPage=Builds\StatusBar\PPStatusBarGeneral.pag
 PropertyPage=Builds\StatusBar\PPStatusBarPanels.pag
 PropertyPage=Builds\Slider\PPSliderGeneral.pag
 PropertyPage=Builds\Slider\PPSliderAppearance.pag
-Class=VTableSubclass; Builds\VTableSubclass.cls
 Module=ComCtlsBase; Builds\ComCtlsBase.bas
 Class=ISubclass; Builds\ISubclass.cls
 Module=VTableHandle; Builds\VTableHandle.bas

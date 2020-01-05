@@ -1,5 +1,12 @@
 List of revisions:
 
+05-Jan-2020
+- Improvement in VTableHandle.bas as IPerPropertyBrowsing must NOT be subclassed anymore.
+  No VTable remains subclassed, therefore VTableSubclass.cls got obselete and was removed!
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - bugfix interface IPerPropertyBrowsing.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
 03-Jan-2020
 - Improvement in VTableHandle.bas as IOleControl must NOT be subclassed anymore.
   It is necessary to replace also all controls. (.ctl)

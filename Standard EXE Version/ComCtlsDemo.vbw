@@ -19,7 +19,6 @@ PPStatusBarGeneral = 635, 196, 1256, 813, C, 655, 148, 1276, 765, C
 PPStatusBarPanels = 278, 94, 1163, 884, C, 150, 150, 771, 767, C
 PPSliderGeneral = 0, 0, 0, 0, C, 175, 175, 796, 792, C
 PPSliderAppearance = 100, 100, 721, 717, C, 200, 200, 821, 817, C
-VTableSubclass = 75, 75, 696, 692, C
 ComCtlsBase = 238, 113, 1324, 928, C
 ISubclass = 25, 25, 655, 642, C
 VTableHandle = 23, 50, 1103, 789, C
