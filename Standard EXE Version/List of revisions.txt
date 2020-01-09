@@ -1,5 +1,9 @@
 List of revisions:
 
+09-Jan-2020
+- Included the CustomColors property (Variant) in the CommonDialog class.
+  16 custom colors can be retrieved or changed via an array.
+
 05-Jan-2020
 - Improvement in VTableHandle.bas as IPerPropertyBrowsing must NOT be subclassed anymore.
   No VTable remains subclassed, therefore VTableSubclass.cls got obselete and was removed!
