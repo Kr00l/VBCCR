@@ -1163,7 +1163,7 @@ Public Sub ComCtlsInitIDEStopProtection()
 
 If InIDE() = True Then
     Dim ASMWrapper As Long, RestorePointer As Long, OldAddress As Long
-    ASMWrapper = VirtualAlloc(ByVal 0, 20, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+    ASMWrapper = VirtualAlloc(ByVal 0&, 20, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
     OldAddress = GetProcAddress(GetModuleHandle(StrPtr("vba6.dll")), "EbProjectReset")
     RestorePointer = HookIATEntry("vb6.exe", "vba6.dll", "EbProjectReset", ASMWrapper)
     WriteCall ASMWrapper, AddressOf ComCtlsIDEStopProtectionHandler
