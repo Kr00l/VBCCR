@@ -140,8 +140,8 @@ Private Const DST_ICON As Long = &H3
 Private Const DST_BITMAP As Long = &H4
 Private Const DSS_DISABLED As Long = &H20
 
-Public Sub InitVisualStyleFixes()
-If App.LogMode <> 0 Then Call InitReleaseVisualStyleFixes(AddressOf ReleaseVisualStyleFixes)
+Public Sub InitVisualStylesFixes()
+If App.LogMode <> 0 Then Call InitReleaseVisualStylesFixes(AddressOf ReleaseVisualStylesFixes)
 Dim ICCEX As TINITCOMMONCONTROLSEX
 With ICCEX
 .dwSize = LenB(ICCEX)
@@ -150,7 +150,7 @@ End With
 InitCommonControlsEx ICCEX
 End Sub
 
-Private Sub InitReleaseVisualStyleFixes(ByVal Address As Long)
+Private Sub InitReleaseVisualStylesFixes(ByVal Address As Long)
 Static Release As TRELEASE
 If Release.VTableHeaderPointer <> 0 Then Exit Sub
 If GetComCtlVersion >= 6 Then
@@ -160,12 +160,12 @@ If GetComCtlVersion >= 6 Then
 End If
 End Sub
 
-Private Function ReleaseVisualStyleFixes() As Long
+Private Function ReleaseVisualStylesFixes() As Long
 Const SEM_NOGPFAULTERRORBOX As Long = &H2
 SetErrorMode SEM_NOGPFAULTERRORBOX
 End Function
 
-Public Sub SetupVisualStyleFixes(ByVal Form As VB.Form)
+Public Sub SetupVisualStylesFixes(ByVal Form As VB.Form)
 If GetComCtlVersion() >= 6 Then SendMessage Form.hWnd, WM_UPDATEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
 If EnabledVisualStyles() = False Then Exit Sub
 Dim CurrControl As VB.Control
@@ -183,7 +183,7 @@ For Each CurrControl In Form.Controls
 Next CurrControl
 End Sub
 
-Public Sub RemoveVisualStyleFixes(ByVal Form As VB.Form)
+Public Sub RemoveVisualStylesFixes(ByVal Form As VB.Form)
 If EnabledVisualStyles() = False Then Exit Sub
 Dim CurrControl As VB.Control
 For Each CurrControl In Form.Controls
