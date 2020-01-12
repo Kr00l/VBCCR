@@ -144,7 +144,7 @@ If RetVal = -1 Then MsgBox "Could not find '" & CommonDialogFind.FindWhat & "'."
 End Sub
 
 Private Sub Form_Load()
-Call SetupVisualStyleFixes(Me)
+Call SetupVisualStylesFixes(Me)
 Set CommonDialogPageSetup = New CommonDialog
 Const LOCALE_IMEASURE As Long = &HD, LOCALE_RETURN_NUMBER As Long = &H20000000
 GetLocaleInfo 0, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), LenB(LocaleMeasure)
