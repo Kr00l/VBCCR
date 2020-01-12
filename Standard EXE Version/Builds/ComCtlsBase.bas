@@ -1185,6 +1185,7 @@ On Error Resume Next
 Dim AppForm As VB.Form, CurrControl As VB.Control
 For Each AppForm In VB.Forms
     For Each CurrControl In AppForm.Controls
+        Call RemoveVisualStyleFixes(AppForm)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceInPlaceActiveObject)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceControl)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfacePerPropertyBrowsing)
