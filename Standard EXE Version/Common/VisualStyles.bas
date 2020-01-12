@@ -140,8 +140,8 @@ Private Const DST_ICON As Long = &H3
 Private Const DST_BITMAP As Long = &H4
 Private Const DSS_DISABLED As Long = &H20
 
-Public Sub InitVisualStyles()
-If App.LogMode <> 0 Then Call InitReleaseVisualStyles(AddressOf ReleaseVisualStyles)
+Public Sub InitVisualStyleFixes()
+If App.LogMode <> 0 Then Call InitReleaseVisualStyleFixes(AddressOf ReleaseVisualStyleFixes)
 Dim ICCEX As TINITCOMMONCONTROLSEX
 With ICCEX
 .dwSize = LenB(ICCEX)
@@ -150,7 +150,7 @@ End With
 InitCommonControlsEx ICCEX
 End Sub
 
-Private Sub InitReleaseVisualStyles(ByVal Address As Long)
+Private Sub InitReleaseVisualStyleFixes(ByVal Address As Long)
 Static Release As TRELEASE
 If Release.VTableHeaderPointer <> 0 Then Exit Sub
 If GetComCtlVersion >= 6 Then
@@ -160,12 +160,12 @@ If GetComCtlVersion >= 6 Then
 End If
 End Sub
 
-Private Function ReleaseVisualStyles() As Long
+Private Function ReleaseVisualStyleFixes() As Long
 Const SEM_NOGPFAULTERRORBOX As Long = &H2
 SetErrorMode SEM_NOGPFAULTERRORBOX
 End Function
 
-Public Sub SetupVisualStyles(ByVal Form As VB.Form)
+Public Sub SetupVisualStyleFixes(ByVal Form As VB.Form)
 If GetComCtlVersion() >= 6 Then SendMessage Form.hWnd, WM_UPDATEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
 If EnabledVisualStyles() = False Then Exit Sub
 Dim CurrControl As VB.Control
@@ -178,6 +178,26 @@ For Each CurrControl In Form.Controls
                 SetProp CurrControl.hWnd, StrPtr("VisualStyles"), GetVisualStyles(CurrControl.hWnd)
                 If CurrControl.Enabled = True Then SetProp CurrControl.hWnd, StrPtr("Enabled"), 1
                 SetWindowSubclass CurrControl.hWnd, AddressOf RedirectButton, ObjPtr(CurrControl), ObjPtr(CurrControl)
+            End If
+    End Select
+Next CurrControl
+End Sub
+
+Public Sub RemoveVisualStyleFixes(ByVal Form As VB.Form)
+If EnabledVisualStyles() = False Then Exit Sub
+Dim CurrControl As VB.Control
+For Each CurrControl In Form.Controls
+    Select Case TypeName(CurrControl)
+        Case "Frame"
+            RemoveWindowSubclass CurrControl.hWnd, AddressOf RedirectFrame, ObjPtr(CurrControl)
+        Case "CommandButton", "OptionButton", "CheckBox"
+            If CurrControl.Style = vbButtonGraphical Then
+                RemoveProp CurrControl.hWnd, StrPtr("VisualStyles")
+                RemoveProp CurrControl.hWnd, StrPtr("Enabled")
+                RemoveProp CurrControl.hWnd, StrPtr("Hot")
+                RemoveProp CurrControl.hWnd, StrPtr("Painted")
+                RemoveProp CurrControl.hWnd, StrPtr("ButtonPart")
+                RemoveWindowSubclass CurrControl.hWnd, AddressOf RedirectButton, ObjPtr(CurrControl)
             End If
     End Select
 Next CurrControl
