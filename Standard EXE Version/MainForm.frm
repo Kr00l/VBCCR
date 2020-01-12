@@ -469,7 +469,7 @@ ToolBar1.ContainerKeyDown KeyCode, Shift
 End Sub
 
 Private Sub Form_Load()
-SetupVisualStyles Me
+Call SetupVisualStyleFixes(Me)
 If InIDE() = True Then
     Animation1.LoadFile AppPath() & "Resources\AnimationDemo.avi"
 Else

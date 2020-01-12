@@ -44,7 +44,7 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private Sub Form_Load()
-SetupVisualStyles Me
+Call SetupVisualStyleFixes(Me)
 Set ToolBar1.ImageList = MainForm.ImageList1
 Dim Width As Single, Height As Single
 ToolBar1.GetIdealSize Width, Height
