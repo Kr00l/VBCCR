@@ -1184,8 +1184,8 @@ Private Sub ComCtlsIDEStopProtectionHandler()
 On Error Resume Next
 Dim AppForm As VB.Form, CurrControl As VB.Control
 For Each AppForm In VB.Forms
+    Call RemoveVisualStylesFixes(AppForm)
     For Each CurrControl In AppForm.Controls
-        Call RemoveVisualStylesFixes(AppForm)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceInPlaceActiveObject)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceControl)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfacePerPropertyBrowsing)
