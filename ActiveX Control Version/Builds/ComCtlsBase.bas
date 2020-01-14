@@ -525,8 +525,8 @@ Const PM_NOREMOVE As Long = &H0, WM_CHAR As Long = &H102
 If PeekMessage(Msg, hWnd, WM_CHAR, WM_CHAR, PM_NOREMOVE) <> 0 Then ComCtlsPeekCharCode = Msg.wParam
 End Function
 
-Public Function ComCtlsSupportLevel() As Byte
-Static Done As Boolean, Value As Byte
+Public Function ComCtlsSupportLevel() As Integer
+Static Done As Boolean, Value As Integer
 If Done = False Then
     Dim Version As DLLVERSIONINFO
     On Error Resume Next
