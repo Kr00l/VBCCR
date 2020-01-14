@@ -1,5 +1,8 @@
 List of revisions:
 
+14-Jan-2020
+- Improvement in the PasswordChar property in the TextBoxW and RichTextBox control.
+
 09-Jan-2020
 - Included the CustomColors property (Variant) in the CommonDialog class.
   16 custom colors can be retrieved or changed via an array.
