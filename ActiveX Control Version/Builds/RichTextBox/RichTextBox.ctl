@@ -877,7 +877,13 @@ PropBorder = .ReadProperty("Border", True)
 PropBackColor = .ReadProperty("BackColor", vbWindowBackground)
 PropLocked = .ReadProperty("Locked", False)
 PropHideSelection = .ReadProperty("HideSelection", True)
-PropPasswordChar = .ReadProperty("PasswordChar", 0)
+Dim VarValue As Variant
+VarValue = .ReadProperty("PasswordChar", 0)
+If VarType(VarValue) = vbString Then ' Compatibility
+    If Len(VarValue) > 0 Then PropPasswordChar = AscW(VarValue) Else PropPasswordChar = 0
+Else
+    PropPasswordChar = VarValue
+End If
 PropUseSystemPasswordChar = .ReadProperty("UseSystemPasswordChar", False)
 PropMultiLine = .ReadProperty("MultiLine", False)
 PropMaxLength = .ReadProperty("MaxLength", 0)
