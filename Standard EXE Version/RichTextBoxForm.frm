@@ -146,8 +146,11 @@ End Sub
 Private Sub Form_Load()
 Call SetupVisualStylesFixes(Me)
 Set CommonDialogPageSetup = New CommonDialog
+Const LOCALE_USER_DEFAULT As Long = &H400
 Const LOCALE_IMEASURE As Long = &HD, LOCALE_RETURN_NUMBER As Long = &H20000000
-GetLocaleInfo 0, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), LenB(LocaleMeasure)
+' cchData = sizeof(DWORD) / sizeof(TCHAR)
+' That is, 2 for Unicode and 4 for ANSI.
+GetLocaleInfo LOCALE_USER_DEFAULT, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), 2
 CommonDialogPageSetup.PageLeftMargin = IIf(LocaleMeasure = 0, 2500, 1000)
 CommonDialogPageSetup.PageTopMargin = IIf(LocaleMeasure = 0, 2500, 1000)
 CommonDialogPageSetup.PageRightMargin = IIf(LocaleMeasure = 0, 2500, 1000)

@@ -1,5 +1,9 @@
 List of revisions:
 
+15-Jan-2020
+- Improvement in the SystemStartOfWeek property in the DTPicker and MonthView control.
+- Bugfix for the StatusBar control when having multiple 'AutoSizeSpring' panels.
+
 14-Jan-2020
 - Improvement in the PasswordChar property in the TextBoxW and RichTextBox control.
 
