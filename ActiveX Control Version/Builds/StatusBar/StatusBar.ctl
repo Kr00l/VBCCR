@@ -1752,12 +1752,24 @@ If StatusBarHandle <> 0 Then
         TotalWidth = TotalWidth + Borders(SBB_HORIZONTAL) + Borders(SBB_HORIZONTAL)
         If Me.IncludesSizeGrip = True Then TotalWidth = TotalWidth + 16 ' GetSystemMetrics(SM_CXVSCROLL) is here not applicable.
         If TotalWidth < (UserControl.ScaleWidth - 1) Then
-            For i = (PropShadowPanelsCount - 1) To 0 Step -1
-                If PropShadowPanels(i + 1).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i + 1).Visible = True Then
-                    Parts(i) = Parts(i) + ((UserControl.ScaleWidth - 1) - TotalWidth)
-                    Exit For
-                End If
+            Dim CountSpring As Long
+            For i = 1 To PropShadowPanelsCount
+                If PropShadowPanels(i).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i).Visible = True Then CountSpring = CountSpring + 1
             Next i
+            If CountSpring > 0 Then
+                Dim WidthPerSpring As Long, Remainder As Long
+                WidthPerSpring = ((UserControl.ScaleWidth - 1) - TotalWidth) / CountSpring
+                Remainder = ((UserControl.ScaleWidth - 1) - TotalWidth) - (WidthPerSpring * CountSpring)
+                For i = PropShadowPanelsCount To 1 Step -1
+                    If PropShadowPanels(i).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i).Visible = True Then
+                        Parts(i - 1) = Parts(i - 1) + WidthPerSpring
+                        If Remainder <> 0 Then
+                            Parts(i - 1) = Parts(i - 1) + Remainder
+                            Remainder = 0
+                        End If
+                    End If
+                Next i
+            End If
         End If
         TotalWidth = Borders(SBB_HORIZONTAL)
         Dim Width As Long
