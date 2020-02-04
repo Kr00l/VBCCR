@@ -974,6 +974,10 @@ Public Function UnsignedAdd(ByVal Start As Long, ByVal Incr As Long) As Long
 UnsignedAdd = ((Start Xor &H80000000) + Incr) Xor &H80000000
 End Function
 
+Public Function UnsignedSub(ByVal Start As Long, ByVal Decr As Long) As Long
+UnsignedSub = ((Start And &H7FFFFFFF) - (Decr And &H7FFFFFFF)) Xor ((Start Xor Decr) And &H80000000)
+End Function
+
 Public Function CUIntToInt(ByVal Value As Long) As Integer
 Const OFFSET_2 As Long = 65536
 Const MAXINT_2 As Integer = 32767
