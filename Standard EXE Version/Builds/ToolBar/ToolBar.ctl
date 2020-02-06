@@ -376,6 +376,7 @@ Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_STYLECHANGED As Long = &H7D
+Private Const WM_UPDATEUISTATE As Long = &H128, UIS_SET As Long = 1, UISF_HIDEACCEL As Long = &H2
 Private Const WM_USER As Long = &H400
 Private Const UM_SETBUTTONCX As Long = (WM_USER + 200)
 Private Const TB_ENABLEBUTTON As Long = (WM_USER + 1)
@@ -3947,6 +3948,17 @@ Select Case wMsg
             .CX = lParam
             End With
             SendMessage ToolBarHandle, TB_SETBUTTONINFO, wParam, ByVal VarPtr(TBBI)
+        End If
+    Case WM_UPDATEUISTATE
+        ' When a ToolBar is hosted in a MDIForm it *can* happen that an MDIChild sets UISF_HIDEACCEL to it's owner.
+        ' However, this ensures to circumvent such scenario.
+        If LoWord(wParam) = UIS_SET Then
+            Dim IntValue As Integer
+            IntValue = HiWord(wParam)
+            If (IntValue And UISF_HIDEACCEL) = UISF_HIDEACCEL Then
+                IntValue = IntValue And Not UISF_HIDEACCEL
+                wParam = MakeDWord(UIS_SET, IntValue)
+            End If
         End If
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)

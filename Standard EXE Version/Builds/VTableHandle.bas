@@ -311,13 +311,21 @@ End Sub
 
 Private Function GetVTableControl() As Long
 If VTableControl(0) = 0 Then
-    VTableControl(0) = ProcPtr(AddressOf IOleControl_QueryInterface)
-    VTableControl(1) = ProcPtr(AddressOf IOleControl_AddRef)
-    VTableControl(2) = ProcPtr(AddressOf IOleControl_Release)
+    If OriginalVTableControl <> 0 Then
+        CopyMemory VTableControl(0), ByVal OriginalVTableControl, 12
+    Else
+        VTableControl(0) = ProcPtr(AddressOf IOleControl_QueryInterface)
+        VTableControl(1) = ProcPtr(AddressOf IOleControl_AddRef)
+        VTableControl(2) = ProcPtr(AddressOf IOleControl_Release)
+    End If
     VTableControl(3) = ProcPtr(AddressOf IOleControl_GetControlInfo)
     VTableControl(4) = ProcPtr(AddressOf IOleControl_OnMnemonic)
     VTableControl(5) = ProcPtr(AddressOf IOleControl_OnAmbientPropertyChange)
-    VTableControl(6) = ProcPtr(AddressOf IOleControl_FreezeEvents)
+    If OriginalVTableControl <> 0 Then
+        CopyMemory VTableControl(6), ByVal UnsignedAdd(OriginalVTableControl, 24), 4
+    Else
+        VTableControl(6) = ProcPtr(AddressOf IOleControl_FreezeEvents)
+    End If
 End If
 GetVTableControl = VarPtr(VTableControl(0))
 End Function
@@ -479,11 +487,19 @@ End Function
 
 Private Function GetVTablePPB() As Long
 If VTablePPB(0) = 0 Then
-    VTablePPB(0) = ProcPtr(AddressOf IPPB_QueryInterface)
-    VTablePPB(1) = ProcPtr(AddressOf IPPB_AddRef)
-    VTablePPB(2) = ProcPtr(AddressOf IPPB_Release)
+    If OriginalVTablePPB <> 0 Then
+        CopyMemory VTablePPB(0), ByVal OriginalVTablePPB, 12
+    Else
+        VTablePPB(0) = ProcPtr(AddressOf IPPB_QueryInterface)
+        VTablePPB(1) = ProcPtr(AddressOf IPPB_AddRef)
+        VTablePPB(2) = ProcPtr(AddressOf IPPB_Release)
+    End If
     VTablePPB(3) = ProcPtr(AddressOf IPPB_GetDisplayString)
-    VTablePPB(4) = ProcPtr(AddressOf IPPB_MapPropertyToPage)
+    If OriginalVTablePPB <> 0 Then
+        CopyMemory VTablePPB(4), ByVal UnsignedAdd(OriginalVTablePPB, 16), 4
+    Else
+        VTablePPB(4) = ProcPtr(AddressOf IPPB_MapPropertyToPage)
+    End If
     VTablePPB(5) = ProcPtr(AddressOf IPPB_GetPredefinedStrings)
     VTablePPB(6) = ProcPtr(AddressOf IPPB_GetPredefinedValue)
 End If
