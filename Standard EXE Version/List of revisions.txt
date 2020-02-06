@@ -1,5 +1,10 @@
 List of revisions:
 
+06-Feb-2020
+- Improvement (cosmetic, not a bug) in VTableHandle.bas so that IOleControl do not disturb anymore in IDE on debugging.
+  This affects only the Std-EXE version (not OCX) and only when setting breakpoints. (F9, F8 etc.)
+- Minor internal improvement in the ToolBar control.
+
 15-Jan-2020
 - Improvement in the SystemStartOfWeek property in the DTPicker and MonthView control.
 - Bugfix for the StatusBar control when having multiple 'AutoSizeSpring' panels.
