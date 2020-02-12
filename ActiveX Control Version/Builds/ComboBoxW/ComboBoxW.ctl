@@ -1376,6 +1376,7 @@ End Property
 Public Sub AddItem(ByVal Item As String, Optional ByVal Index As Variant)
 Attribute AddItem.VB_Description = "Adds an item to the combo box."
 If ComboBoxHandle <> 0 Then
+    If StrPtr(Item) = 0 Then Item = ""
     Dim RetVal As Long
     If IsMissing(Index) = True Then
         RetVal = SendMessage(ComboBoxHandle, CB_ADDSTRING, 0, ByVal StrPtr(Item))
