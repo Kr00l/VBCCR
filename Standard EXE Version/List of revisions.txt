@@ -1,5 +1,8 @@
 List of revisions:
 
+12-Feb-2020
+- Passing vbNullString to the AddItem method of the ComboBoxW control does not cause an error anymore.
+
 06-Feb-2020
 - Improvement (cosmetic, not a bug) in VTableHandle.bas so that IOleControl do not disturb anymore in IDE on debugging.
   This affects only the Std-EXE version (not OCX) and only when setting breakpoints. (F9, F8 etc.)
