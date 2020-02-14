@@ -695,6 +695,7 @@ Private Declare Function ChooseColor Lib "comdlg32" Alias "ChooseColorW" (ByRef 
 Private Declare Function ChooseFont Lib "comdlg32" Alias "ChooseFontW" (ByRef lpChooseFont As TCHOOSEFONT) As Long
 Private Declare Function WinHelp Lib "user32" Alias "WinHelpW" (ByVal hWnd As Long, ByVal lpHelpFile As Long, ByVal wCommand As Long, ByVal dwData As Long) As Long
 Private Declare Function GetActiveWindow Lib "user32" () As Long
+Private Declare Function GetDesktopWindow Lib "user32" () As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function IsWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -1951,6 +1952,12 @@ Dim lpDevMode As Long, lpDevNames As Long, Buffer As String
 With PDLGEX
 .lStructSize = LenB(PDLGEX)
 .hWndOwner = GetOwnerWindow()
+If .hWndOwner = 0 Then
+    ' According to MSDN:
+    ' This member must be a valid window handle; it cannot be NULL.
+    ' The PrintDlgEx function will return E_HANDLE when this member was NULL.
+    .hWndOwner = GetDesktopWindow()
+End If
 .Flags = PropFlags
 .nPageRanges = 1
 .nMaxPageRanges = 1
