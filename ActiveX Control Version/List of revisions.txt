@@ -1,5 +1,152 @@
 List of revisions:
 
+12-Feb-2020
+- Revision update. (Version 1.6.61)
+
+06-Feb-2020
+- Revision update. (Version 1.6.60)
+
+15-Jan-2020
+- Revision update. (Version 1.6.59)
+
+14-Jan-2020
+- Revision update. (Version 1.6.58)
+
+09-Jan-2020
+- Revision update. (Version 1.6.57)
+
+05-Jan-2020
+- Revision update. (Version 1.6.56)
+
+03-Jan-2020
+- Revision update. (Version 1.6.55)
+
+28-Dec-2019
+- Revision update. (Version 1.6.54)
+
+26-Dec-2019
+- Revision update. (Version 1.6.53)
+
+15-Nov-2019
+- Revision update. (Version 1.6.52)
+
+25-Oct-2019
+- Revision update. (Version 1.6.51)
+
+13-Oct-2019
+- Revision update. (Version 1.6.50)
+
+09-Oct-2019
+- Revision update. (Version 1.6.49)
+
+11-Sep-2019
+- Revision update. (Version 1.6.48)
+
+25-Aug-2019
+- Revision update. (Version 1.6.47)
+
+24-Aug-2019
+- Revision update. (Version 1.6.46)
+
+22-Aug-2019
+- Revision update. (Version 1.6.45)
+
+21-Aug-2019
+- Revision update. (Version 1.6.44)
+
+20-Aug-2019
+- Revision update. (Version 1.6.43)
+
+20-Aug-2019
+- Revision update. (Version 1.6.42)
+
+15-Aug-2019
+- Revision update. (Version 1.6.41)
+
+11-Aug-2019
+- Revision update. (Version 1.6.40)
+
+10-Aug-2019
+- Revision update. (Version 1.6.39)
+
+09-Jul-2019
+- Revision update. (Version 1.6.38)
+
+14-May-2019
+- Revision update. (Version 1.6.37)
+
+11-May-2019
+- Revision update. (Version 1.6.36)
+
+23-Apr-2019
+- Revision update. (Version 1.6.35)
+
+19-Apr-2019
+- Revision update. (Version 1.6.34)
+
+31-Mar-2019
+- Revision update. (Version 1.6.33)
+
+26-Mar-2019
+- Revision update. (Version 1.6.32)
+
+25-Mar-2019
+- Revision update. (Version 1.6.31)
+
+10-Mar-2019
+- Revision update. (Version 1.6.30)
+
+26-Feb-2019
+- Revision update. (Version 1.6.29)
+
+25-Feb-2019
+- Revision update. (Version 1.6.28)
+
+19-Feb-2019
+- Revision update. (Version 1.6.27)
+
+18-Feb-2019
+- Revision update. (Version 1.6.26)
+
+15-Feb-2019
+- Revision update. (Version 1.6.25)
+
+10-Feb-2019
+- Revision update. (Version 1.6.24)
+
+06-Feb-2019
+- Revision update. (Version 1.6.23)
+
+02-Feb-2019
+- Revision update. (Version 1.6.22)
+
+30-Jan-2019
+- Revision update. (Version 1.6.21)
+
+29-Jan-2019
+- Revision update. (Version 1.6.20)
+
+23-Jan-2019
+- Revision update. (Version 1.6.19)
+
+21-Jan-2019
+- Revision update. (Version 1.6.18)
+
+17-Jan-2019
+- Revision update. (Version 1.6.17)
+
+17-Jan-2019
+- Revision update. (Version 1.6.16)
+
+06-Jan-2019
+- Revision update. (Version 1.6.15)
+
+04-Jan-2019
+- Revision update. (Version 1.6.14)
+
+11-Nov-2018
+- Revision update. (Version 1.6.13)
+
 05-Nov-2018
 - Revision update. (Version 1.6.12)
 

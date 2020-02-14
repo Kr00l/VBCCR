@@ -188,6 +188,7 @@ Private ProgressBarHandle As Long
 Private ProgressBarITaskBarList3 As IUnknown
 Private ProgressBarIsClick As Boolean
 Private ProgressBarMouseOver As Boolean
+Private ProgressBarDesignMode As Boolean
 Private ProgressBarDblClickSupported As Boolean, ProgressBarIsDblClick As Boolean
 Private ProgressBarDblClickTime As Long, ProgressBarDblClickTickCount As Double
 Private ProgressBarDblClickCX As Long, ProgressBarDblClickCY As Long
@@ -246,7 +247,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_PROGRESS_CLASS)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ProgressBarDblClickTime = GetDoubleClickTime()
 Const SM_CXDOUBLECLK As Long = 36
 Const SM_CYDOUBLECLK As Long = 37
@@ -265,6 +266,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ProgressBarAlignable = False Else ProgressBarAlignable = True
 On Error GoTo 0
+ProgressBarDesignMode = Not Ambient.UserMode
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -295,6 +297,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ProgressBarAlignable = False Else ProgressBarAlignable = True
 On Error GoTo 0
+ProgressBarDesignMode = Not Ambient.UserMode
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -410,17 +413,14 @@ LastWidth = .Width
 LastAlign = Align
 End With
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If ProgressBarHandle <> 0 Then MoveWindow ProgressBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyProgressBar
 Call ComCtlsReleaseShellMod
 End Sub
@@ -657,7 +657,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ProgressBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -690,7 +690,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If ProgressBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If ProgressBarHandle <> 0 Then Call ComCtlsSetRightToLeft(ProgressBarHandle, dwMask)
 UserControl.PropertyChanged "RightToLeft"
 End Property
@@ -737,7 +737,7 @@ If Value < Me.Max Then
     PropRange.Max = Me.Max
     If PropValue < PropRange.Min Then PropValue = PropRange.Min
 Else
-    If Ambient.UserMode = False Then
+    If ProgressBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -763,7 +763,7 @@ If Value > Me.Min Then
     PropRange.Max = Value
     If PropValue > PropRange.Max Then PropValue = PropRange.Max
 Else
-    If Ambient.UserMode = False Then
+    If ProgressBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -851,7 +851,7 @@ Public Property Let MarqueeSpeed(ByVal Value As Long)
 If Value > 0 Then
     PropMarqueeSpeed = Value
 Else
-    If Ambient.UserMode = False Then
+    If ProgressBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -965,7 +965,7 @@ End Property
 
 Public Property Let ShowInTaskBar(ByVal Value As Boolean)
 PropShowInTaskBar = Value
-If Ambient.UserMode = True And ComCtlsSupportLevel() >= 2 Then
+If ProgressBarDesignMode = False And ComCtlsSupportLevel() >= 2 Then
     If ProgressBarITaskBarList3 Is Nothing Then Set ProgressBarITaskBarList3 = CreateITaskBarList3()
     If PropShowInTaskBar = True Then
         Call CheckTaskBarProgress
@@ -995,7 +995,7 @@ Select Case PropScrolling
         If ComCtlsSupportLevel() >= 1 Then
             dwStyle = dwStyle Or PBS_MARQUEE
         Else
-            If Ambient.UserMode = True Then PropScrolling = PrbScrollingStandard
+            If ProgressBarDesignMode = False Then PropScrolling = PrbScrollingStandard
         End If
 End Select
 If PropSmoothReverse = True Then If ComCtlsSupportLevel() >= 1 Then dwStyle = dwStyle Or PBS_SMOOTHREVERSE
@@ -1008,7 +1008,7 @@ Me.MarqueeAnimation = PropMarqueeAnimation
 Me.BackColor = PropBackColor
 Me.ForeColor = PropForeColor
 Me.State = PropState
-If Ambient.UserMode = True Then
+If ProgressBarDesignMode = False Then
     If ProgressBarHandle <> 0 Then
         ProgressBarDblClickSupported = CBool((GetClassLong(ProgressBarHandle, GCL_STYLE) And CS_DBLCLKS) <> 0)
         Call ComCtlsSetSubclass(ProgressBarHandle, Me, 0)
@@ -1017,7 +1017,7 @@ End If
 End Sub
 
 Private Sub ReCreateProgressBar()
-If Ambient.UserMode = True Then
+If ProgressBarDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroyProgressBar

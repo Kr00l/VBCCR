@@ -110,6 +110,7 @@ Private Const CLR_DEFAULT As Long = -16777216
 Implements OLEGuids.IObjectSafety
 Private ImageListHandle As Long
 Private ImageListInitListImagesCount As Long
+Private ImageListDesignMode As Boolean
 Private PropListImages As ImlListImages
 Private PropImageWidth As Long
 Private PropImageHeight As Long
@@ -134,6 +135,7 @@ Call ComCtlsLoadShellMod
 End Sub
 
 Private Sub UserControl_InitProperties()
+ImageListDesignMode = Not Ambient.UserMode
 PropImageWidth = 0
 PropImageHeight = 0
 PropColorDepth = ImlColorDepth24Bit
@@ -146,6 +148,7 @@ Call CreateImageList
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
+ImageListDesignMode = Not Ambient.UserMode
 With PropBag
 PropImageWidth = .ReadProperty("ImageWidth", 0)
 PropImageHeight = .ReadProperty("ImageHeight", 0)
@@ -257,7 +260,7 @@ End Property
 
 Public Property Let ImageWidth(ByVal Value As Long)
 If Me.ListImages.Count > 0 Then
-    If Ambient.UserMode = False Then
+    If ImageListDesignMode = True Then
         MsgBox "Property is read-only if image list contains images", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -267,7 +270,7 @@ Else
     If Value >= 0 Then
         PropImageWidth = Value
     Else
-        If Ambient.UserMode = False Then
+        If ImageListDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -287,7 +290,7 @@ End Property
 
 Public Property Let ImageHeight(ByVal Value As Long)
 If Me.ListImages.Count > 0 Then
-    If Ambient.UserMode = False Then
+    If ImageListDesignMode = True Then
         MsgBox "Property is read-only if image list contains images", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -297,7 +300,7 @@ Else
     If Value >= 0 Then
         PropImageHeight = Value
     Else
-        If Ambient.UserMode = False Then
+        If ImageListDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -317,7 +320,7 @@ End Property
 
 Public Property Let ColorDepth(ByVal Value As ImlColorDepthConstants)
 If Me.ListImages.Count > 0 Then
-    If Ambient.UserMode = False Then
+    If ImageListDesignMode = True Then
         MsgBox "Property is read-only if image list contains images", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -345,7 +348,7 @@ End Property
 
 Public Property Let RightToLeftMirror(ByVal Value As Boolean)
 If Me.ListImages.Count > 0 Then
-    If Ambient.UserMode = False Then
+    If ImageListDesignMode = True Then
         MsgBox "Property is read-only if image list contains images", vbCritical + vbOKOnly
         Exit Property
     Else

@@ -37,6 +37,19 @@ Friend Sub FInit(ByVal Object As TreeView)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropNode(Index)
+If NewKey = vbNullString Then
+    PropNode.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropNode.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropNode.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Relative As Variant, Optional ByVal Relationship As TvwNodeRelationshipConstants = TvwNodeRelationshipNext, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Image As Variant, Optional ByVal SelectedImage As Variant) As TvwNode
 Attribute Add.VB_Description = "Adds a node to the nodes collection."
 Dim ImageIndex As Long, SelectedImageIndex As Long

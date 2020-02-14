@@ -141,8 +141,6 @@ Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lp
 Private Declare Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExW" (ByVal IDHook As Long, ByVal lpfn As Long, ByVal hMod As Long, ByVal dwThreadID As Long) As Long
 Private Declare Function UnhookWindowsHookEx Lib "user32" (ByVal hHook As Long) As Long
 Private Declare Function CallNextHookEx Lib "user32" (ByVal hHook As Long, ByVal nCode As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
-Private Declare Function GetClassName Lib "user32" Alias "GetClassNameW" (ByVal hWnd As Long, ByVal lpClassName As Long, ByVal nMaxCount As Long) As Long
 Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function ImmIsIME Lib "imm32" (ByVal hKL As Long) As Long
@@ -657,8 +655,8 @@ Const PM_NOREMOVE As Long = &H0, WM_CHAR As Long = &H102
 If PeekMessage(Msg, hWnd, WM_CHAR, WM_CHAR, PM_NOREMOVE) <> 0 Then ComCtlsPeekCharCode = Msg.wParam
 End Function
 
-Public Function ComCtlsSupportLevel() As Byte
-Static Done As Boolean, Value As Byte
+Public Function ComCtlsSupportLevel() As Integer
+Static Done As Boolean, Value As Integer
 If Done = False Then
     Dim Version As DLLVERSIONINFO
     On Error Resume Next
@@ -694,25 +692,13 @@ End If
 ComCtlsW2KCompatibility = Value
 End Function
 
-Public Function ComCtlsRootIsEditor(ByVal hWnd As Long) As Boolean
-Static Done As Boolean, Value As Boolean
-If Done = False Then
-    Const GA_ROOT As Long = 2
-    hWnd = GetAncestor(hWnd, GA_ROOT)
-    If hWnd <> 0 Then
-        Dim Buffer As String, RetVal As Long
-        Buffer = String(256, vbNullChar)
-        RetVal = GetClassName(hWnd, StrPtr(Buffer), Len(Buffer))
-        If RetVal <> 0 Then Value = CBool(Left$(Buffer, RetVal) = "wndclass_desked_gsk")
-    End If
-    Done = True
-End If
-ComCtlsRootIsEditor = Value
-End Function
-
 Public Sub ComCtlsTopParentValidateControls(ByVal UserControl As Object)
 With GetTopUserControl(UserControl)
-If TypeOf .Parent Is VB.Form Then
+If TypeOf .Parent Is VB.MDIForm Then
+    Dim MDIForm As VB.MDIForm
+    Set MDIForm = .Parent
+    MDIForm.ValidateControls
+ElseIf TypeOf .Parent Is VB.Form Then
     Dim Form As VB.Form
     Set Form = .Parent
     Form.ValidateControls
@@ -1177,7 +1163,7 @@ Public Sub ComCtlsInitIDEStopProtection()
 
 If InIDE() = True Then
     Dim ASMWrapper As Long, RestorePointer As Long, OldAddress As Long
-    ASMWrapper = VirtualAlloc(ByVal 0, 20, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+    ASMWrapper = VirtualAlloc(ByVal 0&, 20, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
     OldAddress = GetProcAddress(GetModuleHandle(StrPtr("vba6.dll")), "EbProjectReset")
     RestorePointer = HookIATEntry("vb6.exe", "vba6.dll", "EbProjectReset", ASMWrapper)
     WriteCall ASMWrapper, AddressOf ComCtlsIDEStopProtectionHandler
@@ -1196,12 +1182,13 @@ End Sub
 
 Private Sub ComCtlsIDEStopProtectionHandler()
 On Error Resume Next
-Call RemoveAllVTableSubclass(VTableInterfaceInPlaceActiveObject)
-Call RemoveAllVTableSubclass(VTableInterfaceControl)
-Call RemoveAllVTableSubclass(VTableInterfacePerPropertyBrowsing)
-Dim AppForm As Form, CurrControl As Control
-For Each AppForm In Forms
+Dim AppForm As VB.Form, CurrControl As VB.Control
+For Each AppForm In VB.Forms
+    Call RemoveVisualStylesFixes(AppForm)
     For Each CurrControl In AppForm.Controls
+        Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceInPlaceActiveObject)
+        Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceControl)
+        Call RemoveVTableHandling(CurrControl.Object, VTableInterfacePerPropertyBrowsing)
         Select Case TypeName(CurrControl)
             Case "Animation", "DTPicker", "MonthView", "Slider", "StatusBar", "TabStrip", "ListBoxW", "ListView", "TreeView", "IPAddress", "ToolBar", "UpDown", "SpinBox", "Pager", "OptionButtonW", "CheckBoxW", "CommandButtonW", "TextBoxW", "HotKey", "CoolBar", "LinkLabel", "CommandLink"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
@@ -1224,6 +1211,9 @@ For Each AppForm In Forms
         End Select
     Next CurrControl
 Next AppForm
+Call StopVTableHandling(VTableInterfaceInPlaceActiveObject)
+Call StopVTableHandling(VTableInterfaceControl)
+Call StopVTableHandling(VTableInterfacePerPropertyBrowsing)
 If CdlFRDialogCount > 0 Then
     Dim DialogHandle() As Long
     DialogHandle() = CdlFRDialogHandle()

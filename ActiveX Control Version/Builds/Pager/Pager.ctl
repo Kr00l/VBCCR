@@ -161,8 +161,6 @@ Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
-Private Const WM_COMMAND As Long = &H111
-Private Const WM_SHOWWINDOW As Long = &H18
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const PGM_FIRST As Long = &H1400
@@ -178,7 +176,6 @@ Private Const PGM_GETPOS As Long = (PGM_FIRST + 9)
 Private Const PGM_SETBUTTONSIZE As Long = (PGM_FIRST + 10)
 Private Const PGM_GETBUTTONSIZE As Long = (PGM_FIRST + 11)
 Private Const PGM_GETBUTTONSTATE As Long = (PGM_FIRST + 12)
-Private Const PGM_SETSCROLLINFO As Long = (PGM_FIRST + 13)
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_GETDROPTARGET As Long = (CCM_FIRST + 4)
 Private Const PGM_GETDROPTARGET As Long = CCM_GETDROPTARGET
@@ -206,6 +203,7 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private PagerHandle As Long
 Private PagerIsClick As Boolean
 Private PagerMouseOver As Boolean
+Private PagerDesignMode As Boolean
 Private PagerHotItemChangePrevFlags As Long
 Private PagerAlignable As Boolean
 Private PagerBuddyControlHandle As Long, PagerBuddyControlPrevParent As Long
@@ -294,7 +292,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_PAGESCROLLER_CLASS)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim BuddyControlArray(0) As String
 End Sub
 
@@ -304,6 +302,7 @@ If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then PagerAlignable = False Else PagerAlignable = True
 On Error GoTo 0
+PagerDesignMode = Not Ambient.UserMode
 PropBackColor = vbButtonFace
 PropOLEDragDropScroll = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -326,6 +325,7 @@ If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then PagerAlignable = False Else PagerAlignable = True
 On Error GoTo 0
+PagerDesignMode = Not Ambient.UserMode
 With PropBag
 PropBackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -424,17 +424,14 @@ LastWidth = .Width
 LastAlign = Align
 End With
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If PagerHandle <> 0 Then MoveWindow PagerHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyPager
 Call ComCtlsReleaseShellMod
 End Sub
@@ -686,7 +683,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If PagerDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -719,7 +716,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If PagerDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If PagerHandle <> 0 Then Call ComCtlsSetRightToLeft(PagerHandle, dwMask)
 UserControl.PropertyChanged "RightToLeft"
 End Property
@@ -753,7 +750,7 @@ End Property
 
 Public Property Get BuddyControl() As Variant
 Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
-If Ambient.UserMode = True Then
+If PagerDesignMode = False Then
     If PropBuddyControlInit = False And PagerBuddyObjectPointer = 0 Then
         If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
         PropBuddyControlInit = True
@@ -769,7 +766,7 @@ Me.BuddyControl = Value
 End Property
 
 Public Property Let BuddyControl(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If PagerDesignMode = False Then
     If PagerHandle <> 0 Then
         Dim Success As Boolean, Handle As Long
         On Error Resume Next
@@ -854,7 +851,7 @@ End Property
 
 Public Property Let BorderWidth(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If PagerDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -873,7 +870,7 @@ If IntValue >= 0 And ErrValue = 0 Then
         Me.Refresh
     End If
 Else
-    If Ambient.UserMode = False Then
+    If PagerDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -905,7 +902,7 @@ End Property
 
 Public Property Get ButtonSize() As Single
 Attribute ButtonSize.VB_Description = "Returns/sets the current button size. A value of -1 indicates that the default system size will be used."
-If PagerHandle <> 0 And Ambient.UserMode = True Then
+If PagerHandle <> 0 And PagerDesignMode = False Then
     Select Case PropOrientation
         Case PgrOrientationVertical
             ButtonSize = UserControl.ScaleY(SendMessage(PagerHandle, PGM_GETBUTTONSIZE, 0, ByVal 0&), vbPixels, vbContainerSize)
@@ -928,7 +925,7 @@ End Property
 
 Public Property Let ButtonSize(ByVal Value As Single)
 If Value < 0 And Not Value = -1 Then
-    If Ambient.UserMode = False Then
+    If PagerDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -950,7 +947,7 @@ End If
 ErrValue = Err.Number
 On Error GoTo 0
 If (LngValue < 0 And Not LngValue = -1) Or ErrValue <> 0 Then
-    If Ambient.UserMode = False Then
+    If PagerDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1000,14 +997,14 @@ If PagerHandle <> 0 Then
     If Not PropButtonSize = -1 Then SendMessage PagerHandle, PGM_SETBUTTONSIZE, 0, ByVal PropButtonSize
 End If
 Me.BackColor = PropBackColor
-If Ambient.UserMode = True Then
+If PagerDesignMode = False Then
     If PagerHandle <> 0 Then Call ComCtlsSetSubclass(PagerHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
 Private Sub ReCreatePager()
-If Ambient.UserMode = True Then
+If PagerDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     If PagerHandle <> 0 And PagerBuddyControlHandle <> 0 Then

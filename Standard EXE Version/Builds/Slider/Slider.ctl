@@ -143,7 +143,7 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
@@ -231,6 +231,7 @@ Private Const TTN_GETDISPINFOA As Long = (TTN_FIRST - 0)
 Private Const TTN_GETDISPINFOW As Long = (TTN_FIRST - 10)
 Private Const TTN_GETDISPINFO As Long = TTN_GETDISPINFOW
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private SliderHandle As Long, SliderToolTipHandle As Long
@@ -238,6 +239,7 @@ Private SliderTransparentBrush As Long
 Private SliderCharCodeCache As Long
 Private SliderIsClick As Boolean
 Private SliderMouseOver As Boolean
+Private SliderDesignMode As Boolean, SliderTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -258,6 +260,15 @@ Private PropSelStart As Long, PropSelLength As Long
 Private PropTransparent As Boolean
 Private PropHideThumb As Boolean
 Private PropReversed As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -309,12 +320,16 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+SliderDesignMode = Not Ambient.UserMode
+SliderTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -343,6 +358,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+SliderDesignMode = Not Ambient.UserMode
+SliderTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
@@ -440,37 +459,37 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Dim Width As Long, Height As Long
-If DPICorrectionFactor() <> 1 Then
-    Width = .ScaleX(.Extender.Width, vbContainerSize, vbPixels)
-    Height = .ScaleY(.Extender.Height, vbContainerSize, vbPixels)
-Else
-    Width = .ScaleWidth
-    Height = .ScaleHeight
-End If
+Width = .ScaleWidth
+Height = .ScaleHeight
 Select Case PropOrientation
     Case SldOrientationHorizontal
         If Height > 45 Then Height = 45
     Case SldOrientationVertical
         If Width > 45 Then Width = 45
 End Select
-If SliderHandle <> 0 Then MoveWindow SliderHandle, 0, 0, Width, Height, 1
-.Extender.Move .Extender.Left, .Extender.Top, .ScaleX(Width, vbPixels, vbContainerSize), .ScaleY(Height, vbPixels, vbContainerSize)
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
+If SliderHandle <> 0 Then
+    If PropTransparent = True Then
+        MoveWindow SliderHandle, 0, 0, Width, Height, 0
+        If SliderTransparentBrush <> 0 Then
+            DeleteObject SliderTransparentBrush
+            SliderTransparentBrush = 0
+        End If
+        RedrawWindow SliderHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow SliderHandle, 0, 0, Width, Height, 1
+    End If
 End If
+.Extender.Move .Extender.Left, .Extender.Top, .ScaleX(Width, vbPixels, vbContainerSize), .ScaleY(Height, vbPixels, vbContainerSize)
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 End With
 InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroySlider
 Call ComCtlsReleaseShellMod
 End Sub
@@ -716,7 +735,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -748,7 +767,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If SliderDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -802,7 +821,7 @@ If Value < Me.Max Then
         PropSelLength = 0
     End If
 Else
-    If Ambient.UserMode = False Then
+    If SliderDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -839,7 +858,7 @@ If Value > Me.Min Then
         PropSelLength = 0
     End If
 Else
-    If Ambient.UserMode = False Then
+    If SliderDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -897,7 +916,7 @@ Public Property Let TickFrequency(ByVal Value As Long)
 If Value > 0 Then
     PropTickFrequency = Value
 Else
-    If Ambient.UserMode = False Then
+    If SliderDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -918,15 +937,8 @@ Dim Swap(0 To 1) As Long
 Select Case Value
     Case SldOrientationHorizontal, SldOrientationVertical
         If PropOrientation <> Value Then
-            With UserControl
-            If DPICorrectionFactor() <> 1 Then
-                Swap(0) = .ScaleY(.Extender.Height, vbContainerSize, vbPixels)
-                Swap(1) = .ScaleX(.Extender.Width, vbContainerSize, vbPixels)
-            Else
-                Swap(0) = .ScaleHeight
-                Swap(1) = .ScaleWidth
-            End If
-            End With
+            Swap(0) = UserControl.ScaleHeight
+            Swap(1) = UserControl.ScaleWidth
         Else
             Swap(0) = -1
             Swap(1) = -1
@@ -1060,7 +1072,7 @@ End Property
 
 Public Property Let ShowTip(ByVal Value As Boolean)
 PropShowTip = Value
-If SliderHandle <> 0 And Ambient.UserMode = True Then
+If SliderHandle <> 0 And SliderDesignMode = False Then
     If PropShowTip = False Then
         SendMessage SliderHandle, TBM_SETTOOLTIPS, 0, ByVal 0&
     Else
@@ -1151,7 +1163,7 @@ Select Case Value
     Case Me.Min To Me.Max
         PropSelStart = Value
     Case Else
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1188,7 +1200,7 @@ If PropSelectRange = True Then
     If Value >= 0 And (PropSelStart + Value) <= Me.Max Then
         PropSelLength = Value
     Else
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1201,7 +1213,7 @@ If PropSelectRange = True Then
     End If
 Else
     If Value <> 0 Then
-        If Ambient.UserMode = False Then
+        If SliderDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1298,6 +1310,11 @@ If PropShowTip = True Then dwStyle = dwStyle Or TBS_TOOLTIPS
 If PropSelectRange = True Then dwStyle = dwStyle Or TBS_ENABLESELRANGE
 If PropHideThumb = True Then dwStyle = dwStyle Or TBS_NOTHUMB
 If PropReversed = True Then dwStyle = dwStyle Or TBS_REVERSED Or TBS_DOWNISLEFT
+If SliderDesignMode = False Then
+    ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
+    ' Thus it is necessary to subclass the parent before the control is created.
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+End If
 SliderHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_trackbar32"), StrPtr("Slider"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If SliderHandle <> 0 Then
     SliderToolTipHandle = SendMessage(SliderHandle, TBM_GETTOOLTIPS, 0, ByVal 0&)
@@ -1313,14 +1330,13 @@ Me.SmallChange = PropSmallChange
 Me.LargeChange = PropLargeChange
 Me.TipSide = PropTipSide
 If PropSelectRange = True Then Me.SelStart = PropSelStart
-If Ambient.UserMode = True Then
+If SliderDesignMode = False Then
     If SliderHandle <> 0 Then Call ComCtlsSetSubclass(SliderHandle, Me, 1)
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
 Private Sub ReCreateSlider()
-If Ambient.UserMode = True Then
+If SliderDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Call DestroySlider
@@ -1499,8 +1515,8 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> SliderHandle Then
-            If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If SliderTopDesignMode = False And GetFocus() <> SliderHandle Then
+            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN, WM_MBUTTONDOWN
                     On Error Resume Next
@@ -1510,7 +1526,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE

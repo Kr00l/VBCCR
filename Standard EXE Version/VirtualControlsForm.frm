@@ -44,7 +44,7 @@ End Type
 Private VirtualLvwItems(1 To 100000, 0 To 3) As VirtualLvwItemStruct
 
 Private Sub Form_Load()
-Call SetupVisualStyles(Me)
+Call SetupVisualStylesFixes(Me)
 ListView1.VirtualDisabledInfos = 0 ' None disabled info
 Set ListView1.SmallIcons = MainForm.ImageList1
 Dim i As Long, j As Long

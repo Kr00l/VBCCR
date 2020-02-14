@@ -1,5 +1,176 @@
 List of revisions:
 
+12-Feb-2020
+- Passing vbNullString to the AddItem method of the ComboBoxW control does not cause an error anymore.
+
+06-Feb-2020
+- Improvement (cosmetic, not a bug) in VTableHandle.bas so that IOleControl do not disturb anymore in IDE on debugging.
+  This affects only the Std-EXE version (not OCX) and only when setting breakpoints. (F9, F8 etc.)
+- Minor internal improvement in the ToolBar control.
+
+15-Jan-2020
+- Improvement in the SystemStartOfWeek property in the DTPicker and MonthView control.
+- Bugfix for the StatusBar control when having multiple 'AutoSizeSpring' panels.
+
+14-Jan-2020
+- Improvement in the PasswordChar property in the TextBoxW and RichTextBox control.
+
+09-Jan-2020
+- Included the CustomColors property (Variant) in the CommonDialog class.
+  16 custom colors can be retrieved or changed via an array.
+
+05-Jan-2020
+- Improvement in VTableHandle.bas as IPerPropertyBrowsing must NOT be subclassed anymore.
+  No VTable remains subclassed, therefore VTableSubclass.cls got obselete and was removed!
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - bugfix interface IPerPropertyBrowsing.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
+03-Jan-2020
+- Improvement in VTableHandle.bas as IOleControl must NOT be subclassed anymore.
+  It is necessary to replace also all controls. (.ctl)
+
+28-Dec-2019
+- Minor internal improvement in the ContainerKeyDown method in the ToolBar control.
+
+26-Dec-2019
+- Minor internal improvement in the..
+  - RestoreRecent property in the FontCombo control.
+  - WorkAreas/ColumnOrder property in the ListView control.
+  - TileViewIndices property of a ListItem in the ListView control.
+  - SetAcceleration method in the SpinBox control.
+
+15-Nov-2019
+- It is now possible for the TvwNodes collection to change the key on a particular TvwNode in the TreeView control.
+
+25-Oct-2019
+- No crash anymore when getting the Hint property in 'LvwGroup' in the ListView control.
+
+13-Oct-2019
+- Internal improvement for the Transparent property in all affected controls.
+  The internal transparent brush will be reset automatically upon UserControl_Resize.
+  As side-effect it also fixes the cluttered background on non-integral DPI.
+
+09-Oct-2019
+- Change of how to achieve DPI-awareness to the controls for non-integral DPI.
+  It's just a better technique now which reduces the number of resizes.
+  However, the change has no visible impact for the end-user.
+
+08-Oct-2019
+- Cosmetic bugfix in the DPICorrectionFactor() function in Common.bas.
+  It now returns a factor - by definition - in which a result shall be multiplied.
+  Before this bugfix the result must be divided, which was odd.
+
+05-Oct-2019
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - included interface IOleInPlaceObject.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
+11-Sep-2019
+- Bugfix that the .Tag property of 'TbrButtonMenu' was not restored from the PropertyBag in the ToolBar control.
+
+24-Aug-2019
+- BackColor property works now also when VisualStyles is False in the TabStrip control.
+- Included the DoubleBuffer property in the TabStrip control.
+
+22-Aug-2019
+- Included the BackColor property and improved the DrawBackground method in the TabStrip control.
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - enriched interface IOleObject with more methods.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
+21-Aug-2019
+- Included enum value 'RtfFindOptionReverse' for the Find method in the RichTextBox control.
+
+20-Aug-2019
+- UTF-16 BOM was missing in the internal StreamFileOut function in the RichTextBox control.
+  This fix is only meaningful when using 'RtfLoadSaveFormatUnicodeText' in the SaveFile method.
+
+15-Aug-2019
+- Included the SelLink run-time property in the RichTextBox control.
+
+11-Aug-2019
+- Potential double MouseUp event (not on double click; normal click) before and after MouseDown fixed on certain conditions in the ListView/TreeView control.
+
+10-Aug-2019
+- It is now possible for the LvwListItems collection to change the key on a particular LvwListItem in the ListView control.
+
+09-Jul-2019
+- VTable bugfix in the ListView control. (Unstable condition when internal SysHeader32 control had focus)
+
+14-May-2019
+- Minor improvement of the Locked property in the ComboBoxW, FontCombo and ImageCombo control.
+
+11-May-2019
+- Minor internal improvement.
+
+23-Apr-2019
+- Bugfix in the internal ComCtlsTopParentValidateControls function.
+
+26-Mar-2019
+- Minor bugfix in each WM_MOUSEACTIVATE handler.
+
+25-Mar-2019
+- Bugfix in the HDN_BEGINFILTEREDIT handler in the ListView control.
+
+10-Mar-2019
+- Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
+
+26-Feb-2019
+- Bugfix that the PanelClick event fired two times when double clicking in the StatusBar control.
+- Elimination of difference between StdEXE and OCX version. All UserControls in StdEXE now implements IObjectSafety.
+
+19-Feb-2019
+- GDI leak fixed when ListView/TreeView/CommandLink/CommandButtonW/OptionButtonW/CheckBoxW is nested in another UserControl and has the ImageList property set at design-time.
+
+18-Feb-2019
+- Replaced WM_CHANGEUISTATE with WM_UPDATEUISTATE in VisualStyles.bas.
+- GDI leak fixed when ToolBar/CoolBar/TabStrip/ImageCombo is nested in another UserControl and has the ImageList property set at design-time.
+
+15-Feb-2019
+- When the SelectItem function changes the index then the Click event will now be fired in the ComboBoxW control.
+
+10-Feb-2019
+- Bugfix in the Slider control related to ModifyTipText event.
+- StatusBar control can now render 32bpp alpha bitmaps.
+
+07-Feb-2019
+- Further improvement of VisualStyles.bas.
+
+06-Feb-2019
+- CommandButtonW/CheckBoxW/OptionButtonW controls now draw themed on vbButtonGraphical by their own.
+  This way the ForeColor property can be used on vbButtonGraphical even when themed.
+- VisualStyles.bas modified to only consider VB intrinsic CommandButton/CheckBox/OptionButton controls.
+  It also now use WM_QUERYUISTATE to consider if focus rect or accel should be drawn.
+- Minor internal improvement in the RichTextBox control related to theming.
+
+02-Feb-2019
+- Picture property in the FrameW control can now render 32bpp alpha bitmaps.
+- Preview in PPImageListImages.pag can now render 32bpp alpha bitmaps.
+  The ImageList control itself already supported this when the ColorDepth property was set to 32bit.
+
+29-Jan-2019
+- Internal improvement in the BitmapHandleFromPicture function in Common.bas.
+- CommandButtonW/CheckBoxW/OptionButtonW better draws now disabled pictures in vbButtonGraphical style.
+  This has only effect when no DisabledPicture is provided and it draws the normal Picture object as disabled.
+
+23-Jan-2019
+- VBA bugfix.
+
+21-Jan-2019
+- Bugfix when loading a non-unicode file with RtfLoadSaveFormatUnicodeText in the RichTextBox control.
+
+17-Jan-2019
+- Improvement in VTableHandle.bas concerning 'DeactivateIPAO'.
+- Bugfix in the UseShortestDayNames property in the MonthView control.
+
+06-Jan-2019
+- Major perfomance boost when reading .Text or .TextRTF in the RichTextBox control.
+  This was achieved by reducing the number of 'ReDim Preserve' in the internal RtfStreamCallbackStringOut function.
+
+11-Nov-2018
+- Internal improvement concerning design-mode handling.
+
 05-Nov-2018
 - Minor internal improvement in the 'VTableCall' function.
 
@@ -966,37 +1137,6 @@ List of revisions:
 - ComboBoxW with Style 'CboStyleDropDownCombo' is now working on Windows 2000.
   Message CB_GETCOMBOBOXINFO is not supported on Windows 2000, so little workaround was necessary to solve this.
 - Some other minor internal improvements.
-
-25-Feb-2016
-- Minor adjustment to the BackColor in the ToolBar control so that the Pager control can recognize it.
-
-24-Feb-2016
-- Fixed a bug that the Scroll event fired twice instead of once in the Slider control.
-
-19-Feb-2016
-- The BackColor property in the ToolBar control is now shown/visible at design-time.
-  But it remains ignored when the control paints via double-buffering. (also at run-time)
-
-30-Jan-2016
-- Included the ShowTrailingDates property in the MonthView control.
-- Included the CalendarShowTrailingDates property in the DTPicker control.
-- Forgot to rename the HotTrack property to 'HotTracking' in the property page of the SpinBox control.
-
-28-Jan-2016
-- Fixed a bug in the LVN_ITEMACTIVATE handler in the ListView control.
-  The Shift parameter in the ItemActivate event was not properly set.
-
-19-Jan-2016
-- Renamed the HotTrack property to 'HotTracking' in the SpinBox control.
-  So the wording is in line with the UpDown, TreeView, TabStrip, ListView and LinkLabel control.
-
-07-Jan-2016
-- Included the MaxText event in the TextBoxW and RichTextBox control.
-
-01-Jan-2016
-- Mouse events now again in correct order in the ImageCombo, TreeView and ListView control.
-  Some workaround was necessary to raise them 'After' (refer to update 21-Nov-2015) and keep correct order.
-  Issue was an internal modal message loop on these controls. (DragDetect)
 
 [...]
 

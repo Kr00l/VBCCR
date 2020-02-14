@@ -69,6 +69,7 @@ Begin VB.PropertyPage PPCoolBarBands
          Width           =   495
          _ExtentX        =   0
          _ExtentY        =   0
+         VisualStyles    =   0   'False
          BackColor       =   -2147483630
          Enabled         =   0   'False
          Style           =   1
@@ -81,6 +82,7 @@ Begin VB.PropertyPage PPCoolBarBands
          Width           =   495
          _ExtentX        =   0
          _ExtentY        =   0
+         VisualStyles    =   0   'False
          Enabled         =   0   'False
          Style           =   1
       End

@@ -376,6 +376,7 @@ Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_STYLECHANGED As Long = &H7D
+Private Const WM_UPDATEUISTATE As Long = &H128, UIS_SET As Long = 1, UISF_HIDEACCEL As Long = &H2
 Private Const WM_USER As Long = &H400
 Private Const UM_SETBUTTONCX As Long = (WM_USER + 200)
 Private Const TB_ENABLEBUTTON As Long = (WM_USER + 1)
@@ -598,10 +599,15 @@ Private ToolBarCustomizeButtonsCount As Long
 Private ToolBarCustomizeButtons() As ShadowButtonStruct
 Private ToolBarIsClick As Boolean
 Private ToolBarMouseOver As Boolean, ToolBarMouseOverIndex As Long
+Private ToolBarDesignMode As Boolean
 Private ToolBarResizeFrozen As Boolean
 Private ToolBarImageSize As Long, ToolBarDefaultImageSize As Long
 Private ToolBarDoubleBufferEraseBkgDC As Long
 Private ToolBarAlignable As Boolean
+Private ToolBarImageListObjectPointer As Long
+Private ToolBarDisabledImageListObjectPointer As Long
+Private ToolBarHotImageListObjectPointer As Long
+Private ToolBarPressedImageListObjectPointer As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
 Private DispIDDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
@@ -616,10 +622,10 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropImageListName As String, PropImageListControl As Object, PropImageListInit As Boolean
-Private PropDisabledImageListName As String, PropDisabledImageListControl As Object, PropDisabledImageListInit As Boolean
-Private PropHotImageListName As String, PropHotImageListControl As Object, PropHotImageListInit As Boolean
-Private PropPressedImageListName As String, PropPressedImageListControl As Object, PropPressedImageListInit As Boolean
+Private PropImageListName As String, PropImageListInit As Boolean
+Private PropDisabledImageListName As String, PropDisabledImageListInit As Boolean
+Private PropHotImageListName As String, PropHotImageListInit As Boolean
+Private PropPressedImageListName As String, PropPressedImageListInit As Boolean
 Private PropBackColor As OLE_COLOR
 Private PropStyle As TbrStyleConstants
 Private PropTextAlignment As TbrTextAlignConstants
@@ -709,7 +715,7 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
 ReDim DisabledImageListArray(0) As String
 ReDim HotImageListArray(0) As String
@@ -725,6 +731,7 @@ If DispIDPressedImageList = 0 Then DispIDPressedImageList = GetDispID(Me, "Press
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ToolBarAlignable = False Else ToolBarAlignable = True
 On Error GoTo 0
+ToolBarDesignMode = Not Ambient.UserMode
 If ToolBarAlignable = True Then Extender.Align = vbAlignTop
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -734,10 +741,10 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropImageListName = "(None)": Set PropImageListControl = Nothing
-PropDisabledImageListName = "(None)": Set PropDisabledImageListControl = Nothing
-PropHotImageListName = "(None)": Set PropHotImageListControl = Nothing
-PropPressedImageListName = "(None)": Set PropPressedImageListControl = Nothing
+PropImageListName = "(None)"
+PropDisabledImageListName = "(None)"
+PropHotImageListName = "(None)"
+PropPressedImageListName = "(None)"
 PropBackColor = vbButtonFace
 PropStyle = TbrStyleStandard
 PropTextAlignment = TbrTextAlignBottom
@@ -770,6 +777,7 @@ If DispIDPressedImageList = 0 Then DispIDPressedImageList = GetDispID(Me, "Press
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ToolBarAlignable = False Else ToolBarAlignable = True
 On Error GoTo 0
+ToolBarDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -884,6 +892,7 @@ If InitButtonsCount > 0 And ToolBarHandle <> 0 Then
         If InitButtons(i).ButtonMenusCount > 0 Then
             For ii = 1 To InitButtons(i).ButtonMenusCount
                 With .ButtonMenus.Add(ii, InitButtons(i).ButtonMenus(ii).Key, InitButtons(i).ButtonMenus(ii).Text)
+                .Tag = InitButtons(i).ButtonMenus(ii).Tag
                 If InitButtons(i).ButtonMenus(ii).Enabled = False Then .Enabled = False
                 If InitButtons(i).ButtonMenus(ii).Visible = False Then .Visible = False
                 If InitButtons(i).ButtonMenus(ii).Checked = True Then .Checked = True
@@ -1019,12 +1028,7 @@ Private Sub UserControl_Resize()
 Static InProc As Boolean
 If InProc = True Or ToolBarResizeFrozen = True Then Exit Sub
 InProc = True
-If DPICorrectionFactor() <> 1 Then
-    With UserControl
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End With
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If ToolBarHandle = 0 Then InProc = False: Exit Sub
 SendMessage ToolBarHandle, TB_AUTOSIZE, 0, ByVal 0&
 Dim dwStyle As Long, Count As Long, Size As SIZEAPI, Rows As Long
@@ -1104,11 +1108,17 @@ Select Case Align
             Exit Sub
         End If
 End Select
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
+If PropTransparent = True Then
+    MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+    If ToolBarTransparentBrush <> 0 Then
+        DeleteObject ToolBarTransparentBrush
+        ToolBarTransparentBrush = 0
+    End If
+    RedrawWindow ToolBarHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+Else
+    MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End If
-MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
 If Count > 0 And PropWrappable = True Then
@@ -1117,11 +1127,11 @@ End If
 End Sub
 
 Private Sub UserControl_Show()
-If Ambient.UserMode = False Then Call UserControl_Resize
+If ToolBarDesignMode = True Then Call UserControl_Resize
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyToolBar
 Call ComCtlsReleaseShellMod
 End Sub
@@ -1416,7 +1426,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If ToolBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1448,7 +1458,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If ToolBarDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -1486,8 +1496,8 @@ End Property
 
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
-If Ambient.UserMode = True Then
-    If PropImageListInit = False And PropImageListControl Is Nothing Then
+If ToolBarDesignMode = False Then
+    If PropImageListInit = False And ToolBarImageListObjectPointer = 0 Then
         If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
         PropImageListInit = True
     End If
@@ -1515,11 +1525,11 @@ If ToolBarHandle <> 0 Then
             ImageList_GetIconSize Handle, ImageListSize.CX, ImageListSize.CY
             If ImageListSizesAreEqual() = True Then
                 SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal Handle
+                ToolBarImageListObjectPointer = ObjPtr(Value)
                 PropImageListName = ProperControlName(Value)
-                Set PropImageListControl = Value
             Else
                 LSet ImageListSize = OldSize
-                If Ambient.UserMode = False Then
+                If ToolBarDesignMode = True Then
                     MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                     Exit Property
                 Else
@@ -1541,19 +1551,19 @@ If ToolBarHandle <> 0 Then
                         ImageList_GetIconSize Handle, ImageListSize.CX, ImageListSize.CY
                         If ImageListSizesAreEqual() = True Then
                             SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal Handle
+                            If ToolBarDesignMode = False Then ToolBarImageListObjectPointer = ObjPtr(ControlEnum)
                             PropImageListName = Value
-                            If Ambient.UserMode = True Then Set PropImageListControl = ControlEnum
                             Exit For
                         Else
                             LSet ImageListSize = OldSize
-                            If Ambient.UserMode = False Then
+                            If ToolBarDesignMode = True Then
                                 MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                                 Exit Property
                             Else
                                 Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                             End If
                         End If
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf ToolBarDesignMode = True Then
                         PropImageListName = Value
                         Success = True
                         Exit For
@@ -1565,8 +1575,8 @@ If ToolBarHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         If SendMessage(ToolBarHandle, TB_GETIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal 0&
+        ToolBarImageListObjectPointer = 0
         PropImageListName = "(None)"
-        Set PropImageListControl = Nothing
         ImageListSize.CX = 0: ImageListSize.CY = 0
     ElseIf Handle = 0 Then
         If SendMessage(ToolBarHandle, TB_GETIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal 0&
@@ -1586,8 +1596,8 @@ End Property
 
 Public Property Get DisabledImageList() As Variant
 Attribute DisabledImageList.VB_Description = "Returns/sets the image list control to be used for disabled buttons."
-If Ambient.UserMode = True Then
-    If PropDisabledImageListInit = False And PropDisabledImageListControl Is Nothing Then
+If ToolBarDesignMode = False Then
+    If PropDisabledImageListInit = False And ToolBarDisabledImageListObjectPointer = 0 Then
         If Not PropDisabledImageListName = "(None)" Then Me.DisabledImageList = PropDisabledImageListName
         PropDisabledImageListInit = True
     End If
@@ -1615,11 +1625,11 @@ If ToolBarHandle <> 0 Then
             ImageList_GetIconSize Handle, DisabledImageListSize.CX, DisabledImageListSize.CY
             If ImageListSizesAreEqual() = True Then
                 SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal Handle
+                ToolBarDisabledImageListObjectPointer = ObjPtr(Value)
                 PropDisabledImageListName = ProperControlName(Value)
-                Set PropDisabledImageListControl = Value
             Else
                 LSet DisabledImageListSize = OldSize
-                If Ambient.UserMode = False Then
+                If ToolBarDesignMode = True Then
                     MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                     Exit Property
                 Else
@@ -1641,19 +1651,19 @@ If ToolBarHandle <> 0 Then
                         ImageList_GetIconSize Handle, DisabledImageListSize.CX, DisabledImageListSize.CY
                         If ImageListSizesAreEqual() = True Then
                             SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal Handle
+                            If ToolBarDesignMode = False Then ToolBarDisabledImageListObjectPointer = ObjPtr(ControlEnum)
                             PropDisabledImageListName = Value
-                            If Ambient.UserMode = True Then Set PropDisabledImageListControl = ControlEnum
                             Exit For
                         Else
                             LSet DisabledImageListSize = OldSize
-                            If Ambient.UserMode = False Then
+                            If ToolBarDesignMode = True Then
                                 MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                                 Exit Property
                             Else
                                 Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                             End If
                         End If
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf ToolBarDesignMode = True Then
                         PropDisabledImageListName = Value
                         Success = True
                         Exit For
@@ -1665,8 +1675,8 @@ If ToolBarHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         If SendMessage(ToolBarHandle, TB_GETDISABLEDIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal 0&
+        ToolBarDisabledImageListObjectPointer = 0
         PropDisabledImageListName = "(None)"
-        Set PropDisabledImageListControl = Nothing
         DisabledImageListSize.CX = 0: DisabledImageListSize.CY = 0
     ElseIf Handle = 0 Then
         If SendMessage(ToolBarHandle, TB_GETDISABLEDIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal 0&
@@ -1679,8 +1689,8 @@ End Property
 
 Public Property Get HotImageList() As Variant
 Attribute HotImageList.VB_Description = "Returns/sets the image list control to be used for hot buttons."
-If Ambient.UserMode = True Then
-    If PropHotImageListInit = False And PropHotImageListControl Is Nothing Then
+If ToolBarDesignMode = False Then
+    If PropHotImageListInit = False And ToolBarHotImageListObjectPointer = 0 Then
         If Not PropHotImageListName = "(None)" Then Me.HotImageList = PropHotImageListName
         PropHotImageListInit = True
     End If
@@ -1708,11 +1718,11 @@ If ToolBarHandle <> 0 Then
             ImageList_GetIconSize Handle, HotImageListSize.CX, HotImageListSize.CY
             If ImageListSizesAreEqual() = True Then
                 SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal Handle
+                ToolBarHotImageListObjectPointer = ObjPtr(Value)
                 PropHotImageListName = ProperControlName(Value)
-                Set PropHotImageListControl = Value
             Else
                 LSet HotImageListSize = OldSize
-                If Ambient.UserMode = False Then
+                If ToolBarDesignMode = True Then
                     MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                     Exit Property
                 Else
@@ -1734,19 +1744,19 @@ If ToolBarHandle <> 0 Then
                         ImageList_GetIconSize Handle, HotImageListSize.CX, HotImageListSize.CY
                         If ImageListSizesAreEqual() = True Then
                             SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal Handle
+                            If ToolBarDesignMode = False Then ToolBarHotImageListObjectPointer = ObjPtr(ControlEnum)
                             PropHotImageListName = Value
-                            If Ambient.UserMode = True Then Set PropHotImageListControl = ControlEnum
                             Exit For
                         Else
                             LSet HotImageListSize = OldSize
-                            If Ambient.UserMode = False Then
+                            If ToolBarDesignMode = True Then
                                 MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                                 Exit Property
                             Else
                                 Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                             End If
                         End If
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf ToolBarDesignMode = True Then
                         PropHotImageListName = Value
                         Success = True
                         Exit For
@@ -1759,7 +1769,7 @@ If ToolBarHandle <> 0 Then
     If Success = False Then
         If SendMessage(ToolBarHandle, TB_GETHOTIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal 0&
         PropHotImageListName = "(None)"
-        Set PropHotImageListControl = Nothing
+        ToolBarHotImageListObjectPointer = 0
         HotImageListSize.CX = 0: HotImageListSize.CY = 0
     ElseIf Handle = 0 Then
         If SendMessage(ToolBarHandle, TB_GETHOTIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal 0&
@@ -1772,8 +1782,8 @@ End Property
 
 Public Property Get PressedImageList() As Variant
 Attribute PressedImageList.VB_Description = "Returns/sets the image list control to be used for pressed buttons. Requires comctl32.dll version 6.1 or higher."
-If Ambient.UserMode = True Then
-    If PropPressedImageListInit = False And PropPressedImageListControl Is Nothing Then
+If ToolBarDesignMode = False Then
+    If PropPressedImageListInit = False And ToolBarPressedImageListObjectPointer = 0 Then
         If Not PropPressedImageListName = "(None)" Then Me.PressedImageList = PropPressedImageListName
         PropPressedImageListInit = True
     End If
@@ -1801,11 +1811,11 @@ If ToolBarHandle <> 0 Then
             ImageList_GetIconSize Handle, PressedImageListSize.CX, PressedImageListSize.CY
             If ImageListSizesAreEqual() = True Then
                 If ComCtlsSupportLevel() >= 2 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal Handle
+                ToolBarPressedImageListObjectPointer = ObjPtr(Value)
                 PropPressedImageListName = ProperControlName(Value)
-                Set PropPressedImageListControl = Value
             Else
                 LSet PressedImageListSize = OldSize
-                If Ambient.UserMode = False Then
+                If ToolBarDesignMode = True Then
                     MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                     Exit Property
                 Else
@@ -1828,18 +1838,18 @@ If ToolBarHandle <> 0 Then
                         If ImageListSizesAreEqual() = True Then
                             If ComCtlsSupportLevel() >= 2 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal Handle
                             PropPressedImageListName = Value
-                            If Ambient.UserMode = True Then Set PropPressedImageListControl = ControlEnum
+                            If ToolBarDesignMode = False Then ToolBarPressedImageListObjectPointer = ObjPtr(ControlEnum)
                             Exit For
                         Else
                             LSet PressedImageListSize = OldSize
-                            If Ambient.UserMode = False Then
+                            If ToolBarDesignMode = True Then
                                 MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
                                 Exit Property
                             Else
                                 Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                             End If
                         End If
-                    ElseIf Ambient.UserMode = False Then
+                    ElseIf ToolBarDesignMode = True Then
                         PropPressedImageListName = Value
                         Success = True
                         Exit For
@@ -1851,8 +1861,8 @@ If ToolBarHandle <> 0 Then
     On Error GoTo 0
     If Success = False Then
         If ComCtlsSupportLevel() >= 2 Then If SendMessage(ToolBarHandle, TB_GETPRESSEDIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal 0&
+        ToolBarPressedImageListObjectPointer = 0
         PropPressedImageListName = "(None)"
-        Set PropPressedImageListControl = Nothing
         PressedImageListSize.CX = 0: PressedImageListSize.CY = 0
     ElseIf Handle = 0 Then
         If ComCtlsSupportLevel() >= 2 Then If SendMessage(ToolBarHandle, TB_GETPRESSEDIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal 0&
@@ -1870,7 +1880,7 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If Ambient.UserMode = True Then
+If ToolBarDesignMode = False Then
     If ToolBarHandle <> 0 Then
         If ToolBarBackColorBrush <> 0 Then DeleteObject ToolBarBackColorBrush
         ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
@@ -1953,7 +1963,7 @@ Select Case Value
         Select Case Align
             Case vbAlignTop, vbAlignBottom
                 If Value <> TbrOrientationHorizontal Then
-                    If Ambient.UserMode = False Then
+                    If ToolBarDesignMode = True Then
                         MsgBox "Orientation must be 0 - Horizontal when Align is 1 - AlignTop or 2 - AlignBottom", vbCritical + vbOKOnly
                         Exit Property
                     Else
@@ -1962,7 +1972,7 @@ Select Case Value
                 End If
             Case vbAlignLeft, vbAlignRight
                 If Value <> TbrOrientationVertical Then
-                    If Ambient.UserMode = False Then
+                    If ToolBarDesignMode = True Then
                         MsgBox "Orientation must be 1 - Vertical when Align is 3 - AlignLeft or 4 - AlignRight", vbCritical + vbOKOnly
                         Exit Property
                     Else
@@ -2124,7 +2134,7 @@ End Property
 
 Public Property Let ButtonHeight(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2138,7 +2148,7 @@ If Err.Number <> 0 Then IntValue = 0
 On Error GoTo 0
 PropButtonHeight = IntValue
 If PropButtonHeight < (22 * PixelsPerDIP_Y()) Then PropButtonHeight = (22 * PixelsPerDIP_Y())
-If ToolBarHandle <> 0 And Ambient.UserMode = True Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal MakeDWord(LoWord(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&)), PropButtonHeight)
+If ToolBarHandle <> 0 And ToolBarDesignMode = False Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal MakeDWord(LoWord(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&)), PropButtonHeight)
 Call UserControl_Resize
 UserControl.PropertyChanged "ButtonHeight"
 End Property
@@ -2158,7 +2168,7 @@ End Property
 
 Public Property Let ButtonWidth(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2172,7 +2182,7 @@ If Err.Number <> 0 Then IntValue = 0
 On Error GoTo 0
 PropButtonWidth = IntValue
 If PropButtonWidth < (24 * PixelsPerDIP_X()) Then PropButtonWidth = (24 * PixelsPerDIP_X())
-If ToolBarHandle <> 0 And Ambient.UserMode = True Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal MakeDWord(PropButtonWidth, HiWord(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&)))
+If ToolBarHandle <> 0 And ToolBarDesignMode = False Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal MakeDWord(PropButtonWidth, HiWord(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&)))
 Call UserControl_Resize
 UserControl.PropertyChanged "ButtonWidth"
 End Property
@@ -2184,7 +2194,7 @@ End Property
 
 Public Property Let MinButtonWidth(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2204,7 +2214,7 @@ If IntValue >= 0 And ErrValue = 0 Then
     End If
     Call UserControl_Resize
 Else
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2221,7 +2231,7 @@ End Property
 
 Public Property Let MaxButtonWidth(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2241,7 +2251,7 @@ If IntValue >= 0 And ErrValue = 0 Then
     End If
     Call UserControl_Resize
 Else
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2326,7 +2336,7 @@ End Property
 Public Property Let MaxTextRows(ByVal Value As Integer)
 If Value < 1 Then Err.Raise 380
 If Value > 1 And PropTextAlignment = TbrTextAlignRight Then
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "MaxTextRows must be 1 when TextAlignment is 1 - TextAlignRight", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -2926,7 +2936,7 @@ End Property
 
 Friend Property Let FButtonCustomWidth(ByVal ID As Long, ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If ToolBarDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -3067,12 +3077,13 @@ If PropShowTips = True Then dwStyle = dwStyle Or TBSTYLE_TOOLTIPS
 If PropWrappable = True Then dwStyle = dwStyle Or TBSTYLE_WRAPABLE
 If PropAllowCustomize = True Then dwStyle = dwStyle Or CCS_ADJUSTABLE
 If PropAltDrag = True Then dwStyle = dwStyle Or TBSTYLE_ALTDRAG
-If Ambient.UserMode = False Then
+If ToolBarDesignMode = True Then
     dwStyle = dwStyle Or TBSTYLE_TRANSPARENT
     dwExStyle = dwExStyle Or WS_EX_TRANSPARENT
 End If
 ToolBarHandle = CreateWindowEx(dwExStyle, StrPtr("ToolbarWindow32"), StrPtr("Tool Bar"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If ToolBarHandle <> 0 Then
+    Call ComCtlsShowAllUIStates(ToolBarHandle)
     Dim TBB As TBBUTTON
     SendMessage ToolBarHandle, TB_BUTTONSTRUCTSIZE, LenB(TBB), ByVal 0&
     SendMessage ToolBarHandle, TB_SETUNICODEFORMAT, 1, ByVal 0&
@@ -3097,7 +3108,7 @@ Me.Enabled = UserControl.Enabled
 Me.InsertMarkColor = PropInsertMarkColor
 Me.HideClippedButtons = PropHideClippedButtons
 Me.AnchorHot = PropAnchorHot
-If Ambient.UserMode = True Then
+If ToolBarDesignMode = False Then
     If ToolBarHandle <> 0 Then
         If ToolBarBackColorBrush = 0 Then ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(ToolBarHandle, Me, 1)
@@ -3160,7 +3171,7 @@ End If
 Call DestroyToolBar
 Call CreateToolBar
 Call UserControl_Resize
-If Ambient.UserMode = True Then
+If ToolBarDesignMode = False Then
     If Not PropImageListControl Is Nothing Then Set .ImageList = PropImageListControl
     If Not PropDisabledImageListControl Is Nothing Then Set .DisabledImageList = PropDisabledImageListControl
     If Not PropHotImageListControl Is Nothing Then Set .HotImageList = PropHotImageListControl
@@ -3327,12 +3338,7 @@ If Count > 0 Then
             SendMessage ToolBarHandle, TB_GETBUTTONINFO, ID, ByVal VarPtr(TBBI)
             If (.fsState And TBSTATE_ENABLED) <> 0 And (.fsStyle And BTNS_NOPREFIX) = 0 Then
                 Accel = AccelCharCode(GetButtonText(ID))
-                If (VkKeyScan(Accel) And &HFF&) = (KeyCode And &HFF&) Then
-                    DoEvents
-                    Exit For
-                Else
-                    ID = 0
-                End If
+                If (VkKeyScan(Accel) And &HFF&) = (KeyCode And &HFF&) Then Exit For Else ID = 0
             Else
                 ID = 0
             End If
@@ -3366,7 +3372,6 @@ If ID > 0 Then
             SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
             If (.fsStyle And BTNS_WHOLEDROPDOWN) = 0 Then
                 UpdateWindow ToolBarHandle
-                DoEvents
                 Sleep 50
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 RaiseEvent ButtonClick(Button)
@@ -3829,6 +3834,22 @@ If ToolBarHandle <> 0 Then
 End If
 End Sub
 
+Private Function PropImageListControl() As Object
+If ToolBarImageListObjectPointer <> 0 Then Set PropImageListControl = PtrToObj(ToolBarImageListObjectPointer)
+End Function
+
+Private Function PropDisabledImageListControl() As Object
+If ToolBarDisabledImageListObjectPointer <> 0 Then Set PropDisabledImageListControl = PtrToObj(ToolBarDisabledImageListObjectPointer)
+End Function
+
+Private Function PropHotImageListControl() As Object
+If ToolBarHotImageListObjectPointer <> 0 Then Set PropHotImageListControl = PtrToObj(ToolBarHotImageListObjectPointer)
+End Function
+
+Private Function PropPressedImageListControl() As Object
+If ToolBarPressedImageListObjectPointer <> 0 Then Set PropPressedImageListControl = PtrToObj(ToolBarPressedImageListObjectPointer)
+End Function
+
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
     Case 1
@@ -3927,6 +3948,17 @@ Select Case wMsg
             .CX = lParam
             End With
             SendMessage ToolBarHandle, TB_SETBUTTONINFO, wParam, ByVal VarPtr(TBBI)
+        End If
+    Case WM_UPDATEUISTATE
+        ' When a ToolBar is hosted in a MDIForm it *can* happen that an MDIChild sets UISF_HIDEACCEL to it's owner.
+        ' However, this ensures to circumvent such scenario.
+        If LoWord(wParam) = UIS_SET Then
+            Dim IntValue As Integer
+            IntValue = HiWord(wParam)
+            If (IntValue And UISF_HIDEACCEL) = UISF_HIDEACCEL Then
+                IntValue = IntValue And Not UISF_HIDEACCEL
+                wParam = MakeDWord(UIS_SET, IntValue)
+            End If
         End If
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)

@@ -137,16 +137,20 @@ If (CommonDialogFind.Flags And CdlFRMatchCase) = CdlFRMatchCase Then Options = O
 If (CommonDialogFind.Flags And CdlFRDown) = CdlFRDown Then
     RetVal = RichTextBox1.Find(CommonDialogFind.FindWhat, RichTextBox1.SelStart + RichTextBox1.SelLength, , Options)
 Else
-    RetVal = RichTextBox1.Find(CommonDialogFind.FindWhat, , RichTextBox1.SelStart, Options)
+    Options = Options Or RtfFindOptionReverse
+    RetVal = RichTextBox1.Find(CommonDialogFind.FindWhat, RichTextBox1.SelStart, , Options)
 End If
 If RetVal = -1 Then MsgBox "Could not find '" & CommonDialogFind.FindWhat & "'.", vbInformation + vbOKOnly + vbSystemModal
 End Sub
 
 Private Sub Form_Load()
-Call SetupVisualStyles(Me)
+Call SetupVisualStylesFixes(Me)
 Set CommonDialogPageSetup = New CommonDialog
+Const LOCALE_USER_DEFAULT As Long = &H400
 Const LOCALE_IMEASURE As Long = &HD, LOCALE_RETURN_NUMBER As Long = &H20000000
-GetLocaleInfo 0, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), LenB(LocaleMeasure)
+' cchData = sizeof(DWORD) / sizeof(TCHAR)
+' That is, 2 for Unicode and 4 for ANSI.
+GetLocaleInfo LOCALE_USER_DEFAULT, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), 2
 CommonDialogPageSetup.PageLeftMargin = IIf(LocaleMeasure = 0, 2500, 1000)
 CommonDialogPageSetup.PageTopMargin = IIf(LocaleMeasure = 0, 2500, 1000)
 CommonDialogPageSetup.PageRightMargin = IIf(LocaleMeasure = 0, 2500, 1000)

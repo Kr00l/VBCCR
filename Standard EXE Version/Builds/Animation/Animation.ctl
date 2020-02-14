@@ -128,11 +128,13 @@ Private Const ACM_ISPLAYING As Long = (WM_USER + 104)
 Private Const ACN_START As Long = &H1
 Private Const ACN_STOP As Long = &H2
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private AnimationHandle As Long
 Private AnimationCharCodeCache As Long
 Private AnimationMouseOver As Boolean
+Private AnimationDesignMode As Boolean
 Private AnimationFileName As String
 Private AnimationResID As Integer
 Private AnimationResFileName As String
@@ -148,6 +150,15 @@ Private PropRightToLeftMode As CCRightToLeftModeConstants
 Private PropAutoPlay As Boolean
 Private PropBackStyle As CCBackStyleConstants
 Private PropCenter As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -199,12 +210,13 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_ANIMATE_CLASS)
-Call SetVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+AnimationDesignMode = Not Ambient.UserMode
 Me.BackColor = Ambient.BackColor
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -216,7 +228,7 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropAutoPlay = True
 PropBackStyle = CCBackStyleTransparent
 PropCenter = False
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     Call CreateAnimation
 Else
     ImageFilm.Visible = True
@@ -225,6 +237,7 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+AnimationDesignMode = Not Ambient.UserMode
 With PropBag
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -240,7 +253,7 @@ PropAutoPlay = .ReadProperty("AutoPlay", True)
 PropBackStyle = .ReadProperty("BackStyle", CCBackStyleTransparent)
 PropCenter = .ReadProperty("Center", False)
 End With
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     Call CreateAnimation
 Else
     ImageFilm.Visible = True
@@ -265,7 +278,7 @@ End With
 End Sub
 
 Private Sub UserControl_Paint()
-If Ambient.UserMode = False Then
+If AnimationDesignMode = True Then
     Dim RC As RECT
     RC.Left = 0
     RC.Top = 0
@@ -336,12 +349,9 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If AnimationHandle <> 0 Then MoveWindow AnimationHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-If Ambient.UserMode = False Then
+If AnimationDesignMode = True Then
     ImageFilm.Left = (.ScaleWidth / 2) - (ImageFilm.Width / 2)
     ImageFilm.Top = (.ScaleHeight / 2) - (ImageFilm.Height / 2)
 End If
@@ -350,8 +360,8 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyAnimation
 Call ComCtlsReleaseShellMod
 End Sub
@@ -579,7 +589,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If AnimationDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -611,7 +621,7 @@ PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
     Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
     dwMask = 0
@@ -697,14 +707,14 @@ If PropBackStyle = CCBackStyleTransparent Then dwStyle = dwStyle Or ACS_TRANSPAR
 If PropCenter = True Then dwStyle = dwStyle Or ACS_CENTER
 AnimationHandle = CreateWindowEx(dwExStyle, StrPtr("SysAnimate32"), StrPtr("Animation"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 Me.Enabled = UserControl.Enabled
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     If AnimationHandle <> 0 Then Call ComCtlsSetSubclass(AnimationHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
 End Sub
 
 Private Sub ReCreateAnimation()
-If Ambient.UserMode = True Then
+If AnimationDesignMode = False Then
     Dim Locked As Boolean
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim Loaded As Boolean, FileName As String, ResID As Integer, ResFileName As String

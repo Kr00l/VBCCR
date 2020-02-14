@@ -183,7 +183,6 @@ Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As L
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
 Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
-Private Declare Function DrawIconEx Lib "user32" (ByVal hDC As Long, ByVal XLeft As Long, ByVal YTop As Long, ByVal hIcon As Long, ByVal CXWidth As Long, ByVal CYWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As Long, ByVal diFlags As Long) As Long
 Private Declare Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As Long, ByVal hBrush As Long, ByVal lpDrawStateProc As Long, ByVal lData As Long, ByVal wData As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
@@ -206,7 +205,6 @@ Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const GWL_STYLE As Long = (-16)
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const TA_RTLREADING = &H100
-Private Const DI_NORMAL As Long = &H3
 Private Const DST_TEXT As Long = &H1
 Private Const DSS_DISABLED As Long = &H20
 Private Const WS_VISIBLE As Long = &H10000000
@@ -312,6 +310,7 @@ Private Const SBB_HORIZONTAL As Long = 0
 Private Const SBB_VERTICAL As Long = 1
 Private Const SBB_DIVIDER As Long = 2
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private Type InitPanelStruct
 Text As String
@@ -346,6 +345,7 @@ Picture As IPictureDisp
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
+PictureRenderFlag As Integer
 End Type
 Private StatusBarHandle As Long, StatusBarToolTipHandle As Long
 Private StatusBarSizeGripAllowable As Boolean
@@ -357,6 +357,7 @@ Attribute StatusBarParentFormEvents.VB_VarHelpID = -1
 Private StatusBarFontHandle As Long, StatusBarBoldFontHandle As Long
 Private StatusBarIsClick As Boolean
 Private StatusBarMouseOver As Boolean
+Private StatusBarDesignMode As Boolean
 Private StatusBarDoubleBufferEraseBkgDC As Long
 Private StatusBarAlignable As Boolean
 Private DispIDMousePointer As Long
@@ -378,6 +379,15 @@ Private PropAllowSizeGrip As Boolean
 Private PropShowTips As Boolean
 Private PropBackColor As OLE_COLOR
 Private PropDoubleBuffer As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
@@ -403,11 +413,11 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_Show()
-If Ambient.UserMode = False Then
+If StatusBarDesignMode = True Then
     Dim Align As Integer
     If StatusBarAlignable = True Then Align = Extender.Align Else Align = vbAlignNone
     If Align <> vbAlignBottom Then
@@ -424,6 +434,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then StatusBarAlignable = False Else StatusBarAlignable = True
 On Error GoTo 0
+StatusBarDesignMode = Not Ambient.UserMode
 If StatusBarAlignable = True Then Extender.Align = vbAlignBottom
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -440,7 +451,7 @@ PropShowTips = False
 PropBackColor = vbButtonFace
 PropDoubleBuffer = True
 If StatusBarAlignable = True Then StatusBarSizeGripAllowable = CBool((GetWindowLong(UserControl.ContainerHwnd, GWL_STYLE) And WS_THICKFRAME) = WS_THICKFRAME) Else StatusBarSizeGripAllowable = False
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     On Error Resume Next
     With UserControl
     If .ParentControls.Count = 0 Then
@@ -465,6 +476,7 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then StatusBarAlignable = False Else StatusBarAlignable = True
 On Error GoTo 0
+StatusBarDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -512,7 +524,7 @@ If InitPanelsCount > 0 Then
     Next i
 End If
 End With
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     On Error Resume Next
     With UserControl
     If .ParentControls.Count = 0 Then
@@ -653,12 +665,7 @@ LastHeight = .Height
 LastWidth = .Width
 LastAlign = Align
 End With
-If DPICorrectionFactor() <> 1 Then
-    With UserControl
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End With
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call SetMinHeight
 If StatusBarHandle <> 0 Then MoveWindow StatusBarHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 1
 Call SetParts
@@ -667,7 +674,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyStatusBar
 Call ComCtlsReleaseShellMod
 End Sub
@@ -1000,7 +1007,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If StatusBarDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1033,7 +1040,7 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
+If StatusBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If StatusBarHandle <> 0 Then Call ComCtlsSetRightToLeft(StatusBarHandle, dwMask)
 If StatusBarToolTipHandle <> 0 Then
     If PropRightToLeft = True Then
@@ -1127,7 +1134,7 @@ End Property
 
 Public Property Let ShowTips(ByVal Value As Boolean)
 PropShowTips = Value
-If StatusBarHandle <> 0 And Ambient.UserMode = True Then
+If StatusBarHandle <> 0 And StatusBarDesignMode = False Then
     If PropShowTips = False Then
         Call DestroyToolTip
     Else
@@ -1401,6 +1408,7 @@ End Property
 Friend Property Set FPanelPicture(ByVal Index As Long, ByVal Value As IPictureDisp)
 If StatusBarHandle <> 0 Then
     Set PropShadowPanels(Index).Picture = Value
+    PropShadowPanels(Index).PictureRenderFlag = 0
     Call SetParts
     Call SetPanels
 End If
@@ -1468,7 +1476,7 @@ Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or WS_CLIPSIBLINGS Or CCS_BOTTOM
 If StatusBarSizeGripAllowable = True And PropAllowSizeGrip = True Then dwStyle = dwStyle Or SBARS_SIZEGRIP
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
@@ -1481,7 +1489,7 @@ Me.Style = PropStyle
 Me.SimpleText = PropSimpleText
 Me.ShowTips = PropShowTips
 Me.BackColor = PropBackColor
-If Ambient.UserMode = True Then
+If StatusBarDesignMode = False Then
     If StatusBarHandle <> 0 Then Call ComCtlsSetSubclass(StatusBarHandle, Me, 1)
 Else
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
@@ -1541,7 +1549,6 @@ End Sub
 
 Private Sub DestroyToolTip()
 If StatusBarToolTipHandle = 0 Then Exit Sub
-SetParent StatusBarToolTipHandle, 0
 DestroyWindow StatusBarToolTipHandle
 StatusBarToolTipHandle = 0
 End Sub
@@ -1679,13 +1686,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> 0 Then
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
         PictureLeft = RC.Left - (PictureWidth + (4 * PixelsPerDIP_X()))
-        With .Picture
-        If .Type = vbPicTypeIcon Then
-            DrawIconEx hDC, PictureLeft, PictureTop, .Handle, PictureWidth, PictureHeight, 0, 0, DI_NORMAL
-        Else
-            .Render hDC Or 0&, PictureLeft Or 0&, PictureTop Or 0&, PictureWidth Or 0&, PictureHeight Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-        End If
-        End With
+        Call RenderPicture(.Picture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, .PictureRenderFlag)
     End If
     Dim Flags As Long
     Flags = DST_TEXT
@@ -1752,12 +1753,24 @@ If StatusBarHandle <> 0 Then
         TotalWidth = TotalWidth + Borders(SBB_HORIZONTAL) + Borders(SBB_HORIZONTAL)
         If Me.IncludesSizeGrip = True Then TotalWidth = TotalWidth + 16 ' GetSystemMetrics(SM_CXVSCROLL) is here not applicable.
         If TotalWidth < (UserControl.ScaleWidth - 1) Then
-            For i = (PropShadowPanelsCount - 1) To 0 Step -1
-                If PropShadowPanels(i + 1).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i + 1).Visible = True Then
-                    Parts(i) = Parts(i) + ((UserControl.ScaleWidth - 1) - TotalWidth)
-                    Exit For
-                End If
+            Dim CountSpring As Long
+            For i = 1 To PropShadowPanelsCount
+                If PropShadowPanels(i).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i).Visible = True Then CountSpring = CountSpring + 1
             Next i
+            If CountSpring > 0 Then
+                Dim WidthPerSpring As Long, Remainder As Long
+                WidthPerSpring = ((UserControl.ScaleWidth - 1) - TotalWidth) / CountSpring
+                Remainder = ((UserControl.ScaleWidth - 1) - TotalWidth) - (WidthPerSpring * CountSpring)
+                For i = PropShadowPanelsCount To 1 Step -1
+                    If PropShadowPanels(i).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i).Visible = True Then
+                        Parts(i - 1) = Parts(i - 1) + WidthPerSpring
+                        If Remainder <> 0 Then
+                            Parts(i - 1) = Parts(i - 1) + Remainder
+                            Remainder = 0
+                        End If
+                    End If
+                Next i
+            End If
         End If
         TotalWidth = Borders(SBB_HORIZONTAL)
         Dim Width As Long
@@ -2079,18 +2092,23 @@ Select Case wMsg
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = StatusBarHandle Then
-            If NM.Code = SBN_SIMPLEMODECHANGE Then
-                RaiseEvent StyleChange
-            Else
-                Dim NMM As NMMOUSE
-                CopyMemory NMM, ByVal lParam, LenB(NMM)
-                Select Case NM.Code
-                    Case NM_CLICK, NM_RCLICK
-                        If NMM.dwItemSpec >= 0 Then RaiseEvent PanelClick(Me.Panels(NMM.dwItemSpec + 1), UserControl.ScaleX(NMM.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(NMM.PT.Y, vbPixels, vbContainerPosition))
-                    Case NM_DBLCLK, NM_RDBLCLK
-                        If NMM.dwItemSpec >= 0 Then RaiseEvent PanelDblClick(Me.Panels(NMM.dwItemSpec + 1), UserControl.ScaleX(NMM.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(NMM.PT.Y, vbPixels, vbContainerPosition))
-                End Select
-            End If
+            Select Case NM.Code
+                Case SBN_SIMPLEMODECHANGE
+                    RaiseEvent StyleChange
+                Case NM_CLICK, NM_RCLICK, NM_DBLCLK, NM_RDBLCLK
+                    Dim NMM As NMMOUSE
+                    CopyMemory NMM, ByVal lParam, LenB(NMM)
+                    With NMM
+                    Select Case NM.Code
+                        Case NM_CLICK, NM_RCLICK
+                            If StatusBarIsClick = True Then
+                                If .dwItemSpec >= 0 Then RaiseEvent PanelClick(Me.Panels(.dwItemSpec + 1), UserControl.ScaleX(.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(.PT.Y, vbPixels, vbContainerPosition))
+                            End If
+                        Case NM_DBLCLK, NM_RDBLCLK
+                            If .dwItemSpec >= 0 Then RaiseEvent PanelDblClick(Me.Panels(.dwItemSpec + 1), UserControl.ScaleX(.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(.PT.Y, vbPixels, vbContainerPosition))
+                    End Select
+                    End With
+            End Select
         End If
     Case WM_NOTIFYFORMAT
         Const NF_QUERY As Long = 3

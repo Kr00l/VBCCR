@@ -113,7 +113,25 @@ library OLEGuids
 	{
 		HRESULT SetClientSite([in] IOleClientSite *pClientSite);
 		HRESULT GetClientSite([out, retval] IOleClientSite **ppClientSite);
+		HRESULT SetHostNames([in] LPWSTR szContainerApp, [in] LPWSTR szContainerObj);
+		HRESULT Close([in] LONG dwSaveOption);
+		HRESULT SetMoniker([in] LONG dwWhichMoniker, [in] LONG lpmk);
+		HRESULT GetMoniker([in] LONG dwAssign, [in] LONG dwWhichMoniker, [out, retval] LONG *lppmk);
+		HRESULT InitFromData([in] LONG lpDataObject, [in] LONG fCreation, [in] LONG dwReserved);
+		HRESULT GetClipboardData([in] LONG dwReserved, [out, retval] LONG *lppDataObject);
+		LONG DoVerb([in] LONG iVerb, [in] LONG lpMsg, [in] IOleClientSite *pActiveSite, [in] LONG Index, [in] LONG hWndParent, [in] LONG lprcPosRect);
 		// Lots more.
+	};
+	[
+		uuid(00000113-0000-0000-C000-000000000046),
+		odl
+	]
+	interface IOleInPlaceObject : IOleWindow
+	{
+		HRESULT InPlaceDeactivate();
+		HRESULT UIDeactivate();
+		HRESULT SetObjectRects([in] LONG lprcPosRect, [in] LONG lprcClipRect);
+		HRESULT ReactivateAndUndo();
 	};
 	[
 		uuid(B196B288-BAB4-101A-B69C-00AA00341D07),
@@ -123,8 +141,8 @@ library OLEGuids
 	{
 		LONG GetControlInfo([out] OLECONTROLINFO *pCI);
 		LONG OnMnemonic([in] OLEACCELMSG *pMsg);
-		LONG OnAmbientPropertyChange([in] LONG DispID);
-		LONG FreezeEvents([in] LONG bFreeze);
+		HRESULT OnAmbientPropertyChange([in] LONG DispID);
+		HRESULT FreezeEvents([in] LONG bFreeze);
 	};
 	[
 		uuid(B196B289-BAB4-101A-B69C-00AA00341D07),
@@ -206,12 +224,12 @@ library OLEGuids
 		uuid(376BD3AA-3845-101B-84ED-08002B2EC713),
 		odl
 	]
-	interface IPerPropertyBrowsing : IDispatch
+	interface IPerPropertyBrowsing : IUnknown
 	{
-		HRESULT GetDisplayString([in] LONG DispID, [out] BSTR *DisplayName);
-		HRESULT MapPropertyToPage([in] LONG DispID, [out] OLECLSID *pCLSID);
-		HRESULT GetPredefinedStrings([in] LONG DispID, [out] OLECALPOLESTR *pCaStringsOut, [out] OLECADWORD *pCaCookiesOut);
-		HRESULT GetPredefinedValue([in] LONG DispID, [in] LONG dwCookie, [out] VARIANT *pVarOut);
+		LONG GetDisplayString([in] LONG DispID, [out] LONG *pDisplayName);
+		LONG MapPropertyToPage([in] LONG DispID, [out] OLECLSID *pCLSID);
+		LONG GetPredefinedStrings([in] LONG DispID, [out] OLECALPOLESTR *pCaStringsOut, [out] OLECADWORD *pCaCookiesOut);
+		LONG GetPredefinedValue([in] LONG DispID, [in] LONG dwCookie, [out] VARIANT *pVarOut);
 	};
 	[
 		uuid(B196B28B-BAB4-101A-B69C-00AA00341D07),

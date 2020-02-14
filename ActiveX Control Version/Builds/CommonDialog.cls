@@ -689,8 +689,8 @@ Attribute ReplaceAll.VB_Description = "Occurs when the user clicked the replace 
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CommDlgExtendedError Lib "comdlg32" () As Long
-Private Declare Function GetOpenFileName Lib "comdlg32" Alias "GetOpenFileNameW" (ByRef pOpenfilename As OPENFILENAME) As Long
-Private Declare Function GetSaveFileName Lib "comdlg32" Alias "GetSaveFileNameW" (ByRef pOpenfilename As OPENFILENAME) As Long
+Private Declare Function GetOpenFileName Lib "comdlg32" Alias "GetOpenFileNameW" (ByRef lpOpenFileName As OPENFILENAME) As Long
+Private Declare Function GetSaveFileName Lib "comdlg32" Alias "GetSaveFileNameW" (ByRef lpOpenFileName As OPENFILENAME) As Long
 Private Declare Function ChooseColor Lib "comdlg32" Alias "ChooseColorW" (ByRef lpChooseColor As TCHOOSECOLOR) As Long
 Private Declare Function ChooseFont Lib "comdlg32" Alias "ChooseFontW" (ByRef lpChooseFont As TCHOOSEFONT) As Long
 Private Declare Function WinHelp Lib "user32" Alias "WinHelpW" (ByVal hWnd As Long, ByVal lpHelpFile As Long, ByVal wCommand As Long, ByVal dwData As Long) As Long
@@ -765,6 +765,7 @@ Private PropFilter As String, PropFilterIndex As Long
 Private PropInitDir As String
 Private PropDefaultExt As String
 Private PropColor As Long
+Private PropCustomColors(0 To 15) As Long
 Private PropFontName As String, PropFontSize As Single, PropFontBold As Boolean, PropFontItalic As Boolean, PropFontStrikethru As Boolean, PropFontUnderline As Boolean, PropFontCharset As Integer
 Private PropMin As Long, PropMax As Long
 Private PropFromPage As Long, PropToPage As Long
@@ -788,11 +789,30 @@ Private PropFindWhat As String
 Private PropReplaceWith As String
 
 Private Sub Class_Initialize()
+Const LOCALE_USER_DEFAULT As Long = &H400
 Const LOCALE_IMEASURE As Long = &HD, LOCALE_RETURN_NUMBER As Long = &H20000000
 Dim LocaleMeasure As Long
-GetLocaleInfo 0, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), LenB(LocaleMeasure)
+' cchData = sizeof(DWORD) / sizeof(TCHAR)
+' That is, 2 for Unicode and 4 for ANSI.
+GetLocaleInfo LOCALE_USER_DEFAULT, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), 2
 CommonDialogDMFieldsExclusion = DM_ORIENTATION Or DM_PAPERSIZE Or DM_DEFAULTSOURCE Or DM_PRINTQUALITY Or DM_COLOR Or DM_DUPLEX
 PropMaxFileSize = MAX_PATH
+PropCustomColors(0) = &HFFFFFF
+PropCustomColors(1) = &HEFEFEF
+PropCustomColors(2) = &HDFDFDF
+PropCustomColors(3) = &HCFCFCF
+PropCustomColors(4) = &HBFBFBF
+PropCustomColors(5) = &HAFAFAF
+PropCustomColors(6) = &H9F9F9F
+PropCustomColors(7) = &H8F8F8F
+PropCustomColors(8) = &H7F7F7F
+PropCustomColors(9) = &H6F6F6F
+PropCustomColors(10) = &H5F5F5F
+PropCustomColors(11) = &H4F4F4F
+PropCustomColors(12) = &H3F3F3F
+PropCustomColors(13) = &H2F2F2F
+PropCustomColors(14) = &H1F1F1F
+PropCustomColors(15) = &HF0F0F
 PropFontSize = 8
 PropOrientation = CdlPRORPortrait
 PropPaperSize = IIf(LocaleMeasure = 0, CdlPRPSA4, CdlPRPSLetter)
@@ -958,6 +978,40 @@ End Property
 
 Public Property Let Color(ByVal Value As Long)
 PropColor = Value
+End Property
+
+Public Property Get CustomColors() As Variant
+Attribute CustomColors.VB_Description = "Returns/sets the 16 custom colors that a user can select."
+CustomColors = PropCustomColors()
+End Property
+
+Public Property Let CustomColors(ByVal ArgList As Variant)
+If IsArray(ArgList) Then
+    Dim Ptr As Long
+    CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
+    If Ptr <> 0 Then
+        Dim DimensionCount As Integer
+        CopyMemory DimensionCount, ByVal Ptr, 2
+        If DimensionCount = 1 Then
+            Dim LBoundArgList As Long, Count As Long, i As Long
+            LBoundArgList = LBound(ArgList)
+            For i = LBoundArgList To UBound(ArgList)
+                Count = Count + 1
+                Select Case VarType(ArgList(i))
+                    Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+                        PropCustomColors(i + (0 - LBoundArgList)) = WinColor(ArgList(i))
+                End Select
+                If Count >= 16 Then Exit For
+            Next i
+        Else
+            Err.Raise Number:=5, Description:="Array must be single dimensioned"
+        End If
+    Else
+        Err.Raise Number:=91, Description:="Array is not allocated"
+    End If
+Else
+    If Not IsEmpty(ArgList) Then Err.Raise 380
+End If
 End Property
 
 Public Property Get FontName() As String
@@ -1568,7 +1622,6 @@ End Function
 
 Public Function ShowColor() As Boolean
 Attribute ShowColor.VB_Description = "Displays the color dialog box."
-Static CustomColors(0 To 15) As Long, CustomColorsInitialized As Boolean
 Dim CHCLR As TCHOOSECOLOR
 With CHCLR
 .lStructSize = LenB(CHCLR)
@@ -1584,15 +1637,7 @@ Else
     Set This = Me
     .lCustData = ObjPtr(This)
 End If
-If CustomColorsInitialized = False Then
-    Dim i As Long, IntValue As Integer
-    For i = 0 To 15
-        IntValue = 255 - (i * 16)
-        CustomColors(i) = RGB(IntValue, IntValue, IntValue)
-    Next i
-    CustomColorsInitialized = True
-End If
-.lpCustColors = VarPtr(CustomColors(0))
+.lpCustColors = VarPtr(PropCustomColors(0))
 End With
 Dim RetVal As Long
 If (PropFlags And CdlCCHelpButton) = CdlCCHelpButton Then

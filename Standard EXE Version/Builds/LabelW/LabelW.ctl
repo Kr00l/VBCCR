@@ -137,11 +137,13 @@ Private Const BF_RIGHT As Long = &H4
 Private Const BF_TOP As Long = &H2
 Private Const BF_BOTTOM As Long = &H8
 Private Const BF_RECT As Long = (BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM)
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private LabelAutoSizeFlag As Boolean
 Private LabelDisplayedCaption As String
 Private LabelPaintFrozen As Boolean
 Private LabelMouseOver As Boolean, LabelMouseOverPos As Long
+Private LabelDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -157,6 +159,15 @@ Private PropAutoSize As Boolean
 Private PropWordWrap As Boolean
 Private PropEllipsisFormat As LblEllipsisFormatConstants
 Private PropVerticalAlignment As CCVerticalAlignmentConstants
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
 If DispID = DispIDMousePointer Then
@@ -181,11 +192,12 @@ End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+LabelDesignMode = Not Ambient.UserMode
 Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -205,6 +217,7 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+LabelDesignMode = Not Ambient.UserMode
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 If PropFont Is Nothing Then Set PropFont = Ambient.Font
@@ -391,12 +404,7 @@ Private Sub UserControl_Resize()
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
-If DPICorrectionFactor() <> 1 Then
-    With UserControl
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End With
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call RedrawLabel
 InProc = False
 End Sub
@@ -406,7 +414,7 @@ If HitResult = vbHitResultOutside Then HitResult = vbHitResultHit
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call ComCtlsReleaseShellMod
 End Sub
 
@@ -662,7 +670,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If Ambient.UserMode = True Then
+If LabelDesignMode = False Then
     Select Case PropMousePointer
         Case vbIconPointer, 16, vbCustom
             If PropMousePointer = vbCustom Then
@@ -694,7 +702,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If LabelDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else

@@ -263,7 +263,7 @@ Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, W
 Private Const SW_HIDE As Long = &H0
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -282,6 +282,9 @@ Private Const WM_MBUTTONDOWN As Long = &H207
 Private Const WM_MBUTTONUP As Long = &H208
 Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
+Private Const WM_LBUTTONDBLCLK As Long = &H203
+Private Const WM_MBUTTONDBLCLK As Long = &H209
+Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_SIZE As Long = &H5
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
@@ -369,6 +372,7 @@ Private Const CBN_CLOSEUP As Long = 8
 Private Const CBN_SELENDOK As Long = 9
 Private Const CBN_SELENDCANCEL As Long = 10
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private FontComboHandle As Long, FontComboEditHandle As Long, FontComboListHandle As Long
@@ -380,6 +384,7 @@ Private FontComboDroppedDownIndex As Long
 Private FontComboIMCHandle As Long
 Private FontComboCharCodeCache As Long
 Private FontComboMouseOver(0 To 2) As Boolean
+Private FontComboDesignMode As Boolean, FontComboTopDesignMode As Boolean
 Private FontComboTopIndex As Long
 Private FontComboResizeFrozen As Boolean
 Private FontComboAutoDragInSel As Boolean, FontComboAutoDragIsActive As Boolean
@@ -415,6 +420,15 @@ Private PropAutoSelect As Boolean
 Private PropRecentMax As Integer
 Private PropRecentBackColor As OLE_COLOR
 Private PropRecentForeColor As OLE_COLOR
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -509,8 +523,8 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
-Call SetVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 FontComboLFHeightSpacing = (2 * GetSystemMetrics(SM_CYBORDER))
 FontComboDroppedDownIndex = -1
 ReDim BuddyControlArray(0) As String
@@ -519,6 +533,10 @@ End Sub
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+On Error Resume Next
+FontComboDesignMode = Not Ambient.UserMode
+FontComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
@@ -552,6 +570,10 @@ End Sub
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+On Error Resume Next
+FontComboDesignMode = Not Ambient.UserMode
+FontComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -672,7 +694,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If Ambient.UserMode = False And PropertyName = "DisplayName" And PropStyle = FtcStyleDropDownList Then
+If FontComboDesignMode = True And PropertyName = "DisplayName" And PropStyle = FtcStyleDropDownList Then
     If FontComboHandle <> 0 Then
         If SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
             Dim Buffer As String
@@ -690,38 +712,20 @@ Static InProc As Boolean
 If InProc = True Or FontComboResizeFrozen = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If FontComboHandle = 0 Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> FtcStyleSimpleCombo Then
-    If DPICorrectionFactor() <> 1 Then
-        If .Extender.Height > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels), 1
-    Else
-        If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    End If
+    If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect FontComboHandle, WndRect
-    If DPICorrectionFactor() <> 1 Then
-        If (WndRect.Bottom - WndRect.Top) <> CLng(.ScaleY(.Extender.Height, vbContainerSize, vbPixels)) Or (WndRect.Right - WndRect.Left) <> CLng(.ScaleX(.Extender.Width, vbContainerSize, vbPixels)) Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-            .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-            .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-        End If
-    Else
-        If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-            .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-        End If
+    If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
+        .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+        If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
     Call CheckDropDownHeight(True)
 Else
     Dim ListRect As RECT, EditHeight As Long, Height As Long
-    If DPICorrectionFactor() <> 1 Then
-        MoveWindow FontComboHandle, 0, 0, .ScaleX(.Extender.Width, vbContainerSize, vbPixels), .ScaleY(.Extender.Height, vbContainerSize, vbPixels) + IIf(PropIntegralHeight = True, 1, 0), 1
-    Else
-        MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
-    End If
+    MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
     GetWindowRect FontComboHandle, WndRect
     If FontComboListHandle <> 0 Then GetWindowRect FontComboListHandle, ListRect
     MapWindowPoints HWND_DESKTOP, FontComboHandle, ListRect, 2
@@ -733,10 +737,7 @@ Else
         Height = EditHeight
     End If
     .Extender.Height = .ScaleY(Height, vbPixels, vbContainerSize)
-    If DPICorrectionFactor() <> 1 Then
-        .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-        .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-    End If
+    If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     Me.Refresh
 End If
@@ -745,8 +746,8 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyFontCombo
 Call ComCtlsReleaseShellMod
 End Sub
@@ -1110,7 +1111,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If FontComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1174,7 +1175,7 @@ End Property
 
 Public Property Get BuddyControl() As Variant
 Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     If PropBuddyControlInit = False And PropBuddyControl Is Nothing Then
         If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
         PropBuddyControlInit = True
@@ -1190,7 +1191,7 @@ Me.BuddyControl = Value
 End Property
 
 Public Property Let BuddyControl(ByVal Value As Variant)
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     If FontComboHandle <> 0 Then
         Dim Success As Boolean, Handle As Long, ShadowFontCombo As FontCombo
         Set ShadowFontCombo = Me
@@ -1254,7 +1255,7 @@ End Property
 Public Property Let Style(ByVal Value As FtcStyleConstants)
 Select Case Value
     Case FtcStyleDropDownCombo, FtcStyleSimpleCombo, FtcStyleDropDownList
-        If Ambient.UserMode = True Then
+        If FontComboDesignMode = False Then
             Err.Raise Number:=382, Description:="Style property is read-only at run time"
         Else
             PropStyle = Value
@@ -1326,7 +1327,7 @@ Select Case PropStyle
             Text = PropText
         End If
     Case FtcStyleDropDownList
-        If FontComboHandle <> 0 And Ambient.UserMode = True Then
+        If FontComboHandle <> 0 And FontComboDesignMode = False Then
             Dim SelIndex As Long
             SelIndex = SendMessage(FontComboHandle, CB_GETCURSEL, 0, ByVal 0&)
             If Not SelIndex = CB_ERR Then Text = Me.List(SelIndex)
@@ -1345,7 +1346,7 @@ Select Case PropStyle
         PropText = Value
         If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
     Case FtcStyleDropDownList
-        If FontComboHandle <> 0 And Ambient.UserMode = True Then
+        If FontComboHandle <> 0 And FontComboDesignMode = False Then
             Dim Index As Long
             Index = SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(Value))
             If Not Index = CB_ERR Then
@@ -1391,7 +1392,7 @@ Select Case Value
     Case 1 To 30
         PropMaxDropDownItems = Value
     Case Else
-        If Ambient.UserMode = False Then
+        If FontComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1408,7 +1409,7 @@ IntegralHeight = PropIntegralHeight
 End Property
 
 Public Property Let IntegralHeight(ByVal Value As Boolean)
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     Err.Raise Number:=382, Description:="IntegralHeight property is read-only at run time"
 Else
     PropIntegralHeight = Value
@@ -1428,7 +1429,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If FontComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1451,7 +1452,7 @@ End Property
 
 Public Property Let HorizontalExtent(ByVal Value As Single)
 If Value < 0 Then
-    If Ambient.UserMode = False Then
+    If FontComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1475,7 +1476,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 And Ambient.UserMode = True Then
+If FontComboHandle <> 0 And FontComboEditHandle <> 0 And FontComboDesignMode = False Then
     If GetFocus() = FontComboEditHandle Then Call ComCtlsSetIMEMode(FontComboEditHandle, FontComboIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
@@ -1523,7 +1524,7 @@ Select Case Value
             Erase FontComboRecentItems()
         End If
     Case Else
-        If Ambient.UserMode = False Then
+        If FontComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1540,7 +1541,7 @@ End Property
 
 Public Property Let RecentBackColor(ByVal Value As OLE_COLOR)
 PropRecentBackColor = Value
-If FontComboHandle <> 0 And Ambient.UserMode = True Then
+If FontComboHandle <> 0 And FontComboDesignMode = False Then
     If FontComboRecentBackColorBrush <> 0 Then DeleteObject FontComboRecentBackColorBrush
     FontComboRecentBackColorBrush = CreateSolidBrush(WinColor(PropRecentBackColor))
 End If
@@ -1677,7 +1678,7 @@ If PropLocked = True Then Me.Locked = PropLocked
 Me.ExtendedUI = PropExtendedUI
 Me.MaxDropDownItems = PropMaxDropDownItems
 Me.RecentMax = GetRecentMax()
-If Ambient.UserMode = True Then
+If FontComboDesignMode = False Then
     If FontComboHandle <> 0 Then
         If FontComboRecentBackColorBrush = 0 Then FontComboRecentBackColorBrush = CreateSolidBrush(WinColor(PropRecentBackColor))
         Call ComCtlsSetSubclass(FontComboHandle, Me, 1)
@@ -1961,50 +1962,44 @@ If FontComboHandle <> 0 Then
         Dim Ptr As Long
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
         If Ptr <> 0 Then
-            Dim RetVal As Long
-            CopyMemory ByVal VarPtr(RetVal), Ptr, 4
-            If RetVal <> 0 Then
-                Dim DimensionCount As Integer
-                CopyMemory DimensionCount, ByVal Ptr, 2
-                If DimensionCount = 1 Then
-                    Dim Arr() As String, Count As Long, i As Long
-                    For i = LBound(ArgList) To UBound(ArgList)
-                        Select Case VarType(ArgList(i))
-                            Case vbString
-                                If Not ArgList(i) = vbNullString Then
-                                    ReDim Preserve Arr(0 To Count) As String
-                                    Arr(Count) = ArgList(i)
-                                    Count = Count + 1
-                                End If
-                        End Select
-                    Next i
-                    For i = 1 To FontComboRecentCount
-                        SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
-                    Next i
-                    FontComboRecentCount = Count
-                    Me.RecentMax = GetRecentMax()
-                    If FontComboRecentCount > 0 Then
-                        Dim FontName As String, Offset As Integer
-                        For i = 1 To FontComboRecentCount
-                            FontName = Arr(i - 1)
-                            If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
-                                FontComboRecentItems(i - Offset) = FontName
-                                SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
-                            Else
-                                FontComboRecentItems(i) = vbNullString
-                                Offset = Offset + 1
+            Dim DimensionCount As Integer
+            CopyMemory DimensionCount, ByVal Ptr, 2
+            If DimensionCount = 1 Then
+                Dim Arr() As String, Count As Long, i As Long
+                For i = LBound(ArgList) To UBound(ArgList)
+                    Select Case VarType(ArgList(i))
+                        Case vbString
+                            If Not ArgList(i) = vbNullString Then
+                                ReDim Preserve Arr(0 To Count) As String
+                                Arr(Count) = ArgList(i)
+                                Count = Count + 1
                             End If
-                        Next i
-                        FontComboRecentCount = FontComboRecentCount - Offset
-                    End If
-                Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    End Select
+                Next i
+                For i = 1 To FontComboRecentCount
+                    SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
+                Next i
+                FontComboRecentCount = Count
+                Me.RecentMax = GetRecentMax()
+                If FontComboRecentCount > 0 Then
+                    Dim FontName As String, Offset As Integer
+                    For i = 1 To FontComboRecentCount
+                        FontName = Arr(i - 1)
+                        If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
+                            FontComboRecentItems(i - Offset) = FontName
+                            SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
+                        Else
+                            FontComboRecentItems(i) = vbNullString
+                            Offset = Offset + 1
+                        End If
+                    Next i
+                    FontComboRecentCount = FontComboRecentCount - Offset
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(ArgList) Then
         Me.ClearRecent
@@ -2076,7 +2071,7 @@ End If
 End Sub
 
 Private Sub SetupFontComboItems()
-If Ambient.UserMode = False Then
+If FontComboDesignMode = True Then
     If PropStyle <> FtcStyleSimpleCombo Then Exit Sub
 End If
 If FontComboHandle <> 0 Then
@@ -2272,8 +2267,8 @@ Select Case wMsg
         Call DeActivateIPAO
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> FontComboHandle And (GetFocus() <> FontComboEditHandle Or FontComboEditHandle = 0) Then
-            If InProc = True Then WindowProcControl = MA_NOACTIVATEANDEAT: Exit Function
+        If FontComboTopDesignMode = False And GetFocus() <> FontComboHandle And (GetFocus() <> FontComboEditHandle Or FontComboEditHandle = 0) Then
+            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -2283,7 +2278,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcControl = MA_NOACTIVATEANDEAT
+                            WindowProcControl = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcControl = MA_NOACTIVATE
@@ -2373,10 +2368,7 @@ Select Case wMsg
             If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
                 FontComboResizeFrozen = True
                 .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-                If DPICorrectionFactor() <> 1 Then
-                    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-                    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-                End If
+                If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
                 FontComboResizeFrozen = False
             End If
             End With
@@ -2652,13 +2644,13 @@ Select Case wMsg
                     Exit Function
             End Select
         End If
-    Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
+    Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP, WM_LBUTTONDBLCLK, WM_MBUTTONDBLCLK, WM_RBUTTONDBLCLK
         If PropLocked = True Then
             Dim P As POINTAPI
             P.X = Get_X_lParam(lParam)
             P.Y = Get_Y_lParam(lParam)
-            ClientToScreen FontComboListHandle, P
-            If Not LBItemFromPt(FontComboListHandle, P.X, P.Y, 0) = LB_ERR Then Exit Function
+            ClientToScreen hWnd, P
+            If Not LBItemFromPt(hWnd, P.X, P.Y, 0) = LB_ERR Then Exit Function
         End If
     Case WM_VSCROLL
         Select Case LoWord(wParam)

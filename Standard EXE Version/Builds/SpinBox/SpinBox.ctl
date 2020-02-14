@@ -137,7 +137,7 @@ Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_CLIENTEDGE As Long = &H200
 Private Const WS_EX_RTLREADING As Long = &H2000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
+Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const TME_LEAVE As Long = &H2, TME_NONCLIENT As Long = &H10
 Private Const WM_SETFOCUS As Long = &H7
@@ -208,12 +208,14 @@ Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
 Private Const UDM_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
 Implements ISubclass
+Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private SpinBoxUpDownHandle As Long, SpinBoxEditHandle As Long
 Private SpinBoxFontHandle As Long
 Private SpinBoxCharCodeCache As Long
 Private SpinBoxMouseOver(0 To 2) As Boolean
+Private SpinBoxDesignMode As Boolean, SpinBoxTopDesignMode As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -234,6 +236,15 @@ Private PropAllowOnlyNumbers As Boolean
 Private PropTextAlignment As VBRUN.AlignmentConstants
 Private PropLocked As Boolean
 Private PropHideSelection As Boolean
+
+Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
+Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
+pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
+End Sub
+
+Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
+End Sub
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -285,12 +296,16 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_STANDARD_CLASSES Or ICC_UPDOWN_CLASS)
-Call SetVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call SetVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+SpinBoxDesignMode = Not Ambient.UserMode
+SpinBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -317,6 +332,10 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
+SpinBoxDesignMode = Not Ambient.UserMode
+SpinBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -412,10 +431,7 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl
-If DPICorrectionFactor() <> 1 Then
-    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
-    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
-End If
+If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If SpinBoxEditHandle <> 0 Then MoveWindow SpinBoxEditHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 If SpinBoxUpDownHandle <> 0 Then SendMessage SpinBoxUpDownHandle, UDM_SETBUDDY, SpinBoxEditHandle, ByVal 0&
@@ -423,8 +439,8 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableSubclass(Me, VTableInterfaceInPlaceActiveObject)
-Call RemoveVTableSubclass(Me, VTableInterfacePerPropertyBrowsing)
+Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroySpinBox
 Call ComCtlsReleaseShellMod
 End Sub
@@ -721,7 +737,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If Ambient.UserMode = False Then
+        If SpinBoxDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -797,7 +813,7 @@ If Value <= Me.Max Then
     PropMin = Value
     If Me.Value < PropMin Then Me.Value = PropMin
 Else
-    If Ambient.UserMode = False Then
+    If SpinBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -823,7 +839,7 @@ If Value >= Me.Min Then
     PropMax = Value
     If Me.Value > PropMax Then Me.Value = PropMax
 Else
-    If Ambient.UserMode = False Then
+    If SpinBoxDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1102,7 +1118,7 @@ Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Me.Value = PropValue
 Me.Increment = PropIncrement
-If Ambient.UserMode = True Then
+If SpinBoxDesignMode = False Then
     If SpinBoxUpDownHandle <> 0 Then Call ComCtlsSetSubclass(SpinBoxUpDownHandle, Me, 1)
     If SpinBoxEditHandle <> 0 Then Call ComCtlsSetSubclass(SpinBoxEditHandle, Me, 2)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
@@ -1110,7 +1126,7 @@ End If
 End Sub
 
 Private Sub ReCreateSpinBox()
-If Ambient.UserMode = True Then
+If SpinBoxDesignMode = False Then
     Dim Locked As Boolean
     With Me
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
@@ -1167,44 +1183,37 @@ If SpinBoxUpDownHandle <> 0 Then
         CopyMemory Ptr(0), ByVal UnsignedAdd(VarPtr(Delays), 8), 4
         CopyMemory Ptr(1), ByVal UnsignedAdd(VarPtr(Increments), 8), 4
         If Ptr(0) <> 0 And Ptr(1) <> 0 Then
-            Dim RetVal(0 To 1) As Long
-            CopyMemory ByVal VarPtr(RetVal(0)), Ptr(0), 4
-            CopyMemory ByVal VarPtr(RetVal(1)), Ptr(1), 4
-            If RetVal(0) <> 0 And RetVal(1) <> 0 Then
-                Dim DimensionCount(0 To 1) As Integer
-                CopyMemory DimensionCount(0), ByVal Ptr(0), 2
-                CopyMemory DimensionCount(1), ByVal Ptr(1), 2
-                If DimensionCount(0) = 1 And DimensionCount(1) = 1 Then
-                    If LBound(Delays) = LBound(Increments) And UBound(Delays) = UBound(Increments) Then
-                        Dim AccelArr() As UDACCEL, Count As Long, i As Long
-                        For i = LBound(Delays) To UBound(Delays)
-                            Select Case VarType(Delays(i))
-                                Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                                    ReDim Preserve AccelArr(0 To Count) As UDACCEL
-                                    AccelArr(Count).nSec = CLng(Delays(i))
-                                    Select Case VarType(Increments(i))
-                                        Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                                            AccelArr(Count).nInc = CLng(Increments(i))
-                                    End Select
-                                    Count = Count + 1
-                            End Select
-                        Next i
-                        If Count > 0 Then
-                            SendMessage SpinBoxUpDownHandle, UDM_SETACCEL, Count, ByVal VarPtr(AccelArr(0))
-                        Else
-                            Me.Increment = PropIncrement
-                        End If
+            Dim DimensionCount(0 To 1) As Integer
+            CopyMemory DimensionCount(0), ByVal Ptr(0), 2
+            CopyMemory DimensionCount(1), ByVal Ptr(1), 2
+            If DimensionCount(0) = 1 And DimensionCount(1) = 1 Then
+                If LBound(Delays) = LBound(Increments) And UBound(Delays) = UBound(Increments) Then
+                    Dim AccelArr() As UDACCEL, Count As Long, i As Long
+                    For i = LBound(Delays) To UBound(Delays)
+                        Select Case VarType(Delays(i))
+                            Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+                                ReDim Preserve AccelArr(0 To Count) As UDACCEL
+                                AccelArr(Count).nSec = CLng(Delays(i))
+                                Select Case VarType(Increments(i))
+                                    Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+                                        AccelArr(Count).nInc = CLng(Increments(i))
+                                End Select
+                                Count = Count + 1
+                        End Select
+                    Next i
+                    If Count > 0 Then
+                        SendMessage SpinBoxUpDownHandle, UDM_SETACCEL, Count, ByVal VarPtr(AccelArr(0))
                     Else
-                        Err.Raise Number:=5, Description:="Array boundaries are not equal"
+                        Me.Increment = PropIncrement
                     End If
                 Else
-                    Err.Raise Number:=5, Description:="Array must be single dimensioned"
+                    Err.Raise Number:=5, Description:="Array boundaries are not equal"
                 End If
             Else
-                Err.Raise Number:=91, Description:="Array is not allocated"
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
         Else
-            Err.Raise 5
+            Err.Raise Number:=91, Description:="Array is not allocated"
         End If
     ElseIf IsEmpty(Delays) Then
         Me.Increment = PropIncrement
@@ -1395,8 +1404,8 @@ Select Case wMsg
         End If
     Case WM_MOUSEACTIVATE
         Static InProc As Boolean
-        If ComCtlsRootIsEditor(hWnd) = False And GetFocus() <> SpinBoxUpDownHandle And GetFocus() <> SpinBoxEditHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcEdit = MA_NOACTIVATEANDEAT: Exit Function
+        If SpinBoxTopDesignMode = False And GetFocus() <> SpinBoxUpDownHandle And GetFocus() <> SpinBoxEditHandle Then
+            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcEdit = MA_ACTIVATEANDEAT: Exit Function
             Select Case HiWord(lParam)
                 Case WM_LBUTTONDOWN
                     On Error Resume Next
@@ -1406,7 +1415,7 @@ Select Case wMsg
                         Call ComCtlsTopParentValidateControls(Me)
                         InProc = False
                         If Err.Number = 380 Then
-                            WindowProcEdit = MA_NOACTIVATEANDEAT
+                            WindowProcEdit = MA_ACTIVATEANDEAT
                         Else
                             SetFocusAPI .hWnd
                             WindowProcEdit = MA_NOACTIVATE
