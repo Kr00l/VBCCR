@@ -968,7 +968,11 @@ OldRight = .Extender.Left + .Extender.Width
 OldCenter = .Extender.Left + (.Extender.Width / 2)
 OldBottom = .Extender.Top + .Extender.Height
 OldVCenter = .Extender.Top + (.Extender.Height / 2)
-.Extender.Move .Extender.Left, .Extender.Top, .ScaleX((CalcRect.Right - CalcRect.Left) + (BorderWidth * 2), vbPixels, vbContainerSize), .ScaleY((CalcRect.Bottom - CalcRect.Top) + (BorderHeight * 2), vbPixels, vbContainerSize)
+If PropWordWrap = True Then
+    .Extender.Height = .ScaleY((CalcRect.Bottom - CalcRect.Top) + (BorderHeight * 2), vbPixels, vbContainerSize)
+Else
+    .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((CalcRect.Right - CalcRect.Left) + (BorderWidth * 2), vbPixels, vbContainerSize), .ScaleY((CalcRect.Bottom - CalcRect.Top) + (BorderHeight * 2), vbPixels, vbContainerSize)
+End If
 LabelPaintFrozen = True
 Select Case PropAlignment
     Case vbCenter
