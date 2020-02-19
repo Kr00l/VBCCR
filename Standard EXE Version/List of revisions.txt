@@ -1,5 +1,8 @@
 List of revisions:
 
+19-Feb-2020
+- Bugfix in the LabelW control when WordWrap and AutoSize are both set to True.
+
 14-Feb-2020
 - Bugfix that CommonDialog.ShowPrinterEx does not crash anymore on a form-less application.
   CommonDialog.ShowPrinter was not affected as it can deal also without an owner window.
