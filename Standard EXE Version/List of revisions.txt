@@ -1,5 +1,8 @@
 List of revisions:
 
+20-Feb-2020
+- Bugfix related to 19-Feb-2020.
+
 19-Feb-2020
 - Bugfix in the LabelW control when WordWrap and AutoSize are both set to True.
 
