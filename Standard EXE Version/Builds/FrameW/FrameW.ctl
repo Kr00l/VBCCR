@@ -480,11 +480,6 @@ Attribute Drag.VB_Description = "Begins, ends, or cancels a drag operation of an
 If IsMissing(Action) Then Extender.Drag Else Extender.Drag Action
 End Sub
 
-Public Sub SetFocus()
-Attribute SetFocus.VB_Description = "Moves the focus to the specified object."
-Extender.SetFocus
-End Sub
-
 Public Sub ZOrder(Optional ByRef Position As Variant)
 Attribute ZOrder.VB_Description = "Places a specified object at the front or back of the z-order within its graphical level."
 If IsMissing(Position) Then Extender.ZOrder Else Extender.ZOrder Position

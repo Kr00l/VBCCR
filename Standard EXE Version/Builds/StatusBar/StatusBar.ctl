@@ -135,9 +135,9 @@ Attribute DblClick.VB_Description = "Occurs when you press and release a mouse b
 Attribute DblClick.VB_UserMemId = -601
 Public Event StyleChange()
 Attribute StyleChange.VB_Description = "Occurs when the style changes."
-Public Event PanelClick(ByVal Panel As SbrPanel, ByVal X As Single, ByVal Y As Single)
+Public Event PanelClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
 Attribute PanelClick.VB_Description = "Occurs when a user presses and then releases a mouse button over any of the panels."
-Public Event PanelDblClick(ByVal Panel As SbrPanel, ByVal X As Single, ByVal Y As Single)
+Public Event PanelDblClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
 Attribute PanelDblClick.VB_Description = "Occurs when a user presses and then releases a mouse button twice over any of the panels."
 Public Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 Attribute MouseDown.VB_Description = "Occurs when the user presses the mouse button while an object has the focus."
@@ -2089,25 +2089,32 @@ Select Case wMsg
             Exit Function
         End If
     Case WM_NOTIFY
-        Dim NM As NMHDR
+        Dim NM As NMHDR, NMM As NMMOUSE
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = StatusBarHandle Then
             Select Case NM.Code
                 Case SBN_SIMPLEMODECHANGE
                     RaiseEvent StyleChange
-                Case NM_CLICK, NM_RCLICK, NM_DBLCLK, NM_RDBLCLK
-                    Dim NMM As NMMOUSE
-                    CopyMemory NMM, ByVal lParam, LenB(NMM)
-                    With NMM
-                    Select Case NM.Code
-                        Case NM_CLICK, NM_RCLICK
-                            If StatusBarIsClick = True Then
-                                If .dwItemSpec >= 0 Then RaiseEvent PanelClick(Me.Panels(.dwItemSpec + 1), UserControl.ScaleX(.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(.PT.Y, vbPixels, vbContainerPosition))
+                Case NM_CLICK, NM_RCLICK
+                    If StatusBarIsClick = True Then
+                        CopyMemory NMM, ByVal lParam, LenB(NMM)
+                        If NMM.dwItemSpec >= 0 Then
+                            If NM.Code = NM_CLICK Then
+                                RaiseEvent PanelClick(Me.Panels(NMM.dwItemSpec + 1), vbLeftButton)
+                            ElseIf NM.Code = NM_RCLICK Then
+                                RaiseEvent PanelClick(Me.Panels(NMM.dwItemSpec + 1), vbRightButton)
                             End If
-                        Case NM_DBLCLK, NM_RDBLCLK
-                            If .dwItemSpec >= 0 Then RaiseEvent PanelDblClick(Me.Panels(.dwItemSpec + 1), UserControl.ScaleX(.PT.X, vbPixels, vbContainerPosition), UserControl.ScaleY(.PT.Y, vbPixels, vbContainerPosition))
-                    End Select
-                    End With
+                        End If
+                    End If
+                Case NM_DBLCLK, NM_RDBLCLK
+                    CopyMemory NMM, ByVal lParam, LenB(NMM)
+                    If NMM.dwItemSpec >= 0 Then
+                        If NM.Code = NM_DBLCLK Then
+                            RaiseEvent PanelDblClick(Me.Panels(NMM.dwItemSpec + 1), vbLeftButton)
+                        ElseIf NM.Code = NM_RDBLCLK Then
+                            RaiseEvent PanelDblClick(Me.Panels(NMM.dwItemSpec + 1), vbRightButton)
+                        End If
+                    End If
             End Select
         End If
     Case WM_NOTIFYFORMAT

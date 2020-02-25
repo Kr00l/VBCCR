@@ -3321,10 +3321,10 @@ If ToolBarHandle <> 0 Then
 End If
 End Sub
 
-Public Sub ContainerKeyDown(ByRef KeyCode As Integer, ByRef Shift As Integer)
-Attribute ContainerKeyDown.VB_Description = "Method to provide accelerator key access by forwarding the key down events of the container. The key preview property need to be set to true by a form container."
-If ToolBarHandle = 0 Or Shift <> vbAltMask Then Exit Sub
-If IsWindowEnabled(ToolBarHandle) = 0 Then Exit Sub
+Public Function ContainerKeyDown(ByRef KeyCode As Integer, ByRef Shift As Integer) As TbrButton
+Attribute ContainerKeyDown.VB_Description = "Provides accelerator key access by forwarding the key down events of the container. The key preview property need to be set to true by a form container."
+If ToolBarHandle = 0 Or Shift <> vbAltMask Then Exit Function
+If IsWindowEnabled(ToolBarHandle) = 0 Then Exit Function
 Dim ID As Long, Accel As Integer, Count As Long, TBBI As TBBUTTONINFO
 Count = SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&)
 With TBBI
@@ -3383,10 +3383,28 @@ If ID > 0 Then
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
             End If
         End If
+        Set ContainerKeyDown = Button
     End If
 End If
 End With
-End Sub
+End Function
+
+Public Function FindMnemonic(ByVal CharCode As Long) As TbrButton
+Attribute FindMnemonic.VB_Description = "Returns a reference to the button object with an matching mnemonic character."
+If ToolBarHandle <> 0 Then
+    ' TB_MAPACCELERATOR matches either the mnemonic character or the first character in a button item.
+    ' This behavior is undocumented and unwanted.
+    ' The fix is to use the ID only when TB_MAPACCELERATOR returns a nonzero value.
+    Dim ID As Long
+    If SendMessage(ToolBarHandle, TB_MAPACCELERATOR, CharCode, ByVal VarPtr(ID)) <> 0 Then
+        If IsButtonAvailable(ID) = True Then
+            Dim Ptr As Long
+            Ptr = GetButtonPtr(ID)
+            If Ptr <> 0 Then Set FindMnemonic = PtrToObj(Ptr)
+        End If
+    End If
+End If
+End Function
 
 Public Function HitTest(ByVal X As Single, ByVal Y As Single) As TbrButton
 Attribute HitTest.VB_Description = "Returns a reference to the button object located at the coordinates of X and Y."

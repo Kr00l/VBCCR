@@ -699,7 +699,7 @@ UserControl.Refresh
 RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
-Public Property Get Value(Optional ByRef Modifiers As VBRUN.ShiftConstants) As VBRUN.KeyCodeConstants
+Public Property Get Value(Optional ByRef Modifiers As Integer) As VBRUN.KeyCodeConstants
 Attribute Value.VB_Description = "Returns/sets the virtual key code and modifier keys that define a hot key combination."
 Attribute Value.VB_UserMemId = 0
 Attribute Value.VB_MemberFlags = "400"
@@ -711,8 +711,8 @@ If HotKeyHandle <> 0 Then
 End If
 End Property
 
-Public Property Let Value(Optional ByRef Modifiers As VBRUN.ShiftConstants, ByVal NewValue As VBRUN.KeyCodeConstants)
-If HotKeyHandle <> 0 Then SendMessage HotKeyHandle, HKM_SETHOTKEY, MakeDWord(MakeWord(CByte(NewValue), CByte(Modifiers)), 0), ByVal 0&
+Public Property Let Value(Optional ByRef Modifiers As Integer, ByVal NewValue As VBRUN.KeyCodeConstants)
+If HotKeyHandle <> 0 Then SendMessage HotKeyHandle, HKM_SETHOTKEY, MakeDWord(MakeWord(NewValue And &HFF&, Modifiers And &HFF&), 0), ByVal 0&
 End Property
 
 Public Property Get RawValue() As Long
