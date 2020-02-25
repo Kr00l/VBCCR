@@ -991,8 +991,8 @@ Private Sub SpinBox1_LostFocus()
 SpinBox1.ValidateText
 End Sub
 
-Private Sub StatusBar1_PanelClick(ByVal Panel As SbrPanel, ByVal X As Single, ByVal Y As Single)
-MsgBox "clicked panel " & Panel.Index
+Private Sub StatusBar1_PanelClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
+MsgBox "clicked panel " & Panel.Index & " with " & IIf(Button = vbLeftButton, "left", "right") & " button."
 End Sub
 
 Private Sub TabStrip1_OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)

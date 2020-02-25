@@ -1,5 +1,16 @@
 List of revisions:
 
+25-Feb-2020
+- SetFocus method of FrameW removed. (Cleanup)
+  This was a left-over after 13-Jan-2018 update where 'CanGetFocus' was changed to False.
+- Changed Value property in the HotKey control so it works in VB.net AxInterop.
+  Optional 'ByRef Modifiers' param was changed from 'As VBRUN.ShiftConstants' to 'As Integer'.
+- Changed params for PanelClick/PanelDblClick in the StatusBar control.
+  It now includes the 'Button As Integer' param.
+- ContainerKeyDown in the ToolBar control changed from 'Sub' to 'Function'.
+  It can now return a reference to a TbrButton class, when a successfull button click was invoked.
+- Included run-time function FindMnemonic in the ToolBar control.
+
 20-Feb-2020
 - Bugfix related to 19-Feb-2020.
 
