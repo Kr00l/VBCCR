@@ -1,5 +1,8 @@
 List of revisions:
 
+26-Feb-2020
+- TreeView control now 'Alignable', so that it can be used in an MDIForm. (e.g. as 'menu tree')
+
 25-Feb-2020
 - SetFocus method of FrameW removed. (Cleanup)
   This was a left-over after 13-Jan-2018 update where 'CanGetFocus' was changed to False.
