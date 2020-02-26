@@ -1,5 +1,6 @@
 VERSION 5.00
 Begin VB.UserControl TreeView 
+   Alignable       =   -1  'True
    ClientHeight    =   1800
    ClientLeft      =   0
    ClientTop       =   0
@@ -516,6 +517,7 @@ Private TreeViewInsertMarkItem As Long, TreeViewInsertMarkAfter As Boolean
 Private TreeViewExpandItem As Long, TreeViewPrevExpandItem As Long, TreeViewTickCount As Double
 Private TreeViewSampleMode As Boolean
 Private TreeViewImageListObjectPointer As Long
+Private TreeViewAlignable As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -643,6 +645,7 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
+If UserControl.ParentControls.Count = 0 Then TreeViewAlignable = False Else TreeViewAlignable = True
 TreeViewDesignMode = Not Ambient.UserMode
 TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
@@ -701,6 +704,7 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
+If UserControl.ParentControls.Count = 0 Then TreeViewAlignable = False Else TreeViewAlignable = True
 TreeViewDesignMode = Not Ambient.UserMode
 TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
@@ -896,9 +900,31 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
+Static LastHeight As Single, LastWidth As Single, LastAlign As Integer
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
+With UserControl.Extender
+Dim Align As Integer
+If TreeViewAlignable = True Then Align = .Align Else Align = vbAlignNone
+Select Case Align
+    Case LastAlign
+    Case vbAlignNone
+    Case vbAlignTop, vbAlignBottom
+        Select Case LastAlign
+            Case vbAlignLeft, vbAlignRight
+                .Height = LastWidth
+        End Select
+    Case vbAlignLeft, vbAlignRight
+        Select Case LastAlign
+            Case vbAlignTop, vbAlignBottom
+                .Width = LastHeight
+        End Select
+End Select
+LastHeight = .Height
+LastWidth = .Width
+LastAlign = Align
+End With
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If TreeViewHandle <> 0 Then MoveWindow TreeViewHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
@@ -1026,6 +1052,16 @@ End Property
 
 Public Property Let WhatsThisHelpID(ByVal Value As Long)
 Extender.WhatsThisHelpID = Value
+End Property
+
+Public Property Get Align() As Integer
+Attribute Align.VB_Description = "Returns/sets a value that determines where an object is displayed on a form."
+Attribute Align.VB_MemberFlags = "400"
+Align = Extender.Align
+End Property
+
+Public Property Let Align(ByVal Value As Integer)
+Extender.Align = Value
 End Property
 
 Public Property Get DragIcon() As IPictureDisp
