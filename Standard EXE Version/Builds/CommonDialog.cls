@@ -1823,7 +1823,7 @@ If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
         DNAMES.wDeviceOffset = DNAMES.wDriverOffset + Len(PropPrinterDriver) + 1
         DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(PropPrinterName) + 1
         DNAMES.wDefault = 0
-        Buffer = Left$(PropPrinterName & vbNullChar & PropPrinterName & vbNullChar & PropPrinterPort & vbNullChar, CCHDEVNAMESEXTRA)
+        Buffer = Left$(PropPrinterDriver & vbNullChar & PropPrinterName & vbNullChar & PropPrinterPort & vbNullChar, CCHDEVNAMESEXTRA)
         CopyMemory DNAMES.wExtra(0), ByVal StrPtr(Buffer), LenB(Buffer)
         PDLG.hDevNames = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DNAMES))
         lpDevNames = GlobalLock(PDLG.hDevNames)
@@ -1832,13 +1832,18 @@ If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
     End If
 End If
 Dim RetVal As Long
-If (PropFlags And CdlPDHelpButton) = CdlPDHelpButton Then
-    If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
-    Call ComCtlsSetSubclass(PDLG.hWndOwner, Me, 5, HELPMSGSTRING & "_5")
+If (PDLG.Flags And CdlPDHelpButton) = 0 Then
     RetVal = PrintDialog(PDLG)
-    Call ComCtlsRemoveSubclass(PDLG.hWndOwner, HELPMSGSTRING & "_5")
 Else
-    RetVal = PrintDialog(PDLG)
+    If PDLG.hWndOwner <> 0 Then
+        If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
+        Call ComCtlsSetSubclass(PDLG.hWndOwner, Me, 5, HELPMSGSTRING & "_5")
+        RetVal = PrintDialog(PDLG)
+        Call ComCtlsRemoveSubclass(PDLG.hWndOwner, HELPMSGSTRING & "_5")
+    Else
+        PDLG.Flags = PDLG.Flags And Not CdlPDHelpButton
+        RetVal = PrintDialog(PDLG)
+    End If
 End If
 If RetVal <> 0 Then
     lpDevMode = GlobalLock(PDLG.hDevMode)
@@ -1849,24 +1854,13 @@ If RetVal <> 0 Then
     CopyMemory DNAMES, ByVal lpDevNames, LenB(DNAMES)
     GlobalUnlock PDLG.hDevNames
     GlobalFree PDLG.hDevNames
-    If (DNAMES.wDefault And DN_DEFAULTPRN) = 0 Then
-        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1)
-        PropPrinterDriver = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1)
-        PropPrinterName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-        Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1)
-        PropPrinterPort = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-        If PropPrinterDefault = True Then
-            Call SetPrinterDefault(PropPrinterName)
-            PropPrinterDriver = vbNullString
-            PropPrinterName = vbNullString
-            PropPrinterPort = vbNullString
-        End If
-    Else
-        PropPrinterDriver = vbNullString
-        PropPrinterName = vbNullString
-        PropPrinterPort = vbNullString
-    End If
+    Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1)
+    PropPrinterDriver = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1)
+    PropPrinterName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1)
+    PropPrinterPort = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    If (DNAMES.wDefault And DN_DEFAULTPRN) = 0 And PropPrinterDefault = True Then Call SetPrinterDefault(PropPrinterName)
     If (PDLG.Flags And (PD_ENABLEPRINTHOOK Or PD_ENABLESETUPHOOK)) = 0 Then
         PropFlags = PDLG.Flags
     Else
@@ -2043,24 +2037,13 @@ If ErrVal = S_OK Then
         CopyMemory DNAMES, ByVal lpDevNames, LenB(DNAMES)
         GlobalUnlock PDLGEX.hDevNames
         GlobalFree PDLGEX.hDevNames
-        If (DNAMES.wDefault And DN_DEFAULTPRN) = 0 Then
-            Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1)
-            PropPrinterDriver = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-            Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1)
-            PropPrinterName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-            Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1)
-            PropPrinterPort = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-            If PropPrinterDefault = True Then
-                Call SetPrinterDefault(PropPrinterName)
-                PropPrinterDriver = vbNullString
-                PropPrinterName = vbNullString
-                PropPrinterPort = vbNullString
-            End If
-        Else
-            PropPrinterDriver = vbNullString
-            PropPrinterName = vbNullString
-            PropPrinterPort = vbNullString
-        End If
+        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1)
+        PropPrinterDriver = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1)
+        PropPrinterName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1)
+        PropPrinterPort = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        If (DNAMES.wDefault And DN_DEFAULTPRN) = 0 And PropPrinterDefault = True Then Call SetPrinterDefault(PropPrinterName)
         PropFlags = PDLGEX.Flags
         If (DMODE.DMFields And DM_COLLATE) <> 0 Then
             If (PropFlags And CdlPDUseDevModeCopiesAndCollate) <> 0 Then
