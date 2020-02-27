@@ -1,5 +1,8 @@
 List of revisions:
 
+27-Feb-2020
+- Behavior change for returning printer params for ShowPrinter/ShowPrinterEx dialog in the CommonDialog class.
+
 26-Feb-2020
 - TreeView control now 'Alignable', so that it can be used in an MDIForm. (e.g. as 'menu tree')
 
