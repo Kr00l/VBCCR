@@ -1481,7 +1481,7 @@ Else
 End If
 End With
 Dim RetVal As Long
-If (PropFlags And CdlOFNHelpButton) = CdlOFNHelpButton Then
+If (OFN.Flags And CdlOFNHelpButton) = CdlOFNHelpButton And OFN.hWndOwner <> 0 Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(OFN.hWndOwner, Me, 1, HELPMSGSTRING & "_1")
     RetVal = GetOpenFileName(OFN)
@@ -1559,7 +1559,7 @@ If PropDefaultExt = vbNullString Then DefaultExt = vbNullChar Else DefaultExt = 
 .lpstrDefExt = StrPtr(DefaultExt)
 End With
 Dim RetVal As Long
-If (PropFlags And CdlOFNHelpButton) = CdlOFNHelpButton Then
+If (OFN.Flags And CdlOFNHelpButton) = CdlOFNHelpButton And OFN.hWndOwner <> 0 Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(OFN.hWndOwner, Me, 2, HELPMSGSTRING & "_2")
     RetVal = GetSaveFileName(OFN)
@@ -1641,7 +1641,7 @@ End If
 .lpCustColors = VarPtr(PropCustomColors(0))
 End With
 Dim RetVal As Long
-If (PropFlags And CdlCCHelpButton) = CdlCCHelpButton Then
+If (CHCLR.Flags And CdlCCHelpButton) = CdlCCHelpButton And CHCLR.hWndOwner <> 0 Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(CHCLR.hWndOwner, Me, 3, HELPMSGSTRING & "_3")
     RetVal = ChooseColor(CHCLR)
@@ -1701,7 +1701,7 @@ End If
 .nSizeMax = PropMax
 End With
 Dim RetVal As Long
-If (PropFlags And CdlCFHelpButton) = CdlCFHelpButton Then
+If (CHFONT.Flags And CdlCFHelpButton) = CdlCFHelpButton And CHFONT.hWndOwner <> 0 Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(CHFONT.hWndOwner, Me, 4, HELPMSGSTRING & "_4")
     RetVal = ChooseFont(CHFONT)
@@ -1832,18 +1832,13 @@ If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
     End If
 End If
 Dim RetVal As Long
-If (PDLG.Flags And CdlPDHelpButton) = 0 Then
+If (PDLG.Flags And CdlPDHelpButton) = CdlPDHelpButton And PDLG.hWndOwner <> 0 Then
+    If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
+    Call ComCtlsSetSubclass(PDLG.hWndOwner, Me, 5, HELPMSGSTRING & "_5")
     RetVal = PrintDialog(PDLG)
+    Call ComCtlsRemoveSubclass(PDLG.hWndOwner, HELPMSGSTRING & "_5")
 Else
-    If PDLG.hWndOwner <> 0 Then
-        If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
-        Call ComCtlsSetSubclass(PDLG.hWndOwner, Me, 5, HELPMSGSTRING & "_5")
-        RetVal = PrintDialog(PDLG)
-        Call ComCtlsRemoveSubclass(PDLG.hWndOwner, HELPMSGSTRING & "_5")
-    Else
-        PDLG.Flags = PDLG.Flags And Not CdlPDHelpButton
-        RetVal = PrintDialog(PDLG)
-    End If
+    RetVal = PrintDialog(PDLG)
 End If
 If RetVal <> 0 Then
     lpDevMode = GlobalLock(PDLG.hDevMode)
@@ -2181,7 +2176,7 @@ If (PSDLG.Flags And CdlPSDReturnDefault) = 0 Then
     End If
 End If
 Dim RetVal As Long
-If (PropFlags And CdlPSDHelpButton) = CdlPSDHelpButton Then
+If (PSDLG.Flags And CdlPSDHelpButton) = CdlPSDHelpButton And PSDLG.hWndOwner <> 0 Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(PSDLG.hWndOwner, Me, 7, HELPMSGSTRING & "_7")
     RetVal = PageSetupDialog(PSDLG)
