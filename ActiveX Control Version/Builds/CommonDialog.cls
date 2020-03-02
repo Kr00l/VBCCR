@@ -714,6 +714,9 @@ Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (By
 Private Declare Function PrintDialog Lib "comdlg32" Alias "PrintDlgW" (ByRef lpPrintDlg As PRINTDLG) As Long
 Private Declare Function PrintDialogEx Lib "comdlg32" Alias "PrintDlgExW" (ByRef lpPrintDlgEx As PRINTDLGEX) As Long
 Private Declare Function PageSetupDialog Lib "comdlg32" Alias "PageSetupDlgW" (ByRef lpPageSetupDlg As PAGESETUPDLG) As Long
+Private Declare Function DocumentProperties Lib "winspool.drv" Alias "DocumentPropertiesW" (ByVal hWnd As Long, ByVal hPrinter As Long, ByVal lpszDeviceName As Long, ByVal lpDevModeOutput As Long, ByVal lpDevModeInput As Long, ByVal fMode As Long) As Long
+Private Declare Function OpenPrinter Lib "winspool.drv" Alias "OpenPrinterW" (ByVal lpszPrinterName As Long, ByRef hPrinter As Long, ByVal lpDefault As Long) As Long
+Private Declare Function ClosePrinter Lib "winspool.drv" (ByVal hPrinter As Long) As Long
 Private Declare Function GetDefaultPrinter Lib "winspool.drv" Alias "GetDefaultPrinterW" (ByVal lpszPrinterName As Long, ByRef cch As Long) As Long
 Private Declare Function SetDefaultPrinter Lib "winspool.drv" Alias "SetDefaultPrinterW" (ByVal lpszPrinterName As Long) As Long
 Private Declare Function FindText Lib "comdlg32" Alias "FindTextW" (ByRef lpFindReplace As FINDREPLACE) As Long
@@ -1778,8 +1781,11 @@ End With
 If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
     DMODE.DMSize = LenB(DMODE)
     If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+        DMODE.DMDriverExtra = GetDMDriverExtra(DMODE.DMSize, PropPrinterName)
         Buffer = Left$(PropPrinterName, CCHDEVICENAME)
         CopyMemory DMODE.DMDeviceName(0), ByVal StrPtr(Buffer), LenB(Buffer)
+    Else
+        DMODE.DMDriverExtra = GetDMDriverExtra(DMODE.DMSize)
     End If
     DMODE.DMFields = DM_ORIENTATION Or DM_PAPERSIZE Or DM_COPIES Or DM_DEFAULTSOURCE Or DM_PRINTQUALITY Or DM_COLOR Or DM_DUPLEX Or DM_COLLATE
     If (CommonDialogDMFieldsExclusion And DM_ORIENTATION) = 0 Then
@@ -1814,7 +1820,7 @@ If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
         DMODE.DMFields = DMODE.DMFields And Not DM_DUPLEX
     End If
     DMODE.DMCollate = IIf((PDLG.Flags And CdlPDCollate) <> 0, 1, 0)
-    PDLG.hDevMode = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DMODE))
+    PDLG.hDevMode = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DMODE) + DMODE.DMDriverExtra)
     lpDevMode = GlobalLock(PDLG.hDevMode)
     CopyMemory ByVal lpDevMode, DMODE, LenB(DMODE)
     GlobalUnlock PDLG.hDevMode
@@ -1849,11 +1855,11 @@ If RetVal <> 0 Then
     CopyMemory DNAMES, ByVal lpDevNames, LenB(DNAMES)
     GlobalUnlock PDLG.hDevNames
     GlobalFree PDLG.hDevNames
-    Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1)
+    Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1) & vbNullChar
     PropPrinterDriver = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-    Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1)
+    Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1) & vbNullChar
     PropPrinterName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-    Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1)
+    Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1) & vbNullChar
     PropPrinterPort = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
     If (DNAMES.wDefault And DN_DEFAULTPRN) = 0 And PropPrinterDefault = True Then Call SetPrinterDefault(PropPrinterName)
     If (PDLG.Flags And (PD_ENABLEPRINTHOOK Or PD_ENABLESETUPHOOK)) = 0 Then
@@ -1962,8 +1968,11 @@ End With
 If (PDLGEX.Flags And CdlPDReturnDefault) = 0 Then
     DMODE.DMSize = LenB(DMODE)
     If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+        DMODE.DMDriverExtra = GetDMDriverExtra(DMODE.DMSize, PropPrinterName)
         Buffer = Left$(PropPrinterName, CCHDEVICENAME)
         CopyMemory DMODE.DMDeviceName(0), ByVal StrPtr(Buffer), LenB(Buffer)
+    Else
+        DMODE.DMDriverExtra = GetDMDriverExtra(DMODE.DMSize)
     End If
     DMODE.DMFields = DM_ORIENTATION Or DM_PAPERSIZE Or DM_COPIES Or DM_DEFAULTSOURCE Or DM_PRINTQUALITY Or DM_COLOR Or DM_DUPLEX Or DM_COLLATE
     If (CommonDialogDMFieldsExclusion And DM_ORIENTATION) = 0 Then
@@ -1998,7 +2007,7 @@ If (PDLGEX.Flags And CdlPDReturnDefault) = 0 Then
         DMODE.DMFields = DMODE.DMFields And Not DM_DUPLEX
     End If
     DMODE.DMCollate = IIf((PDLGEX.Flags And CdlPDCollate) <> 0, 1, 0)
-    PDLGEX.hDevMode = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DMODE))
+    PDLGEX.hDevMode = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DMODE) + DMODE.DMDriverExtra)
     lpDevMode = GlobalLock(PDLGEX.hDevMode)
     CopyMemory ByVal lpDevMode, DMODE, LenB(DMODE)
     GlobalUnlock PDLGEX.hDevMode
@@ -2032,11 +2041,11 @@ If ErrVal = S_OK Then
         CopyMemory DNAMES, ByVal lpDevNames, LenB(DNAMES)
         GlobalUnlock PDLGEX.hDevNames
         GlobalFree PDLGEX.hDevNames
-        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1)
+        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1) & vbNullChar
         PropPrinterDriver = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1)
+        Buffer = Mid$(DNAMES.wExtra, DNAMES.wDeviceOffset - DNAMES.wDriverOffset + 1) & vbNullChar
         PropPrinterName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
-        Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1)
+        Buffer = Mid$(DNAMES.wExtra, DNAMES.wOutputOffset - DNAMES.wDriverOffset + 1) & vbNullChar
         PropPrinterPort = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
         If (DNAMES.wDefault And DN_DEFAULTPRN) = 0 And PropPrinterDefault = True Then Call SetPrinterDefault(PropPrinterName)
         PropFlags = PDLGEX.Flags
@@ -2139,8 +2148,11 @@ End With
 If (PSDLG.Flags And CdlPSDReturnDefault) = 0 Then
     DMODE.DMSize = LenB(DMODE)
     If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+        DMODE.DMDriverExtra = GetDMDriverExtra(DMODE.DMSize, PropPrinterName)
         Buffer = Left$(PropPrinterName, CCHDEVICENAME)
         CopyMemory DMODE.DMDeviceName(0), ByVal StrPtr(Buffer), LenB(Buffer)
+    Else
+        DMODE.DMDriverExtra = GetDMDriverExtra(DMODE.DMSize)
     End If
     DMODE.DMFields = DM_ORIENTATION Or DM_PAPERSIZE Or DM_DEFAULTSOURCE
     If (CommonDialogDMFieldsExclusion And DM_ORIENTATION) = 0 Then
@@ -2158,7 +2170,7 @@ If (PSDLG.Flags And CdlPSDReturnDefault) = 0 Then
     Else
         DMODE.DMFields = DMODE.DMFields And Not DM_DEFAULTSOURCE
     End If
-    PSDLG.hDevMode = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DMODE))
+    PSDLG.hDevMode = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DMODE) + DMODE.DMDriverExtra)
     lpDevMode = GlobalLock(PSDLG.hDevMode)
     CopyMemory ByVal lpDevMode, DMODE, LenB(DMODE)
     GlobalUnlock PSDLG.hDevMode
@@ -2249,6 +2261,34 @@ Else
 End If
 End Function
 
+Private Function GetDMDriverExtra(ByVal DMSize As Long, Optional ByVal PrinterName As String) As Long
+' According to MSDN:
+' The DEVMODE structure actually used by a printer driver contains the device-independent part
+' followed by a driver-specific part that varies in size and content with each driver and driver version.
+' Because of this driver dependence, it is very important for applications to query the driver for the correct
+' size of the DEVMODE structure before allocating a buffer for it.
+If PrinterName = vbNullString Then
+    Dim Length As Long
+    GetDefaultPrinter 0, Length
+    If Length > 0 Then
+        Dim Buffer As String
+        Buffer = String(Length, vbNullChar)
+        GetDefaultPrinter StrPtr(Buffer), Length
+        PrinterName = Left$(Buffer, Length - 1)
+    End If
+End If
+Dim hPrinter As Long
+If OpenPrinter(StrPtr(PrinterName), hPrinter, 0) Then
+    Dim RetVal As Long
+    RetVal = DocumentProperties(0, hPrinter, StrPtr(PrinterName), 0, 0, 0)
+    If RetVal > -1 Then
+        If RetVal > DMSize Then GetDMDriverExtra = RetVal - DMSize
+    End If
+    ClosePrinter hPrinter
+    hPrinter = 0
+End If
+End Function
+
 Private Sub SetPrinterDefault(ByVal NewPrinterName As String)
 Dim Length As Long
 GetDefaultPrinter 0, Length
@@ -2256,7 +2296,7 @@ If Length > 0 Then
     Dim Buffer As String
     Buffer = String(Length, vbNullChar)
     GetDefaultPrinter StrPtr(Buffer), Length
-    If StrComp(Left$(Buffer, InStr(Buffer, vbNullChar) - 1), NewPrinterName, vbTextCompare) <> 0 Then SetDefaultPrinter StrPtr(NewPrinterName)
+    If StrComp(Left$(Buffer, Length - 1), NewPrinterName, vbTextCompare) <> 0 Then SetDefaultPrinter StrPtr(NewPrinterName)
 End If
 End Sub
 
@@ -2290,7 +2330,7 @@ If .pIDLRoot <> 0 Then CoTaskMemFree .pIDLRoot
 End With
 If IDList <> 0 Then
     Dim Buffer As String, PathName As String
-    Buffer = String(MAX_PATH, vbNullChar)
+    Buffer = String(MAX_PATH, vbNullChar) & vbNullChar
     If SHGetPathFromIDList(IDList, StrPtr(Buffer)) <> 0 Then PathName = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
     CoTaskMemFree IDList
     On Error Resume Next
@@ -2672,7 +2712,7 @@ Select Case dwRefData
             Case BFFM_SELCHANGED
                 Dim RetVal As Long
                 If lParam <> 0 Then
-                    Buffer = String(MAX_PATH, vbNullChar)
+                    Buffer = String(MAX_PATH, vbNullChar) & vbNullChar
                     RetVal = SHGetPathFromIDList(lParam, StrPtr(Buffer))
                     If RetVal <> 0 Then
                         Text = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
