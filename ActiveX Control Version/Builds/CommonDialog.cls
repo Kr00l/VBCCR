@@ -1882,10 +1882,13 @@ If RetVal <> 0 Then
         GlobalFree PDLG.hDevMode
     End If
     If PDLG.hDevNames <> 0 Then
-        lpDevNames = GlobalLock(PDLG.hDevNames)
-        ' DEVNAMES is a variable length memory block. GlobalSize() is safer than LenB(DNAMES).
+        ' DEVNAMES is a variable length memory block.
+        Dim dwMemSize As Long
+        dwMemSize = GlobalSize(PDLG.hDevNames)
+        If dwMemSize > LenB(DNAMES) Then dwMemSize = LenB(DNAMES)
         Erase DNAMES.wExtra()
-        CopyMemory DNAMES, ByVal lpDevNames, GlobalSize(PDLG.hDevNames)
+        lpDevNames = GlobalLock(PDLG.hDevNames)
+        CopyMemory DNAMES, ByVal lpDevNames, dwMemSize
         GlobalUnlock PDLG.hDevNames
         GlobalFree PDLG.hDevNames
         Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1) & vbNullChar
@@ -2098,10 +2101,13 @@ If ErrVal = S_OK Then
             GlobalFree PDLGEX.hDevMode
         End If
         If PDLGEX.hDevNames <> 0 Then
-            lpDevNames = GlobalLock(PDLGEX.hDevNames)
-            ' DEVNAMES is a variable length memory block. GlobalSize() is safer than LenB(DNAMES).
+            ' DEVNAMES is a variable length memory block.
+            Dim dwMemSize As Long
+            dwMemSize = GlobalSize(PDLGEX.hDevNames)
+            If dwMemSize > LenB(DNAMES) Then dwMemSize = LenB(DNAMES)
             Erase DNAMES.wExtra()
-            CopyMemory DNAMES, ByVal lpDevNames, GlobalSize(PDLGEX.hDevNames)
+            lpDevNames = GlobalLock(PDLGEX.hDevNames)
+            CopyMemory DNAMES, ByVal lpDevNames, dwMemSize
             GlobalUnlock PDLGEX.hDevNames
             GlobalFree PDLGEX.hDevNames
             Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1) & vbNullChar
