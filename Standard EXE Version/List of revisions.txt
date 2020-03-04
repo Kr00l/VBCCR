@@ -1,12 +1,8 @@
 List of revisions:
 
-03-Mar-2020
+04-Mar-2020
 - Internal improvement for ShowPrinter/ShowPrinterEx/ShowPageSetup dialog in the CommonDialog class.
   The DevMode plays now by the rules. (https://support.microsoft.com/en-us/help/167345/how-to-modify-printer-settings-with-the-documentproperties-function)
-
-02-Mar-2020
-- Bugfix in the ShowPrinter/ShowPrinterEx/ShowPageSetup dialog in the CommonDialog class.
-  It now specifies the DMDriverExtra member, if applicable.
 
 27-Feb-2020
 - Behavior change for returning printer params for ShowPrinter/ShowPrinterEx dialog in the CommonDialog class.
