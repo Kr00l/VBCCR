@@ -727,6 +727,7 @@ Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString
 Private Declare Function MulDiv Lib "kernel32" (ByVal nNumber As Long, ByVal nNumerator As Long, ByVal nDenominator As Long) As Long
 Private Declare Function GlobalLock Lib "kernel32" (ByVal hMem As Long) As Long
 Private Declare Function GlobalUnlock Lib "kernel32" (ByVal hMem As Long) As Long
+Private Declare Function GlobalSize Lib "kernel32" (ByVal hMem As Long) As Long
 Private Declare Function GlobalAlloc Lib "kernel32" (ByVal wFlags As Long, ByVal dwBytes As Long) As Long
 Private Declare Function GlobalFree Lib "kernel32" (ByVal hMem As Long) As Long
 Private Const HELPMSGSTRING As String = "commdlg_help"
@@ -1783,7 +1784,7 @@ End If
 End With
 If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
     Dim hPrinter As Long, DeviceName As String, DMODE_B() As Byte, dwBytes As Long
-    If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+    If PropPrinterDefaultInit = False And Not PropPrinterName = vbNullString Then
         DeviceName = PropPrinterName
         dwBytes = PrepareDevModeBuffer(hPrinter, DeviceName, DMODE_B())
         If dwBytes = 0 Then
@@ -1848,12 +1849,14 @@ If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
         lpDevMode = GlobalLock(PDLG.hDevMode)
         CopyMemory ByVal lpDevMode, DMODE_B(0), dwBytes
         GlobalUnlock PDLG.hDevMode
-        If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+        If Not DeviceName = vbNullString Then
+            ' wDeviceOffset will only be used on input when DMDeviceName got truncated due to the 32 characters limit.
+            ' wDriverOffset and wOutputOffset are ignored on input.
             DNAMES.wDriverOffset = 4
-            DNAMES.wDeviceOffset = DNAMES.wDriverOffset + Len(PropPrinterDriver) + 1
-            DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(PropPrinterName) + 1
+            DNAMES.wDeviceOffset = DNAMES.wDriverOffset + 1
+            DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(DeviceName) + 1
             DNAMES.wDefault = 0
-            Buffer = Left$(PropPrinterDriver & vbNullChar & PropPrinterName & vbNullChar & PropPrinterPort & vbNullChar, CCHDEVNAMESEXTRA)
+            Buffer = Left$(vbNullChar & DeviceName & vbNullChar & vbNullChar, CCHDEVNAMESEXTRA)
             CopyMemory DNAMES.wExtra(0), ByVal StrPtr(Buffer), LenB(Buffer)
             PDLG.hDevNames = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DNAMES))
             lpDevNames = GlobalLock(PDLG.hDevNames)
@@ -1880,7 +1883,9 @@ If RetVal <> 0 Then
     End If
     If PDLG.hDevNames <> 0 Then
         lpDevNames = GlobalLock(PDLG.hDevNames)
-        CopyMemory DNAMES, ByVal lpDevNames, LenB(DNAMES)
+        ' DEVNAMES is a variable length memory block. GlobalSize() is safer than LenB(DNAMES).
+        Erase DNAMES.wExtra()
+        CopyMemory DNAMES, ByVal lpDevNames, GlobalSize(PDLG.hDevNames)
         GlobalUnlock PDLG.hDevNames
         GlobalFree PDLG.hDevNames
         Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1) & vbNullChar
@@ -1996,7 +2001,7 @@ Const START_PAGE_GENERAL As Long = &HFFFFFFFF
 End With
 If (PDLGEX.Flags And CdlPDReturnDefault) = 0 Then
     Dim hPrinter As Long, DeviceName As String, DMODE_B() As Byte, dwBytes As Long
-    If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+    If PropPrinterDefaultInit = False And Not PropPrinterName = vbNullString Then
         DeviceName = PropPrinterName
         dwBytes = PrepareDevModeBuffer(hPrinter, DeviceName, DMODE_B())
         If dwBytes = 0 Then
@@ -2061,12 +2066,14 @@ If (PDLGEX.Flags And CdlPDReturnDefault) = 0 Then
         lpDevMode = GlobalLock(PDLGEX.hDevMode)
         CopyMemory ByVal lpDevMode, DMODE_B(0), dwBytes
         GlobalUnlock PDLGEX.hDevMode
-        If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+        If Not DeviceName = vbNullString Then
+            ' wDeviceOffset will only be used on input when DMDeviceName got truncated due to the 32 characters limit.
+            ' wDriverOffset and wOutputOffset are ignored on input.
             DNAMES.wDriverOffset = 4
-            DNAMES.wDeviceOffset = DNAMES.wDriverOffset + Len(PropPrinterDriver) + 1
-            DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(PropPrinterName) + 1
+            DNAMES.wDeviceOffset = DNAMES.wDriverOffset + 1
+            DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(DeviceName) + 1
             DNAMES.wDefault = 0
-            Buffer = Left$(PropPrinterDriver & vbNullChar & PropPrinterName & vbNullChar & PropPrinterPort & vbNullChar, CCHDEVNAMESEXTRA)
+            Buffer = Left$(vbNullChar & DeviceName & vbNullChar & vbNullChar, CCHDEVNAMESEXTRA)
             CopyMemory DNAMES.wExtra(0), ByVal StrPtr(Buffer), LenB(Buffer)
             PDLGEX.hDevNames = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DNAMES))
             lpDevNames = GlobalLock(PDLGEX.hDevNames)
@@ -2092,7 +2099,9 @@ If ErrVal = S_OK Then
         End If
         If PDLGEX.hDevNames <> 0 Then
             lpDevNames = GlobalLock(PDLGEX.hDevNames)
-            CopyMemory DNAMES, ByVal lpDevNames, LenB(DNAMES)
+            ' DEVNAMES is a variable length memory block. GlobalSize() is safer than LenB(DNAMES).
+            Erase DNAMES.wExtra()
+            CopyMemory DNAMES, ByVal lpDevNames, GlobalSize(PDLGEX.hDevNames)
             GlobalUnlock PDLGEX.hDevNames
             GlobalFree PDLGEX.hDevNames
             Buffer = Mid$(DNAMES.wExtra, DNAMES.wDriverOffset - DNAMES.wDriverOffset + 1) & vbNullChar
@@ -2201,7 +2210,7 @@ End If
 End With
 If (PSDLG.Flags And CdlPSDReturnDefault) = 0 Then
     Dim hPrinter As Long, DeviceName As String, DMODE_B() As Byte, dwBytes As Long
-    If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+    If PropPrinterDefaultInit = False And Not PropPrinterName = vbNullString Then
         DeviceName = PropPrinterName
         dwBytes = PrepareDevModeBuffer(hPrinter, DeviceName, DMODE_B())
         If dwBytes = 0 Then
@@ -2243,12 +2252,14 @@ If (PSDLG.Flags And CdlPSDReturnDefault) = 0 Then
         lpDevMode = GlobalLock(PSDLG.hDevMode)
         CopyMemory ByVal lpDevMode, DMODE_B(0), dwBytes
         GlobalUnlock PSDLG.hDevMode
-        If PropPrinterDefaultInit = False And Not (PropPrinterDriver = vbNullString Or PropPrinterName = vbNullString Or PropPrinterPort = vbNullString) Then
+        If Not DeviceName = vbNullString Then
+            ' wDeviceOffset will only be used on input when DMDeviceName got truncated due to the 32 characters limit.
+            ' wDriverOffset and wOutputOffset are ignored on input.
             DNAMES.wDriverOffset = 4
-            DNAMES.wDeviceOffset = DNAMES.wDriverOffset + Len(PropPrinterDriver) + 1
-            DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(PropPrinterName) + 1
+            DNAMES.wDeviceOffset = DNAMES.wDriverOffset + 1
+            DNAMES.wOutputOffset = DNAMES.wDeviceOffset + Len(DeviceName) + 1
             DNAMES.wDefault = 0
-            Buffer = Left$(PropPrinterDriver & vbNullChar & PropPrinterName & vbNullChar & PropPrinterPort & vbNullChar, CCHDEVNAMESEXTRA)
+            Buffer = Left$(vbNullChar & DeviceName & vbNullChar & vbNullChar, CCHDEVNAMESEXTRA)
             CopyMemory DNAMES.wExtra(0), ByVal StrPtr(Buffer), LenB(Buffer)
             PSDLG.hDevNames = GlobalAlloc(GMEM_MOVEABLE Or GMEM_ZEROINIT, LenB(DNAMES))
             lpDevNames = GlobalLock(PSDLG.hDevNames)
