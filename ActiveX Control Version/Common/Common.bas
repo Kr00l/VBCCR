@@ -100,8 +100,6 @@ dwFileDateMS As Long
 dwFileDateLS As Long
 End Type
 Private Const LF_FACESIZE As Long = 32
-Private Const FW_NORMAL As Long = 400
-Private Const FW_BOLD As Long = 700
 Private Const DEFAULT_QUALITY As Long = 0
 Private Type LOGFONT
 LFHeight As Long
@@ -700,7 +698,7 @@ With LF
 FontName = Left$(Font.Name, LF_FACESIZE)
 CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
 .LFHeight = -MulDiv(CLng(Font.Size), DPI_Y(), 72)
-If Font.Bold = True Then .LFWeight = FW_BOLD Else .LFWeight = FW_NORMAL
+.LFWeight = Font.Weight
 If Font.Italic = True Then .LFItalic = 1 Else .LFItalic = 0
 If Font.Strikethrough = True Then .LFStrikeOut = 1 Else .LFStrikeOut = 0
 If Font.Underline = True Then .LFUnderline = 1 Else .LFUnderline = 0
