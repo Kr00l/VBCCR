@@ -774,7 +774,7 @@ Private PropInitDir As String
 Private PropDefaultExt As String
 Private PropColor As Long
 Private PropCustomColors(0 To 15) As Long
-Private PropFontName As String, PropFontSize As Single, PropFontBold As Boolean, PropFontItalic As Boolean, PropFontStrikethru As Boolean, PropFontUnderline As Boolean, PropFontCharset As Integer
+Private PropFontName As String, PropFontSize As Single, PropFontWeight As Integer, PropFontItalic As Boolean, PropFontStrikethru As Boolean, PropFontUnderline As Boolean, PropFontCharset As Integer
 Private PropMin As Long, PropMax As Long
 Private PropFromPage As Long, PropToPage As Long
 Private PropOrientation As CdlPRORConstants
@@ -822,6 +822,7 @@ PropCustomColors(13) = &H2F2F2F
 PropCustomColors(14) = &H1F1F1F
 PropCustomColors(15) = &HF0F0F
 PropFontSize = 8
+PropFontWeight = FW_NORMAL
 PropOrientation = CdlPRORPortrait
 PropPaperSize = IIf(LocaleMeasure = 0, CdlPRPSA4, CdlPRPSLetter)
 PropCopies = 1
@@ -1042,11 +1043,11 @@ End Property
 
 Public Property Get FontBold() As Boolean
 Attribute FontBold.VB_Description = "Returns/sets bold font styles."
-FontBold = PropFontBold
+FontBold = CBool(PropFontWeight >= 600)
 End Property
 
 Public Property Let FontBold(ByVal Value As Boolean)
-PropFontBold = Value
+PropFontWeight = IIf(Value, FW_BOLD, FW_NORMAL)
 End Property
 
 Public Property Get FontItalic() As Boolean
@@ -1683,7 +1684,7 @@ With LF
 FontName = Left$(PropFontName, LF_FACESIZE)
 CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
 .LFHeight = -MulDiv(CLng(PropFontSize), DPI_Y(), 72)
-If PropFontBold = True Then .LFWeight = FW_BOLD Else .LFWeight = FW_NORMAL
+.LFWeight = PropFontWeight
 .LFItalic = IIf(PropFontItalic = True, 1, 0)
 .LFStrikeOut = IIf(PropFontStrikethru = True, 1, 0)
 .LFUnderline = IIf(PropFontUnderline = True, 1, 0)
@@ -1725,7 +1726,7 @@ If RetVal <> 0 Then
     End If
     If (.Flags And CF_NOFACESEL) = 0 Then PropFontName = Left$(LF.LFFaceName(), InStr(CStr(LF.LFFaceName()) & vbNullChar, vbNullChar) - 1)
     If (.Flags And CF_NOSTYLESEL) = 0 Then
-        PropFontBold = CBool(LF.LFWeight = FW_BOLD)
+        PropFontWeight = LF.LFWeight
         PropFontItalic = CBool(LF.LFItalic <> 0)
     End If
     If (.Flags And CF_NOSIZESEL) = 0 Then PropFontSize = CSng(.iPointSize / 10)
@@ -2790,7 +2791,7 @@ Select Case dwRefData
                     iItem = SendDlgItemMessage(hDlg, IDC_COLOR_COMBOBOX, CB_GETCURSEL, 0, ByVal 0&)
                     If Not iItem = CB_ERR Then RGBColor = SendDlgItemMessage(hDlg, IDC_COLOR_COMBOBOX, CB_GETITEMDATA, iItem, ByVal 0&)
                     With LF
-                    RaiseEvent FontApply(Flags, Left$(.LFFaceName(), InStr(.LFFaceName(), vbNullChar) - 1), CSng(MulDiv(-.LFHeight, 72, DPI_Y())), CBool(.LFWeight = FW_BOLD), CBool(.LFItalic <> 0), CBool(.LFStrikeOut <> 0), CBool(.LFUnderline <> 0), CInt(.LFCharset), RGBColor, hDlg)
+                    RaiseEvent FontApply(Flags, Left$(.LFFaceName(), InStr(.LFFaceName(), vbNullChar) - 1), CSng(MulDiv(-.LFHeight, 72, DPI_Y())), CBool(.LFWeight >= 600), CBool(.LFItalic <> 0), CBool(.LFStrikeOut <> 0), CBool(.LFUnderline <> 0), CInt(.LFCharset), RGBColor, hDlg)
                     End With
                 End If
             End If
