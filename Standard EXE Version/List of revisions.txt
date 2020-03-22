@@ -4,6 +4,7 @@ List of revisions:
 - Bugfix in the CreateGDIFontFromOLEFont function. (Common.bas)
 - Minor speed optimization in the LabelW control for auto-sizing.
   Usage of function 'GDIFontFromOLEFont' instead of 'CreateGDIFontFromOLEFont'.
+- Minor internal improvement in the CommonDialog class.
 
 04-Mar-2020
 - Internal improvement for ShowPrinter/ShowPrinterEx/ShowPageSetup dialog in the CommonDialog class.
