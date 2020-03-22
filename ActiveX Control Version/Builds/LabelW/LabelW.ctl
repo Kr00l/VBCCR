@@ -1004,12 +1004,10 @@ Else
     If hDCScreen <> 0 Then
         hDC = CreateCompatibleDC(hDCScreen)
         If hDC <> 0 Then
-            Dim hFontTemp As Long, hFontOld As Long
-            hFontTemp = CreateGDIFontFromOLEFont(PropFont)
-            hFontOld = SelectObject(hDC, hFontTemp)
+            Dim hFontOld As Long
+            hFontOld = SelectObject(hDC, GDIFontFromOLEFont(PropFont))
             Call DoAutoSize(hDC)
             If hFontOld <> 0 Then SelectObject hDC, hFontOld
-            If hFontTemp <> 0 Then DeleteObject hFontTemp
             DeleteDC hDC
         End If
         ReleaseDC 0, hDCScreen
