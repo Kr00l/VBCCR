@@ -1,5 +1,10 @@
 List of revisions:
 
+22-Mar-2020
+- Bugfix in the CreateGDIFontFromOLEFont function. (Common.bas)
+- Minor speed optimization in the LabelW control for auto-sizing.
+  Usage of function 'GDIFontFromOLEFont' instead of 'CreateGDIFontFromOLEFont'.
+
 04-Mar-2020
 - Internal improvement for ShowPrinter/ShowPrinterEx/ShowPageSetup dialog in the CommonDialog class.
   The DevMode plays now by the rules. (https://support.microsoft.com/en-us/help/167345/how-to-modify-printer-settings-with-the-documentproperties-function)
