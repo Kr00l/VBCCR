@@ -42,8 +42,12 @@ PropIndex = Value
 End Property
 
 Public Property Get Key() As String
-Attribute Key.VB_Description = "Returns the key used in the collection."
+Attribute Key.VB_Description = "Returns/sets the key used in the collection."
 Key = PropKey
+End Property
+
+Public Property Let Key(ByVal Value As String)
+ShadowImageCombo.ComboItems.FChangeKey PropIndex, PropKey, Value
 End Property
 
 Public Property Get Tag() As Variant

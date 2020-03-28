@@ -43,6 +43,19 @@ Friend Sub FInit(ByVal Object As ImageCombo)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropComboItem(Index)
+If NewKey = vbNullString Then
+    PropComboItem.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropComboItem.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropComboItem.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Image As Variant, Optional ByVal SelImage As Variant, Optional ByVal Indentation As Variant) As ImcComboItem
 Attribute Add.VB_Description = "Adds a combo item to the combo items collection."
 If Index > (PropComboItem.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
