@@ -1,5 +1,9 @@
 List of revisions:
 
+28-Mar-2020
+- It is now possible for the ImcComboItems collection to change the key on a particular ImcComboItem in the ImageCombo control.
+- Some other minor cleanup.
+
 22-Mar-2020
 - Bugfix in the CreateGDIFontFromOLEFont function. (Common.bas)
 - Minor speed optimization in the LabelW control for auto-sizing.
