@@ -236,6 +236,7 @@ Begin VB.Form MainForm
       HideSelection   =   0   'False
       ShowInfoTips    =   -1  'True
       ShowLabelTips   =   -1  'True
+      ShowColumnTips  =   -1  'True
       PictureAlignment=   5
       GroupView       =   -1  'True
       GroupSubsetCount=   3
@@ -476,7 +477,10 @@ Else
 End If
 ListView1.ColumnHeaders.Add , , "Col1"
 ListView1.ColumnHeaders.Add , , "Col2"
-ListView1.ColumnHeaders.Add(, , "Col3").CheckBox = True
+With ListView1.ColumnHeaders.Add(, , "Col3")
+.CheckBox = True
+.ToolTipText = "click on the checkbox"
+End With
 ListView1.ColumnHeaders.Add , , "Col4"
 ListView1.ColumnHeaders.Add , , "Col5"
 ListView1.ColumnHeaders.Add , , "Col6"
