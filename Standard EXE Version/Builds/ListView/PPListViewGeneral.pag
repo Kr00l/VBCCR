@@ -9,6 +9,14 @@ Begin VB.PropertyPage PPListViewGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   7425
    ScaleWidth      =   6450
+   Begin VB.CheckBox CheckShowColumnTips 
+      Caption         =   "ShowColumnTips"
+      Height          =   225
+      Left            =   4200
+      TabIndex        =   49
+      Top             =   4320
+      Width           =   2160
+   End
    Begin VB.ListBox ListVirtualDisabledInfos 
       Height          =   735
       Left            =   1800
@@ -28,8 +36,8 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "VirtualMode"
       Height          =   225
       Left            =   4200
-      TabIndex        =   59
-      Top             =   6720
+      TabIndex        =   60
+      Top             =   6960
       Width           =   2160
    End
    Begin VB.ComboBox ComboHeaderMousePointer 
@@ -60,8 +68,8 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "AutoSelectFirstItem"
       Height          =   225
       Left            =   4200
-      TabIndex        =   58
-      Top             =   6480
+      TabIndex        =   59
+      Top             =   6720
       Width           =   2160
    End
    Begin VB.ComboBox ComboVisualTheme 
@@ -76,8 +84,8 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "UseColumnFilterBar"
       Height          =   225
       Left            =   4200
-      TabIndex        =   57
-      Top             =   6240
+      TabIndex        =   58
+      Top             =   6480
       Width           =   2160
    End
    Begin VB.TextBox TextGroupSubsetCount 
@@ -99,16 +107,16 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "UseColumnChevron"
       Height          =   225
       Left            =   4200
-      TabIndex        =   56
-      Top             =   6000
+      TabIndex        =   57
+      Top             =   6240
       Width           =   2160
    End
    Begin VB.CheckBox CheckGroupView 
       Caption         =   "GroupView"
       Height          =   225
       Left            =   4200
-      TabIndex        =   55
-      Top             =   5760
+      TabIndex        =   56
+      Top             =   6000
       Width           =   2160
    End
    Begin VB.CheckBox CheckUnderlineHot 
@@ -131,8 +139,8 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "SnapToGrid"
       Height          =   225
       Left            =   4200
-      TabIndex        =   54
-      Top             =   5520
+      TabIndex        =   55
+      Top             =   5760
       Width           =   2160
    End
    Begin VB.TextBox TextTileViewLines 
@@ -146,8 +154,8 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "PictureWatermark"
       Height          =   225
       Left            =   4200
-      TabIndex        =   53
-      Top             =   5280
+      TabIndex        =   54
+      Top             =   5520
       Width           =   2160
    End
    Begin VB.CheckBox CheckAllowColumnCheckboxes 
@@ -170,32 +178,32 @@ Begin VB.PropertyPage PPListViewGeneral
       Caption         =   "ResizableColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   52
-      Top             =   5040
+      TabIndex        =   53
+      Top             =   5280
       Width           =   2160
    End
    Begin VB.CheckBox CheckTrackSizeColumnHeaders 
       Caption         =   "TrackSizeColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   51
-      Top             =   4800
+      TabIndex        =   52
+      Top             =   5040
       Width           =   2160
    End
    Begin VB.CheckBox CheckHighlightColumnHeaders 
       Caption         =   "HighlightColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   50
-      Top             =   4560
+      TabIndex        =   51
+      Top             =   4800
       Width           =   2160
    End
    Begin VB.CheckBox CheckClickableColumnHeaders 
       Caption         =   "ClickableColumnHeaders"
       Height          =   225
       Left            =   4200
-      TabIndex        =   49
-      Top             =   4320
+      TabIndex        =   50
+      Top             =   4560
       Width           =   2160
    End
    Begin VB.ComboBox ComboTextBackground 
@@ -641,6 +649,7 @@ Next i
 .HoverSelection = CBool(CheckHoverSelection.Value = vbChecked)
 .ShowInfoTips = CBool(CheckShowInfoTips.Value = vbChecked)
 .ShowLabelTips = CBool(CheckShowLabelTips.Value = vbChecked)
+.ShowColumnTips = CBool(CheckShowColumnTips.Value = vbChecked)
 .ClickableColumnHeaders = CBool(CheckClickableColumnHeaders.Value = vbChecked)
 .HighlightColumnHeaders = CBool(CheckHighlightColumnHeaders.Value = vbChecked)
 .TrackSizeColumnHeaders = CBool(CheckTrackSizeColumnHeaders.Value = vbChecked)
@@ -746,6 +755,7 @@ CheckUnderlineHot.Value = IIf(.UnderlineHot = True, vbChecked, vbUnchecked)
 CheckHoverSelection.Value = IIf(.HoverSelection = True, vbChecked, vbUnchecked)
 CheckShowInfoTips.Value = IIf(.ShowInfoTips = True, vbChecked, vbUnchecked)
 CheckShowLabelTips.Value = IIf(.ShowLabelTips = True, vbChecked, vbUnchecked)
+CheckShowColumnTips.Value = IIf(.ShowColumnTips = True, vbChecked, vbUnchecked)
 CheckClickableColumnHeaders.Value = IIf(.ClickableColumnHeaders = True, vbChecked, vbUnchecked)
 CheckHighlightColumnHeaders.Value = IIf(.HighlightColumnHeaders = True, vbChecked, vbUnchecked)
 CheckTrackSizeColumnHeaders.Value = IIf(.TrackSizeColumnHeaders = True, vbChecked, vbUnchecked)
@@ -1091,6 +1101,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckShowLabelTips_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckShowColumnTips_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

@@ -37,6 +37,19 @@ Friend Sub FInit(ByVal Object As ListView)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropColumnHeader(Index)
+If NewKey = vbNullString Then
+    PropColumnHeader.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropColumnHeader.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropColumnHeader.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Width As Single, Optional ByVal Alignment As LvwColumnHeaderAlignmentConstants, Optional ByVal Icon As Variant) As LvwColumnHeader
 Attribute Add.VB_Description = "Adds a column header to the column headers collection."
 If Index > (PropColumnHeader.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
