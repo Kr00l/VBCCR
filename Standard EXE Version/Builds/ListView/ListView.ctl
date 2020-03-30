@@ -555,7 +555,6 @@ Private Const MAXINT_4 As Long = 2147483647
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_POPUP As Long = &H80000000
-Private Const WS_EX_TRANSPARENT As Long = &H20
 Private Const WS_EX_TOOLWINDOW As Long = &H80
 Private Const WS_EX_TOPMOST As Long = &H8
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
@@ -915,6 +914,7 @@ Private Const HDN_BEGINFILTEREDIT As Long = (HDN_FIRST - 14)
 Private Const HDN_ENDFILTEREDIT As Long = (HDN_FIRST - 15)
 Private Const HDN_ITEMSTATEICONCLICK As Long = (HDN_FIRST - 16)
 Private Const HDN_DROPDOWN As Long = (HDN_FIRST - 18)
+Private Const TTM_POP As Long = (WM_USER + 28)
 Private Const TTM_ADDTOOLA As Long = (WM_USER + 4)
 Private Const TTM_ADDTOOLW As Long = (WM_USER + 50)
 Private Const TTM_ADDTOOL As Long = TTM_ADDTOOLW
@@ -924,16 +924,7 @@ Private Const TTM_NEWTOOLRECT As Long = TTM_NEWTOOLRECTW
 Private Const TTM_SETTOOLINFOA As Long = (WM_USER + 9)
 Private Const TTM_SETTOOLINFOW As Long = (WM_USER + 54)
 Private Const TTM_SETTOOLINFO As Long = TTM_SETTOOLINFOW
-Private Const TTM_GETTOOLCOUNT As Long = (WM_USER + 13)
-Private Const TTM_ENUMTOOLSA As Long = (WM_USER + 14)
-Private Const TTM_ENUMTOOLSW As Long = (WM_USER + 58)
-Private Const TTM_ENUMTOOLS As Long = TTM_ENUMTOOLSW
-Private Const TTM_SETMAXTIPWIDTH As Long = (WM_USER + 24)
-Private Const TTM_POP As Long = (WM_USER + 28)
-Private Const TTM_UPDATE As Long = (WM_USER + 29)
-Private Const TTM_ADJUSTRECT As Long = (WM_USER + 31)
 Private Const TTF_SUBCLASS As Long = &H10
-Private Const TTF_TRANSPARENT As Long = &H100
 Private Const TTF_PARSELINKS As Long = &H1000
 Private Const TTF_RTLREADING As Long = &H4
 Private Const TTS_ALWAYSTIP As Long = &H1
@@ -5468,17 +5459,17 @@ If Done = False Then
     Done = True
 End If
 Dim dwExStyle As Long
-dwExStyle = WS_EX_TOOLWINDOW Or WS_EX_TOPMOST Or WS_EX_TRANSPARENT
+dwExStyle = WS_EX_TOOLWINDOW Or WS_EX_TOPMOST
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
 ListViewHeaderToolTipHandle = CreateWindowEx(dwExStyle, StrPtr("tooltips_class32"), StrPtr("Tool Tip"), WS_POPUP Or TTS_ALWAYSTIP Or TTS_NOPREFIX, 0, 0, 0, 0, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If ListViewHeaderToolTipHandle <> 0 Then
-    SendMessage ListViewHeaderToolTipHandle, TTM_SETMAXTIPWIDTH, 0, ByVal &H7FFF&
+    Call ComCtlsInitToolTip(ListViewHeaderToolTipHandle)
     Dim TI As TOOLINFO
     With TI
     .cbSize = LenB(TI)
     .hWnd = ListViewHeaderHandle
     .uId = 0
-    .uFlags = TTF_SUBCLASS Or TTF_TRANSPARENT Or TTF_PARSELINKS
+    .uFlags = TTF_SUBCLASS Or TTF_PARSELINKS
     If PropRightToLeft = True And PropRightToLeftLayout = False Then .uFlags = .uFlags Or TTF_RTLREADING
     .lpszText = LPSTR_TEXTCALLBACK
     GetClientRect ListViewHeaderHandle, .RC
