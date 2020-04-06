@@ -1408,8 +1408,11 @@ If TabStripHandle <> 0 And TabStripDesignMode = False Then
     If PropShowTips = False Then
         SendMessage TabStripHandle, TCM_SETTOOLTIPS, 0, ByVal 0&
     Else
-        If TabStripToolTipHandle = 0 Then Call ReCreateTabStrip
-        If TabStripToolTipHandle <> 0 Then SendMessage TabStripHandle, TCM_SETTOOLTIPS, TabStripToolTipHandle, ByVal 0&
+        If TabStripToolTipHandle <> 0 Then
+            SendMessage TabStripHandle, TCM_SETTOOLTIPS, TabStripToolTipHandle, ByVal 0&
+        Else
+            Call ReCreateTabStrip
+        End If
     End If
 End If
 UserControl.PropertyChanged "ShowTips"
@@ -1718,7 +1721,7 @@ If PropTabWidthStyle = TbsTabWidthStyleFixed Then
             dwStyle = dwStyle Or TCS_FORCELABELLEFT
     End Select
 End If
-If PropShowTips = True Then If TabStripDesignMode = False Then dwStyle = dwStyle Or TCS_TOOLTIPS
+If PropShowTips = True And TabStripDesignMode = False Then dwStyle = dwStyle Or TCS_TOOLTIPS
 If PropDrawMode = TbsDrawModeOwnerDrawFixed Then dwStyle = dwStyle Or TCS_OWNERDRAWFIXED
 If TabStripDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
@@ -1727,6 +1730,7 @@ If TabStripDesignMode = False Then
 End If
 TabStripHandle = CreateWindowEx(dwExStyle, StrPtr("SysTabControl32"), StrPtr("Tab Strip"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If TabStripHandle <> 0 Then
+    Call ComCtlsShowAllUIStates(TabStripHandle)
     TabStripToolTipHandle = SendMessage(TabStripHandle, TCM_GETTOOLTIPS, 0, ByVal 0&)
     If TabStripToolTipHandle <> 0 Then Call ComCtlsInitToolTip(TabStripToolTipHandle)
     If PropTabWidthStyle = TbsTabWidthStyleFixed Then SendMessage TabStripHandle, TCM_SETITEMSIZE, 0, ByVal MakeDWord(PropTabFixedWidth, PropTabFixedHeight)
