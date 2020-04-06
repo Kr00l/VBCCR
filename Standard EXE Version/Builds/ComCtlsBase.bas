@@ -90,13 +90,6 @@ Top As Long
 Right As Long
 Bottom As Long
 End Type
-Private Type CWPRETSTRUCT
-lResult As Long
-lParam As Long
-wParam As Long
-Message As Long
-hWnd As Long
-End Type
 Private Type TRACKMOUSEEVENTSTRUCT
 cbSize As Long
 dwFlags As Long
@@ -148,7 +141,6 @@ Private Declare Function ImmCreateContext Lib "imm32" () As Long
 Private Declare Function ImmDestroyContext Lib "imm32" (ByVal hIMC As Long) As Long
 Private Declare Function ImmGetContext Lib "imm32" (ByVal hWnd As Long) As Long
 Private Declare Function ImmReleaseContext Lib "imm32" (ByVal hWnd As Long, ByVal hIMC As Long) As Long
-Private Declare Function ImmGetOpenStatus Lib "imm32" (ByVal hIMC As Long) As Long
 Private Declare Function ImmSetOpenStatus Lib "imm32" (ByVal hIMC As Long, ByVal fOpen As Long) As Long
 Private Declare Function ImmAssociateContext Lib "imm32" (ByVal hWnd As Long, ByVal hIMC As Long) As Long
 Private Declare Function ImmGetConversionStatus Lib "imm32" (ByVal hIMC As Long, ByRef lpfdwConversion As Long, ByRef lpfdwSentence As Long) As Long
@@ -183,7 +175,6 @@ Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_UAHDESTROYWINDOW As Long = &H90
 Private Const WM_INITDIALOG As Long = &H110
 Private Const WM_USER As Long = &H400
-Private Const E_NOTIMPL As Long = &H80004001
 Private Const E_NOINTERFACE As Long = &H80004002
 Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
