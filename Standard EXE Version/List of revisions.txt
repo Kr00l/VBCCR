@@ -1,5 +1,8 @@
 List of revisions:
 
+06-Apr-2020
+- Minor internal improvement in the TabStrip and TreeView control.
+
 29-Mar-2020
 - Included the ShowColumnTips property in the ListView control to enable tooltips on the column headers.
   Therefore ToolTipText, ToolTipTextFilterBtn and ToolTipTextDropDown property are included of a ColumnHeader in the ListView control.

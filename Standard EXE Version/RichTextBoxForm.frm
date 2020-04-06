@@ -108,10 +108,9 @@ Private LocaleMeasure As Long
 Private FindDialogHandle As Long
 Private FontComboFreezeClick As Boolean
 Private RichTextBoxFreezeSelChange As Boolean
+Private CommonDialogPrinter As CommonDialog
 Private WithEvents CommonDialogPageSetup As CommonDialog
 Attribute CommonDialogPageSetup.VB_VarHelpID = -1
-Private WithEvents CommonDialogPrinter As CommonDialog
-Attribute CommonDialogPrinter.VB_VarHelpID = -1
 Private WithEvents CommonDialogFont As CommonDialog
 Attribute CommonDialogFont.VB_VarHelpID = -1
 Private WithEvents CommonDialogFind As CommonDialog
@@ -145,6 +144,9 @@ End Sub
 
 Private Sub Form_Load()
 Call SetupVisualStylesFixes(Me)
+Set CommonDialogPrinter = New CommonDialog
+CommonDialogPrinter.PrinterDefault = False
+CommonDialogPrinter.PrinterDefaultInit = False
 Set CommonDialogPageSetup = New CommonDialog
 Const LOCALE_USER_DEFAULT As Long = &H400
 Const LOCALE_IMEASURE As Long = &HD, LOCALE_RETURN_NUMBER As Long = &H20000000
@@ -158,9 +160,6 @@ CommonDialogPageSetup.PageBottomMargin = IIf(LocaleMeasure = 0, 2500, 1000)
 CommonDialogPageSetup.Flags = IIf(LocaleMeasure = 0, CdlPSDInHundredthsOfMillimeters, CdlPSDInThousandthsOfInches) Or CdlPSDDefaultMinMargins Or CdlPSDMargins Or CdlPSDHelpButton
 CommonDialogPageSetup.PrinterDefault = False
 CommonDialogPageSetup.PrinterDefaultInit = False
-Set CommonDialogPrinter = New CommonDialog
-CommonDialogPrinter.PrinterDefault = False
-CommonDialogPrinter.PrinterDefaultInit = False
 Set CommonDialogFont = New CommonDialog
 Set CommonDialogFind = New CommonDialog
 CommonDialogFind.Flags = CdlFRDown
