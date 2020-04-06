@@ -479,8 +479,6 @@ Private Const NM_CLICK As Long = (NM_FIRST - 2)
 Private Const NM_DBLCLK As Long = (NM_FIRST - 3)
 Private Const NM_RCLICK As Long = (NM_FIRST - 5)
 Private Const NM_RDBLCLK As Long = (NM_FIRST - 6)
-Private Const NM_SETFOCUS As Long = (NM_FIRST - 7)
-Private Const NM_KILLFOCUS As Long = (NM_FIRST - 8)
 Private Const NM_CUSTOMDRAW As Long = (NM_FIRST - 12)
 Private Const TVS_EX_DOUBLEBUFFER As Long = &H4
 Private Const TVS_HASBUTTONS As Long = &H1
@@ -2591,6 +2589,8 @@ If TreeViewDesignMode = False Then
     ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
+Else
+    dwStyle = dwStyle Or TVS_NOTOOLTIPS Or TVS_DISABLEDRAGDROP
 End If
 TreeViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysTreeView32"), StrPtr("Tree View"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If TreeViewHandle <> 0 Then
@@ -2843,7 +2843,7 @@ End Property
 Public Sub ResetForeColors()
 Attribute ResetForeColors.VB_Description = "Resets the foreground color of particular nodes that have been modified."
 If TreeViewHandle <> 0 Then
-    Dim Node As TvwNode, i As Long
+    Dim Node As TvwNode
     SendMessage TreeViewHandle, WM_SETREDRAW, 0, ByVal 0&
     For Each Node In Me.Nodes
         Node.ForeColor = -1
