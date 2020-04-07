@@ -274,8 +274,6 @@ Begin VB.Form MainForm
       Width           =   1935
       _ExtentX        =   3413
       _ExtentY        =   556
-      RightToLeft     =   -1  'True
-      RightToLeftMode =   0
       CalendarDayState=   -1  'True
       MinDate         =   36526
       MaxDate         =   73050

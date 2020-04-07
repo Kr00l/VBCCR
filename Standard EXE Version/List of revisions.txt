@@ -1,5 +1,8 @@
 List of revisions:
 
+07-Apr-2020
+- Major internal improvement for CheckBoxW/CommandButtonW/OptionButtonW/CommandLink as no WM_MOUSEACTIVATE overhead necessary anymore.
+
 06-Apr-2020
 - Minor internal improvement in the TabStrip and TreeView control.
 
