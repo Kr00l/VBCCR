@@ -220,7 +220,6 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_RTLREADING As Long = &H2000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
@@ -243,7 +242,6 @@ Private Const WM_DRAWITEM As Long = &H2B, ODT_BUTTON As Long = &H4, ODA_FOCUS As
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_THEMECHANGED As Long = &H31A
-Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_CTLCOLORSTATIC As Long = &H138
@@ -308,14 +306,14 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private OptionButtonHandle As Long
 Private OptionButtonTransparentBrush As Long
 Private OptionButtonOwnerDrawCheckedBrush As Long
-Private OptionButtonIgnoreClick As Boolean
 Private OptionButtonFontHandle As Long
 Private OptionButtonCharCodeCache As Long
 Private OptionButtonMouseOver(0 To 1) As Boolean
-Private OptionButtonDesignMode As Boolean, OptionButtonTopDesignMode As Boolean
+Private OptionButtonDesignMode As Boolean
 Private OptionButtonImageListHandle As Long
 Private OptionButtonImageListObjectPointer As Long
 Private OptionButtonEnabledVisualStyles As Boolean
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -422,7 +420,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 OptionButtonDesignMode = Not Ambient.UserMode
-OptionButtonTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -457,7 +454,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 OptionButtonDesignMode = Not Ambient.UserMode
-OptionButtonTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -1686,37 +1682,8 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If OptionButtonTopDesignMode = False And GetFocus() <> OptionButtonHandle Then
-            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            OptionButtonIgnoreClick = True
-                            SetFocusAPI .hWnd
-                            OptionButtonIgnoreClick = False
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        OptionButtonIgnoreClick = True
-                        SetFocusAPI .hWnd
-                        OptionButtonIgnoreClick = False
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -1816,11 +1783,7 @@ Select Case wMsg
         If lParam = OptionButtonHandle Then
             Select Case HiWord(wParam)
                 Case BN_CLICKED
-                    If OptionButtonIgnoreClick = True Then
-                        Exit Function
-                    ElseIf PropValue = False Then
-                        Me.Value = True
-                    End If
+                    If PropValue = False Then Me.Value = True
                 Case BN_DOUBLECLICKED
                     RaiseEvent DblClick
             End Select
@@ -2155,7 +2118,7 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI OptionButtonHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI OptionButtonHandle
 End Function
 
 Private Function WindowProcUserControlDesignMode(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
