@@ -223,7 +223,6 @@ Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_HORZ As Long = 0, SB_VERT As Long = 1
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -349,12 +348,13 @@ Private TextBoxCharCodeCache As Long
 Private TextBoxAutoDragInSel As Boolean, TextBoxAutoDragIsActive As Boolean
 Private TextBoxIsClick As Boolean
 Private TextBoxMouseOver As Boolean
-Private TextBoxDesignMode As Boolean, TextBoxTopDesignMode As Boolean
+Private TextBoxDesignMode As Boolean
 Private TextBoxChangeFrozen As Boolean
 Private TextBoxNetAddressFormat As TxtNetAddressFormatConstants
 Private TextBoxNetAddressString As String
 Private TextBoxNetAddressPortNumber As Integer
 Private TextBoxNetAddressPrefixLength As Byte
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -464,7 +464,6 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 TextBoxDesignMode = Not Ambient.UserMode
-TextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -502,7 +501,6 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 TextBoxDesignMode = Not Ambient.UserMode
-TextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -1942,12 +1940,12 @@ Select Case wMsg
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If PropOLEDragMode = vbOLEDragAutomatic Then
-                Dim P3 As POINTAPI
+                Dim P1 As POINTAPI
                 Dim CharPos As Long, CaretPos As Long
                 Dim SelStart As Long, SelEnd As Long
-                GetCursorPos P3
-                ScreenToClient TextBoxHandle, P3
-                CharPos = CIntToUInt(LoWord(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P3.X, P3.Y))))
+                GetCursorPos P1
+                ScreenToClient TextBoxHandle, P1
+                CharPos = CIntToUInt(LoWord(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P1.X, P1.Y))))
                 CaretPos = SendMessage(TextBoxHandle, EM_POSFROMCHAR, CharPos, ByVal 0&)
                 SendMessage TextBoxHandle, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
                 TextBoxAutoDragInSel = CBool(CharPos >= SelStart And CharPos <= SelEnd And CaretPos > -1 And (SelEnd - SelStart) > 0)
@@ -1971,32 +1969,29 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If TextBoxTopDesignMode = False And GetFocus() <> TextBoxHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
+    Case WM_LBUTTONDOWN
+        If PropOLEDragMode = vbOLEDragAutomatic And TextBoxAutoDragInSel = True Then
+            If GetFocus() <> hWnd Then SetFocusAPI UserControl.hWnd ' UCNoSetFocusFwd not applicable
+            Dim P2 As POINTAPI, P3 As POINTAPI
+            P2.X = Get_X_lParam(lParam)
+            P2.Y = Get_Y_lParam(lParam)
+            P3.X = P2.X
+            P3.Y = P2.Y
+            ClientToScreen TextBoxHandle, P3
+            RaiseEvent MouseDown(vbLeftButton, GetShiftStateFromParam(wParam), UserControl.ScaleX(P2.X, vbPixels, vbTwips), UserControl.ScaleY(P2.Y, vbPixels, vbTwips))
+            If DragDetect(TextBoxHandle, CUIntToInt(P3.X And &HFFFF&), CUIntToInt(P3.Y And &HFFFF&)) <> 0 Then
+                TextBoxIsClick = False
+                Me.OLEDrag
+            Else
+                Dim SelPos As Long
+                SelPos = CIntToUInt(LoWord(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P2.X, P2.Y))))
+                SendMessage TextBoxHandle, EM_SETSEL, SelPos, ByVal SelPos
+                RaiseEvent MouseUp(vbLeftButton, GetShiftStateFromParam(wParam), UserControl.ScaleX(P2.X, vbPixels, vbTwips), UserControl.ScaleY(P2.Y, vbPixels, vbTwips))
+            End If
+            WindowProcControl = 0
+            Exit Function
+        Else
+            If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
         End If
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
@@ -2058,30 +2053,18 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_LBUTTONDOWN
-        If PropOLEDragMode = vbOLEDragAutomatic And TextBoxAutoDragInSel = True Then
-            Dim P1 As POINTAPI
-            P1.X = Get_X_lParam(lParam)
-            P1.Y = Get_Y_lParam(lParam)
-            ClientToScreen TextBoxHandle, P1
-            If DragDetect(TextBoxHandle, CUIntToInt(P1.X And &HFFFF&), CUIntToInt(P1.Y And &HFFFF&)) <> 0 Then
-                TextBoxIsClick = False
-                Me.OLEDrag
-            End If
-            Exit Function
-        End If
     Case WM_VSCROLL, WM_HSCROLL
         ' The notification codes EN_HSCROLL and EN_VSCROLL are not sent when clicking the scroll bar thumb itself.
         If LoWord(wParam) = SB_THUMBTRACK Then RaiseEvent Scroll
     Case WM_CONTEXTMENU
         If wParam = TextBoxHandle Then
-            Dim P2 As POINTAPI, Handled As Boolean
-            P2.X = Get_X_lParam(lParam)
-            P2.Y = Get_Y_lParam(lParam)
-            If P2.X > 0 And P2.Y > 0 Then
-                ScreenToClient TextBoxHandle, P2
-                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P2.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P2.Y, vbPixels, vbContainerPosition))
-            ElseIf P2.X = -1 And P2.Y = -1 Then
+            Dim P4 As POINTAPI, Handled As Boolean
+            P4.X = Get_X_lParam(lParam)
+            P4.Y = Get_Y_lParam(lParam)
+            If P4.X > 0 And P4.Y > 0 Then
+                ScreenToClient TextBoxHandle, P4
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P4.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P4.Y, vbPixels, vbContainerPosition))
+            ElseIf P4.X = -1 And P4.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             End If
@@ -2197,5 +2180,5 @@ Select Case wMsg
         End Select
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI TextBoxHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI TextBoxHandle
 End Function

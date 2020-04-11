@@ -377,7 +377,6 @@ Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_HORZ As Long = 0, SB_VERT As Long = 1
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -675,7 +674,6 @@ Private Const REO_SELECTED As Long = &H8000000
 Private Const REO_STATIC As Long = &H40000000
 Private Const REO_LINK As Long = &H80000000
 Private Const OLE_S_STATIC As Long = &H40001
-Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private Const OLERENDER_DRAW As Long = 1
 Private Const DVASPECT_CONTENT As Long = 1
@@ -708,12 +706,13 @@ Private RichTextBoxIMCHandle As Long
 Private RichTextBoxCharCodeCache As Long
 Private RichTextBoxIsClick As Boolean
 Private RichTextBoxMouseOver(0 To 1) As Boolean
-Private RichTextBoxDesignMode As Boolean, RichTextBoxTopDesignMode As Boolean
+Private RichTextBoxDesignMode As Boolean
 Private RichTextBoxFocused As Boolean
 Private RichTextBoxDataObjectValue As Variant
 Private RichTextBoxDataObjectFormat As Variant
 Private RichTextBoxIsOleCallback As Boolean
 Private RichTextBoxEnabledVisualStyles As Boolean
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -822,7 +821,6 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
-RichTextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -860,7 +858,6 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
-RichTextBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -3448,33 +3445,8 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If RichTextBoxTopDesignMode = False And GetFocus() <> RichTextBoxHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
@@ -3757,5 +3729,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI RichTextBoxHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI RichTextBoxHandle
 End Function
