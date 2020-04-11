@@ -369,14 +369,14 @@ Begin VB.Form MainForm
       SnapToGrid      =   -1  'True
    End
    Begin ComCtlsDemo.ListBoxW ListBoxW1 
-      Height          =   2790
+      Height          =   2595
       Left            =   5880
       TabIndex        =   18
       Top             =   600
       Visible         =   0   'False
       Width           =   3855
       _ExtentX        =   6800
-      _ExtentY        =   4921
+      _ExtentY        =   4577
       BackColor       =   -2147483643
       ForeColor       =   -2147483640
       OLEDragMode     =   1
