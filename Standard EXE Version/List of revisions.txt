@@ -1,5 +1,9 @@
 List of revisions:
 
+11-Apr-2020
+- Major internal improvement for TextBoxW/RichTextBox/DTPicker as no WM_MOUSEACTIVATE overhead necessary anymore.
+- Behavior improvement for vbOLEDragAutomatic in the TextBoxW control. (OLEDragMode property)
+
 07-Apr-2020
 - Major internal improvement for CheckBoxW/CommandButtonW/OptionButtonW/CommandLink as no WM_MOUSEACTIVATE overhead necessary anymore.
 
