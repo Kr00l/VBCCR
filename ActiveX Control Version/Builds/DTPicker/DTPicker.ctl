@@ -201,7 +201,6 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
@@ -308,7 +307,7 @@ Private DTPickerBackColorBrush As Long
 Private DTPickerCharCodeCache As Long
 Private DTPickerIsClick As Boolean
 Private DTPickerMouseOver As Boolean
-Private DTPickerDesignMode As Boolean, DTPickerTopDesignMode As Boolean
+Private DTPickerDesignMode As Boolean
 Private DTPickerIsValueInvalid As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -316,6 +315,7 @@ Private DTPickerDroppedDown As Boolean
 Private DTPickerCalendarFontHandle As Long
 Private WithEvents PropCalendarFont As StdFont
 Attribute PropCalendarFont.VB_VarHelpID = -1
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDStartOfWeek As Long
 Private PropVisualStyles As Boolean
@@ -443,7 +443,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
 On Error Resume Next
 DTPickerDesignMode = Not Ambient.UserMode
-DTPickerTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 Set PropCalendarFont = Ambient.Font
@@ -485,7 +484,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
 On Error Resume Next
 DTPickerDesignMode = Not Ambient.UserMode
-DTPickerTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -1919,33 +1917,8 @@ Select Case wMsg
                     End If
             End Select
         End If
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If DTPickerTopDesignMode = False And GetFocus() <> DTPickerHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -2330,6 +2303,7 @@ Select Case wMsg
                             End If
                             ' There is a focus issue with the calendar. (quickly flash open and then close)
                             ' But only when the previous focused control was an intrinsic TextBox or ListBox.
+                            ' The cause is a pending WM_COMMAND message with EN_KILLFOCUS/LBN_KILLFOCUS in the parent window.
                             ' Thus it is necessary to make a 'DoEvents' here to avoid that case.
                             DoEvents
                             RaiseEvent DropDown
@@ -2470,5 +2444,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI DTPickerHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI DTPickerHandle
 End Function
