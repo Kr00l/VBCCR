@@ -289,7 +289,6 @@ Private Const WM_VSCROLL As Long = &H115
 Private Const WM_HSCROLL As Long = &H114
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
@@ -496,6 +495,7 @@ Private Const TVS_INFOTIP As Long = &H800
 Private Const TVS_FULLROWSELECT As Long = &H1000
 Private Const TVS_NOSCROLL As Long = &H2000
 Private Const TVS_NONEVENHEIGHT As Long = &H4000
+Private Const TVS_NOHSCROLL As Long = &H8000&
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
@@ -506,7 +506,7 @@ Private TreeViewIMCHandle As Long
 Private TreeViewCharCodeCache As Long
 Private TreeViewIsClick As Boolean
 Private TreeViewMouseOver As Boolean
-Private TreeViewDesignMode As Boolean, TreeViewTopDesignMode As Boolean
+Private TreeViewDesignMode As Boolean
 Private TreeViewLabelInEdit As Boolean
 Private TreeViewStartLabelEdit As Boolean
 Private TreeViewButtonDown As Integer
@@ -516,6 +516,7 @@ Private TreeViewExpandItem As Long, TreeViewPrevExpandItem As Long, TreeViewTick
 Private TreeViewSampleMode As Boolean
 Private TreeViewImageListObjectPointer As Long
 Private TreeViewAlignable As Boolean
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -645,7 +646,6 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then TreeViewAlignable = False Else TreeViewAlignable = True
 TreeViewDesignMode = Not Ambient.UserMode
-TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -704,7 +704,6 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then TreeViewAlignable = False Else TreeViewAlignable = True
 TreeViewDesignMode = Not Ambient.UserMode
-TreeViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -2578,7 +2577,6 @@ Select Case PropStyle
 End Select
 If PropLineStyle = TvwLineStyleRootLines Then dwStyle = dwStyle Or TVS_LINESATROOT
 If PropLabelEdit <> TvwLabelEditDisabled Then dwStyle = dwStyle Or TVS_EDITLABELS
-If PropCheckboxes = True Then dwStyle = dwStyle Or TVS_CHECKBOXES
 If PropShowTips = True Then dwStyle = dwStyle Or TVS_INFOTIP
 If PropHideSelection = False Then dwStyle = dwStyle Or TVS_SHOWSELALWAYS
 If PropFullRowSelect = True Then dwStyle = dwStyle Or TVS_FULLROWSELECT
@@ -2604,6 +2602,9 @@ Me.BackColor = PropBackColor
 Me.ForeColor = PropForeColor
 If PropRedraw = False Then Me.Redraw = False
 Me.LineColor = PropLineColor
+' According to MSDN:
+' The TVS_CHECKBOXES style must be set with SetWindowLong after the tree view control is created.
+Me.Checkboxes = PropCheckboxes
 Me.InsertMarkColor = PropInsertMarkColor
 Me.DoubleBuffer = PropDoubleBuffer
 If TreeViewHandle <> 0 Then
@@ -3023,35 +3024,15 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        Dim LabelEditHandle As Long
-        LabelEditHandle = Me.hWndLabelEdit
-        If TreeViewTopDesignMode = False And GetFocus() <> TreeViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
+    Case WM_MBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        ' There is no modal message loop (DragDetect) on WM_MBUTTONDOWN.
+    Case WM_RBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -3118,15 +3099,11 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_LBUTTONDOWN
-        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
-    Case WM_RBUTTONDOWN
-        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case UM_CHECKSTATECHANGED
         If lParam <> 0 Then RaiseEvent NodeCheck(PtrToObj(lParam))
         Exit Function
     Case UM_BUTTONDOWN
-        ' The control enters a modal message loop on WM_LBUTTONDOWN and WM_RBUTTONDOWN. (DragDetect)
+        ' The control enters a modal message loop (DragDetect) on WM_LBUTTONDOWN and WM_RBUTTONDOWN.
         ' This workaround is necessary to raise 'MouseDown' before the button was released or the mouse was moved.
         RaiseEvent MouseDown(LoWord(wParam), HiWord(wParam), UserControl.ScaleX(Get_X_lParam(lParam), vbPixels, vbTwips), UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips))
         TreeViewButtonDown = LoWord(wParam)
@@ -3142,12 +3119,18 @@ Select Case wMsg
         Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
+                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' Otherwise not. So check and change focus, if needed.
+                If GetFocus() <> hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
             Case WM_MBUTTONDOWN
                 RaiseEvent MouseDown(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
                 TreeViewButtonDown = 0
                 TreeViewIsClick = True
             Case WM_RBUTTONDOWN
+                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' Otherwise not. So check and change focus, if needed.
+                If GetFocus() <> hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
             Case WM_MOUSEMOVE
                 If TreeViewMouseOver = False And PropMouseTrack = True Then
@@ -3481,5 +3464,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI TreeViewHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI TreeViewHandle
 End Function
