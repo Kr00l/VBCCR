@@ -1,5 +1,9 @@
 List of revisions:
 
+12-Apr-2020
+- Major internal improvement for TreeView as no WM_MOUSEACTIVATE overhead necessary anymore.
+- Bugfix in the Checkboxes property in the TreeView control.
+
 11-Apr-2020
 - Major internal improvement for TextBoxW/RichTextBox/DTPicker/ListBoxW as no WM_MOUSEACTIVATE overhead necessary anymore.
 - Behavior improvement for vbOLEDragAutomatic in the TextBoxW/ListBoxW control. (OLEDragMode property)
