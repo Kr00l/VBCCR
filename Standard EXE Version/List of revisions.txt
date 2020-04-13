@@ -1,5 +1,11 @@
 List of revisions:
 
+13-Apr-2020
+- Behavior improvement for the LabelW control. (when AutoSize property set to True)
+  It now sets a temporary NULL clipping region in that case, like the VB.Label does.
+- Major internal improvement for Slider/TabStrip as no WM_MOUSEACTIVATE overhead necessary anymore.
+- Minor internal improvement in the TextBoxW and RichTextBox control.
+
 12-Apr-2020
 - Major internal improvement for TreeView as no WM_MOUSEACTIVATE overhead necessary anymore.
 - Bugfix in the Checkboxes property in the TreeView control.
