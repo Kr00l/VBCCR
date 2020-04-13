@@ -353,7 +353,11 @@ If Not PropCaption = vbNullString Then
         End If
     End If
     DrawText .hDC, StrPtr(Buffer), -1, RC, Format Or DT_MODIFYSTRING
-    If hRgn <> 0 Then SelectClipRgn .hDC, hRgn
+    If hRgn <> 0 Then
+        SelectClipRgn .hDC, hRgn
+        DeleteObject hRgn
+        hRgn = 0
+    End If
     LabelDisplayedCaption = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
 Else
     LabelDisplayedCaption = vbNullString
