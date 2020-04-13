@@ -143,7 +143,6 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
@@ -180,7 +179,7 @@ Private Const TBM_GETRANGEMAX As Long = (WM_USER + 2)
 Private Const TBM_GETTIC As Long = (WM_USER + 3)
 Private Const TBM_SETTIC As Long = (WM_USER + 4)
 Private Const TBM_SETPOS As Long = (WM_USER + 5)
-Private Const TBM_SETRANGE As Long = (WM_USER + 6)
+Private Const TBM_SETRANGE As Long = (WM_USER + 6) ' 16 bit
 Private Const TBM_SETRANGEMIN As Long = (WM_USER + 7)
 Private Const TBM_SETRANGEMAX As Long = (WM_USER + 8)
 Private Const TBM_CLEARTICS As Long = (WM_USER + 9)
@@ -239,7 +238,8 @@ Private SliderTransparentBrush As Long
 Private SliderCharCodeCache As Long
 Private SliderIsClick As Boolean
 Private SliderMouseOver As Boolean
-Private SliderDesignMode As Boolean, SliderTopDesignMode As Boolean
+Private SliderDesignMode As Boolean
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -328,7 +328,6 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 SliderDesignMode = Not Ambient.UserMode
-SliderTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -360,7 +359,6 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 SliderDesignMode = Not Ambient.UserMode
-SliderTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
@@ -1513,33 +1511,10 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If SliderTopDesignMode = False And GetFocus() <> SliderHandle Then
-            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN, WM_MBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+    Case WM_MBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -1745,5 +1720,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI SliderHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI SliderHandle
 End Function

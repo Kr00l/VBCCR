@@ -1993,6 +1993,10 @@ Select Case wMsg
         Else
             If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
         End If
+    Case WM_MBUTTONDOWN
+        ' SetFocusAPI not applicable as the edit control has no in-built reader mode, unlike the rich edit control. (DoReaderMode)
+    Case WM_RBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&

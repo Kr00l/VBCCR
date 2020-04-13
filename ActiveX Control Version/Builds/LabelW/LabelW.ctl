@@ -106,21 +106,20 @@ Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As L
 Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
-Private Const DT_BOTTOM As Long = &H8
-Private Const DT_CALCRECT As Long = &H400
-Private Const DT_CENTER As Long = &H1
-Private Const DT_END_ELLIPSIS As Long = &H8000&
+Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
+Private Declare Function GetClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long) As Long
+Private Declare Function SelectClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long) As Long
 Private Const DT_LEFT As Long = &H0
-Private Const DT_MODIFYSTRING As Long = &H10000
+Private Const DT_CENTER As Long = &H1
+Private Const DT_RIGHT As Long = &H2
+Private Const DT_WORDBREAK As Long = &H10
 Private Const DT_NOCLIP As Long = &H100
+Private Const DT_CALCRECT As Long = &H400
 Private Const DT_NOPREFIX As Long = &H800
 Private Const DT_PATH_ELLIPSIS As Long = &H4000
-Private Const DT_RIGHT As Long = &H2
+Private Const DT_END_ELLIPSIS As Long = &H8000&
+Private Const DT_MODIFYSTRING As Long = &H10000
 Private Const DT_RTLREADING As Long = &H20000
-Private Const DT_SINGLELINE As Long = &H20
-Private Const DT_TOP As Long = &H0
-Private Const DT_VCENTER As Long = &H4
-Private Const DT_WORDBREAK As Long = &H10
 Private Const DT_WORD_ELLIPSIS As Long = &H40000
 Private Const SM_CXBORDER As Long = 5
 Private Const SM_CYBORDER As Long = 6
@@ -337,8 +336,27 @@ If PropVerticalAlignment <> CCVerticalAlignmentTop Then
 End If
 SetRect RC, RC.Left + BorderWidth, RC.Top + BorderHeight, RC.Right - (BorderWidth * 2), RC.Bottom - (BorderHeight * 2)
 If Not PropCaption = vbNullString Then
-    LabelDisplayedCaption = PropCaption
-    DrawText .hDC, StrPtr(LabelDisplayedCaption), -1, RC, Format Or DT_MODIFYSTRING
+    ' The function could add up to four additional characters to this string.
+    ' The buffer containing the string should be large enough to accommodate these extra characters.
+    Buffer = PropCaption & String$(4, vbNullChar) & vbNullChar
+    Dim hRgn As Long
+    If PropAutoSize = True Then
+        ' Temporarily remove the clipping region in this case.
+        hRgn = CreateRectRgn(0, 0, 0, 0)
+        If hRgn <> 0 Then
+            If GetClipRgn(.hDC, hRgn) = 1 Then
+                SelectClipRgn .hDC, 0
+            Else
+                DeleteObject hRgn
+                hRgn = 0
+            End If
+        End If
+    End If
+    DrawText .hDC, StrPtr(Buffer), -1, RC, Format Or DT_MODIFYSTRING
+    If hRgn <> 0 Then SelectClipRgn .hDC, hRgn
+    LabelDisplayedCaption = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+Else
+    LabelDisplayedCaption = vbNullString
 End If
 End With
 End Sub

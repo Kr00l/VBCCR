@@ -210,6 +210,7 @@ Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hIns
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+Private Const GWL_STYLE As Long = (-16)
 Private Const HWND_DESKTOP As Long = &H0
 Private Const COLOR_BTNFACE As Long = 15
 Private Const RGN_OR As Long = 2
@@ -220,12 +221,12 @@ Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_CLIPSIBLINGS As Long = &H4000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
-Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
+Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_PARENTNOTIFY As Long = &H210, WM_CREATE As Long = &H1
+Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
@@ -347,9 +348,11 @@ Private TabStripFontHandle As Long
 Private TabStripBackColorBrush As Long
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
-Private TabStripDesignMode As Boolean, TabStripTopDesignMode As Boolean
+Private TabStripDesignMode As Boolean
 Private TabStripDoubleBufferEraseBkgDC As Long
 Private TabStripImageListObjectPointer As Long
+Private TabStripStyleCache As Long
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -518,7 +521,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 TabStripDesignMode = Not Ambient.UserMode
-TabStripTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -555,7 +557,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 TabStripDesignMode = Not Ambient.UserMode
-TabStripTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -1745,6 +1746,7 @@ If TabStripDesignMode = False Then
     If TabStripHandle <> 0 Then
         If TabStripBackColorBrush = 0 Then TabStripBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(TabStripHandle, Me, 1)
+        TabStripStyleCache = dwStyle
     End If
 End If
 End Sub
@@ -1818,6 +1820,7 @@ If TabStripBackColorBrush <> 0 Then
     DeleteObject TabStripBackColorBrush
     TabStripBackColorBrush = 0
 End If
+TabStripStyleCache = 0
 End Sub
 
 Public Sub Refresh()
@@ -1986,33 +1989,16 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If TabStripTopDesignMode = False And GetFocus() <> TabStripHandle Then
-            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN, WM_MBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
+    Case WM_LBUTTONDOWN
+        If Not (TabStripStyleCache And TCS_FOCUSNEVER) = TCS_FOCUSNEVER Then
+            If (TabStripStyleCache And TCS_FOCUSONBUTTONDOWN) = TCS_FOCUSONBUTTONDOWN Then
+                If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            Else
+                If GetFocus() <> hWnd Then SetFocusAPI UserControl.hWnd ' UCNoSetFocusFwd not applicable
+            End If
         End If
+    Case WM_MBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -2173,6 +2159,8 @@ Select Case wMsg
                 RemoveVisualStyles lParam
             End If
         End If
+    Case WM_STYLECHANGED
+        If wParam = GWL_STYLE Then CopyMemory TabStripStyleCache, ByVal UnsignedAdd(lParam, 4), 4
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -2283,5 +2271,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI TabStripHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI TabStripHandle
 End Function
