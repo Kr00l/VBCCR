@@ -7795,12 +7795,12 @@ Select Case wMsg
             Dim P As POINTAPI
             P.X = Get_X_lParam(lParam)
             P.Y = Get_Y_lParam(lParam)
-            If P.X > 0 And P.Y > 0 Then
-                ScreenToClient ListViewHandle, P
-                RaiseEvent ContextMenu(UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
-            ElseIf P.X = -1 And P.Y = -1 Then
+            If P.X = -1 And P.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(-1, -1)
+            Else
+                ScreenToClient ListViewHandle, P
+                RaiseEvent ContextMenu(UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
             End If
         End If
     Case WM_NOTIFYFORMAT
