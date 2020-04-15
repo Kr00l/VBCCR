@@ -1470,12 +1470,12 @@ Select Case wMsg
             Dim P1 As POINTAPI, Handled As Boolean
             P1.X = Get_X_lParam(lParam)
             P1.Y = Get_Y_lParam(lParam)
-            If P1.X > 0 And P1.Y > 0 Then
-                ScreenToClient SpinBoxEditHandle, P1
-                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition))
-            ElseIf P1.X = -1 And P1.Y = -1 Then
+            If P1.X = -1 And P1.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
+            Else
+                ScreenToClient SpinBoxEditHandle, P1
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
         End If
