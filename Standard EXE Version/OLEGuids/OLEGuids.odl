@@ -286,7 +286,7 @@ library OLEGuids
 	interface IOleInPlaceActiveObjectVB : IDispatch
 	{
         	[id(0x00000001)]
-        	HRESULT TranslateAccelerator([in, out] boolean *Handled, [in, out] LONG *RetVal, [in] LONG wMsg, [in] LONG wParam, [in] LONG lParam, [in] LONG Shift);
+        	HRESULT TranslateAccelerator([in, out] boolean *Handled, [in, out] LONG *RetVal, [in] LONG hWnd, [in] LONG wMsg, [in] LONG wParam, [in] LONG lParam, [in] LONG Shift);
     	};
 	[
 		uuid(C895C8F9-6564-4123-8760-529F72AB9322),
@@ -301,7 +301,7 @@ library OLEGuids
         	[id(0x00000001)]
         	HRESULT GetControlInfo([in, out] boolean *Handled, [in, out] SHORT *AccelCount, [in, out] LONG *AccelTable, [in, out] LONG *Flags);
 		[id(0x00000002)]
-		HRESULT OnMnemonic([in, out] boolean *Handled, [in] LONG wMsg, [in] LONG wParam, [in] LONG lParam, [in] LONG Shift);
+		HRESULT OnMnemonic([in, out] boolean *Handled, [in] LONG hWnd, [in] LONG wMsg, [in] LONG wParam, [in] LONG lParam, [in] LONG Shift);
 	};
     	[
 		uuid(D5D3BBE3-DB60-4522-AF5B-D767FE736DDB),
