@@ -1,6 +1,9 @@
 List of revisions:
 
 15-Apr-2020
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - included hWnd param for IOleInPlaceActiveObjectVB and IOleControlVB
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
 - Bugfix in the various WM_CONTEXTMENU handlers. It can now also handle negative screen coordinates.
 
 13-Apr-2020
