@@ -266,7 +266,7 @@ End If
 On Error GoTo CATCH_EXCEPTION
 Dim Handled As Boolean
 IOleIPAO_TranslateAccelerator = S_OK
-This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+This.IOleIPAO.TranslateAccelerator Handled, IOleIPAO_TranslateAccelerator, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
 If Handled = False Then IOleIPAO_TranslateAccelerator = This.OriginalIOleIPAO.TranslateAccelerator(VarPtr(Msg))
 Exit Function
 CATCH_EXCEPTION:
@@ -399,7 +399,7 @@ End If
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowIOleControlVB As OLEGuids.IOleControlVB, Handled As Boolean
 Set ShadowIOleControlVB = PtrToObj(VarPtr(This))
-ShadowIOleControlVB.OnMnemonic Handled, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+ShadowIOleControlVB.OnMnemonic Handled, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
 If Handled = False Then
     IOleControl_OnMnemonic = Original_IOleControl_OnMnemonic(This, Msg)
 Else
