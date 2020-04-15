@@ -178,7 +178,7 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
-Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
+Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     Dim KeyCode As Integer, IsInputKey As Boolean
     KeyCode = wParam And &HFF&
@@ -189,23 +189,16 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyTab, vbKeyReturn, vbKeyEscape
-            Dim hWnd As Long
-            hWnd = GetFocus()
-            If hWnd <> 0 Then
-                Select Case hWnd
-                    Case IPAddressHandle, IPAddressEditHandle(1), IPAddressEditHandle(2), IPAddressEditHandle(3), IPAddressEditHandle(4)
-                        Select Case KeyCode
-                            Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd
-                                SendMessage hWnd, wMsg, wParam, ByVal lParam
-                                Handled = True
-                            Case vbKeyTab, vbKeyReturn, vbKeyEscape
-                                If IsInputKey = True Then
-                                    SendMessage hWnd, wMsg, wParam, ByVal lParam
-                                    Handled = True
-                                End If
-                        End Select
-                End Select
-            End If
+            Select Case KeyCode
+                Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd
+                    SendMessage hWnd, wMsg, wParam, ByVal lParam
+                    Handled = True
+                Case vbKeyTab, vbKeyReturn, vbKeyEscape
+                    If IsInputKey = True Then
+                        SendMessage hWnd, wMsg, wParam, ByVal lParam
+                        Handled = True
+                    End If
+            End Select
     End Select
 End If
 End Sub
