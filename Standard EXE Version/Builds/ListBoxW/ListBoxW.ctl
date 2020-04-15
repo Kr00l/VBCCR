@@ -2317,12 +2317,12 @@ Select Case wMsg
             Dim P3 As POINTAPI
             P3.X = Get_X_lParam(lParam)
             P3.Y = Get_Y_lParam(lParam)
-            If P3.X > 0 And P3.Y > 0 Then
-                ScreenToClient ListBoxHandle, P3
-                RaiseEvent ContextMenu(UserControl.ScaleX(P3.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P3.Y, vbPixels, vbContainerPosition))
-            ElseIf P3.X = -1 And P3.Y = -1 Then
+            If P3.X = -1 And P3.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(-1, -1)
+            Else
+                ScreenToClient ListBoxHandle, P3
+                RaiseEvent ContextMenu(UserControl.ScaleX(P3.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P3.Y, vbPixels, vbContainerPosition))
             End If
         End If
     Case WM_HSCROLL, WM_VSCROLL
