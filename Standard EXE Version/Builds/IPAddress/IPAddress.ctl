@@ -1659,8 +1659,8 @@ Select Case wMsg
 End Select
 WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
-    Case WM_SETFOCUS, WM_KILLFOCUS
-        If wMsg = WM_SETFOCUS Then IPAddressEditFocusHwnd = hWnd Else IPAddressEditFocusHwnd = 0
+    Case WM_SETFOCUS
+        IPAddressEditFocusHwnd = hWnd
         
         #If ImplementThemedBorder = True Then
         
@@ -1670,12 +1670,23 @@ Select Case wMsg
         
         #End If
         
-        If wMsg = WM_SETFOCUS Then
-            If dwRefData <> IPAddressSelectedItem Then
-                IPAddressSelectedItem = dwRefData
-                RaiseEvent SelChange
+        If dwRefData <> IPAddressSelectedItem Then
+            IPAddressSelectedItem = dwRefData
+            RaiseEvent SelChange
+        End If
+    Case WM_KILLFOCUS
+        IPAddressEditFocusHwnd = 0
+        
+        #If ImplementThemedBorder = True Then
+        
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
+            If wParam <> UserControl.hWnd Then ' Avoid flicker
+                If IPAddressEnabledVisualStyles = True Then SetWindowPos UserControl.hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
             End If
         End If
+        
+        #End If
+        
     Case WM_CHAR
         Select Case wParam
             Case 48 To 57 ' "0-9"
