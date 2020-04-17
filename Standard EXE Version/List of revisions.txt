@@ -1,5 +1,15 @@
 List of revisions:
 
+17-Apr-2020
+- Major internal improvement in the IPAddress control as SysIPAddress32 class no longer used.
+  Instead everything is done from scratch within the UserControl and four internal edit controls.
+  The behavior and usage is 100% mimic, but looks more "VB-ish".
+  - BackColor property now possible.
+  - ForeColor property also effects now the three dots.
+  - UserControl_Resize does not need a re-creation. (SysIPAddress32 was fixed, no MoveWindow was possible!)
+  - BorderStyle property now possible. (e.g. Flat style)
+  - Design time property page included.
+
 15-Apr-2020
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
   - included hWnd param for IOleInPlaceActiveObjectVB and IOleControlVB

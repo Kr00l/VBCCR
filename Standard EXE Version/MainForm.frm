@@ -615,16 +615,17 @@ VirtualControlsForm.Show vbModal
 End Sub
 
 Private Sub Command3_Click()
-If IPAddress1.Address = vbNullString Then
+If IPAddress1.Text = vbNullString Then
     MsgBox "IP Address is blank"
 Else
-    MsgBox "IP Address: " & IPAddress1.Address & vbLf & _
-    "Field1: " & IIf(IPAddress1.IsEmptyField(1), "Blank", IPAddress1.FieldValue(1)) & vbLf & _
-    "Field2: " & IIf(IPAddress1.IsEmptyField(2), "Blank", IPAddress1.FieldValue(2)) & vbLf & _
-    "Field3: " & IIf(IPAddress1.IsEmptyField(3), "Blank", IPAddress1.FieldValue(3)) & vbLf & _
-    "Field4: " & IIf(IPAddress1.IsEmptyField(4), "Blank", IPAddress1.FieldValue(4)) & vbLf & _
-    "Content will be cleared now."
-    IPAddress1.Address = vbNullString
+    Dim Text4() As String
+    Text4() = Split(IPAddress1.Text, ".")
+    MsgBox "IP Address Text: " & IPAddress1.Text & vbLf & _
+    "IP Address Value: " & IPAddress1.Value & vbLf & _
+    "Item1: " & Text4(0) & vbLf & "Item2: " & Text4(1) & vbLf & _
+    "Item3: " & Text4(2) & vbLf & "Item4: " & Text4(3)
+    MsgBox "Content will be cleared now."
+    IPAddress1.Text = vbNullString
 End If
 End Sub
 

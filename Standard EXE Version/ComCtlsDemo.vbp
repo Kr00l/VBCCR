@@ -40,6 +40,7 @@ Class=ImlListImages; Builds\ImageList\ImlListImages.cls
 PropertyPage=Builds\ImageList\PPImageListGeneral.pag
 PropertyPage=Builds\ImageList\PPImageListImages.pag
 UserControl=Builds\IPAddress\IPAddress.ctl
+PropertyPage=Builds\IPAddress\PPIPAddressGeneral.pag
 UserControl=Builds\LabelW\LabelW.ctl
 UserControl=Builds\LinkLabel\LinkLabel.ctl
 Class=LlbLink; Builds\LinkLabel\LlbLink.cls
