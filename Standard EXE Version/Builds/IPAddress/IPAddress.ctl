@@ -220,6 +220,13 @@ Private Const WM_SETTEXT As Long = &HC
 Private Const WM_PASTE As Long = &H302
 Private Const WM_NCPAINT As Long = &H85
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_USER As Long = &H400
+Private Const IPM_CLEARADDRESS As Long = (WM_USER + 100)
+Private Const IPM_SETADDRESS As Long = (WM_USER + 101)
+Private Const IPM_GETADDRESS As Long = (WM_USER + 102)
+Private Const IPM_SETRANGE As Long = (WM_USER + 103)
+Private Const IPM_SETFOCUS As Long = (WM_USER + 104)
+Private Const IPM_ISBLANK As Long = (WM_USER + 105)
 Private Const EM_SETREADONLY As Long = &HCF, ES_READONLY As Long = &H800
 Private Const EM_GETSEL As Long = &HB0
 Private Const EM_SETSEL As Long = &HB1
@@ -1245,6 +1252,45 @@ If Item > 0 Then
 End If
 End Function
 
+Private Function GetNonBlankCount() As Long
+Dim Count As Long
+If IPAddressEditHandle(1) <> 0 Then If SendMessage(IPAddressEditHandle(1), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then Count = Count + 1
+If IPAddressEditHandle(2) <> 0 Then If SendMessage(IPAddressEditHandle(2), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then Count = Count + 1
+If IPAddressEditHandle(3) <> 0 Then If SendMessage(IPAddressEditHandle(3), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then Count = Count + 1
+If IPAddressEditHandle(4) <> 0 Then If SendMessage(IPAddressEditHandle(4), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then Count = Count + 1
+GetNonBlankCount = Count
+End Function
+
+Private Function GetBlankItem() As Integer
+Dim NonBlank(1 To 4) As Boolean
+If IPAddressEditHandle(1) <> 0 Then
+    If SendMessage(IPAddressEditHandle(1), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(1) = True
+End If
+If IPAddressEditHandle(2) <> 0 Then
+    If SendMessage(IPAddressEditHandle(2), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(2) = True
+End If
+If IPAddressEditHandle(3) <> 0 Then
+    If SendMessage(IPAddressEditHandle(3), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(3) = True
+End If
+If IPAddressEditHandle(4) <> 0 Then
+    If SendMessage(IPAddressEditHandle(4), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(4) = True
+End If
+If NonBlank(1) = True And NonBlank(2) = True And NonBlank(3) = True And NonBlank(4) = True Then
+    ' If all are non-blank then set first item.
+    GetBlankItem = 1
+Else
+    If NonBlank(1) = False Then
+        GetBlankItem = 1
+    ElseIf NonBlank(2) = False Then
+        GetBlankItem = 2
+    ElseIf NonBlank(3) = False Then
+        GetBlankItem = 3
+    ElseIf NonBlank(4) = False Then
+        GetBlankItem = 4
+    End If
+End If
+End Function
+
 Private Function ItemFromWindow(ByVal hWnd As Long) As Integer
 If hWnd <> 0 Then
     Select Case hWnd
@@ -1352,6 +1398,57 @@ Select Case wMsg
     
     #End If
     
+    ' Compatibility for the SysIPAddress32 messages
+    
+    Case IPM_CLEARADDRESS
+        Me.Text = vbNullString
+        Exit Function
+    Case IPM_SETADDRESS
+        Me.Value = lParam
+        Exit Function
+    Case IPM_GETADDRESS
+        Dim LngValue As Long
+        LngValue = Me.Value
+        If lParam <> 0 Then CopyMemory ByVal lParam, ByVal VarPtr(LngValue), 4
+        WindowProcUserControl = GetNonBlankCount()
+        Exit Function
+    Case IPM_SETRANGE
+        Select Case wParam
+            Case 0 To 3
+                Dim IntValue As Integer
+                IntValue = LoWord(lParam)
+                IPAddressMin(wParam + 1) = LoByte(IntValue)
+                IPAddressMax(wParam + 1) = HiByte(IntValue)
+                WindowProcUserControl = 1
+            Case Else
+                WindowProcUserControl = 0
+        End Select
+        Exit Function
+    Case IPM_SETFOCUS
+        Dim Item As Integer
+        Select Case wParam
+            Case Is > 3
+                Item = GetBlankItem()
+            Case 3
+                Item = 4
+            Case 2
+                Item = 3
+            Case 1
+                Item = 2
+            Case 0
+                Item = 1
+        End Select
+        If Item > 0 Then
+            If IPAddressEditHandle(Item) <> 0 Then
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+                SetFocusAPI IPAddressEditHandle(Item)
+                SendMessage IPAddressEditHandle(Item), EM_SETSEL, 0, ByVal -1&
+            End If
+        End If
+        Exit Function
+    Case IPM_ISBLANK
+        If Me.Text = vbNullString Then WindowProcUserControl = 1 Else WindowProcUserControl = 0
+        Exit Function
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -1384,47 +1481,11 @@ Select Case wMsg
                         SendMessage IPAddressEditHandle(4), EM_SETSEL, 0, ByVal -1&
                     End If
                 Case IpaAutoSelectBlank
-                    Dim NonBlank(1 To 4) As Boolean
-                    If IPAddressEditHandle(1) <> 0 Then
-                        If SendMessage(IPAddressEditHandle(1), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(1) = True
-                    End If
-                    If IPAddressEditHandle(2) <> 0 Then
-                        If SendMessage(IPAddressEditHandle(2), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(2) = True
-                    End If
-                    If IPAddressEditHandle(3) <> 0 Then
-                        If SendMessage(IPAddressEditHandle(3), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(3) = True
-                    End If
-                    If IPAddressEditHandle(4) <> 0 Then
-                        If SendMessage(IPAddressEditHandle(4), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(4) = True
-                    End If
-                    If NonBlank(1) = True And NonBlank(2) = True And NonBlank(3) = True And NonBlank(4) = True Then
-                        ' Set to first when all are non-blank.
-                        If IPAddressEditHandle(1) <> 0 Then
-                            SetFocusAPI IPAddressEditHandle(1)
-                            SendMessage IPAddressEditHandle(1), EM_SETSEL, 0, ByVal -1&
-                        End If
-                    Else
-                        If NonBlank(1) = False Then
-                            If IPAddressEditHandle(1) <> 0 Then
-                                SetFocusAPI IPAddressEditHandle(1)
-                                SendMessage IPAddressEditHandle(1), EM_SETSEL, 0, ByVal -1&
-                            End If
-                        ElseIf NonBlank(2) = False Then
-                            If IPAddressEditHandle(2) <> 0 Then
-                                SetFocusAPI IPAddressEditHandle(2)
-                                SendMessage IPAddressEditHandle(2), EM_SETSEL, 0, ByVal -1&
-                            End If
-                        ElseIf NonBlank(3) = False Then
-                            If IPAddressEditHandle(3) <> 0 Then
-                                SetFocusAPI IPAddressEditHandle(3)
-                                SendMessage IPAddressEditHandle(3), EM_SETSEL, 0, ByVal -1&
-                            End If
-                        ElseIf NonBlank(4) = False Then
-                            If IPAddressEditHandle(4) <> 0 Then
-                                SetFocusAPI IPAddressEditHandle(4)
-                                SendMessage IPAddressEditHandle(4), EM_SETSEL, 0, ByVal -1&
-                            End If
-                        End If
+                    Dim BlankItem As Integer
+                    BlankItem = GetBlankItem()
+                    If IPAddressEditHandle(BlankItem) <> 0 Then
+                        SetFocusAPI IPAddressEditHandle(BlankItem)
+                        SendMessage IPAddressEditHandle(BlankItem), EM_SETSEL, 0, ByVal -1&
                     End If
             End Select
         End If
