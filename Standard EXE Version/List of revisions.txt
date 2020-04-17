@@ -9,6 +9,7 @@ List of revisions:
   - UserControl_Resize does not need a re-creation. (SysIPAddress32 was fixed, no MoveWindow was possible!)
   - BorderStyle property now possible. (e.g. Flat style)
   - Design time property page included.
+  - Support for SysIPAddress32 IPM_* messages.
 
 15-Apr-2020
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
