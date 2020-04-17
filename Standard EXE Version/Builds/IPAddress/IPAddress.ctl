@@ -1417,8 +1417,8 @@ Select Case wMsg
             Case 0 To 3
                 Dim IntValue As Integer
                 IntValue = LoWord(lParam)
-                IPAddressMin(wParam + 1) = LoByte(IntValue)
-                IPAddressMax(wParam + 1) = HiByte(IntValue)
+                Me.Min(wParam + 1) = LoByte(IntValue)
+                Me.Max(wParam + 1) = HiByte(IntValue)
                 WindowProcUserControl = 1
             Case Else
                 WindowProcUserControl = 0
