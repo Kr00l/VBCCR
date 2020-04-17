@@ -1,15 +1,19 @@
 VERSION 5.00
 Begin VB.UserControl IPAddress 
+   BackColor       =   &H80000005&
+   BorderStyle     =   1  'Fixed Single
    ClientHeight    =   1800
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
+   ForeColor       =   &H80000008&
    HasDC           =   0   'False
+   MousePointer    =   3  'I-Beam
    PropertyPages   =   "IPAddress.ctx":0000
    ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   160
-   ToolboxBitmap   =   "IPAddress.ctx":0035
+   ToolboxBitmap   =   "IPAddress.ctx":004A
 End
 Attribute VB_Name = "IPAddress"
 Attribute VB_GlobalNameSpace = False
@@ -17,11 +21,29 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+
+#Const ImplementThemedBorder = True
+
+#If False Then
+Private IpaAutoSelectNone, IpaAutoSelectFirst, IpaAutoSelectSecond, IpaAutoSelectThird, IpaAutoSelectFourth, IpaAutoSelectBlank
+#End If
+Public Enum IpaAutoSelectConstants
+IpaAutoSelectNone = 0
+IpaAutoSelectFirst = 1
+IpaAutoSelectSecond = 2
+IpaAutoSelectThird = 3
+IpaAutoSelectFourth = 4
+IpaAutoSelectBlank = 5
+End Enum
 Private Type RECT
 Left As Long
 Top As Long
 Right As Long
 Bottom As Long
+End Type
+Private Type SIZEAPI
+CX As Long
+CY As Long
 End Type
 Private Type POINTAPI
 X As Long
@@ -33,20 +55,18 @@ dwFlags As Long
 hWndTrack As Long
 dwHoverTime As Long
 End Type
-Private Type NMHDR
-hWndFrom As Long
-IDFrom As Long
-Code As Long
-End Type
-Private Type NMIPADDRESS
-hdr As NMHDR
-iField As Long
-iValue As Long
-End Type
+Public Event Click()
+Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
+Attribute Click.VB_UserMemId = -600
+Public Event DblClick()
+Attribute DblClick.VB_Description = "Occurs when you press and release a mouse button and then press and release it again over an object."
+Attribute DblClick.VB_UserMemId = -601
 Public Event Change()
 Attribute Change.VB_Description = "Occurs when the contents of a control have changed."
-Public Event FieldChange(ByVal Field As Long)
-Attribute FieldChange.VB_Description = "Occurs when the contents of a specific field have changed."
+Public Event SelChange()
+Attribute SelChange.VB_Description = "Occurs when the selected item changes."
+Public Event ContextMenu(ByRef Handled As Boolean, ByVal X As Single, ByVal Y As Single)
+Attribute ContextMenu.VB_Description = "Occurs when the user clicked the right mouse button or types SHIFT + F10."
 Public Event PreviewKeyDown(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
 Attribute PreviewKeyDown.VB_Description = "Occurs before the KeyDown event."
 Public Event PreviewKeyUp(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
@@ -87,6 +107,7 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
@@ -95,28 +116,81 @@ Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
-Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
-Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
-Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function TrackMouseEvent Lib "user32" (ByRef lpEventTrack As TRACKMOUSEEVENTSTRUCT) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
 Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
-Private Const ICC_INTERNET_CLASSES As Long = &H800
-Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
+Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
+Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
+Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
+Private Declare Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal lpString As Long, ByVal nCount As Long) As Long
+
+#If ImplementThemedBorder = True Then
+
+Private Enum UxThemeEditParts
+EP_EDITTEXT = 1
+EP_CARET = 2
+EP_BACKGROUND = 3
+EP_PASSWORD = 4
+EP_BACKGROUNDWITHBORDER = 5
+EP_EDITBORDER_NOSCROLL = 6
+EP_EDITBORDER_HSCROLL = 7
+EP_EDITBORDER_VSCROLL = 8
+EP_EDITBORDER_HVSCROLL = 9
+End Enum
+Private Enum UxThemeEditBorderNoScrollStates
+EPSN_NORMAL = 1
+EPSN_HOT = 2
+EPSN_FOCUSED = 3
+EPSN_DISABLED = 4
+End Enum
+Private Declare Function OpenThemeData Lib "uxtheme" (ByVal hWnd As Long, ByVal pszClassList As Long) As Long
+Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As Long
+Private Declare Function IsThemeBackgroundPartiallyTransparent Lib "uxtheme" (ByVal Theme As Long, iPartId As Long, iStateId As Long) As Long
+Private Declare Function DrawThemeParentBackground Lib "uxtheme" (ByVal hWnd As Long, ByVal hDC As Long, ByRef pRect As RECT) As Long
+Private Declare Function DrawThemeBackground Lib "uxtheme" (ByVal Theme As Long, ByVal hDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, ByRef pRect As RECT, ByRef pClipRect As RECT) As Long
+Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
+Private Declare Function GetWindowDC Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetDCEx Lib "user32" (ByVal hWnd As Long, ByVal hRgnClip As Long, ByVal fdwOptions As Long) As Long
+Private Declare Function ExcludeClipRect Lib "gdi32" (ByVal hDC As Long, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
+Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
+Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+
+#End If
+
+Private Const ICC_STANDARD_CLASSES As Long = &H4000
+Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80, RDW_NOCHILDREN As Long = &H40, RDW_FRAME As Long = &H400
+Private Const SWP_FRAMECHANGED As Long = &H20
+Private Const SWP_DRAWFRAME As Long = SWP_FRAMECHANGED
+Private Const SWP_NOMOVE As Long = &H2
+Private Const SWP_NOOWNERZORDER As Long = &H200
+Private Const SWP_NOSIZE As Long = &H1
+Private Const SWP_NOZORDER As Long = &H4
+Private Const DCX_WINDOW As Long = &H1
+Private Const DCX_INTERSECTRGN As Long = &H80
+Private Const DCX_USESTYLE As Long = &H10000
+Private Const GWL_STYLE As Long = (-16)
+Private Const GWL_EXSTYLE As Long = (-20)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const SW_HIDE As Long = &H0
 Private Const TME_LEAVE As Long = &H2, TME_NONCLIENT As Long = &H10
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
-Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
+Private Const WM_ENABLE As Long = &HA
+Private Const WM_THEMECHANGED As Long = &H31A
+Private Const WM_STYLECHANGING As Long = &H7C
+Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
@@ -131,43 +205,64 @@ Private Const WM_MBUTTONDOWN As Long = &H207
 Private Const WM_MBUTTONUP As Long = &H208
 Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
+Private Const WM_LBUTTONDBLCLK As Long = &H203
+Private Const WM_MBUTTONDBLCLK As Long = &H209
+Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_NCMOUSEMOVE As Long = &HA0
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_NCMOUSELEAVE As Long = &H2A2
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_SETFONT As Long = &H30
-Private Const WM_CTLCOLOREDIT As Long = &H133
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
 Private Const WM_PASTE As Long = &H302
+Private Const WM_NCPAINT As Long = &H85
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
-Private Const WM_USER As Long = &H400
-Private Const IPM_CLEARADDRESS As Long = (WM_USER + 100)
-Private Const IPM_SETADDRESS As Long = (WM_USER + 101)
-Private Const IPM_GETADDRESS As Long = (WM_USER + 102)
-Private Const IPM_SETRANGE As Long = (WM_USER + 103)
-Private Const IPM_SETFOCUS As Long = (WM_USER + 104)
-Private Const IPM_ISBLANK As Long = (WM_USER + 105)
-Private Const IPN_FIRST As Long = (-860)
-Private Const IPN_FIELDCHANGED As Long = (IPN_FIRST - 0)
+Private Const EM_SETREADONLY As Long = &HCF, ES_READONLY As Long = &H800
+Private Const EM_GETSEL As Long = &HB0
+Private Const EM_SETSEL As Long = &HB1
+Private Const EM_LIMITTEXT As Long = &HC5
+Private Const EM_SETLIMITTEXT As Long = EM_LIMITTEXT
+Private Const EN_CHANGE As Long = &H300
+Private Const ES_LEFT As Long = &H0
+Private Const ES_CENTER As Long = &H1
+Private Const ES_RIGHT As Long = &H2
+Private Const ES_AUTOHSCROLL As Long = &H80
+Private Const ES_NUMBER As Long = &H2000
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
-Private IPAddressHandle As Long, IPAddressEditHandle(1 To 4) As Long
+Private IPAddressEditHandle(1 To 4) As Long
 Private IPAddressFontHandle As Long
 Private IPAddressCharCodeCache As Long
-Private IPAddressMouseOver(0 To 5) As Boolean
-Private IPAddressDesignMode As Boolean, IPAddressTopDesignMode As Boolean
+Private IPAddressIsClick As Boolean
+Private IPAddressMouseOver(0 To 1) As Boolean
+Private IPAddressEditMouseOver(1 To 4) As Boolean
+Private IPAddressDesignMode As Boolean
+Private IPAddressDotSpacing As Long
+Private IPAddressPadding As SIZEAPI
+Private IPAddressChangeFrozen As Boolean
+Private IPAddressRTLReading(1 To 4) As Boolean
+Private IPAddressEnabledVisualStyles As Boolean
+Private IPAddressEditFocusHwnd As Long
+Private IPAddressSelectedItem As Integer
+Private IPAddressMin(1 To 4) As Integer, IPAddressMax(1 To 4) As Integer
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
-Private PropMin(1 To 4) As Byte, PropMax(1 To 4) As Byte
-Private PropForeColor As OLE_COLOR
+Private PropRightToLeft As Boolean
+Private PropRightToLeftMode As CCRightToLeftModeConstants
+Private PropBorderStyle As CCBorderStyleConstants
+Private PropText As String
+Private PropAutoSelect As IpaAutoSelectConstants
+Private PropLocked As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -226,22 +321,38 @@ End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call ComCtlsInitCC(ICC_INTERNET_CLASSES)
+Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+IPAddressPadding.CX = 3 * PixelsPerDIP_X()
+IPAddressPadding.CY = 1 * PixelsPerDIP_Y()
+IPAddressSelectedItem = 1
+IPAddressMin(1) = 0
+IPAddressMin(2) = 0
+IPAddressMin(3) = 0
+IPAddressMin(4) = 0
+IPAddressMax(1) = 255
+IPAddressMax(2) = 255
+IPAddressMax(3) = 255
+IPAddressMax(4) = 255
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 IPAddressDesignMode = Not Ambient.UserMode
-IPAddressTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
-PropForeColor = vbWindowText
+PropRightToLeft = Ambient.RightToLeft
+PropRightToLeftMode = CCRightToLeftModeVBAME
+If PropRightToLeft = True Then Me.RightToLeft = True
+PropBorderStyle = CCBorderStyleSunken ' UserControl.BorderStyle = vbFixedSingle
+PropText = vbNullString
+PropAutoSelect = IpaAutoSelectFirst
+PropLocked = False
 Call CreateIPAddress
 End Sub
 
@@ -249,17 +360,24 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 IPAddressDesignMode = Not Ambient.UserMode
-IPAddressTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
+Me.BackColor = .ReadProperty("BackColor", vbWindowBackground)
+Me.ForeColor = .ReadProperty("ForeColor", vbWindowText)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
-PropForeColor = .ReadProperty("ForeColor", vbWindowText)
+PropRightToLeft = .ReadProperty("RightToLeft", False)
+PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
+If PropRightToLeft = True Then Me.RightToLeft = True
+Me.BorderStyle = .ReadProperty("BorderStyle", CCBorderStyleSunken)
+PropText = .ReadProperty("Text", vbNullString) ' Unicode not necessary
+PropAutoSelect = .ReadProperty("AutoSelect", IpaAutoSelectFirst)
+PropLocked = .ReadProperty("Locked", False)
 End With
 Call CreateIPAddress
 End Sub
@@ -268,13 +386,66 @@ Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
+.WriteProperty "BackColor", Me.BackColor, vbWindowBackground
+.WriteProperty "ForeColor", Me.ForeColor, vbWindowText
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
-.WriteProperty "ForeColor", PropForeColor, vbWindowText
+.WriteProperty "RightToLeft", PropRightToLeft, False
+.WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
+.WriteProperty "BorderStyle", Me.BorderStyle, CCBorderStyleSunken
+.WriteProperty "Text", PropText, vbNullString ' Unicode not necessary
+.WriteProperty "AutoSelect", PropAutoSelect, IpaAutoSelectFirst
+.WriteProperty "Locked", PropLocked, False
 End With
+End Sub
+
+Private Sub UserControl_Paint()
+With UserControl
+Dim hFontOld As Long
+If IPAddressFontHandle <> 0 Then hFontOld = SelectObject(.hDC, IPAddressFontHandle)
+Dim X As Long, Y As Long, CX As Long
+X = IPAddressPadding.CX
+Y = IPAddressPadding.CY
+CX = ((UserControl.ScaleWidth - X) - (IPAddressDotSpacing * 3)) \ 4 ' Discard any remainder
+X = X + CX
+TextOut .hDC, X, Y, StrPtr("."), 1
+X = X + IPAddressDotSpacing + CX
+TextOut .hDC, X, Y, StrPtr("."), 1
+X = X + IPAddressDotSpacing + CX
+TextOut .hDC, X, Y, StrPtr("."), 1
+If hFontOld <> 0 Then SelectObject .hDC, hFontOld
+End With
+End Sub
+
+Private Sub UserControl_Click()
+RaiseEvent Click
+End Sub
+
+Private Sub UserControl_DblClick()
+RaiseEvent DblClick
+End Sub
+
+Private Sub UserControl_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+RaiseEvent MouseDown(Button, Shift, X, Y)
+End Sub
+
+Private Sub UserControl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+If (IPAddressMouseOver(0) = False And PropMouseTrack = True) Or (IPAddressMouseOver(1) = False And PropMouseTrack = True) Then
+    If IPAddressMouseOver(0) = False And PropMouseTrack = True Then IPAddressMouseOver(0) = True
+    If IPAddressMouseOver(1) = False And PropMouseTrack = True Then
+        IPAddressMouseOver(1) = True
+        RaiseEvent MouseEnter
+    End If
+    Call ComCtlsRequestMouseLeave(hWnd)
+End If
+RaiseEvent MouseMove(Button, Shift, X, Y)
+End Sub
+
+Private Sub UserControl_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+RaiseEvent MouseUp(Button, Shift, X, Y)
 End Sub
 
 Private Sub UserControl_OLECompleteDrag(Effect As Long)
@@ -312,11 +483,18 @@ If InProc = True Then Exit Sub
 InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-If IPAddressHandle <> 0 Then
-    Dim RC As RECT
-    GetWindowRect IPAddressHandle, RC
-    If (RC.Right - RC.Left) <> .ScaleWidth Or (RC.Bottom - RC.Top) <> .ScaleHeight Then Call ReCreateIPAddress
-End If
+Dim X As Long, Y As Long, CX As Long, CY As Long
+X = IPAddressPadding.CX
+Y = IPAddressPadding.CY
+CX = ((UserControl.ScaleWidth - X) - (IPAddressDotSpacing * 3)) \ 4 ' Discard any remainder
+CY = UserControl.ScaleHeight - Y
+If IPAddressEditHandle(1) <> 0 Then MoveWindow IPAddressEditHandle(1), X, Y, CX, CY, 1
+X = X + CX + IPAddressDotSpacing
+If IPAddressEditHandle(2) <> 0 Then MoveWindow IPAddressEditHandle(2), X, Y, CX, CY, 1
+X = X + CX + IPAddressDotSpacing
+If IPAddressEditHandle(3) <> 0 Then MoveWindow IPAddressEditHandle(3), X, Y, CX, CY, 1
+X = X + CX + IPAddressDotSpacing
+If IPAddressEditHandle(4) <> 0 Then MoveWindow IPAddressEditHandle(4), X, Y, CX, CY, 1
 End With
 InProc = False
 End Sub
@@ -472,18 +650,13 @@ End Sub
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
 Attribute hWnd.VB_UserMemId = -515
-hWnd = IPAddressHandle
+hWnd = UserControl.hWnd
 End Property
 
-Public Property Get hWndUserControl() As Long
-Attribute hWndUserControl.VB_Description = "Returns a handle to a control."
-hWndUserControl = UserControl.hWnd
-End Property
-
-Public Property Get hWndEdit(ByVal Field As Long) As Long
+Public Property Get hWndEdit(ByVal Index As Integer) As Long
 Attribute hWndEdit.VB_Description = "Returns a handle to a control."
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-If IPAddressHandle <> 0 Then hWndEdit = IPAddressEditHandle(Field)
+If Index > 4 Or Index < 1 Then Err.Raise Number:=35600, Description:="Index out of bounds"
+hWndEdit = IPAddressEditHandle(Index)
 End Property
 
 Public Property Get Font() As StdFont
@@ -502,8 +675,22 @@ Dim OldFontHandle As Long
 Set PropFont = NewFont
 OldFontHandle = IPAddressFontHandle
 IPAddressFontHandle = CreateGDIFontFromOLEFont(PropFont)
-If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(1) <> 0 Then SendMessage IPAddressEditHandle(1), WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(2) <> 0 Then SendMessage IPAddressEditHandle(2), WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(3) <> 0 Then SendMessage IPAddressEditHandle(3), WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(4) <> 0 Then SendMessage IPAddressEditHandle(4), WM_SETFONT, IPAddressFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
+Dim hDCScreen As Long
+hDCScreen = GetDC(0)
+If hDCScreen <> 0 Then
+    Dim Size As SIZEAPI, hFontOld As Long
+    If IPAddressFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, IPAddressFontHandle)
+    GetTextExtentPoint32 hDCScreen, StrPtr("."), 1, Size
+    IPAddressDotSpacing = Size.CX
+    If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
+    ReleaseDC 0, hDCScreen
+End If
+Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Property
 
@@ -511,8 +698,22 @@ Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As Long
 OldFontHandle = IPAddressFontHandle
 IPAddressFontHandle = CreateGDIFontFromOLEFont(PropFont)
-If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(1) <> 0 Then SendMessage IPAddressEditHandle(1), WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(2) <> 0 Then SendMessage IPAddressEditHandle(2), WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(3) <> 0 Then SendMessage IPAddressEditHandle(3), WM_SETFONT, IPAddressFontHandle, ByVal 1&
+If IPAddressEditHandle(4) <> 0 Then SendMessage IPAddressEditHandle(4), WM_SETFONT, IPAddressFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
+Dim hDCScreen As Long
+hDCScreen = GetDC(0)
+If hDCScreen <> 0 Then
+    Dim Size As SIZEAPI, hFontOld As Long
+    If IPAddressFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, IPAddressFontHandle)
+    GetTextExtentPoint32 hDCScreen, StrPtr("."), 1, Size
+    IPAddressDotSpacing = Size.CX
+    If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
+    ReleaseDC 0, hDCScreen
+End If
+Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Sub
 
@@ -523,15 +724,56 @@ End Property
 
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
-If IPAddressHandle <> 0 And EnabledVisualStyles() = True Then
+IPAddressEnabledVisualStyles = EnabledVisualStyles()
+If IPAddressEnabledVisualStyles = True Then
     If PropVisualStyles = True Then
-        ActivateVisualStyles IPAddressHandle
+        If IPAddressEditHandle(1) <> 0 Then ActivateVisualStyles IPAddressEditHandle(1)
+        If IPAddressEditHandle(2) <> 0 Then ActivateVisualStyles IPAddressEditHandle(2)
+        If IPAddressEditHandle(3) <> 0 Then ActivateVisualStyles IPAddressEditHandle(3)
+        If IPAddressEditHandle(4) <> 0 Then ActivateVisualStyles IPAddressEditHandle(4)
     Else
-        RemoveVisualStyles IPAddressHandle
+        If IPAddressEditHandle(1) <> 0 Then RemoveVisualStyles IPAddressEditHandle(1)
+        If IPAddressEditHandle(2) <> 0 Then RemoveVisualStyles IPAddressEditHandle(2)
+        If IPAddressEditHandle(3) <> 0 Then RemoveVisualStyles IPAddressEditHandle(3)
+        If IPAddressEditHandle(4) <> 0 Then RemoveVisualStyles IPAddressEditHandle(4)
     End If
     Me.Refresh
 End If
 UserControl.PropertyChanged "VisualStyles"
+End Property
+
+Public Property Get BackColor() As OLE_COLOR
+Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object."
+Attribute BackColor.VB_UserMemId = -501
+BackColor = UserControl.BackColor
+End Property
+
+Public Property Let BackColor(ByVal Value As OLE_COLOR)
+UserControl.BackColor = Value
+Me.Refresh
+
+#If ImplementThemedBorder = True Then
+
+If PropBorderStyle = CCBorderStyleSunken Then
+    ' Redraw the border to consider the new back color for the themed border, if any.
+    RedrawWindow UserControl.hWnd, 0, 0, RDW_FRAME Or RDW_INVALIDATE Or RDW_UPDATENOW Or RDW_NOCHILDREN
+End If
+
+#End If
+
+UserControl.PropertyChanged "BackColor"
+End Property
+
+Public Property Get ForeColor() As OLE_COLOR
+Attribute ForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in an object."
+Attribute ForeColor.VB_UserMemId = -513
+ForeColor = UserControl.ForeColor
+End Property
+
+Public Property Let ForeColor(ByVal Value As OLE_COLOR)
+UserControl.ForeColor = Value
+Me.Refresh
+UserControl.PropertyChanged "ForeColor"
 End Property
 
 Public Property Get Enabled() As Boolean
@@ -542,7 +784,10 @@ End Property
 
 Public Property Let Enabled(ByVal Value As Boolean)
 UserControl.Enabled = Value
-If IPAddressHandle <> 0 Then EnableWindow IPAddressHandle, IIf(Value = True, 1, 0)
+If IPAddressEditHandle(1) <> 0 Then EnableWindow IPAddressEditHandle(1), IIf(Value = True, 1, 0)
+If IPAddressEditHandle(2) <> 0 Then EnableWindow IPAddressEditHandle(2), IIf(Value = True, 1, 0)
+If IPAddressEditHandle(3) <> 0 Then EnableWindow IPAddressEditHandle(3), IIf(Value = True, 1, 0)
+If IPAddressEditHandle(4) <> 0 Then EnableWindow IPAddressEditHandle(4), IIf(Value = True, 1, 0)
 UserControl.PropertyChanged "Enabled"
 End Property
 
@@ -613,103 +858,251 @@ PropMouseTrack = Value
 UserControl.PropertyChanged "MouseTrack"
 End Property
 
-Public Property Get ForeColor() As OLE_COLOR
-Attribute ForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in an object. Only applicable if the enabled property is set to true. This property is ignored at design time."
-ForeColor = PropForeColor
+Public Property Get RightToLeft() As Boolean
+Attribute RightToLeft.VB_Description = "Determines text display direction and control visual appearance on a bidirectional system."
+Attribute RightToLeft.VB_UserMemId = -611
+RightToLeft = PropRightToLeft
 End Property
 
-Public Property Let ForeColor(ByVal Value As OLE_COLOR)
-PropForeColor = Value
-Me.Refresh
-UserControl.PropertyChanged "ForeColor"
+Public Property Let RightToLeft(ByVal Value As Boolean)
+PropRightToLeft = Value
+UserControl.RightToLeft = PropRightToLeft
+Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
+Dim dwMask As Long
+If PropRightToLeft = True Then dwMask = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
+If IPAddressEditHandle(1) <> 0 Then Call ComCtlsSetRightToLeft(IPAddressEditHandle(1), dwMask)
+If IPAddressEditHandle(2) <> 0 Then Call ComCtlsSetRightToLeft(IPAddressEditHandle(2), dwMask)
+If IPAddressEditHandle(3) <> 0 Then Call ComCtlsSetRightToLeft(IPAddressEditHandle(3), dwMask)
+If IPAddressEditHandle(4) <> 0 Then Call ComCtlsSetRightToLeft(IPAddressEditHandle(4), dwMask)
+UserControl.PropertyChanged "RightToLeft"
+End Property
+
+Public Property Get RightToLeftMode() As CCRightToLeftModeConstants
+Attribute RightToLeftMode.VB_Description = "Returns/sets the right-to-left mode."
+RightToLeftMode = PropRightToLeftMode
+End Property
+
+Public Property Let RightToLeftMode(ByVal Value As CCRightToLeftModeConstants)
+Select Case Value
+    Case CCRightToLeftModeNoControl, CCRightToLeftModeVBAME, CCRightToLeftModeSystemLocale, CCRightToLeftModeUserLocale, CCRightToLeftModeOSLanguage
+        PropRightToLeftMode = Value
+    Case Else
+        Err.Raise 380
+End Select
+Me.RightToLeft = PropRightToLeft
+UserControl.PropertyChanged "RightToLeftMode"
+End Property
+
+Public Property Get BorderStyle() As CCBorderStyleConstants
+Attribute BorderStyle.VB_Description = "Returns/sets the border style."
+Attribute BorderStyle.VB_UserMemId = -504
+BorderStyle = PropBorderStyle
+End Property
+
+Public Property Let BorderStyle(ByVal Value As CCBorderStyleConstants)
+Select Case Value
+    Case CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
+        PropBorderStyle = Value
+    Case Else
+        Err.Raise 380
+End Select
+Call ComCtlsChangeBorderStyle(UserControl.hWnd, PropBorderStyle)
+Call UserControl_Resize
+UserControl.PropertyChanged "BorderStyle"
+End Property
+
+Public Property Get Text() As String
+Attribute Text.VB_Description = "Returns/sets the text contained in an object."
+Attribute Text.VB_UserMemId = 0
+Attribute Text.VB_MemberFlags = "200"
+Dim Length(1 To 4) As Long
+If IPAddressEditHandle(1) <> 0 Then Length(1) = SendMessage(IPAddressEditHandle(1), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If IPAddressEditHandle(2) <> 0 Then Length(2) = SendMessage(IPAddressEditHandle(2), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If IPAddressEditHandle(3) <> 0 Then Length(3) = SendMessage(IPAddressEditHandle(3), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If IPAddressEditHandle(4) <> 0 Then Length(4) = SendMessage(IPAddressEditHandle(4), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If Length(1) > 0 Or Length(2) > 0 Or Length(3) > 0 Or Length(4) > 0 Then
+    Dim Buffer(1 To 4) As String
+    If Length(1) > 0 Then
+        Buffer(1) = String$(Length(1), vbNullChar)
+        SendMessage IPAddressEditHandle(1), WM_GETTEXT, Length(1) + 1, ByVal StrPtr(Buffer(1))
+    End If
+    If Length(2) > 0 Then
+        Buffer(2) = String$(Length(2), vbNullChar)
+        SendMessage IPAddressEditHandle(2), WM_GETTEXT, Length(2) + 1, ByVal StrPtr(Buffer(2))
+    End If
+    If Length(3) > 0 Then
+        Buffer(3) = String$(Length(3), vbNullChar)
+        SendMessage IPAddressEditHandle(3), WM_GETTEXT, Length(3) + 1, ByVal StrPtr(Buffer(3))
+    End If
+    If Length(4) > 0 Then
+        Buffer(4) = String$(Length(4), vbNullChar)
+        SendMessage IPAddressEditHandle(4), WM_GETTEXT, Length(4) + 1, ByVal StrPtr(Buffer(4))
+    End If
+    Text = Buffer(1) & "." & Buffer(2) & "." & Buffer(3) & "." & Buffer(4)
+End If
+End Property
+
+Public Property Let Text(ByVal Value As String)
+Dim OldText As String
+OldText = Me.Text
+If Value = vbNullString Then
+    IPAddressChangeFrozen = True
+    If IPAddressEditHandle(1) <> 0 Then SendMessage IPAddressEditHandle(1), WM_SETTEXT, 0, ByVal 0&
+    If IPAddressEditHandle(2) <> 0 Then SendMessage IPAddressEditHandle(2), WM_SETTEXT, 0, ByVal 0&
+    If IPAddressEditHandle(3) <> 0 Then SendMessage IPAddressEditHandle(3), WM_SETTEXT, 0, ByVal 0&
+    If IPAddressEditHandle(4) <> 0 Then SendMessage IPAddressEditHandle(4), WM_SETTEXT, 0, ByVal 0&
+    IPAddressChangeFrozen = False
+    If Not OldText = vbNullString Then RaiseEvent Change
+Else
+    Dim Buffer(0 To 3) As String
+    Dim Pos1 As Long, Pos2 As Long, i As Long, j As Long
+    Do
+        If i > 3 Then i = -1: Exit Do
+        Pos1 = InStr(Pos1 + 1, Value, ".")
+        If Pos1 > 0 Then
+            Buffer(i) = Mid$(Value, Pos2 + 1, Pos1 - Pos2 - 1)
+        Else
+            Buffer(i) = Mid$(Value, Pos2 + 1)
+        End If
+        Pos2 = Pos1
+        i = i + 1
+    Loop Until Pos1 = 0
+    If i = 4 Then
+        Dim InvalidText As Boolean
+        For i = 0 To 3
+            If Len(Buffer(i)) > 3 Then
+                InvalidText = True
+                Exit For
+            Else
+                For j = 1 To Len(Buffer(i))
+                    If InStr("0123456789", Mid$(Buffer(i), j, 1)) = 0 Then
+                        InvalidText = True
+                        Exit For
+                    End If
+                Next j
+            End If
+            If InvalidText = True Then Exit For
+        Next i
+        If InvalidText = False Then
+            Dim LngValue(0 To 3) As Long
+            For i = 0 To 3
+                On Error Resume Next
+                LngValue(i) = CLng(Buffer(i))
+                On Error GoTo 0
+                If LngValue(i) < IPAddressMin(i + 1) Then
+                    Buffer(i) = CStr(IPAddressMin(i + 1))
+                ElseIf LngValue(i) > IPAddressMax(i + 1) Then
+                    Buffer(i) = CStr(IPAddressMax(i + 1))
+                End If
+                IPAddressChangeFrozen = True
+                If IPAddressEditHandle(i + 1) <> 0 Then SendMessage IPAddressEditHandle(i + 1), WM_SETTEXT, 0, ByVal StrPtr(Buffer(i))
+                IPAddressChangeFrozen = False
+            Next i
+            If Not OldText = Buffer(0) & "." & Buffer(1) & "." & Buffer(2) & "." & Buffer(3) Then RaiseEvent Change
+        Else
+            If IPAddressDesignMode = True Then
+                MsgBox "Invalid property value", vbCritical + vbOKOnly
+                Exit Property
+            Else
+                Err.Raise 380
+            End If
+        End If
+    Else
+        If IPAddressDesignMode = True Then
+            MsgBox "Invalid property value", vbCritical + vbOKOnly
+            Exit Property
+        Else
+            Err.Raise 380
+        End If
+    End If
+End If
+PropText = Value
+UserControl.PropertyChanged "Text"
+End Property
+
+Public Property Get AutoSelect() As IpaAutoSelectConstants
+Attribute AutoSelect.VB_Description = "Returns/sets which item will be selected automatically upon keyboard focus."
+AutoSelect = PropAutoSelect
+End Property
+
+Public Property Let AutoSelect(ByVal Value As IpaAutoSelectConstants)
+Select Case Value
+    Case IpaAutoSelectNone, IpaAutoSelectFirst, IpaAutoSelectSecond, IpaAutoSelectThird, IpaAutoSelectFourth, IpaAutoSelectBlank
+        PropAutoSelect = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "AutoSelect"
+End Property
+
+Public Property Get Locked() As Boolean
+Attribute Locked.VB_Description = "Returns/sets a value indicating whether the contents can be edited."
+Locked = PropLocked
+End Property
+
+Public Property Let Locked(ByVal Value As Boolean)
+PropLocked = Value
+If IPAddressEditHandle(1) <> 0 Then SendMessage IPAddressEditHandle(1), EM_SETREADONLY, IIf(PropLocked = True, 1, 0), ByVal 0&
+If IPAddressEditHandle(2) <> 0 Then SendMessage IPAddressEditHandle(2), EM_SETREADONLY, IIf(PropLocked = True, 1, 0), ByVal 0&
+If IPAddressEditHandle(3) <> 0 Then SendMessage IPAddressEditHandle(3), EM_SETREADONLY, IIf(PropLocked = True, 1, 0), ByVal 0&
+If IPAddressEditHandle(4) <> 0 Then SendMessage IPAddressEditHandle(4), EM_SETREADONLY, IIf(PropLocked = True, 1, 0), ByVal 0&
+UserControl.PropertyChanged "Locked"
 End Property
 
 Private Sub CreateIPAddress()
-If IPAddressHandle <> 0 Then Exit Sub
-Dim dwStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE
-IPAddressHandle = CreateWindowEx(0, StrPtr("SysIPAddress32"), StrPtr("IP Address"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
-If IPAddressHandle <> 0 Then
-    Dim hWnd(1 To 4) As Long
-    hWnd(1) = FindWindowEx(IPAddressHandle, 0, StrPtr("Edit"), 0)
-    hWnd(2) = FindWindowEx(IPAddressHandle, hWnd(1), StrPtr("Edit"), 0)
-    hWnd(3) = FindWindowEx(IPAddressHandle, hWnd(2), StrPtr("Edit"), 0)
-    hWnd(4) = FindWindowEx(IPAddressHandle, hWnd(3), StrPtr("Edit"), 0)
-    IPAddressEditHandle(1) = hWnd(4)
-    IPAddressEditHandle(2) = hWnd(3)
-    IPAddressEditHandle(3) = hWnd(2)
-    IPAddressEditHandle(4) = hWnd(1)
-    If IPAddressEditHandle(1) = 0 Or IPAddressEditHandle(2) = 0 Or IPAddressEditHandle(3) = 0 Or IPAddressEditHandle(4) = 0 Then
-        ShowWindow IPAddressHandle, SW_HIDE
-        SetParent IPAddressHandle, 0
-        DestroyWindow IPAddressHandle
-        IPAddressHandle = 0
-        Erase IPAddressEditHandle()
-        Exit Sub
-    End If
-End If
-PropMin(1) = 0
-PropMin(2) = 0
-PropMin(3) = 0
-PropMin(4) = 0
-PropMax(1) = 255
-PropMax(2) = 255
-PropMax(3) = 255
-PropMax(4) = 255
+If IPAddressEditHandle(1) <> 0 Or IPAddressEditHandle(2) <> 0 Or IPAddressEditHandle(3) <> 0 Or IPAddressEditHandle(4) <> 0 Then Exit Sub
+Dim dwStyle As Long, dwExStyle As Long
+dwStyle = WS_CHILD Or WS_VISIBLE Or ES_CENTER Or ES_AUTOHSCROLL Or ES_NUMBER
+If PropRightToLeft = True Then dwExStyle = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
+IPAddressRTLReading(1) = CBool((dwExStyle And WS_EX_RTLREADING) = WS_EX_RTLREADING)
+If PropLocked = True Then dwStyle = dwStyle Or ES_READONLY
+IPAddressEditHandle(1) = CreateWindowEx(dwExStyle, StrPtr("Edit"), 0, dwStyle, 0, 0, 0, 0, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+If IPAddressEditHandle(1) <> 0 Then SendMessage IPAddressEditHandle(1), EM_SETLIMITTEXT, 3, ByVal 0&
+IPAddressRTLReading(2) = IPAddressRTLReading(1)
+IPAddressEditHandle(2) = CreateWindowEx(dwExStyle, StrPtr("Edit"), 0, dwStyle, 0, 0, 0, 0, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+If IPAddressEditHandle(2) <> 0 Then SendMessage IPAddressEditHandle(2), EM_SETLIMITTEXT, 3, ByVal 0&
+IPAddressRTLReading(3) = IPAddressRTLReading(1)
+IPAddressEditHandle(3) = CreateWindowEx(dwExStyle, StrPtr("Edit"), 0, dwStyle, 0, 0, 0, 0, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+If IPAddressEditHandle(3) <> 0 Then SendMessage IPAddressEditHandle(3), EM_SETLIMITTEXT, 3, ByVal 0&
+IPAddressRTLReading(4) = IPAddressRTLReading(1)
+IPAddressEditHandle(4) = CreateWindowEx(dwExStyle, StrPtr("Edit"), 0, dwStyle, 0, 0, 0, 0, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+If IPAddressEditHandle(4) <> 0 Then SendMessage IPAddressEditHandle(4), EM_SETLIMITTEXT, 3, ByVal 0&
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
+Me.Text = PropText
 If IPAddressDesignMode = False Then
-    If IPAddressHandle <> 0 Then
-        Call ComCtlsSetSubclass(IPAddressHandle, Me, 1)
-        If IPAddressEditHandle(1) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(1), Me, 2)
-        If IPAddressEditHandle(2) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(2), Me, 2)
-        If IPAddressEditHandle(3) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(3), Me, 2)
-        If IPAddressEditHandle(4) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(4), Me, 2)
-    End If
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
-End If
-End Sub
-
-Private Sub ReCreateIPAddress()
-If IPAddressDesignMode = False Then
-    Dim Locked As Boolean
-    Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
-    Dim FieldText(1 To 4) As String, Field As Long
-    If IPAddressHandle <> 0 Then
-        For Field = 1 To 4
-            FieldText(Field) = String(SendMessage(IPAddressEditHandle(Field), WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
-            SendMessage IPAddressEditHandle(Field), WM_GETTEXT, Len(FieldText(Field)) + 1, ByVal StrPtr(FieldText(Field))
-        Next Field
-    End If
-    Call DestroyIPAddress
-    Call CreateIPAddress
-    If IPAddressHandle <> 0 Then
-        For Field = 1 To 4
-            If Not FieldText(Field) = vbNullString Then SendMessage IPAddressEditHandle(Field), WM_SETTEXT, 0, ByVal StrPtr(FieldText(Field))
-        Next Field
-    End If
-    If Locked = True Then LockWindowUpdate 0
-    Me.Refresh
-Else
-    Call DestroyIPAddress
-    Call CreateIPAddress
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
+    If IPAddressEditHandle(1) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(1), Me, 1)
+    If IPAddressEditHandle(2) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(2), Me, 2)
+    If IPAddressEditHandle(3) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(3), Me, 3)
+    If IPAddressEditHandle(4) <> 0 Then Call ComCtlsSetSubclass(IPAddressEditHandle(4), Me, 4)
 End If
 End Sub
 
 Private Sub DestroyIPAddress()
-If IPAddressHandle = 0 Then Exit Sub
-Call ComCtlsRemoveSubclass(IPAddressHandle)
+If IPAddressEditHandle(1) = 0 And IPAddressEditHandle(2) = 0 And IPAddressEditHandle(3) = 0 And IPAddressEditHandle(4) = 0 Then Exit Sub
+Call ComCtlsRemoveSubclass(UserControl.hWnd)
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(1))
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(2))
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(3))
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(4))
-Call ComCtlsRemoveSubclass(UserControl.hWnd)
-ShowWindow IPAddressHandle, SW_HIDE
-SetParent IPAddressHandle, 0
-DestroyWindow IPAddressHandle
-IPAddressHandle = 0
-Erase IPAddressEditHandle()
+ShowWindow IPAddressEditHandle(1), SW_HIDE
+ShowWindow IPAddressEditHandle(2), SW_HIDE
+ShowWindow IPAddressEditHandle(3), SW_HIDE
+ShowWindow IPAddressEditHandle(4), SW_HIDE
+SetParent IPAddressEditHandle(1), 0
+SetParent IPAddressEditHandle(2), 0
+SetParent IPAddressEditHandle(3), 0
+SetParent IPAddressEditHandle(4), 0
+DestroyWindow IPAddressEditHandle(1)
+DestroyWindow IPAddressEditHandle(2)
+DestroyWindow IPAddressEditHandle(3)
+DestroyWindow IPAddressEditHandle(4)
+IPAddressEditHandle(1) = 0
+IPAddressEditHandle(2) = 0
+IPAddressEditHandle(3) = 0
+IPAddressEditHandle(4) = 0
 If IPAddressFontHandle <> 0 Then
     DeleteObject IPAddressFontHandle
     IPAddressFontHandle = 0
@@ -723,216 +1116,320 @@ UserControl.Refresh
 RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
-Public Property Get Min(ByVal Field As Long) As Byte
-Attribute Min.VB_Description = "Returns/sets the minimum value that the specified field accepts."
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-Min = PropMin(Field)
+Public Property Get SelectedItem() As Integer
+Attribute SelectedItem.VB_Description = "Returns/sets a reference to the currently selected item."
+Attribute SelectedItem.VB_MemberFlags = "400"
+SelectedItem = IPAddressSelectedItem
 End Property
 
-Public Property Let Min(ByVal Field As Long, ByVal Value As Byte)
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-If Value > PropMax(Field) Then Value = PropMax(Field)
-PropMin(Field) = Value
-If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, IPM_SETRANGE, Field - 1, ByVal MakeWord(PropMin(Field), PropMax(Field))
+Public Property Let SelectedItem(ByVal Value As Integer)
+If Value > 4 Or Value < 1 Then Err.Raise 380
+IPAddressSelectedItem = Value
+If IPAddressEditFocusHwnd <> 0 Then
+    UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+    SetFocusAPI IPAddressEditHandle(IPAddressSelectedItem)
+    SendMessage IPAddressEditHandle(IPAddressSelectedItem), EM_SETSEL, 0, ByVal -1&
+End If
 End Property
 
-Public Property Get Max(ByVal Field As Long) As Byte
-Attribute Max.VB_Description = "Returns/sets the maximum value that the specified field accepts."
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-Max = PropMax(Field)
+Public Property Get Min(ByVal Item As Integer) As Byte
+Attribute Min.VB_Description = "Returns/sets the minimum value that the specified item accepts."
+Attribute Min.VB_MemberFlags = "400"
+If Item > 4 Or Item < 1 Then Err.Raise 5
+Min = IPAddressMin(Item)
 End Property
 
-Public Property Let Max(ByVal Field As Long, ByVal Value As Byte)
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-If Value < PropMin(Field) Then Value = PropMin(Field)
-PropMax(Field) = Value
-If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, IPM_SETRANGE, Field - 1, ByVal MakeWord(PropMin(Field), PropMax(Field))
+Public Property Let Min(ByVal Item As Integer, ByVal Value As Byte)
+If Item > 4 Or Item < 1 Then Err.Raise 5
+If Value > IPAddressMax(Item) Then Value = IPAddressMax(Item)
+IPAddressMin(Item) = Value
 End Property
 
-Public Property Get FieldValue(ByVal Field As Long) As Byte
-Attribute FieldValue.VB_Description = "Returns/sets the byte value of the specified field."
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-If IPAddressHandle <> 0 Then
-    Dim Text As String
-    Text = String(SendMessage(IPAddressEditHandle(Field), WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
-    SendMessage IPAddressEditHandle(Field), WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
-    If Not Text = vbNullString Then
+Public Property Get Max(ByVal Item As Integer) As Byte
+Attribute Max.VB_Description = "Returns/sets the maximum value that the specified item accepts."
+Attribute Max.VB_MemberFlags = "400"
+If Item > 4 Or Item < 1 Then Err.Raise 5
+Max = IPAddressMax(Item)
+End Property
+
+Public Property Let Max(ByVal Item As Integer, ByVal Value As Byte)
+If Item > 4 Or Item < 1 Then Err.Raise 5
+If Value < IPAddressMin(Item) Then Value = IPAddressMin(Item)
+IPAddressMax(Item) = Value
+End Property
+
+Public Property Get Value() As Long
+Attribute Value.VB_Description = "Returns/sets a value which represents the text of all four items."
+Attribute Value.VB_MemberFlags = "400"
+Dim Length(1 To 4) As Long
+If IPAddressEditHandle(1) <> 0 Then Length(1) = SendMessage(IPAddressEditHandle(1), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If IPAddressEditHandle(2) <> 0 Then Length(2) = SendMessage(IPAddressEditHandle(2), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If IPAddressEditHandle(3) <> 0 Then Length(3) = SendMessage(IPAddressEditHandle(3), WM_GETTEXTLENGTH, 0, ByVal 0&)
+If IPAddressEditHandle(4) <> 0 Then Length(4) = SendMessage(IPAddressEditHandle(4), WM_GETTEXTLENGTH, 0, ByVal 0&)
+Dim Buffer(1 To 4) As String
+If Length(1) > 0 Then
+    Buffer(1) = String$(Length(1), vbNullChar)
+    SendMessage IPAddressEditHandle(1), WM_GETTEXT, Length(1) + 1, ByVal StrPtr(Buffer(1))
+End If
+If Length(2) > 0 Then
+    Buffer(2) = String$(Length(2), vbNullChar)
+    SendMessage IPAddressEditHandle(2), WM_GETTEXT, Length(2) + 1, ByVal StrPtr(Buffer(2))
+End If
+If Length(3) > 0 Then
+    Buffer(3) = String$(Length(3), vbNullChar)
+    SendMessage IPAddressEditHandle(3), WM_GETTEXT, Length(3) + 1, ByVal StrPtr(Buffer(3))
+End If
+If Length(4) > 0 Then
+    Buffer(4) = String$(Length(4), vbNullChar)
+    SendMessage IPAddressEditHandle(4), WM_GETTEXT, Length(4) + 1, ByVal StrPtr(Buffer(4))
+End If
+Dim LngValue(1 To 4) As Long, i As Long
+For i = 1 To 4
+    On Error Resume Next
+    LngValue(i) = CLng(Buffer(i))
+    On Error GoTo 0
+Next i
+Value = MakeDWord(MakeWord(LngValue(4) And &HFF&, LngValue(3) And &HFF&), MakeWord(LngValue(2) And &HFF&, LngValue(1) And &HFF&))
+End Property
+
+Public Property Let Value(ByVal NewValue As Long)
+Dim OldText As String
+OldText = Me.Text
+Dim IntValue(1 To 4) As Integer
+IntValue(1) = HiWord(NewValue)
+IntValue(2) = LoByte(IntValue(1))
+IntValue(1) = HiByte(IntValue(1))
+IntValue(3) = LoWord(NewValue)
+IntValue(4) = LoByte(IntValue(3))
+IntValue(3) = HiByte(IntValue(3))
+IPAddressChangeFrozen = True
+Dim Buffer As String, NewText As String
+Buffer = CStr(IntValue(1))
+NewText = Buffer & "."
+If IPAddressEditHandle(1) <> 0 Then SendMessage IPAddressEditHandle(1), WM_SETTEXT, 0, ByVal StrPtr(Buffer)
+Buffer = CStr(IntValue(2))
+NewText = NewText & Buffer & "."
+If IPAddressEditHandle(2) <> 0 Then SendMessage IPAddressEditHandle(2), WM_SETTEXT, 0, ByVal StrPtr(Buffer)
+Buffer = CStr(IntValue(3))
+NewText = NewText & Buffer & "."
+If IPAddressEditHandle(3) <> 0 Then SendMessage IPAddressEditHandle(3), WM_SETTEXT, 0, ByVal StrPtr(Buffer)
+Buffer = CStr(IntValue(4))
+NewText = NewText & Buffer
+If IPAddressEditHandle(4) <> 0 Then SendMessage IPAddressEditHandle(4), WM_SETTEXT, 0, ByVal StrPtr(Buffer)
+IPAddressChangeFrozen = False
+If Not OldText = NewText Then RaiseEvent Change
+End Property
+
+Private Function CheckMinMaxFromWindow(ByVal hWnd As Long) As Boolean
+Dim Item As Integer
+Item = ItemFromWindow(hWnd)
+If Item > 0 Then
+    Dim StrValue As String
+    StrValue = String(SendMessage(hWnd, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
+    SendMessage hWnd, WM_GETTEXT, Len(StrValue) + 1, ByVal StrPtr(StrValue)
+    If Not StrValue = vbNullString Then
+        Dim LngValue As Long
         On Error Resume Next
-        FieldValue = CByte(Text)
+        LngValue = CLng(StrValue)
         On Error GoTo 0
+        If LngValue < IPAddressMin(Item) Then
+            StrValue = CStr(IPAddressMin(Item))
+            SendMessage hWnd, WM_SETTEXT, 0, ByVal StrPtr(StrValue)
+            CheckMinMaxFromWindow = True
+        ElseIf LngValue > IPAddressMax(Item) Then
+            StrValue = CStr(IPAddressMax(Item))
+            SendMessage hWnd, WM_SETTEXT, 0, ByVal StrPtr(StrValue)
+            CheckMinMaxFromWindow = True
+        End If
     End If
 End If
-End Property
+End Function
 
-Public Property Let FieldValue(ByVal Field As Long, ByVal Value As Byte)
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-If IPAddressHandle <> 0 Then
-    If Value < PropMin(Field) Then Value = PropMin(Field)
-    If Value > PropMax(Field) Then Value = PropMax(Field)
-    Dim Text As String
-    Text = CStr(Value)
-    SendMessage IPAddressEditHandle(Field), WM_SETTEXT, 0, ByVal StrPtr(Text)
+Private Function ItemFromWindow(ByVal hWnd As Long) As Integer
+If hWnd <> 0 Then
+    Select Case hWnd
+        Case IPAddressEditHandle(1)
+            ItemFromWindow = 1
+        Case IPAddressEditHandle(2)
+            ItemFromWindow = 2
+        Case IPAddressEditHandle(3)
+            ItemFromWindow = 3
+        Case IPAddressEditHandle(4)
+            ItemFromWindow = 4
+    End Select
 End If
-End Property
-
-Public Property Get Address() As String
-Attribute Address.VB_Description = "Returns/sets the currently displayed IP address. Setting this property to an empty string clears the displayed IP address. If this property is an empty string then the displayed IP address is blank."
-Attribute Address.VB_UserMemId = 0
-Attribute Address.VB_MemberFlags = "400"
-If IPAddressHandle <> 0 Then
-    If SendMessage(IPAddressHandle, IPM_ISBLANK, 0, ByVal 0&) = 0 Then
-        Dim Buffer As Long
-        SendMessage IPAddressHandle, IPM_GETADDRESS, 0, ByVal VarPtr(Buffer)
-        Address = HiByte(HiWord(Buffer)) & "." & LoByte(HiWord(Buffer)) & "." & HiByte(LoWord(Buffer)) & "." & LoByte(LoWord(Buffer))
-    End If
-End If
-End Property
-
-Public Property Let Address(ByVal Value As String)
-If IPAddressHandle <> 0 Then
-    If Not Value = vbNullString Then
-        On Error GoTo Cancel
-        Dim AddrValue(1 To 4) As Byte
-        Dim Start As Long, Field As Long
-        Do
-            Field = Field + 1
-            Start = InStr(Value, ".")
-            If Start = 0 Then Exit Do
-            AddrValue(Field) = CByte(Left(Value, Start - 1))
-            Value = Mid(Value, Start + 1)
-        Loop
-        AddrValue(Field) = CByte(Left(Value, Len(Value)))
-        On Error GoTo 0
-        SendMessage IPAddressHandle, IPM_SETADDRESS, 0, ByVal MakeDWord(MakeWord(AddrValue(4), AddrValue(3)), MakeWord(AddrValue(2), AddrValue(1)))
-    Else
-        SendMessage IPAddressHandle, IPM_CLEARADDRESS, 0, ByVal 0&
-    End If
-    RaiseEvent FieldChange(1)
-    RaiseEvent FieldChange(2)
-    RaiseEvent FieldChange(3)
-    RaiseEvent FieldChange(4)
-End If
-Exit Property
-Cancel:
-Err.Raise 380
-End Property
-
-Public Sub SetFocusToField(ByVal Field As Long)
-Attribute SetFocusToField.VB_Description = "Sets the keyboard focus to the specified field in the IP address control. All of the text in that field will be selected."
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-UserControl.SetFocus
-If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, IPM_SETFOCUS, Field - 1, ByVal 0&
-End Sub
-
-Public Function IsEmptyField(ByVal Field As Long) As Boolean
-Attribute IsEmptyField.VB_Description = "Determines whether the specified field is empty or not."
-If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
-If IPAddressHandle <> 0 Then IsEmptyField = CBool(SendMessage(IPAddressEditHandle(Field), WM_GETTEXTLENGTH, 0, ByVal 0&) = 0)
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
-    Case 1
-        ISubclass_Message = WindowProcControl(hWnd, wMsg, wParam, lParam)
-    Case 2
-        ISubclass_Message = WindowProcEdit(hWnd, wMsg, wParam, lParam)
-    Case 3
+    Case 0
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+    Case 1 To 4
+        ISubclass_Message = WindowProcEdit(hWnd, wMsg, wParam, lParam, dwRefData)
 End Select
 End Function
 
-Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
-    Case WM_SETFOCUS
-        If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
-        Call ActivateIPAO(Me)
-    Case WM_KILLFOCUS
-        Call DeActivateIPAO
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If IPAddressTopDesignMode = False And GetFocus() <> IPAddressHandle And (GetFocus() <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (GetFocus() <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (GetFocus() <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (GetFocus() <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_COMMAND
+        Select Case HiWord(wParam)
+            Case EN_CHANGE
+                If IPAddressChangeFrozen = False Then RaiseEvent Change
+        End Select
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
                 SetCursor LoadCursor(0, MousePointerID(PropMousePointer))
-                WindowProcControl = 1
+                WindowProcUserControl = 1
                 Exit Function
             ElseIf PropMousePointer = 99 Then
                 If Not PropMouseIcon Is Nothing Then
                     SetCursor PropMouseIcon.Handle
-                    WindowProcControl = 1
+                    WindowProcUserControl = 1
                     Exit Function
                 End If
             End If
         End If
-    Case WM_COMMAND
-        Const EN_CHANGE As Long = &H300
-        If HiWord(wParam) = EN_CHANGE Then RaiseEvent Change
-    Case WM_CTLCOLOREDIT
-        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-        SetTextColor wParam, WinColor(PropForeColor)
-        Exit Function
-End Select
-WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-Select Case wMsg
-    Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
-        Dim X As Single
-        Dim Y As Single
-        X = UserControl.ScaleX(Get_X_lParam(lParam), vbPixels, vbTwips)
-        Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
-        Select Case wMsg
-            Case WM_LBUTTONDOWN
-                RaiseEvent MouseDown(vbLeftButton, GetShiftStateFromParam(wParam), X, Y)
-            Case WM_MBUTTONDOWN
-                RaiseEvent MouseDown(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
-            Case WM_RBUTTONDOWN
-                RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
-            Case WM_MOUSEMOVE
-                If (IPAddressMouseOver(0) = False And PropMouseTrack = True) Or (IPAddressMouseOver(5) = False And PropMouseTrack = True) Then
-                    If IPAddressMouseOver(0) = False And PropMouseTrack = True Then IPAddressMouseOver(0) = True
-                    If IPAddressMouseOver(5) = False And PropMouseTrack = True Then
-                        IPAddressMouseOver(5) = True
-                        RaiseEvent MouseEnter
+    
+    #If ImplementThemedBorder = True Then
+    
+    Case WM_THEMECHANGED, WM_STYLECHANGED, WM_ENABLE
+        If wMsg = WM_THEMECHANGED Then IPAddressEnabledVisualStyles = EnabledVisualStyles()
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
+            If IPAddressEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+        End If
+    Case WM_NCPAINT
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
+            If IPAddressEnabledVisualStyles = True Then
+                Dim Theme As Long
+                Theme = OpenThemeData(hWnd, StrPtr("Edit"))
+                If Theme <> 0 Then
+                    WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                    Dim hDC As Long
+                    If wParam = 1 Then ' Alias for entire window
+                        hDC = GetWindowDC(hWnd)
+                    Else
+                        hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
                     End If
-                    Call ComCtlsRequestMouseLeave(hWnd)
+                    If hDC <> 0 Then
+                        Dim BorderX As Long, BorderY As Long
+                        Dim RC1 As RECT, RC2 As RECT, WndRect As RECT
+                        Const SM_CXEDGE As Long = 45
+                        Const SM_CYEDGE As Long = 46
+                        BorderX = GetSystemMetrics(SM_CXEDGE)
+                        BorderY = GetSystemMetrics(SM_CYEDGE)
+                        GetWindowRect hWnd, WndRect
+                        With UserControl
+                        SetRect RC1, BorderX, BorderY, (WndRect.Right - WndRect.Left) - BorderX, (WndRect.Bottom - WndRect.Top) - BorderY
+                        SetRect RC2, 0, 0, (WndRect.Right - WndRect.Left), (WndRect.Bottom - WndRect.Top)
+                        End With
+                        ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
+                        Dim EditPart As Long, EditState As Long
+                        EditPart = EP_EDITBORDER_NOSCROLL
+                        Dim Brush As Long
+                        If Me.Enabled = False Then
+                            EditState = EPSN_DISABLED
+                            Brush = CreateSolidBrush(WinColor(vbButtonFace))
+                        Else
+                            If IPAddressEditFocusHwnd <> 0 Then
+                                EditState = EPSN_FOCUSED
+                            Else
+                                EditState = EPSN_NORMAL
+                            End If
+                            Brush = CreateSolidBrush(WinColor(Me.BackColor))
+                        End If
+                        FillRect hDC, RC2, Brush
+                        DeleteObject Brush
+                        If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
+                        DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
+                        ReleaseDC hWnd, hDC
+                    End If
+                    CloseThemeData Theme
+                    Exit Function
                 End If
-                RaiseEvent MouseMove(GetMouseStateFromParam(wParam), GetShiftStateFromParam(wParam), X, Y)
-            Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
-                Select Case wMsg
-                    Case WM_LBUTTONUP
-                        RaiseEvent MouseUp(vbLeftButton, GetShiftStateFromParam(wParam), X, Y)
-                    Case WM_MBUTTONUP
-                        RaiseEvent MouseUp(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
-                    Case WM_RBUTTONUP
-                        RaiseEvent MouseUp(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
-                End Select
-        End Select
+            End If
+        End If
+    
+    #End If
+    
+End Select
+WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_SETFOCUS
+        If UCNoSetFocusFwd = False Then
+            Select Case PropAutoSelect
+                Case IpaAutoSelectNone
+                    If IPAddressEditHandle(IPAddressSelectedItem) <> 0 Then
+                        SetFocusAPI IPAddressEditHandle(IPAddressSelectedItem)
+                        SendMessage IPAddressEditHandle(IPAddressSelectedItem), EM_SETSEL, 0, ByVal -1&
+                    End If
+                Case IpaAutoSelectFirst
+                    If IPAddressEditHandle(1) <> 0 Then
+                        SetFocusAPI IPAddressEditHandle(1)
+                        SendMessage IPAddressEditHandle(1), EM_SETSEL, 0, ByVal -1&
+                    End If
+                Case IpaAutoSelectSecond
+                    If IPAddressEditHandle(2) <> 0 Then
+                        SetFocusAPI IPAddressEditHandle(2)
+                        SendMessage IPAddressEditHandle(2), EM_SETSEL, 0, ByVal -1&
+                    End If
+                Case IpaAutoSelectThird
+                    If IPAddressEditHandle(3) <> 0 Then
+                        SetFocusAPI IPAddressEditHandle(3)
+                        SendMessage IPAddressEditHandle(3), EM_SETSEL, 0, ByVal -1&
+                    End If
+                Case IpaAutoSelectFourth
+                    If IPAddressEditHandle(4) <> 0 Then
+                        SetFocusAPI IPAddressEditHandle(4)
+                        SendMessage IPAddressEditHandle(4), EM_SETSEL, 0, ByVal -1&
+                    End If
+                Case IpaAutoSelectBlank
+                    Dim NonBlank(1 To 4) As Boolean
+                    If IPAddressEditHandle(1) <> 0 Then
+                        If SendMessage(IPAddressEditHandle(1), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(1) = True
+                    End If
+                    If IPAddressEditHandle(2) <> 0 Then
+                        If SendMessage(IPAddressEditHandle(2), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(2) = True
+                    End If
+                    If IPAddressEditHandle(3) <> 0 Then
+                        If SendMessage(IPAddressEditHandle(3), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(3) = True
+                    End If
+                    If IPAddressEditHandle(4) <> 0 Then
+                        If SendMessage(IPAddressEditHandle(4), WM_GETTEXTLENGTH, 0, ByVal 0&) > 0 Then NonBlank(4) = True
+                    End If
+                    If NonBlank(1) = True And NonBlank(2) = True And NonBlank(3) = True And NonBlank(4) = True Then
+                        ' Set to first when all are non-blank.
+                        If IPAddressEditHandle(1) <> 0 Then
+                            SetFocusAPI IPAddressEditHandle(1)
+                            SendMessage IPAddressEditHandle(1), EM_SETSEL, 0, ByVal -1&
+                        End If
+                    Else
+                        If NonBlank(1) = False Then
+                            If IPAddressEditHandle(1) <> 0 Then
+                                SetFocusAPI IPAddressEditHandle(1)
+                                SendMessage IPAddressEditHandle(1), EM_SETSEL, 0, ByVal -1&
+                            End If
+                        ElseIf NonBlank(2) = False Then
+                            If IPAddressEditHandle(2) <> 0 Then
+                                SetFocusAPI IPAddressEditHandle(2)
+                                SendMessage IPAddressEditHandle(2), EM_SETSEL, 0, ByVal -1&
+                            End If
+                        ElseIf NonBlank(3) = False Then
+                            If IPAddressEditHandle(3) <> 0 Then
+                                SetFocusAPI IPAddressEditHandle(3)
+                                SendMessage IPAddressEditHandle(3), EM_SETSEL, 0, ByVal -1&
+                            End If
+                        ElseIf NonBlank(4) = False Then
+                            If IPAddressEditHandle(4) <> 0 Then
+                                SetFocusAPI IPAddressEditHandle(4)
+                                SendMessage IPAddressEditHandle(4), EM_SETSEL, 0, ByVal -1&
+                            End If
+                        End If
+                    End If
+            End Select
+        End If
     Case WM_MOUSELEAVE, WM_NCMOUSEMOVE
-        If wMsg = WM_NCMOUSEMOVE And IPAddressMouseOver(5) = False Then Exit Function
+        If wMsg = WM_NCMOUSEMOVE And IPAddressMouseOver(1) = False Then Exit Function
         Dim TME As TRACKMOUSEEVENTSTRUCT
         With TME
         .cbSize = LenB(TME)
@@ -942,40 +1439,127 @@ Select Case wMsg
         TrackMouseEvent TME
     Case WM_NCMOUSELEAVE
         IPAddressMouseOver(0) = False
-        If IPAddressMouseOver(5) = True Then
+        If IPAddressMouseOver(1) = True Then
             Dim Pos As Long, hWndFromPoint As Long
             Pos = GetMessagePos()
             hWndFromPoint = WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos))
             If (hWndFromPoint <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (hWndFromPoint <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (hWndFromPoint <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (hWndFromPoint <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
-                IPAddressMouseOver(5) = False
+                IPAddressMouseOver(1) = False
                 RaiseEvent MouseLeave
             End If
         End If
 End Select
 End Function
 
-Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Dim Index As Long
-If hWnd = IPAddressEditHandle(1) Then
-    Index = 1
-ElseIf hWnd = IPAddressEditHandle(2) Then
-    Index = 2
-ElseIf hWnd = IPAddressEditHandle(3) Then
-    Index = 3
-ElseIf hWnd = IPAddressEditHandle(4) Then
-    Index = 4
-End If
+Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
+Dim SelStart As Long, SelEnd As Long
 Select Case wMsg
     Case WM_SETFOCUS
+        If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
+        CheckMinMaxFromWindow hWnd
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
         If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                Select Case KeyCode
+                    Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyHome, vbKeyEnd, vbKeyBack
+                        Dim Shift As Integer
+                        Shift = GetShiftStateFromMsg()
+                        Select Case KeyCode
+                            Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight
+                                If (Shift And vbCtrlMask) = 0 Then SendMessage hWnd, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+                            Case vbKeyBack
+                                SendMessage hWnd, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+                        End Select
+                        If SelStart = SelEnd Then
+                            Dim Item As Integer
+                            Item = dwRefData
+                            Select Case KeyCode
+                                Case vbKeyUp, vbKeyLeft
+                                    If Item > 1 Then
+                                        If (Shift And vbCtrlMask) <> 0 Then
+                                            Item = Item - 1
+                                        Else
+                                            If IPAddressRTLReading(Item) = False Then
+                                                If SelEnd = 0 Then Item = Item - 1
+                                            Else
+                                                If SelEnd = SendMessage(hWnd, WM_GETTEXTLENGTH, 0, ByVal 0&) Then Item = Item - 1
+                                            End If
+                                        End If
+                                    End If
+                                Case vbKeyDown, vbKeyRight
+                                    If Item < 4 Then
+                                        If (Shift And vbCtrlMask) <> 0 Then
+                                            Item = Item + 1
+                                        Else
+                                            If IPAddressRTLReading(Item) = False Then
+                                                If SelEnd = SendMessage(hWnd, WM_GETTEXTLENGTH, 0, ByVal 0&) Then Item = Item + 1
+                                            Else
+                                                If SelEnd = 0 Then Item = Item + 1
+                                            End If
+                                        End If
+                                    End If
+                                Case vbKeyHome
+                                    Item = 1
+                                Case vbKeyEnd
+                                    Item = 4
+                                Case vbKeyBack
+                                    If (Shift And vbShiftMask) = 0 And (Shift And vbCtrlMask) = 0 Then
+                                        If Item > 1 Then
+                                            If SelEnd = 0 Then Item = Item - 1
+                                        End If
+                                    End If
+                            End Select
+                            If Item <> dwRefData Then
+                                If CheckMinMaxFromWindow(IPAddressEditHandle(dwRefData)) = False Then
+                                    If GetFocus() <> IPAddressEditHandle(Item) And IPAddressEditHandle(Item) <> 0 Then
+                                        UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+                                        SetFocusAPI IPAddressEditHandle(Item)
+                                        Select Case KeyCode
+                                            Case vbKeyUp, vbKeyLeft
+                                                If (Shift And vbCtrlMask) <> 0 Then
+                                                    SendMessage IPAddressEditHandle(Item), EM_SETSEL, 0, ByVal -1&
+                                                Else
+                                                    If IPAddressRTLReading(Item) = False Then
+                                                        SelEnd = SendMessage(IPAddressEditHandle(Item), WM_GETTEXTLENGTH, 0, ByVal 0&)
+                                                        SendMessage IPAddressEditHandle(Item), EM_SETSEL, SelEnd, ByVal SelEnd
+                                                    Else
+                                                        SendMessage IPAddressEditHandle(Item), EM_SETSEL, 0, ByVal 0&
+                                                    End If
+                                                End If
+                                            Case vbKeyDown, vbKeyRight
+                                                If (Shift And vbCtrlMask) <> 0 Then
+                                                    SendMessage IPAddressEditHandle(Item), EM_SETSEL, 0, ByVal -1&
+                                                Else
+                                                    If IPAddressRTLReading(Item) = False Then
+                                                        SendMessage IPAddressEditHandle(Item), EM_SETSEL, 0, ByVal 0&
+                                                    Else
+                                                        SelEnd = SendMessage(IPAddressEditHandle(Item), WM_GETTEXTLENGTH, 0, ByVal 0&)
+                                                        SendMessage IPAddressEditHandle(Item), EM_SETSEL, SelEnd, ByVal SelEnd
+                                                    End If
+                                                End If
+                                            Case vbKeyHome
+                                                SendMessage IPAddressEditHandle(Item), EM_SETSEL, 0, ByVal 0&
+                                            Case vbKeyEnd
+                                                SelEnd = SendMessage(IPAddressEditHandle(Item), WM_GETTEXTLENGTH, 0, ByVal 0&)
+                                                SendMessage IPAddressEditHandle(Item), EM_SETSEL, SelEnd, ByVal SelEnd
+                                            Case vbKeyBack
+                                                SelEnd = SendMessage(IPAddressEditHandle(Item), WM_GETTEXTLENGTH, 0, ByVal 0&)
+                                                SendMessage IPAddressEditHandle(Item), EM_SETSEL, SelEnd, ByVal SelEnd
+                                                If SelEnd > 0 Then PostMessage IPAddressEditHandle(Item), WM_KEYDOWN, vbKeyBack, ByVal 0&
+                                        End Select
+                                    End If
+                                End If
+                            End If
+                        End If
+                End Select
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
@@ -1000,12 +1584,44 @@ Select Case wMsg
         Else
             wParam = CIntToUInt(KeyChar)
         End If
+        Select Case wParam
+            Case 32, 46 ' " ", "."
+                SendMessage hWnd, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+                If SelStart = SelEnd And SelStart > 0 Then
+                    If dwRefData < 4 Then
+                        ' CheckMinMaxFromWindow validation not necessary as no modification happens.
+                        ' Just change focus to the next edit control.
+                        If GetFocus() <> IPAddressEditHandle(dwRefData + 1) And IPAddressEditHandle(dwRefData + 1) <> 0 Then
+                            UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+                            SetFocusAPI IPAddressEditHandle(dwRefData + 1)
+                            SendMessage IPAddressEditHandle(dwRefData + 1), EM_SETSEL, 0, ByVal -1&
+                        End If
+                    Else
+                        wParam = 0 ' Beep
+                    End If
+                End If
+                If wParam <> 0 Then Exit Function ' Avoid ES_NUMBER style balloon tip
+        End Select
     Case WM_UNICHAR
         If wParam = UNICODE_NOCHAR Then WindowProcEdit = 1 Else SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    Case WM_CONTEXTMENU
+        If wParam = hWnd Then
+            Dim P1 As POINTAPI, Handled As Boolean
+            P1.X = Get_X_lParam(lParam)
+            P1.Y = Get_Y_lParam(lParam)
+            If P1.X = -1 And P1.Y = -1 Then
+                ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
+                RaiseEvent ContextMenu(Handled, -1, -1)
+            Else
+                ScreenToClient UserControl.hWnd, P1
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition))
+            End If
+            If Handled = True Then Exit Function
+        End If
     Case WM_PASTE
         If ComCtlsSupportLevel() <= 1 Then
             Dim Text As String
@@ -1024,35 +1640,87 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_STYLECHANGING, WM_STYLECHANGED
+        Dim dwStyleOld As Long, dwStyleNew As Long
+        If wMsg = WM_STYLECHANGING And wParam = GWL_STYLE Then
+            CopyMemory dwStyleNew, ByVal UnsignedAdd(lParam, 4), 4
+            dwStyleOld = dwStyleNew
+            If (dwStyleNew And ES_LEFT) = ES_LEFT Then dwStyleNew = dwStyleNew And Not ES_LEFT
+            If (dwStyleNew And ES_CENTER) = ES_CENTER Then dwStyleNew = dwStyleNew And Not ES_CENTER
+            If (dwStyleNew And ES_RIGHT) = ES_RIGHT Then dwStyleNew = dwStyleNew And Not ES_RIGHT
+            ' Enforcing ES_CENTER style and circumvent unwanted modification.
+            ' For example, when changing the right-to-left reading in the default context menu.
+            dwStyleNew = dwStyleNew Or ES_CENTER
+            If dwStyleOld <> dwStyleNew Then CopyMemory ByVal UnsignedAdd(lParam, 4), dwStyleNew, 4
+        ElseIf wMsg = WM_STYLECHANGED And wParam = GWL_EXSTYLE Then
+            CopyMemory dwStyleNew, ByVal UnsignedAdd(lParam, 4), 4
+            IPAddressRTLReading(dwRefData) = CBool((dwStyleNew And WS_EX_RTLREADING) = WS_EX_RTLREADING)
+        End If
 End Select
 WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
+    Case WM_SETFOCUS, WM_KILLFOCUS
+        If wMsg = WM_SETFOCUS Then IPAddressEditFocusHwnd = hWnd Else IPAddressEditFocusHwnd = 0
+        
+        #If ImplementThemedBorder = True Then
+        
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
+            If IPAddressEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+        End If
+        
+        #End If
+        
+        If wMsg = WM_SETFOCUS Then
+            If dwRefData <> IPAddressSelectedItem Then
+                IPAddressSelectedItem = dwRefData
+                RaiseEvent SelChange
+            End If
+        End If
+    Case WM_CHAR
+        Select Case wParam
+            Case 48 To 57 ' "0-9"
+                SendMessage hWnd, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+                If SelStart = 3 And SelEnd = 3 Then
+                    If CheckMinMaxFromWindow(hWnd) = False Then
+                        If dwRefData < 4 Then
+                            If GetFocus() <> IPAddressEditHandle(dwRefData + 1) And IPAddressEditHandle(dwRefData + 1) <> 0 Then
+                                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+                                SetFocusAPI IPAddressEditHandle(dwRefData + 1)
+                                SendMessage IPAddressEditHandle(dwRefData + 1), EM_SETSEL, 0, ByVal -1&
+                            End If
+                        End If
+                    End If
+                End If
+        End Select
+    Case WM_LBUTTONDBLCLK, WM_MBUTTONDBLCLK, WM_RBUTTONDBLCLK
+        RaiseEvent DblClick
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
-        Dim P As POINTAPI
-        P.X = Get_X_lParam(lParam)
-        P.Y = Get_Y_lParam(lParam)
-        If IPAddressHandle <> 0 Then MapWindowPoints hWnd, IPAddressHandle, P, 1
+        Dim P2 As POINTAPI
+        P2.X = Get_X_lParam(lParam)
+        P2.Y = Get_Y_lParam(lParam)
+        MapWindowPoints hWnd, UserControl.hWnd, P2, 1
         Dim X As Single
         Dim Y As Single
-        X = UserControl.ScaleX(P.X, vbPixels, vbTwips)
-        Y = UserControl.ScaleY(P.Y, vbPixels, vbTwips)
+        X = UserControl.ScaleX(P2.X, vbPixels, vbTwips)
+        Y = UserControl.ScaleY(P2.Y, vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
                 RaiseEvent MouseDown(vbLeftButton, GetShiftStateFromParam(wParam), X, Y)
+                IPAddressIsClick = True
             Case WM_MBUTTONDOWN
                 RaiseEvent MouseDown(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
+                IPAddressIsClick = True
             Case WM_RBUTTONDOWN
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
+                IPAddressIsClick = True
             Case WM_MOUSEMOVE
-                If Index > 0 Then
-                    If (IPAddressMouseOver(Index) = False And PropMouseTrack = True) Or (IPAddressMouseOver(5) = False And PropMouseTrack = True) Then
-                        If IPAddressMouseOver(Index) = False And PropMouseTrack = True Then IPAddressMouseOver(Index) = True
-                        If IPAddressMouseOver(5) = False And PropMouseTrack = True Then
-                            IPAddressMouseOver(5) = True
-                            RaiseEvent MouseEnter
-                        End If
-                        Call ComCtlsRequestMouseLeave(hWnd)
+                If (IPAddressEditMouseOver(dwRefData) = False And PropMouseTrack = True) Or (IPAddressMouseOver(1) = False And PropMouseTrack = True) Then
+                    If IPAddressEditMouseOver(dwRefData) = False And PropMouseTrack = True Then IPAddressEditMouseOver(dwRefData) = True
+                    If IPAddressMouseOver(1) = False And PropMouseTrack = True Then
+                        IPAddressMouseOver(1) = True
+                        RaiseEvent MouseEnter
                     End If
+                    Call ComCtlsRequestMouseLeave(hWnd)
                 End If
                 RaiseEvent MouseMove(GetMouseStateFromParam(wParam), GetShiftStateFromParam(wParam), X, Y)
             Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -1064,37 +1732,21 @@ Select Case wMsg
                     Case WM_RBUTTONUP
                         RaiseEvent MouseUp(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 End Select
+                If IPAddressIsClick = True Then
+                    IPAddressIsClick = False
+                    If (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then RaiseEvent Click
+                End If
         End Select
     Case WM_MOUSELEAVE
-        If Index > 0 Then
-            IPAddressMouseOver(Index) = False
-            If IPAddressMouseOver(5) = True Then
-                Dim Pos As Long, hWndFromPoint As Long
-                Pos = GetMessagePos()
-                hWndFromPoint = WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos))
-                If (hWndFromPoint <> IPAddressHandle Or IPAddressHandle = 0) And (hWndFromPoint <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (hWndFromPoint <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (hWndFromPoint <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (hWndFromPoint <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
-                    IPAddressMouseOver(5) = False
-                    RaiseEvent MouseLeave
-                End If
+        IPAddressEditMouseOver(dwRefData) = False
+        If IPAddressMouseOver(1) = True Then
+            Dim Pos As Long, hWndFromPoint As Long
+            Pos = GetMessagePos()
+            hWndFromPoint = WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos))
+            If hWndFromPoint <> UserControl.hWnd And (hWndFromPoint <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (hWndFromPoint <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (hWndFromPoint <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (hWndFromPoint <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
+                IPAddressMouseOver(1) = False
+                RaiseEvent MouseLeave
             End If
         End If
 End Select
-End Function
-
-Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Select Case wMsg
-    Case WM_NOTIFY
-        Dim NM As NMHDR
-        CopyMemory NM, ByVal lParam, LenB(NM)
-        If NM.hWndFrom = IPAddressHandle Then
-            Select Case NM.Code
-                Case IPN_FIELDCHANGED
-                    Dim NMIPA As NMIPADDRESS
-                    CopyMemory NMIPA, ByVal lParam, LenB(NMIPA)
-                    RaiseEvent FieldChange(NMIPA.iField + 1)
-            End Select
-        End If
-End Select
-WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI IPAddressHandle
 End Function
