@@ -1665,7 +1665,7 @@ Select Case wMsg
         #If ImplementThemedBorder = True Then
         
         If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
-            If IPAddressEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+            If IPAddressEnabledVisualStyles = True Then SetWindowPos UserControl.hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
         End If
         
         #End If
