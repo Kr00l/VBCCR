@@ -1181,10 +1181,12 @@ For Each AppForm In VB.Forms
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfaceControl)
         Call RemoveVTableHandling(CurrControl.Object, VTableInterfacePerPropertyBrowsing)
         Select Case TypeName(CurrControl)
-            Case "Animation", "DTPicker", "MonthView", "Slider", "StatusBar", "TabStrip", "ListBoxW", "ListView", "TreeView", "IPAddress", "ToolBar", "UpDown", "SpinBox", "Pager", "OptionButtonW", "CheckBoxW", "CommandButtonW", "TextBoxW", "HotKey", "CoolBar", "LinkLabel", "CommandLink"
+            Case "Animation", "CheckBoxW", "CommandButtonW", "CommandLink", "CoolBar", "DTPicker", _
+            "HotKey", "LinkLabel", "ListBoxW", "ListView", "MonthView", "OptionButtonW", "Pager", _
+            "Slider", "SpinBox", "StatusBar", "TabStrip", "TextBoxW", "ToolBar", "TreeView", "UpDown"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
                 Call ComCtlsRemoveSubclass(CurrControl.hWndUserControl)
-            Case "ProgressBar", "FrameW"
+            Case "FrameW", "ProgressBar"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
             Case "ComboBoxW", "FontCombo"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
@@ -1197,6 +1199,12 @@ For Each AppForm In VB.Forms
                 If CurrControl.hWndEdit <> 0 Then Call ComCtlsRemoveSubclass(CurrControl.hWndEdit)
                 If CurrControl.hWndList <> 0 Then Call ComCtlsRemoveSubclass(CurrControl.hWndList)
                 Call ComCtlsRemoveSubclass(CurrControl.hWndUserControl)
+            Case "IPAddress"
+                Call ComCtlsRemoveSubclass(CurrControl.hWnd)
+                If CurrControl.hWndEdit(1) <> 0 Then Call ComCtlsRemoveSubclass(CurrControl.hWndEdit(1))
+                If CurrControl.hWndEdit(2) <> 0 Then Call ComCtlsRemoveSubclass(CurrControl.hWndEdit(2))
+                If CurrControl.hWndEdit(3) <> 0 Then Call ComCtlsRemoveSubclass(CurrControl.hWndEdit(3))
+                If CurrControl.hWndEdit(4) <> 0 Then Call ComCtlsRemoveSubclass(CurrControl.hWndEdit(4))
             Case "RichTextBox", "MCIWnd", "SysInfo"
                 CurrControl.IDEStop ' Hidden
         End Select
