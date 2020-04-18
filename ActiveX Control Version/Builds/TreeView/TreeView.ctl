@@ -574,21 +574,15 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
-            If TreeViewHandle <> 0 Then
-                If TreeViewLabelInEdit = True Then
-                    SendMessage Me.hWndLabelEdit, wMsg, wParam, ByVal lParam
-                Else
-                    If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
-                    SendMessage TreeViewHandle, wMsg, wParam, ByVal lParam
-                End If
-                Handled = True
+            If TreeViewLabelInEdit = False Then
+                If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
             End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Handled = True
         Case vbKeyTab
             If IsInputKey = True Then
-                If TreeViewHandle <> 0 Then
-                    SendMessage TreeViewHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If

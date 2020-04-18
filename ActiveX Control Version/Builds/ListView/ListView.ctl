@@ -550,7 +550,6 @@ Private Const WM_VSCROLL As Long = &H115
 Private Const WM_HSCROLL As Long = &H114
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const SW_SHOW As Long = &H5
 Private Const WM_NOTIFY As Long = &H4E
@@ -1033,6 +1032,7 @@ Private ListViewIconsObjectPointer As Long
 Private ListViewSmallIconsObjectPointer As Long
 Private ListViewColumnHeaderIconsObjectPointer As Long
 Private ListViewGroupIconsObjectPointer As Long
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDHotMousePointer As Long
 Private DispIDHeaderMousePointer As Long
@@ -1129,25 +1129,15 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
-            If ListViewHandle <> 0 Then
-                If ListViewFilterEditHandle = 0 Then
-                    If ListViewLabelInEdit = True Then
-                        SendMessage Me.hWndLabelEdit, wMsg, wParam, ByVal lParam
-                    Else
-                        If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
-                        SendMessage ListViewHandle, wMsg, wParam, ByVal lParam
-                    End If
-                Else
-                    SendMessage ListViewFilterEditHandle, wMsg, wParam, ByVal lParam
-                End If
-                Handled = True
+            If ListViewLabelInEdit = False And ListViewFilterEditHandle = 0 Then
+                If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
             End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Handled = True
         Case vbKeyTab
             If IsInputKey = True Then
-                If ListViewHandle <> 0 Then
-                    SendMessage ListViewHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -6819,35 +6809,15 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        Dim LabelEditHandle As Long
-        LabelEditHandle = Me.hWndLabelEdit
-        If ListViewTopDesignMode = False And GetFocus() <> ListViewHandle And (GetFocus() <> LabelEditHandle Or LabelEditHandle = 0) And (GetFocus() <> ListViewFilterEditHandle Or ListViewFilterEditHandle = 0) Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
+    Case WM_MBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        ' There is no modal message loop (DragDetect) on WM_MBUTTONDOWN.
+    Case WM_RBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -7117,12 +7087,8 @@ Select Case wMsg
                     End If
             End Select
         End If
-    Case WM_LBUTTONDOWN
-        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
-    Case WM_RBUTTONDOWN
-        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case UM_BUTTONDOWN
-        ' The control enters a modal message loop on WM_LBUTTONDOWN and WM_RBUTTONDOWN. (DragDetect)
+        ' The control enters a modal message loop (DragDetect) on WM_LBUTTONDOWN and WM_RBUTTONDOWN.
         ' This workaround is necessary to raise 'MouseDown' before the button was released or the mouse was moved.
         RaiseEvent MouseDown(LoWord(wParam), HiWord(wParam), UserControl.ScaleX(Get_X_lParam(lParam), vbPixels, vbTwips), UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips))
         ListViewButtonDown = LoWord(wParam)
@@ -7138,12 +7104,18 @@ Select Case wMsg
         Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
+                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' Otherwise not. So check and change focus, if needed.
+                If GetFocus() <> hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
             Case WM_MBUTTONDOWN
                 RaiseEvent MouseDown(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
                 ListViewButtonDown = 0
                 ListViewIsClick = True
             Case WM_RBUTTONDOWN
+                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' Otherwise not. So check and change focus, if needed.
+                If GetFocus() <> hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
             Case WM_MOUSEMOVE
                 If ListViewMouseOver = False And PropMouseTrack = True Then
@@ -7254,7 +7226,7 @@ Select Case wMsg
             End If
         End If
     Case WM_COMMAND
-        Const EN_SETFOCUS As Long = &H100, EN_KILLFOCUS = &H200
+        Const EN_SETFOCUS As Long = &H100, EN_KILLFOCUS As Long = &H200
         Select Case HiWord(wParam)
             Case EN_SETFOCUS
                 ListViewFilterEditHandle = lParam
@@ -7813,5 +7785,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI ListViewHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI ListViewHandle
 End Function
