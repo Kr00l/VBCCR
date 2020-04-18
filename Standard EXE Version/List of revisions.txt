@@ -1,6 +1,7 @@
 List of revisions:
 
 18-Apr-2020
+- Major internal improvement for ListView as no WM_MOUSEACTIVATE overhead necessary anymore.
 - Renamed the Border property to 'BorderStyle' in the RichTextBox control. (like in the original MS control)
 
 17-Apr-2020
