@@ -1,10 +1,12 @@
 VERSION 5.00
 Begin VB.UserControl RichTextBox 
+   BackColor       =   &H80000005&
    ClientHeight    =   1800
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
    DataBindingBehavior=   1  'vbSimpleBound
+   ForeColor       =   &H80000008&
    HasDC           =   0   'False
    PropertyPages   =   "RichTextBox.ctx":0000
    ScaleHeight     =   120
@@ -373,10 +375,7 @@ Private Const WS_EX_CLIENTEDGE As Long = &H200
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
-Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
-Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
-Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
-Private Const SB_HORZ As Long = 0, SB_VERT As Long = 1
+Private Const SB_THUMBTRACK As Long = 5
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -677,8 +676,6 @@ Private Const OLE_S_STATIC As Long = &H40001
 Private Const S_OK As Long = &H0
 Private Const OLERENDER_DRAW As Long = 1
 Private Const DVASPECT_CONTENT As Long = 1
-Private Const DVASPECT_THUMBNAIL As Long = 2
-Private Const DVASPECT_ICON As Long = 4
 Private Const FILE_FLAG_SEQUENTIAL_SCAN As Long = &H8000000
 Private Const INVALID_HANDLE_VALUE As Long = (-1)
 Private Const CREATE_ALWAYS As Long = 2
@@ -3544,40 +3541,40 @@ Select Case wMsg
                         SetRect RC2, 0, 0, .ScaleWidth, .ScaleHeight
                         End With
                         ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
-                        Dim RichTextBoxPart As Long, RichTextBoxState As Long
                         Dim dwStyle As Long
                         dwStyle = GetWindowLong(hWnd, GWL_STYLE)
+                        Dim EditPart As Long, EditState As Long
                         If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
                             If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                                RichTextBoxPart = EP_EDITBORDER_HVSCROLL
+                                EditPart = EP_EDITBORDER_HVSCROLL
                             Else
-                                RichTextBoxPart = EP_EDITBORDER_HSCROLL
+                                EditPart = EP_EDITBORDER_HSCROLL
                             End If
                         Else
                             If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                                RichTextBoxPart = EP_EDITBORDER_VSCROLL
+                                EditPart = EP_EDITBORDER_VSCROLL
                             Else
-                                RichTextBoxPart = EP_EDITBORDER_NOSCROLL
+                                EditPart = EP_EDITBORDER_NOSCROLL
                             End If
                         End If
                         Dim Brush As Long
                         If Me.Enabled = False Then
-                            RichTextBoxState = EPSN_DISABLED
+                            EditState = EPSN_DISABLED
                             Brush = CreateSolidBrush(WinColor(vbButtonFace))
                         Else
                             If RichTextBoxFocused = True Then
-                                RichTextBoxState = EPSN_FOCUSED
+                                EditState = EPSN_FOCUSED
                             ElseIf RichTextBoxMouseOver(0) = True Then
-                                RichTextBoxState = EPSN_HOT
+                                EditState = EPSN_HOT
                             Else
-                                RichTextBoxState = EPSN_NORMAL
+                                EditState = EPSN_NORMAL
                             End If
                             Brush = CreateSolidBrush(WinColor(PropBackColor))
                         End If
                         FillRect hDC, RC2, Brush
                         DeleteObject Brush
-                        If IsThemeBackgroundPartiallyTransparent(Theme, RichTextBoxPart, RichTextBoxState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
-                        DrawThemeBackground Theme, hDC, RichTextBoxPart, RichTextBoxState, RC2, RC2
+                        If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
+                        DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
                         ReleaseDC hWnd, hDC
                     End If
                     CloseThemeData Theme
