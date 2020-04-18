@@ -1,5 +1,8 @@
 List of revisions:
 
+18-Apr-2020
+- Renamed the Border property to 'BorderStyle' in the RichTextBox control. (like in the original MS control)
+
 17-Apr-2020
 - Major internal improvement in the IPAddress control as SysIPAddress32 class no longer used.
   Instead everything is done from scratch within the UserControl and four internal edit controls.
