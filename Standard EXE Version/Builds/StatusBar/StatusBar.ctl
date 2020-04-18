@@ -166,7 +166,6 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
-Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetKeyboardState Lib "user32" (ByRef pbKeyState As Byte) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -237,7 +236,6 @@ Private Const WM_SIZE As Long = &H5
 Private Const WM_DRAWITEM As Long = &H2B
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
-Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
@@ -296,7 +294,7 @@ Private Const SBT_OWNERDRAW As Long = &H1000
 Private Const SBT_NOBORDERS As Long = &H100
 Private Const SBT_POPOUT As Long = &H200
 Private Const SBT_RTLREADING As Long = &H400 ' Useless on SBT_OWNERDRAW
-Private Const SBT_TOOLTIPS As Long = &H800
+Private Const SBT_TOOLTIPS As Long = &H800 ' Useless on SBT_OWNERDRAW
 Private Const SBN_FIRST As Long = (-880)
 Private Const SBN_SIMPLEMODECHANGE As Long = (SBN_FIRST - 0)
 Private Const H_MAX As Long = (&HFFFF + 1)
@@ -306,6 +304,7 @@ Private Const NM_DBLCLK As Long = (NM_FIRST - 3)
 Private Const NM_RCLICK As Long = (NM_FIRST - 5)
 Private Const NM_RDBLCLK As Long = (NM_FIRST - 6)
 Private Const SBARS_SIZEGRIP As Long = &H100
+Private Const SBARS_TOOLTIPS As Long = SBT_TOOLTIPS ' Useless on SBT_OWNERDRAW
 Private Const SBB_HORIZONTAL As Long = 0
 Private Const SBB_VERTICAL As Long = 1
 Private Const SBB_DIVIDER As Long = 2
@@ -1107,7 +1106,20 @@ End Property
 Public Property Get SimpleText() As String
 Attribute SimpleText.VB_Description = "Returns/sets the text displayed when the style property is set to simple."
 Attribute SimpleText.VB_MemberFlags = "200"
-SimpleText = PropSimpleText
+If StatusBarHandle <> 0 Then
+    If SendMessage(StatusBarHandle, SB_ISSIMPLE, 0, ByVal 0&) <> 0 Then
+        Dim Length As Long
+        Length = CIntToUInt(LoWord(SendMessage(StatusBarHandle, SB_GETTEXTLENGTH, 0, ByVal 0&)))
+        If Length > 0 Then
+            SimpleText = String$(Length, vbNullChar)
+            SendMessage StatusBarHandle, SB_GETTEXT, 0, ByVal StrPtr(SimpleText)
+        End If
+    Else
+        SimpleText = PropSimpleText
+    End If
+Else
+    SimpleText = PropSimpleText
+End If
 End Property
 
 Public Property Let SimpleText(ByVal Value As String)
