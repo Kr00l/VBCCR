@@ -239,6 +239,8 @@ Private SliderCharCodeCache As Long
 Private SliderIsClick As Boolean
 Private SliderMouseOver As Boolean
 Private SliderDesignMode As Boolean
+Private SliderMaxExtentX As Long
+Private SliderMaxExtentY As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private PropVisualStyles As Boolean
@@ -281,16 +283,12 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd
-            If SliderHandle <> 0 Then
-                SendMessage SliderHandle, wMsg, wParam, ByVal lParam
-                Handled = True
-            End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Handled = True
         Case vbKeyTab, vbKeyReturn, vbKeyEscape
             If IsInputKey = True Then
-                If SliderHandle <> 0 Then
-                    SendMessage SliderHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -322,6 +320,8 @@ Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+SliderMaxExtentX = 45 * PixelsPerDIP_X()
+SliderMaxExtentY = 45 * PixelsPerDIP_Y()
 End Sub
 
 Private Sub UserControl_InitProperties()
@@ -463,9 +463,9 @@ Width = .ScaleWidth
 Height = .ScaleHeight
 Select Case PropOrientation
     Case SldOrientationHorizontal
-        If Height > 45 Then Height = 45
+        If Height > SliderMaxExtentY Then Height = SliderMaxExtentY
     Case SldOrientationVertical
-        If Width > 45 Then Width = 45
+        If Width > SliderMaxExtentX Then Width = SliderMaxExtentX
 End Select
 If SliderHandle <> 0 Then
     If PropTransparent = True Then
