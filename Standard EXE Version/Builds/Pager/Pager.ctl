@@ -183,9 +183,6 @@ Private Const PGN_FIRST As Long = (-900)
 Private Const PGN_SCROLL As Long = (PGN_FIRST - 1)
 Private Const PGN_CALCSIZE As Long = (PGN_FIRST - 2)
 Private Const PGN_HOTITEMCHANGE As Long = (PGN_FIRST - 3)
-Private Const H_MAX As Long = (&HFFFF + 1)
-Private Const NM_FIRST As Long = H_MAX
-Private Const NM_RELEASEDCAPTURE As Long = (NM_FIRST - 16)
 Private Const PGS_VERT As Long = &H0
 Private Const PGS_HORZ As Long = &H1
 Private Const PGS_AUTOSCROLL As Long = &H2
@@ -301,8 +298,8 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then PagerAlignable = False Else PagerAlignable = True
-On Error GoTo 0
 PagerDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 PropBackColor = vbButtonFace
 PropOLEDragDropScroll = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -324,8 +321,8 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then PagerAlignable = False Else PagerAlignable = True
-On Error GoTo 0
 PagerDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropBackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.Enabled = .ReadProperty("Enabled", True)
