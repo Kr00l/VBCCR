@@ -730,8 +730,8 @@ If DispIDHotImageList = 0 Then DispIDHotImageList = GetDispID(Me, "HotImageList"
 If DispIDPressedImageList = 0 Then DispIDPressedImageList = GetDispID(Me, "PressedImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ToolBarAlignable = False Else ToolBarAlignable = True
-On Error GoTo 0
 ToolBarDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 If ToolBarAlignable = True Then Extender.Align = vbAlignTop
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -776,8 +776,8 @@ If DispIDHotImageList = 0 Then DispIDHotImageList = GetDispID(Me, "HotImageList"
 If DispIDPressedImageList = 0 Then DispIDPressedImageList = GetDispID(Me, "PressedImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ToolBarAlignable = False Else ToolBarAlignable = True
-On Error GoTo 0
 ToolBarDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)

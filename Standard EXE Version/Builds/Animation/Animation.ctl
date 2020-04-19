@@ -31,16 +31,26 @@ Top As Long
 Right As Long
 Bottom As Long
 End Type
-Public Event StartedPlay()
-Attribute StartedPlay.VB_Description = "Occurs when the associated AVI clip has started playing."
-Public Event StoppedPlay()
-Attribute StoppedPlay.VB_Description = "Occurs when the associated AVI clip has stopped playing."
+Private Type POINTAPI
+X As Long
+Y As Long
+End Type
+Private Type TMSG
+hWnd As Long
+Message As Long
+wParam As Long
+lParam As Long
+Time As Long
+PT As POINTAPI
+End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when the user presses and releases a mouse button and then presses and releases it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event Change()
+Attribute Change.VB_Description = "Occurs when the associated AVI clip has started or stopped playing."
 Public Event PreviewKeyDown(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
 Attribute PreviewKeyDown.VB_Description = "Occurs before the KeyDown event."
 Public Event PreviewKeyUp(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
@@ -81,9 +91,12 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
+Private Declare Function DispatchMessage Lib "user32" Alias "DispatchMessageW" (ByRef lpMsg As TMSG) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
+Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
@@ -216,7 +229,9 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
 AnimationDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 Me.BackColor = Ambient.BackColor
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -237,7 +252,9 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+On Error Resume Next
 AnimationDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 With PropBag
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.Enabled = .ReadProperty("Enabled", True)
@@ -763,22 +780,33 @@ UserControl.Refresh
 RedrawWindow UserControl.hWnd, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
-Public Sub StartPlay(Optional ByVal RepeatCount As Long = -1, Optional ByVal StartFrame As Integer = 0, Optional ByVal EndFrame As Integer = -1)
-Attribute StartPlay.VB_Description = "Method to play the associated AVI clip."
-If AnimationHandle <> 0 Then SendMessage AnimationHandle, ACM_PLAY, RepeatCount, ByVal MakeDWord(StartFrame, EndFrame)
+Public Sub Play(Optional ByVal RepeatCount As Long = -1, Optional ByVal StartFrame As Integer = 0, Optional ByVal EndFrame As Integer = -1)
+Attribute Play.VB_Description = "Method to play the associated AVI clip."
+If AnimationHandle <> 0 Then
+    If Me.Playing = True Then
+        SendMessage AnimationHandle, ACM_STOP, 0, ByVal 0&
+        Call WorkOffCommands
+    End If
+    SendMessage AnimationHandle, ACM_PLAY, RepeatCount, ByVal MakeDWord(StartFrame, EndFrame)
+    Call WorkOffCommands
+End If
 End Sub
 
 Public Sub StopPlay()
 Attribute StopPlay.VB_Description = "Method to stop playing the associated AVI clip."
-If AnimationHandle <> 0 Then SendMessage AnimationHandle, ACM_STOP, 0, ByVal 0&
+If AnimationHandle <> 0 Then
+    SendMessage AnimationHandle, ACM_STOP, 0, ByVal 0&
+    Call WorkOffCommands
+End If
 End Sub
 
-Public Property Get IsPlaying() As Boolean
-Attribute IsPlaying.VB_Description = "Returns a value that determines whether an AVI clip is playing or not."
+Public Property Get Playing() As Boolean
+Attribute Playing.VB_Description = "Returns a value that determines whether an AVI clip is playing or not."
+Attribute Playing.VB_MemberFlags = "400"
 If AnimationHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
-    IsPlaying = CBool(SendMessage(AnimationHandle, ACM_ISPLAYING, 0, ByVal 0&) <> 0)
+    Playing = CBool(SendMessage(AnimationHandle, ACM_ISPLAYING, 0, ByVal 0&) <> 0)
 Else
-    IsPlaying = AnimationPlaying
+    Playing = AnimationPlaying
 End If
 End Property
 
@@ -836,6 +864,14 @@ If AnimationHandle <> 0 And AnimationLoaded = True Then
     End If
     AnimationLoaded = False
 End If
+End Sub
+
+Private Sub WorkOffCommands()
+Dim Msg As TMSG
+Const PM_REMOVE As Long = &H1
+Do While PeekMessage(Msg, UserControl.hWnd, WM_COMMAND, WM_COMMAND, PM_REMOVE) <> 0
+    DispatchMessage Msg
+Loop
 End Sub
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
@@ -896,11 +932,15 @@ Select Case wMsg
         If lParam = AnimationHandle Then
             Select Case HiWord(wParam)
                 Case ACN_START
-                    AnimationPlaying = True
-                    RaiseEvent StartedPlay
+                    If AnimationPlaying = False Then
+                        AnimationPlaying = True
+                        RaiseEvent Change
+                    End If
                 Case ACN_STOP
-                    AnimationPlaying = False
-                    RaiseEvent StoppedPlay
+                    If AnimationPlaying = True Then
+                        AnimationPlaying = False
+                        RaiseEvent Change
+                    End If
             End Select
         End If
     Case WM_SETCURSOR
@@ -921,7 +961,7 @@ End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_SETFOCUS
-        SetFocusAPI AnimationHandle
+        SetFocusAPI AnimationHandle ' UCNoSetFocusFwd not applicable
     Case WM_MOUSELEAVE
         If AnimationMouseOver = True Then
             AnimationMouseOver = False
