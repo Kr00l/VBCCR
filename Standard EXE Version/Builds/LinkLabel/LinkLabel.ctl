@@ -197,6 +197,7 @@ Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_SETFOCUS As Long = &H7
+Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
@@ -309,25 +310,21 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyTab
-            If LinkLabelHandle <> 0 Then
-                SendMessage LinkLabelHandle, wMsg, wParam, ByVal lParam
-                Dim Item As LITEM
-                With Item
-                .iLink = 0
-                .Mask = LIF_ITEMINDEX Or LIF_STATE
-                .StateMask = LIS_FOCUSED
-                Do While SendMessage(LinkLabelHandle, LM_GETITEM, 0, ByVal VarPtr(Item)) <> 0
-                    If .State = LIS_FOCUSED Then Handled = True
-                    .iLink = .iLink + 1
-                Loop
-                End With
-            End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Dim Item As LITEM
+            With Item
+            .iLink = 0
+            .Mask = LIF_ITEMINDEX Or LIF_STATE
+            .StateMask = LIS_FOCUSED
+            Do While SendMessage(LinkLabelHandle, LM_GETITEM, 0, ByVal VarPtr(Item)) <> 0
+                If .State = LIS_FOCUSED Then Handled = True
+                .iLink = .iLink + 1
+            Loop
+            End With
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
             If IsInputKey = True Then
-                If LinkLabelHandle <> 0 Then
-                    SendMessage LinkLabelHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -1572,6 +1569,9 @@ Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        Call ActivateIPAO(Me)
+    Case WM_KILLFOCUS
+        Call DeActivateIPAO
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
