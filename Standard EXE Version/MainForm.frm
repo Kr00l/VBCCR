@@ -448,7 +448,6 @@ Begin VB.Form MainForm
       Width           =   1860
       _ExtentX        =   3281
       _ExtentY        =   1164
-      Enabled         =   0   'False
    End
 End
 Attribute VB_Name = "MainForm"
