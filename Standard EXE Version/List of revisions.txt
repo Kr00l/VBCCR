@@ -1,5 +1,9 @@
 List of revisions:
 
+20-Apr-2020
+- Major Bugfix in the CheckBoxW/CommandButtonW/CommandLink/LinkLabel/OptionButtonW control.
+  Forgot to call DeActivateIPAO method upon WM_KILLFOCUS.
+
 19-Apr-2020
 - Internal improvement in ComCtlsBase.bas.
 - Improvement for Animation control.
