@@ -236,7 +236,9 @@ End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+On Error Resume Next
 UpDownDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
 PropMouseTrack = False
@@ -260,7 +262,9 @@ End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+On Error Resume Next
 UpDownDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
