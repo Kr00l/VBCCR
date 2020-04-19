@@ -183,7 +183,7 @@ Bottom As Long
 End Type
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
-Private Declare Function DrawFocusRect Lib "user32" (ByVal hDC As Long, lpRect As RECT) As Long
+Private Declare Function DrawFocusRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
@@ -192,8 +192,6 @@ Private Const BF_TOP As Long = 2
 Private Const BF_RIGHT As Long = 4
 Private Const BF_BOTTOM As Long = 8
 Private Const BF_RECT As Long = BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM
-Private Const BDR_SUNKENINNER As Long = 8
-Private Const BDR_SUNKENOUTER As Long = 2
 Private Const BDR_RAISEDOUTER As Long = 1
 Private Const BDR_RAISEDINNER As Long = 4
 Private CurrIndex As Long
@@ -360,7 +358,7 @@ With PropertyPage.SelectedControls(0)
 ImageListHandle = .hImageList
 If ImageListHandle <> 0 Then
     Dim RC As RECT, TRC As RECT
-    Dim i As Long, X As Long, Y As Long
+    Dim i As Long, X As Long
     Dim Brush As Long, Max As Long
     RC.Left = 0
     RC.Top = 0

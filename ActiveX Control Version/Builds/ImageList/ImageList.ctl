@@ -135,7 +135,9 @@ Call ComCtlsLoadShellMod
 End Sub
 
 Private Sub UserControl_InitProperties()
+On Error Resume Next
 ImageListDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 PropImageWidth = 0
 PropImageHeight = 0
 PropColorDepth = ImlColorDepth24Bit
@@ -148,7 +150,9 @@ Call CreateImageList
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
+On Error Resume Next
 ImageListDesignMode = Not Ambient.UserMode
+On Error GoTo 0
 With PropBag
 PropImageWidth = .ReadProperty("ImageWidth", 0)
 PropImageHeight = .ReadProperty("ImageHeight", 0)
@@ -539,8 +543,10 @@ Public Property Get SystemColorDepth() As ImlColorDepthConstants
 Attribute SystemColorDepth.VB_Description = "Returns the system color depth."
 Dim hDC As Long
 hDC = CreateDCAsNull(StrPtr("DISPLAY"), ByVal 0&, ByVal 0&, ByVal 0&)
-SystemColorDepth = GetDeviceCaps(hDC, BITSPIXEL)
-DeleteDC hDC
+If hDC <> 0 Then
+    SystemColorDepth = GetDeviceCaps(hDC, BITSPIXEL)
+    DeleteDC hDC
+End If
 End Property
 
 Public Function Overlay(ByVal Index1 As Variant, ByVal Index2 As Variant) As IPictureDisp
