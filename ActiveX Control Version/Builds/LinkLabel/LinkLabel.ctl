@@ -197,6 +197,7 @@ Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_SETFOCUS As Long = &H7
+Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
@@ -1572,6 +1573,9 @@ Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        Call ActivateIPAO(Me)
+    Case WM_KILLFOCUS
+        Call DeActivateIPAO
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&

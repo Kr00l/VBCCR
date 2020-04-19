@@ -221,6 +221,7 @@ Private Const WS_EX_RTLREADING As Long = &H2000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETFOCUS As Long = &H7
+Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
@@ -363,10 +364,8 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyTab, vbKeyReturn, vbKeyEscape
             If IsInputKey = True Then
-                If OptionButtonHandle <> 0 Then
-                    SendMessage OptionButtonHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -1650,6 +1649,9 @@ Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        Call ActivateIPAO(Me)
+    Case WM_KILLFOCUS
+        Call DeActivateIPAO
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
