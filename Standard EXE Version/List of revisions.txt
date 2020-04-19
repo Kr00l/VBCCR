@@ -2,8 +2,11 @@ List of revisions:
 
 19-Apr-2020
 - Internal improvement in ComCtlsBase.bas.
-- StartPlay and IsPlaying renamed to Play and Playing in the Animation control. (like in the original MS control)
-  Also StartedPlay/StoppedPlay event merged into new Change event. (more VB-ish, use .Playing to determine current status)
+- Improvement for Animation control.
+  - No re-creation anymore when changing BackColor property.
+  - Default value for AutoPlay property now False instead of True. (like in the original MS control)
+  - StartPlay and IsPlaying renamed to Play and Playing in the Animation control. (like in the original MS control)
+  - StartedPlay/StoppedPlay event merged into new Change event. (more VB-ish, use .Playing to determine current status)
 
 18-Apr-2020
 - Major internal improvement for ListView as no WM_MOUSEACTIVATE overhead necessary anymore.
