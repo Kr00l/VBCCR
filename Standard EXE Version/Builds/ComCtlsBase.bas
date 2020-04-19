@@ -180,6 +180,7 @@ Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private ShellModHandle As Long, ShellModCount As Long
+Private ComCtlsSubclassProcPtr As Long
 Private CdlPDEXVTableIPDCB(0 To 5) As Long
 Private CdlFRHookHandle As Long
 Private CdlFRDialogHandle() As Long, CdlFRDialogCount As Long
@@ -708,12 +709,13 @@ End Sub
 
 Public Sub ComCtlsSetSubclass(ByVal hWnd As Long, ByVal This As ISubclass, ByVal dwRefData As Long, Optional ByVal Name As String)
 If hWnd = 0 Then Exit Sub
-If Name = vbNullString Then Name = "ComCtl"
+If Name = vbNullString Then Name = "ComCtls"
 If GetProp(hWnd, StrPtr(Name & "SubclassInit")) = 0 Then
+    If ComCtlsSubclassProcPtr = 0 Then ComCtlsSubclassProcPtr = ProcPtr(AddressOf ComCtlsSubclassProc)
     If ComCtlsW2KCompatibility() = False Then
-        SetWindowSubclass hWnd, AddressOf ComCtlsSubclassProc, ObjPtr(This), dwRefData
+        SetWindowSubclass hWnd, ComCtlsSubclassProcPtr, ObjPtr(This), dwRefData
     Else
-        SetWindowSubclass_W2K hWnd, AddressOf ComCtlsSubclassProc, ObjPtr(This), dwRefData
+        SetWindowSubclass_W2K hWnd, ComCtlsSubclassProcPtr, ObjPtr(This), dwRefData
     End If
     SetProp hWnd, StrPtr(Name & "SubclassID"), ObjPtr(This)
     SetProp hWnd, StrPtr(Name & "SubclassInit"), 1
@@ -730,12 +732,12 @@ End Function
 
 Public Sub ComCtlsRemoveSubclass(ByVal hWnd As Long, Optional ByVal Name As String)
 If hWnd = 0 Then Exit Sub
-If Name = vbNullString Then Name = "ComCtl"
+If Name = vbNullString Then Name = "ComCtls"
 If GetProp(hWnd, StrPtr(Name & "SubclassInit")) = 1 Then
     If ComCtlsW2KCompatibility() = False Then
-        RemoveWindowSubclass hWnd, AddressOf ComCtlsSubclassProc, GetProp(hWnd, StrPtr(Name & "SubclassID"))
+        RemoveWindowSubclass hWnd, ComCtlsSubclassProcPtr, GetProp(hWnd, StrPtr(Name & "SubclassID"))
     Else
-        RemoveWindowSubclass_W2K hWnd, AddressOf ComCtlsSubclassProc, GetProp(hWnd, StrPtr(Name & "SubclassID"))
+        RemoveWindowSubclass_W2K hWnd, ComCtlsSubclassProcPtr, GetProp(hWnd, StrPtr(Name & "SubclassID"))
     End If
     RemoveProp hWnd, StrPtr(Name & "SubclassID")
     RemoveProp hWnd, StrPtr(Name & "SubclassInit")
@@ -750,9 +752,9 @@ Select Case wMsg
     Case WM_NCDESTROY, WM_UAHDESTROYWINDOW
         ComCtlsSubclassProc = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
         If ComCtlsW2KCompatibility() = False Then
-            RemoveWindowSubclass hWnd, AddressOf ComCtlsBase.ComCtlsSubclassProc, uIdSubclass
+            RemoveWindowSubclass hWnd, ComCtlsSubclassProcPtr, uIdSubclass
         Else
-            RemoveWindowSubclass_W2K hWnd, AddressOf ComCtlsBase.ComCtlsSubclassProc, uIdSubclass
+            RemoveWindowSubclass_W2K hWnd, ComCtlsSubclassProcPtr, uIdSubclass
         End If
         Exit Function
 End Select
