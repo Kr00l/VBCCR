@@ -111,6 +111,7 @@ Private Const ICC_ANIMATE_CLASS As Long = &H80
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_EX_TRANSPARENT As Long = &H20
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
@@ -240,7 +241,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropAutoPlay = True
+PropAutoPlay = False
 PropBackStyle = CCBackStyleTransparent
 PropCenter = False
 If AnimationDesignMode = False Then
@@ -266,7 +267,7 @@ PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropAutoPlay = .ReadProperty("AutoPlay", True)
+PropAutoPlay = .ReadProperty("AutoPlay", False)
 PropBackStyle = .ReadProperty("BackStyle", CCBackStyleTransparent)
 PropCenter = .ReadProperty("Center", False)
 End With
@@ -288,7 +289,7 @@ With PropBag
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
-.WriteProperty "AutoPlay", PropAutoPlay, True
+.WriteProperty "AutoPlay", PropAutoPlay, False
 .WriteProperty "BackStyle", PropBackStyle, CCBackStyleTransparent
 .WriteProperty "Center", PropCenter, False
 End With
@@ -543,7 +544,6 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 UserControl.BackColor = Value
-If AnimationHandle <> 0 Then Call ReCreateAnimation
 Me.Refresh
 UserControl.PropertyChanged "BackColor"
 End Property
@@ -717,6 +717,7 @@ Private Sub CreateAnimation()
 If AnimationHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
+dwExStyle = WS_EX_TRANSPARENT
 If ComCtlsSupportLevel() = 0 Then dwStyle = dwStyle Or ACS_TIMER
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
 If PropAutoPlay = True Then dwStyle = dwStyle Or ACS_AUTOPLAY
@@ -755,6 +756,7 @@ If AnimationDesignMode = False Then
     End If
     If Locked = True Then LockWindowUpdate 0
     Me.Refresh
+    Call ProcessWMCommands
 Else
     Call DestroyAnimation
     Call CreateAnimation
@@ -785,10 +787,10 @@ Attribute Play.VB_Description = "Method to play the associated AVI clip."
 If AnimationHandle <> 0 Then
     If Me.Playing = True Then
         SendMessage AnimationHandle, ACM_STOP, 0, ByVal 0&
-        Call WorkOffCommands
+        Call ProcessWMCommands
     End If
     SendMessage AnimationHandle, ACM_PLAY, RepeatCount, ByVal MakeDWord(StartFrame, EndFrame)
-    Call WorkOffCommands
+    Call ProcessWMCommands
 End If
 End Sub
 
@@ -796,7 +798,7 @@ Public Sub StopPlay()
 Attribute StopPlay.VB_Description = "Method to stop playing the associated AVI clip."
 If AnimationHandle <> 0 Then
     SendMessage AnimationHandle, ACM_STOP, 0, ByVal 0&
-    Call WorkOffCommands
+    Call ProcessWMCommands
 End If
 End Sub
 
@@ -815,11 +817,11 @@ Attribute LoadFile.VB_Description = "Loads an AVI clip from the specified file n
 If AnimationHandle <> 0 Then
     Me.Unload
     If SendMessage(AnimationHandle, ACM_OPEN, 0, ByVal StrPtr(FileName)) <> 0 Then
-        Me.Refresh
         AnimationFileName = FileName
         AnimationResID = 0
         AnimationResFileName = vbNullString
         AnimationLoaded = True
+        Me.Refresh
     Else
         Err.Raise 53
     End If
@@ -839,11 +841,11 @@ If AnimationHandle <> 0 Then
         AnimationModHandle = hMod
     End If
     If SendMessage(AnimationHandle, ACM_OPEN, hMod, ByVal MakeDWord(ResID, 0)) <> 0 Then
-        Me.Refresh
         AnimationFileName = vbNullString
         AnimationResID = ResID
         AnimationResFileName = FileName
         AnimationLoaded = True
+        Me.Refresh
     Else
         Err.Raise Number:=326, Description:="Resource with identifier '" & ResID & "' not found"
     End If
@@ -854,7 +856,6 @@ Public Sub Unload()
 Attribute Unload.VB_Description = "Unloads the associated AVI clip."
 If AnimationHandle <> 0 And AnimationLoaded = True Then
     SendMessage AnimationHandle, ACM_OPEN, 0, ByVal 0&
-    Me.Refresh
     AnimationFileName = vbNullString
     AnimationResID = 0
     AnimationResFileName = vbNullString
@@ -863,10 +864,11 @@ If AnimationHandle <> 0 And AnimationLoaded = True Then
         AnimationModHandle = 0
     End If
     AnimationLoaded = False
+    Me.Refresh
 End If
 End Sub
 
-Private Sub WorkOffCommands()
+Private Sub ProcessWMCommands()
 Dim Msg As TMSG
 Const PM_REMOVE As Long = &H1
 Do While PeekMessage(Msg, UserControl.hWnd, WM_COMMAND, WM_COMMAND, PM_REMOVE) <> 0
