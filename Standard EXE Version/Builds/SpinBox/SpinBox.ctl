@@ -26,12 +26,6 @@ Public Enum SpbNumberStyleConstants
 SpbNumberStyleDecimal = 0
 SpbNumberStyleHexadecimal = 1
 End Enum
-Private Type RECT
-Left As Long
-Top As Long
-Right As Long
-Bottom As Long
-End Type
 Private Type POINTAPI
 X As Long
 Y As Long
@@ -137,7 +131,6 @@ Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_CLIENTEDGE As Long = &H200
 Private Const WS_EX_RTLREADING As Long = &H2000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const SW_HIDE As Long = &H0
 Private Const TME_LEAVE As Long = &H2, TME_NONCLIENT As Long = &H10
 Private Const WM_SETFOCUS As Long = &H7
@@ -216,6 +209,7 @@ Private SpinBoxFontHandle As Long
 Private SpinBoxCharCodeCache As Long
 Private SpinBoxMouseOver(0 To 2) As Boolean
 Private SpinBoxDesignMode As Boolean, SpinBoxTopDesignMode As Boolean
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -257,16 +251,12 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd
-            If SpinBoxEditHandle <> 0 Then
-                SendMessage SpinBoxEditHandle, wMsg, wParam, ByVal lParam
-                Handled = True
-            End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Handled = True
         Case vbKeyTab, vbKeyReturn, vbKeyEscape
             If IsInputKey = True Then
-                If SpinBoxEditHandle <> 0 Then
-                    SendMessage SpinBoxEditHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -1316,21 +1306,17 @@ End Select
 End Function
 
 Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Select Case wMsg
-    Case WM_SETFOCUS
-        SetFocusAPI UserControl.hWnd
-        Exit Function
-    Case UM_CHECKVALUE
-        If wParam <> PropValue Then
-            PropValue = wParam
-            UserControl.PropertyChanged "Value"
-            On Error Resume Next
-            UserControl.Extender.DataChanged = True
-            On Error GoTo 0
-            RaiseEvent Change
-        End If
-        Exit Function
-End Select
+If wMsg = UM_CHECKVALUE Then
+    If wParam <> PropValue Then
+        PropValue = wParam
+        UserControl.PropertyChanged "Value"
+        On Error Resume Next
+        UserControl.Extender.DataChanged = True
+        On Error GoTo 0
+        RaiseEvent Change
+    End If
+    Exit Function
+End If
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -1402,33 +1388,8 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If SpinBoxTopDesignMode = False And GetFocus() <> SpinBoxUpDownHandle And GetFocus() <> SpinBoxEditHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcEdit = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcEdit = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcEdit = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcEdit = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
@@ -1610,5 +1571,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI SpinBoxEditHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI SpinBoxEditHandle
 End Function
