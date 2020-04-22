@@ -483,7 +483,7 @@ ListView1.ColumnHeaders.Add , , "Col4"
 ListView1.ColumnHeaders.Add , , "Col5"
 ListView1.ColumnHeaders.Add , , "Col6"
 ListView1.ColumnHeaders.Add , , "Col7"
-If ComCtlsSupportLevel() > 0 Then ' XP+
+If ComCtlsSupportLevel() >= 1 Then ' XP+
     ListView1.SelectedColumn = ListView1.ColumnHeaders(1)
     ListView1.ColumnHeaders(1).SortArrow = LvwColumnHeaderSortArrowDown
 Else
@@ -494,11 +494,13 @@ Else
     Next EnumColumn
 End If
 Dim GroupsAvailable As Boolean
-If ComCtlsSupportLevel() >= 1 Then ' Vista+
-    With ListView1.Groups.Add(, , "Group A")
-    .SubsetLink = "Click here to display all items"
-    .Subseted = True
-    End With
+If ComCtlsSupportLevel() >= 1 Then ' XP+
+    If ComCtlsSupportLevel() >= 2 Then ' Vista+
+        With ListView1.Groups.Add(, , "Group A")
+        .SubsetLink = "Click here to display all items"
+        .Subseted = True
+        End With
+    End If
     ListView1.Groups.Add , , "Group B"
     ListView1.Groups.Add , , "Group C"
     ListView1.Groups.Add , , "Group D"
