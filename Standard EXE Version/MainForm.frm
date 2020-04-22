@@ -483,26 +483,27 @@ ListView1.ColumnHeaders.Add , , "Col4"
 ListView1.ColumnHeaders.Add , , "Col5"
 ListView1.ColumnHeaders.Add , , "Col6"
 ListView1.ColumnHeaders.Add , , "Col7"
-If ComCtlsSupportLevel() = 0 Then
+If ComCtlsSupportLevel() > 0 Then ' XP+
+    ListView1.SelectedColumn = ListView1.ColumnHeaders(1)
+    ListView1.ColumnHeaders(1).SortArrow = LvwColumnHeaderSortArrowDown
+Else
     ListView1.ColumnHeaders(1).Icon = 1
     Dim EnumColumn As LvwColumnHeader
     For Each EnumColumn In ListView1.ColumnHeaders
         EnumColumn.IconOnRight = True
     Next EnumColumn
-Else
-    ListView1.SelectedColumn = ListView1.ColumnHeaders(1)
-    ListView1.ColumnHeaders(1).SortArrow = LvwColumnHeaderSortArrowDown
 End If
-On Error Resume Next
-' Ignore error raise in case group is not supported. (Prior Windows XP)
-With ListView1.Groups.Add(, , "Group A")
-.SubsetLink = "Click here to display all items"
-.Subseted = True
-End With
-ListView1.Groups.Add , , "Group B"
-ListView1.Groups.Add , , "Group C"
-ListView1.Groups.Add , , "Group D"
-On Error GoTo 0
+Dim GroupsAvailable As Boolean
+If ComCtlsSupportLevel() >= 1 Then ' Vista+
+    With ListView1.Groups.Add(, , "Group A")
+    .SubsetLink = "Click here to display all items"
+    .Subseted = True
+    End With
+    ListView1.Groups.Add , , "Group B"
+    ListView1.Groups.Add , , "Group C"
+    ListView1.Groups.Add , , "Group D"
+    GroupsAvailable = True
+End If
 ListView1.Redraw = False
 Dim i As Long
 For i = 1 To 1000
@@ -518,18 +519,18 @@ For i = 1 To 1000
     .Add , , "sub text5_" & IIf(i Mod 2, "B", "A")
     .Add , , "sub text6_" & IIf(i Mod 2, "B", "A")
     End With
-    On Error Resume Next
-    Select Case i
-        Case Is > 750
-            Set .Group = ListView1.Groups(4)
-        Case Is > 500
-            Set .Group = ListView1.Groups(3)
-        Case Is > 250
-            Set .Group = ListView1.Groups(2)
-        Case Else
-            Set .Group = ListView1.Groups(1)
-    End Select
-    On Error GoTo 0
+    If GroupsAvailable = True Then
+        Select Case i
+            Case Is > 750
+                Set .Group = ListView1.Groups(4)
+            Case Is > 500
+                Set .Group = ListView1.Groups(3)
+            Case Is > 250
+                Set .Group = ListView1.Groups(2)
+            Case Else
+                Set .Group = ListView1.Groups(1)
+        End Select
+    End If
     End With
 Next i
 ListView1.Sorted = True
