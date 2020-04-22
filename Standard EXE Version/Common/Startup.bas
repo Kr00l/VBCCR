@@ -15,6 +15,15 @@ If App.PrevInstance = True And InIDE() = False Then
         AppActivate "ComCtls Demo"
     End If
 Else
+    If ComCtlsSupportLevel() = 0 Then
+        If InIDE() = True Then
+            If MsgBox("The IDE is not manifested !" & vbLf & vbLf & _
+            "The demo will raise a crash unless IDE options are set to" & vbLf & "'Break on Unhandled Errors'.", _
+            vbExclamation + vbOKCancel + vbDefaultButton2, "Warning IDE not manifested!") <> vbOK Then Exit Sub
+        Else
+            ' Not concerned as .res file ensures that compiled EXE is manifested.
+        End If
+    End If
     Call ComCtlsInitIDEStopProtection
     Call InitVisualStylesFixes
     MainForm.Show vbModeless
