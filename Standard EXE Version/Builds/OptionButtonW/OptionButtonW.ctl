@@ -1842,8 +1842,7 @@ Select Case wMsg
         CopyMemory DIS, ByVal lParam, LenB(DIS)
         If DIS.CtlType = ODT_BUTTON And DIS.hWndItem = OptionButtonHandle Then
             If (DIS.ItemAction And ODA_FOCUS) = ODA_FOCUS Then
-                PropValue = True
-                UserControl.PropertyChanged "Value"
+                If PropValue = False Then Me.Value = True
             End If
             If PropStyle = vbButtonGraphical Then
                 Dim Brush As Long, Text As String, TextRect As RECT
