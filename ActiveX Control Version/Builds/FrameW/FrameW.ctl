@@ -67,6 +67,8 @@ Public Event OLESetData(Data As DataObject, DataFormat As Integer)
 Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source control when the drop target requests data that was not provided to the DataObject during the OLEDragStart event."
 Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As Long, ByVal lpchText As Long, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -125,6 +127,9 @@ Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As L
 
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const HWND_DESKTOP As Long = &H0
+Private Const WM_GETTEXTLENGTH As Long = &HE
+Private Const WM_GETTEXT As Long = &HD
+Private Const WM_SETTEXT As Long = &HC
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_MOUSELEAVE As Long = &H2A3
@@ -1141,13 +1146,44 @@ ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-If wMsg = WM_PRINTCLIENT Then
-    Dim ClientRect As RECT
-    GetClientRect UserControl.hWnd, ClientRect
-    BitBlt wParam, 0, 0, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top, UserControl.hDC, 0, 0, vbSrcCopy
-    WindowProcUserControl = 0
-    Exit Function
-End If
+Select Case wMsg
+    Case WM_PRINTCLIENT
+        Dim ClientRect As RECT
+        GetClientRect UserControl.hWnd, ClientRect
+        BitBlt wParam, 0, 0, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top, UserControl.hDC, 0, 0, vbSrcCopy
+        WindowProcUserControl = 0
+        Exit Function
+    Case WM_GETTEXTLENGTH
+        WindowProcUserControl = Len(PropCaption)
+        Exit Function
+    Case WM_GETTEXT, WM_SETTEXT
+        Dim Length As Long, Text As String
+        If wMsg = WM_GETTEXT Then
+            If wParam > 0 And lParam <> 0 Then
+                Length = Len(PropCaption) + 1
+                If wParam < Length Then Length = wParam
+                Text = Left$(PropCaption, Length - 1) & vbNullChar
+                CopyMemory ByVal lParam, ByVal StrPtr(Text), Length * 2
+                WindowProcUserControl = Length - 1
+            Else
+                WindowProcUserControl = 0
+            End If
+        ElseIf wMsg = WM_SETTEXT Then
+            If lParam <> 0 Then Length = lstrlen(lParam)
+            If Length > 0 Then
+                Text = String$(Length, vbNullChar)
+                CopyMemory ByVal StrPtr(Text), ByVal lParam, Length * 2
+                Me.Caption = Text
+                WindowProcUserControl = 1
+            ElseIf lParam = 0 Then
+                Me.Caption = vbNullString
+                WindowProcUserControl = 1
+            Else
+                WindowProcUserControl = 0
+            End If
+        End If
+        Exit Function
+End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 If wMsg = WM_MOUSELEAVE Then
     If FrameMouseOver = True Then
