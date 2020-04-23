@@ -1,5 +1,8 @@
 List of revisions:
 
+23-Apr-2020
+- FrameW responds now to WM_SETTEXT/WM_GETTEXT/WM_GETTEXTLENGTH like the VB.Frame.
+
 22-Apr-2020
 - Bugfix that an OwnerDrawn OptionButtonW did not raise the Click event, though the value got changed.
 
