@@ -1,5 +1,8 @@
 List of revisions:
 
+26-Apr-2020
+- Bugfix in the GetClipboardText function in Common.bas.
+
 23-Apr-2020
 - FrameW responds now to WM_SETTEXT/WM_GETTEXT/WM_GETTEXTLENGTH like the VB.Frame.
 
