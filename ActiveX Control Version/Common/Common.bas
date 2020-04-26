@@ -119,6 +119,8 @@ LFFaceName(0 To ((LF_FACESIZE * 2) - 1)) As Byte
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As Long
+Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
+Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
 Private Declare Function GetActiveWindow Lib "user32" () As Long
 Private Declare Function GetForegroundWindow Lib "user32" () As Long
@@ -136,7 +138,6 @@ Private Declare Function GetVolumePathName Lib "kernel32" Alias "GetVolumePathNa
 Private Declare Function GetVolumeInformation Lib "kernel32" Alias "GetVolumeInformationW" (ByVal lpRootPathName As Long, ByVal lpVolumeNameBuffer As Long, ByVal nVolumeNameSize As Long, ByRef lpVolumeSerialNumber As Long, ByRef lpMaximumComponentLength As Long, ByRef lpFileSystemFlags As Long, ByVal lpFileSystemNameBuffer As Long, ByVal nFileSystemNameSize As Long) As Long
 Private Declare Function CreateDirectory Lib "kernel32" Alias "CreateDirectoryW" (ByVal lpPathName As Long, ByVal lpSecurityAttributes As Long) As Long
 Private Declare Function RemoveDirectory Lib "kernel32" Alias "RemoveDirectoryW" (ByVal lpPathName As Long) As Long
-Private Declare Function GetCurrentDirectory Lib "kernel32" Alias "GetCurrentDirectoryW" (ByVal nBufferLength As Long, ByVal lpBuffer As Long) As Long
 Private Declare Function GetFileVersionInfo Lib "Version" Alias "GetFileVersionInfoW" (ByVal lpFileName As Long, ByVal dwHandle As Long, ByVal dwLen As Long, ByVal lpData As Long) As Long
 Private Declare Function GetFileVersionInfoSize Lib "Version" Alias "GetFileVersionInfoSizeW" (ByVal lpFileName As Long, ByVal lpdwHandle As Long) As Long
 Private Declare Function VerQueryValue Lib "Version" Alias "VerQueryValueW" (ByVal lpBlock As Long, ByVal lpSubBlock As Long, ByRef lplpBuffer As Long, ByRef puLen As Long) As Long
@@ -518,20 +519,19 @@ End Function
 
 Public Function GetClipboardText() As String
 Const CF_UNICODETEXT As Long = 13
-Dim lpText As Long, Length As Long
-Dim hMem As Long, lpMem As Long
+Dim lpText As Long, lpMem As Long, Length As Long
 If OpenClipboard(0) <> 0 Then
     If IsClipboardFormatAvailable(CF_UNICODETEXT) <> 0 Then
         lpText = GetClipboardData(CF_UNICODETEXT)
         If lpText <> 0 Then
-            Length = GlobalSize(lpText)
-            If Length > 0 Then
-                lpMem = GlobalLock(lpText)
-                If lpMem <> 0 Then
-                    GetClipboardText = String((Length \ 2) - 1, vbNullChar)
-                    CopyMemory ByVal StrPtr(GetClipboardText), ByVal lpMem, Length
-                    GlobalUnlock lpMem
+            lpMem = GlobalLock(lpText)
+            If lpMem <> 0 Then
+                Length = lstrlen(lpMem)
+                If Length > 0 Then
+                    GetClipboardText = String(Length, vbNullChar)
+                    lstrcpy StrPtr(GetClipboardText), lpMem
                 End If
+                GlobalUnlock lpMem
             End If
         End If
     End If
