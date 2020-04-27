@@ -89,7 +89,13 @@ Attribute Item.VB_Description = "Returns a list item given its index or key."
 Attribute Item.VB_UserMemId = 0
 Select Case VarType(Index)
     Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-        Set Item = PtrToObj(ShadowListView.FListItemPtr(Index))
+        Dim Ptr As Long
+        Ptr = ShadowListView.FListItemPtr(Index)
+        If Ptr <> 0 Then
+            Set Item = PtrToObj(Ptr)
+        Else
+            Err.Raise Number:=35600, Description:="Index out of bounds"
+        End If
     Case vbString
         Set Item = PropListItem(Index)
     Case Else
