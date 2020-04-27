@@ -6544,6 +6544,7 @@ If ListViewHandle <> 0 Then
     End If
     ModularValid = CBool(ListViewFocusIndex > 0)
     If (ParamValid = True And ModularValid = True And (Index <> ListViewFocusIndex)) Or (ParamValid Xor ModularValid) Then
+        ListViewFocusIndex = Index
         If ParamValid = True Then
             Dim ListItem As LvwListItem
             If PropVirtualMode = False Then
@@ -6554,7 +6555,6 @@ If ListViewHandle <> 0 Then
             End If
             RaiseEvent ItemFocus(ListItem)
         End If
-        ListViewFocusIndex = Index
     Else
         ListViewFocusIndex = 0
     End If
