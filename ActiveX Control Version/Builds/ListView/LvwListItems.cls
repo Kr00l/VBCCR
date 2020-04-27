@@ -75,12 +75,12 @@ Dim Ptr As Long
 Ptr = ObjPtr(NewListItem)
 If Index = 0 Then Index = PropListItem.Count + 1
 NewListItem.FInit ShadowObjectPointer, Index, Key, Ptr, Text, Icon, IconIndex, SmallIcon, SmallIconIndex
-ShadowListView.FListItemsAdd Ptr, Index, Text
 If Key = vbNullString Then
     PropListItem.Add NewListItem
 Else
     PropListItem.Add NewListItem, Key
 End If
+ShadowListView.FListItemsAdd Ptr, Index, Text
 Set Add = NewListItem
 End Function
 
