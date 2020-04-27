@@ -611,11 +611,6 @@ If Done = False Then
     Set StatusBar1.Panels(1).Picture = ImageList1.ListImages("abc").ExtractIcon
     Done = True
 End If
-
-Dim i As Long
-For i = 1 To ListView1.ListItems.Count
-    ListView1.ListItems.Remove 1
-Next i
 End Sub
 
 Private Sub CommandButtonW1_Click()
