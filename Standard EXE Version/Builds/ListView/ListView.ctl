@@ -3687,7 +3687,7 @@ End Sub
 Friend Sub FListItemsRemove(ByVal Index As Long)
 If ListViewHandle <> 0 Then
     SendMessage ListViewHandle, LVM_DELETEITEM, Index - 1, ByVal 0&
-    If (Me.ListItems.Count - 1) = 0 Then
+    If ListViewListItemsControl = 0 Then
         Call CheckItemFocus(0)
     ElseIf ListViewFocusIndex > Index Then
         ListViewFocusIndex = ListViewFocusIndex - 1
