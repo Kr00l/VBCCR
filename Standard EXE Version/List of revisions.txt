@@ -1,5 +1,10 @@
 List of revisions:
 
+27-Apr-2020
+- Internal improvement in the ListView control.
+  The ItemFocus event is now able to fire at first item insertion. (Index = 1)
+- Minor speed improvement for deleting items in the ListView control.
+
 26-Apr-2020
 - Bugfix in the GetClipboardText function in Common.bas.
 
