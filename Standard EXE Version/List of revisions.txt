@@ -1,10 +1,15 @@
 List of revisions:
 
+28-Apr-2020
+- Property bag for the CheckBoxW/CommandButtonW/OptionButtonW caption's property not unicode anymore. (like LabelW from beginning)
+  This avoids some .frx refs as there is no property page anyway for these available to input unicode in the IDE.
+  No problem occurs with existing property bags, so no compatibility break.
+- Other minor internal improvements in the ListView control.
+
 27-Apr-2020
 - Bugfix in the ListView control.
   - The ItemFocus event is now able to fire at first item insertion. (Index = 1)
   - The ItemFocus event will not have an Item set as 'Nothing' anymore when clearing the list. (mis-feature)
-- Other minor internal improvements in the ListView control.
 
 26-Apr-2020
 - Bugfix in the GetClipboardText function in Common.bas.
