@@ -3562,7 +3562,6 @@ If PropVirtualMode = True Then
             End If
             End With
             SendMessage ListViewHandle, LVM_SETITEMSTATE, 0, ByVal VarPtr(LVI)
-            ListViewFocusIndex = 1
         End If
         ListViewListItemsControl = Value
     End If
@@ -6536,27 +6535,24 @@ End Sub
 
 Private Sub CheckItemFocus(ByVal Index As Long)
 If ListViewHandle <> 0 Then
-    Dim ParamValid As Boolean, ModularValid As Boolean
+    Dim ParamValid As Boolean
     If PropVirtualMode = False Then
         ParamValid = CBool(Index > 0 And Index <= Me.ListItems.Count)
     Else
         ParamValid = CBool(Index > 0 And Index <= SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&))
     End If
-    ModularValid = CBool(ListViewFocusIndex > 0)
-    If (ParamValid = True And ModularValid = True And (Index <> ListViewFocusIndex)) Or (ParamValid Xor ModularValid) Then
+    If Index <> ListViewFocusIndex Then
         ListViewFocusIndex = Index
         If ParamValid = True Then
             Dim ListItem As LvwListItem
             If PropVirtualMode = False Then
-                Set ListItem = Me.ListItems(Index)
+                Set ListItem = Me.ListItems(ListViewFocusIndex)
             Else
                 Set ListItem = New LvwListItem
-                ListItem.FInit ObjPtr(Me), Index, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                ListItem.FInit ObjPtr(Me), ListViewFocusIndex, vbNullString, 0, vbNullString, 0, 0, 0, 0
             End If
             RaiseEvent ItemFocus(ListItem)
         End If
-    Else
-        ListViewFocusIndex = 0
     End If
 End If
 End Sub
@@ -7279,7 +7275,6 @@ Select Case wMsg
                         End If
                         End With
                         SendMessage ListViewHandle, LVM_SETITEMSTATE, 0, ByVal VarPtr(LVI)
-                        ListViewFocusIndex = 1
                     End If
                     ListViewListItemsControl = ListViewListItemsControl + 1
                 Case LVN_DELETEITEM

@@ -240,7 +240,7 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropAlignment = .ReadProperty("Alignment", vbLeftJustify)
 PropBorderStyle = .ReadProperty("BorderStyle", CCBorderStyleNone)
 Me.BackStyle = .ReadProperty("BackStyle", CCBackStyleOpaque)
-PropCaption = .ReadProperty("Caption", vbNullString)
+PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropUseMnemonic = .ReadProperty("UseMnemonic", True)
 PropAutoSize = .ReadProperty("AutoSize", False)
 PropWordWrap = .ReadProperty("WordWrap", False)
@@ -270,7 +270,7 @@ With PropBag
 .WriteProperty "Alignment", PropAlignment, vbLeftJustify
 .WriteProperty "BorderStyle", PropBorderStyle, CCBorderStyleNone
 .WriteProperty "BackStyle", Me.BackStyle, CCBackStyleOpaque
-.WriteProperty "Caption", PropCaption, vbNullString
+.WriteProperty "Caption", PropCaption, vbNullString ' Unicode not necessary
 .WriteProperty "UseMnemonic", PropUseMnemonic, True
 .WriteProperty "AutoSize", PropAutoSize, False
 .WriteProperty "WordWrap", PropWordWrap, False

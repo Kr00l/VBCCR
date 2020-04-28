@@ -549,7 +549,7 @@ PropImageListName = .ReadProperty("ImageList", "(None)")
 PropImageListAlignment = .ReadProperty("ImageListAlignment", ChkImageListAlignmentLeft)
 PropImageListMargin = .ReadProperty("ImageListMargin", 0)
 PropValue = .ReadProperty("Value", vbUnchecked)
-PropCaption = VarToStr(.ReadProperty("Caption", vbNullString))
+PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropAlignment = .ReadProperty("Alignment", CCLeftRightAlignmentLeft)
 PropTextAlignment = .ReadProperty("TextAlignment", vbLeftJustify)
 PropPushLike = .ReadProperty("PushLike", False)
@@ -586,7 +586,7 @@ With PropBag
 .WriteProperty "ImageListAlignment", PropImageListAlignment, ChkImageListAlignmentLeft
 .WriteProperty "ImageListMargin", PropImageListMargin, 0
 .WriteProperty "Value", PropValue, vbUnchecked
-.WriteProperty "Caption", StrToVar(PropCaption), vbNullString
+.WriteProperty "Caption", PropCaption, vbNullString ' Unicode not necessary
 .WriteProperty "Alignment", PropAlignment, CCLeftRightAlignmentLeft
 .WriteProperty "TextAlignment", PropTextAlignment, vbLeftJustify
 .WriteProperty "PushLike", PropPushLike, False
