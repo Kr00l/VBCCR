@@ -416,7 +416,7 @@ Begin VB.Form MainForm
          Width           =   2415
          _ExtentX        =   4260
          _ExtentY        =   3096
-         Caption         =   "MainForm.frx":2AFB
+         Caption         =   "FrameW1"
          Transparent     =   -1  'True
          Begin ComCtlsDemo.HotKey HotKey1 
             Height          =   315
