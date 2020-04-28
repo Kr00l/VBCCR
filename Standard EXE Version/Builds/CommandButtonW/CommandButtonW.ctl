@@ -572,7 +572,7 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropImageListName = .ReadProperty("ImageList", "(None)")
 PropImageListAlignment = .ReadProperty("ImageListAlignment", CmdImageListAlignmentLeft)
 PropImageListMargin = .ReadProperty("ImageListMargin", 0)
-PropCaption = VarToStr(.ReadProperty("Caption", vbNullString))
+PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropAlignment = .ReadProperty("Alignment", vbCenter)
 PropVerticalAlignment = .ReadProperty("VerticalAlignment", CCVerticalAlignmentCenter)
 Set PropPicture = .ReadProperty("Picture", Nothing)
@@ -612,7 +612,7 @@ With PropBag
 .WriteProperty "ImageList", PropImageListName, "(None)"
 .WriteProperty "ImageListAlignment", PropImageListAlignment, CmdImageListAlignmentLeft
 .WriteProperty "ImageListMargin", PropImageListMargin, 0
-.WriteProperty "Caption", StrToVar(PropCaption), vbNullString
+.WriteProperty "Caption", PropCaption, vbNullString ' Unicode not necessary
 .WriteProperty "Alignment", PropAlignment, vbCenter
 .WriteProperty "VerticalAlignment", PropVerticalAlignment, CCVerticalAlignmentCenter
 .WriteProperty "Picture", PropPicture, Nothing
