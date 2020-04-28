@@ -264,7 +264,7 @@ PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
 PropBorderStyle = .ReadProperty("BorderStyle", vbFixedSingle)
-PropCaption = VarToStr(.ReadProperty("Caption", vbNullString))
+PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropAlignment = .ReadProperty("Alignment", vbLeftJustify)
 PropTransparent = .ReadProperty("Transparent", False)
 Set PropPicture = .ReadProperty("Picture", Nothing)
@@ -288,7 +288,7 @@ With PropBag
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
 .WriteProperty "BorderStyle", PropBorderStyle, vbFixedSingle
-.WriteProperty "Caption", StrToVar(PropCaption), vbNullString
+.WriteProperty "Caption", PropCaption, vbNullString ' Unicode not necessary
 .WriteProperty "Alignment", PropAlignment, vbLeftJustify
 .WriteProperty "Transparent", PropTransparent, False
 .WriteProperty "Picture", PropPicture, Nothing
