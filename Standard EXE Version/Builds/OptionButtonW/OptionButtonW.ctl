@@ -1482,7 +1482,7 @@ If OptionButtonHandle <> 0 Then Call ComCtlsShowAllUIStates(OptionButtonHandle)
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
-If PropValue = True Then Me.Value = True
+Me.Value = PropValue
 Me.Caption = PropCaption
 If Not PropPicture Is Nothing Then Set Me.Picture = PropPicture
 If OptionButtonDesignMode = False Then
