@@ -1,5 +1,8 @@
 List of revisions:
 
+30-Apr-2020
+- Internal improvement in the OptionButtonW control.
+
 28-Apr-2020
 - Property bag for the CheckBoxW/CommandButtonW/OptionButtonW/FrameW caption's property not unicode anymore. (like LabelW from beginning)
   This avoids some .frx refs as there is no property page anyway for these available to input unicode in the IDE.
