@@ -195,7 +195,6 @@ Private Const WS_EX_RTLREADING As Long = &H2000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
@@ -268,9 +267,10 @@ Private LinkLabelTransparentBrush As Long
 Private LinkLabelFontHandle As Long, LinkLabelUnderlineFontHandle As Long
 Private LinkLabelCharCodeCache As Long
 Private LinkLabelMouseOver(0 To 3) As Boolean, LinkLabelMouseOverIndex As Long
-Private LinkLabelDesignMode As Boolean, LinkLabelTopDesignMode As Boolean
+Private LinkLabelDesignMode As Boolean
 Private LinkLabelIsClick As Boolean
 Private LinkLabelToolTipReady As Boolean
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -310,25 +310,21 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyTab
-            If LinkLabelHandle <> 0 Then
-                SendMessage LinkLabelHandle, wMsg, wParam, ByVal lParam
-                Dim Item As LITEM
-                With Item
-                .iLink = 0
-                .Mask = LIF_ITEMINDEX Or LIF_STATE
-                .StateMask = LIS_FOCUSED
-                Do While SendMessage(LinkLabelHandle, LM_GETITEM, 0, ByVal VarPtr(Item)) <> 0
-                    If .State = LIS_FOCUSED Then Handled = True
-                    .iLink = .iLink + 1
-                Loop
-                End With
-            End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Dim Item As LITEM
+            With Item
+            .iLink = 0
+            .Mask = LIF_ITEMINDEX Or LIF_STATE
+            .StateMask = LIS_FOCUSED
+            Do While SendMessage(hWnd, LM_GETITEM, 0, ByVal VarPtr(Item)) <> 0
+                If .State = LIS_FOCUSED Then Handled = True
+                .iLink = .iLink + 1
+            Loop
+            End With
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
             If IsInputKey = True Then
-                If LinkLabelHandle <> 0 Then
-                    SendMessage LinkLabelHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -366,7 +362,6 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 LinkLabelDesignMode = Not Ambient.UserMode
-LinkLabelTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -397,7 +392,6 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 LinkLabelDesignMode = Not Ambient.UserMode
-LinkLabelTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -1608,33 +1602,8 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If LinkLabelTopDesignMode = False And GetFocus() <> LinkLabelHandle Then
-            If InProc = True Or LoWord(lParam) = HTBORDER Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_MOUSEMOVE
         If PropHotTracking = True Then
             Dim LHTI1 As LHITTESTINFO, Index As Long
@@ -1938,7 +1907,7 @@ End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_SETFOCUS
-        SetFocusAPI LinkLabelHandle
+        If UCNoSetFocusFwd = False Then SetFocusAPI LinkLabelHandle
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim X As Single
         Dim Y As Single
