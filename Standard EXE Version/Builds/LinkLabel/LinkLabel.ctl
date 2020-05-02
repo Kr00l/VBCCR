@@ -316,7 +316,7 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
             .iLink = 0
             .Mask = LIF_ITEMINDEX Or LIF_STATE
             .StateMask = LIS_FOCUSED
-            Do While SendMessage(hWnd, LM_GETITEM, 0, ByVal VarPtr(Item)) <> 0
+            Do While SendMessage(LinkLabelHandle, LM_GETITEM, 0, ByVal VarPtr(Item)) <> 0
                 If .State = LIS_FOCUSED Then Handled = True
                 .iLink = .iLink + 1
             Loop
