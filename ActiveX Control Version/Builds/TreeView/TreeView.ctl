@@ -869,7 +869,7 @@ If TreeViewDragItem <> 0 Then
         Dim Text As String
         Text = Me.FNodeText(TreeViewDragItem)
         Data.SetData StrToVar(Text & vbNullChar), CF_UNICODETEXT
-        Data.SetData StrToVar(Text), vbCFText
+        Data.SetData Text, vbCFText
         Const vbDropEffectLink As Long = 4 ' Undocumented
         AllowedEffects = vbDropEffectMove Or vbDropEffectCopy Or vbDropEffectLink
     End If

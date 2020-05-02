@@ -593,7 +593,7 @@ If ImageComboDragIndex > 0 Then
         Dim Text As String
         Text = Me.FComboItemText(ImageComboDragIndex)
         Data.SetData StrToVar(Text & vbNullChar), CF_UNICODETEXT
-        Data.SetData StrToVar(Text), vbCFText
+        Data.SetData Text, vbCFText
         AllowedEffects = vbDropEffectMove Or vbDropEffectCopy
     End If
 End If
