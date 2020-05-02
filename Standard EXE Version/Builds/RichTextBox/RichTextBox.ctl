@@ -761,16 +761,12 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd
-            If RichTextBoxHandle <> 0 Then
-                SendMessage RichTextBoxHandle, wMsg, wParam, ByVal lParam
-                Handled = True
-            End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Handled = True
         Case vbKeyTab, vbKeyReturn, vbKeyEscape
             If IsInputKey = True Then
-                If RichTextBoxHandle <> 0 Then
-                    SendMessage RichTextBoxHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
