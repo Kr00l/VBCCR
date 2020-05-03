@@ -1,6 +1,6 @@
 List of revisions:
 
-02-May-2020
+03-May-2020
 - Major internal improvement for LinkLabel/MonthView/ComboBoxW/FontCombo as no WM_MOUSEACTIVATE overhead necessary anymore.
 - Other minor internal improvements.
 

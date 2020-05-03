@@ -280,6 +280,7 @@ Begin VB.Form MainForm
       Value           =   41455
       Format          =   3
       CustomFormat    =   "MainForm.frx":1E29
+      AllowUserInput  =   -1  'True
    End
    Begin VB.PictureBox Picture2 
       AutoRedraw      =   -1  'True
@@ -873,7 +874,7 @@ End If
 Dim DataString As String
 DataString = VarToStr(Data.GetData(vbCFRTF))
 If DataString = ListView1.Name Or DataString = ImageCombo1.Name Or DataString = TreeView1.Name Or DataString = ListBoxW1.Name Then
-    Effect = vbDropEffectMove Or vbDropEffectCopy
+    Effect = vbDropEffectCopy Or vbDropEffectMove
 Else
     Effect = vbDropEffectNone
     Exit Sub
@@ -976,7 +977,7 @@ End If
 Dim DataString As String
 DataString = VarToStr(Data.GetData(vbCFRTF))
 If DataString = ListView1.Name Or DataString = ImageCombo1.Name Or DataString = TreeView1.Name Then
-    Effect = vbDropEffectMove Or vbDropEffectCopy
+    Effect = vbDropEffectCopy Or vbDropEffectMove
 Else
     Effect = vbDropEffectNone
     Exit Sub
@@ -1007,7 +1008,7 @@ Set TabItem = TabStrip1.HitTest(X, Y)
 If TabItem Is Nothing Then
     Effect = vbDropEffectNone
 Else
-    Effect = vbDropEffectMove Or vbDropEffectCopy
+    Effect = vbDropEffectCopy Or vbDropEffectMove
     TabItem.Selected = True
 End If
 End Sub
@@ -1102,7 +1103,7 @@ If Data.GetFormat(vbCFRTF) = False Then Exit Sub
 Dim DataString As String
 DataString = VarToStr(Data.GetData(vbCFRTF))
 If DataString = TreeView1.Name Then
-    Effect = vbDropEffectMove Or vbDropEffectCopy
+    Effect = vbDropEffectCopy Or vbDropEffectMove
     Dim Node As TvwNode, MarkNode As TvwNode, After As Boolean
     Set Node = TreeView1.OLEDraggedItem
     If Not Node Is Nothing Then
