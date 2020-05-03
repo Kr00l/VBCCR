@@ -876,7 +876,7 @@ If TreeViewDragItem <> 0 Then
         Data.SetData StrToVar(Text & vbNullChar), CF_UNICODETEXT
         Data.SetData Text, vbCFText
         Const vbDropEffectLink As Long = 4 ' Undocumented
-        AllowedEffects = vbDropEffectMove Or vbDropEffectCopy Or vbDropEffectLink
+        AllowedEffects = vbDropEffectCopy Or vbDropEffectMove Or vbDropEffectLink
     End If
 End If
 RaiseEvent OLEStartDrag(Data, AllowedEffects)
