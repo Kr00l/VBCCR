@@ -309,6 +309,7 @@ Private DTPickerIsClick As Boolean
 Private DTPickerMouseOver As Boolean
 Private DTPickerDesignMode As Boolean
 Private DTPickerIsValueInvalid As Boolean
+Private DTPickerEditHandle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private DTPickerDroppedDown As Boolean
@@ -366,21 +367,15 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     End If
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
-            If DTPickerHandle <> 0 Then
-                If DTPickerDroppedDown = True Then
-                    SendMessage DTPickerHandle, wMsg, wParam, ByVal lParam
-                Else
-                    If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
-                    SendMessage DTPickerHandle, wMsg, wParam, ByVal lParam
-                End If
-                Handled = True
+            If DTPickerDroppedDown = False And DTPickerEditHandle = 0 Then
+                If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
             End If
+            SendMessage hWnd, wMsg, wParam, ByVal lParam
+            Handled = True
         Case vbKeyTab
             If IsInputKey = True Then
-                If DTPickerHandle <> 0 Then
-                    SendMessage DTPickerHandle, wMsg, wParam, ByVal lParam
-                    Handled = True
-                End If
+                SendMessage hWnd, wMsg, wParam, ByVal lParam
+                Handled = True
             End If
     End Select
 End If
@@ -1883,14 +1878,21 @@ Select Case wMsg
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_COMMAND
-        Const EN_SETFOCUS As Long = &H100
-        If HiWord(wParam) = EN_SETFOCUS Then
-            If lParam <> 0 Then
-                If PropRightToLeft = True And PropRightToLeftLayout = False Then Call ComCtlsSetRightToLeft(lParam, WS_EX_RTLREADING)
-                Call ComCtlsSetSubclass(lParam, Me, 3)
-                Call ActivateIPAO(Me)
-            End If
-        End If
+        Const EN_SETFOCUS As Long = &H100, EN_KILLFOCUS As Long = &H200
+        Select Case HiWord(wParam)
+            Case EN_SETFOCUS
+                DTPickerEditHandle = lParam
+                If lParam <> 0 Then
+                    If PropRightToLeft = True And PropRightToLeftLayout = False Then Call ComCtlsSetRightToLeft(lParam, WS_EX_RTLREADING)
+                    Call ComCtlsSetSubclass(lParam, Me, 3)
+                    Call ActivateIPAO(Me)
+                End If
+            Case EN_KILLFOCUS
+                ' Unlike the filter edit window in the list view control this here is sent in all cases.
+                ' However, it is more secure to handle both EN_KILLFOCUS and WM_KILLFOCUS.
+                DTPickerEditHandle = 0
+                If lParam <> 0 Then Call ComCtlsRemoveSubclass(lParam)
+        End Select
     Case WM_ERASEBKGND
         If Me.Enabled = True And PropBackColor <> vbWindowBackground And DTPickerBackColorBrush <> 0 Then
             Const SM_CXHTHUMB As Long = &HA
@@ -2133,6 +2135,8 @@ End Function
 
 Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
+    Case WM_SETFOCUS
+        Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
@@ -2190,8 +2194,12 @@ End Select
 WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_KILLFOCUS
-        SendMessage DTPickerHandle, WM_KEYDOWN, vbKeyRight, ByVal 0&
-        Call ComCtlsRemoveSubclass(hWnd)
+        If DTPickerEditHandle <> 0 Then
+            ' Remove subclass only in case EN_KILLFOCUS was not processed.
+            DTPickerEditHandle = 0
+            Call ComCtlsRemoveSubclass(hWnd)
+        End If
+        If DTPickerHandle <> 0 Then SendMessage DTPickerHandle, WM_KEYDOWN, vbKeyRight, ByVal 0&
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim P2 As POINTAPI
         P2.X = Get_X_lParam(lParam)
