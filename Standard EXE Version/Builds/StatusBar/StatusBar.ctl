@@ -203,7 +203,7 @@ Private Const ICC_BAR_CLASSES As Long = &H20
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const GWL_STYLE As Long = (-16)
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
-Private Const TA_RTLREADING = &H100
+Private Const TA_RTLREADING As Long = &H100
 Private Const DST_TEXT As Long = &H1
 Private Const DSS_DISABLED As Long = &H20
 Private Const WS_VISIBLE As Long = &H10000000

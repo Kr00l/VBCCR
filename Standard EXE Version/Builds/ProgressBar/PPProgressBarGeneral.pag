@@ -1,19 +1,26 @@
 VERSION 5.00
 Begin VB.PropertyPage PPProgressBarGeneral 
    Caption         =   "General"
-   ClientHeight    =   3810
+   ClientHeight    =   4140
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   5925
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   3810
+   ScaleHeight     =   4140
    ScaleWidth      =   5925
+   Begin VB.TextBox TextText 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   21
+      Top             =   3720
+      Width           =   2235
+   End
    Begin VB.CheckBox CheckShowInTaskBar 
       Caption         =   "ShowInTaskBar"
       Height          =   285
       Left            =   4200
-      TabIndex        =   24
+      TabIndex        =   26
       Top             =   1920
       Width           =   1620
    End
@@ -21,7 +28,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       Caption         =   "MouseTrack"
       Height          =   285
       Left            =   4200
-      TabIndex        =   20
+      TabIndex        =   22
       Top             =   480
       Width           =   1620
    End
@@ -50,7 +57,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       Caption         =   "SmoothReverse"
       Height          =   285
       Left            =   4200
-      TabIndex        =   23
+      TabIndex        =   25
       Top             =   1560
       Width           =   1620
    End
@@ -104,7 +111,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       Caption         =   "MarqueeAnimation"
       Height          =   285
       Left            =   4200
-      TabIndex        =   22
+      TabIndex        =   24
       Top             =   1200
       Width           =   1620
    End
@@ -112,7 +119,7 @@ Begin VB.PropertyPage PPProgressBarGeneral
       Caption         =   "StepAutoReset"
       Height          =   285
       Left            =   4200
-      TabIndex        =   21
+      TabIndex        =   23
       Top             =   840
       Width           =   1620
    End
@@ -130,6 +137,14 @@ Begin VB.PropertyPage PPProgressBarGeneral
       Left            =   1800
       TabIndex        =   1
       Top             =   120
+      Width           =   1620
+   End
+   Begin VB.Label LabelText 
+      Caption         =   "Text:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   20
+      Top             =   3720
       Width           =   1620
    End
    Begin VB.Label LabelMarqueeSpeed 
@@ -257,6 +272,7 @@ With PropertyPage.SelectedControls(0)
 .State = ComboState.ItemData(ComboState.ListIndex)
 .Step = CLng(TextStep.Text)
 .MarqueeSpeed = CLng(TextMarqueeSpeed.Text)
+.Text = TextText.Text
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .StepAutoReset = CBool(CheckStepAutoReset.Value = vbChecked)
 .MarqueeAnimation = CBool(CheckMarqueeAnimation.Value = vbChecked)
@@ -301,6 +317,7 @@ For i = 0 To ComboState.ListCount - 1
 Next i
 TextStep.Text = CStr(.Step)
 TextMarqueeSpeed.Text = CStr(.MarqueeSpeed)
+TextText.Text = .Text
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckStepAutoReset.Value = IIf(.StepAutoReset = True, vbChecked, vbUnchecked)
 CheckMarqueeAnimation.Value = IIf(.MarqueeAnimation = True, vbChecked, vbUnchecked)
@@ -548,6 +565,20 @@ Else
         TextMarqueeSpeed.SetFocus
     End If
 End If
+End Sub
+
+Private Sub TextText_GotFocus()
+If Not TextText.SelStart = 0 Then Exit Sub
+TextText.SelLength = Len(TextText.Text)
+End Sub
+
+Private Sub TextText_LostFocus()
+TextText.SelStart = 0
+End Sub
+
+Private Sub TextText_Change()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckMouseTrack_Click()
