@@ -1,5 +1,9 @@
 List of revisions:
 
+04-May-2020
+- Included Font/Text/TextColor property in the ProgressBar control.
+  Text placeholders: {0} = Value, {1} = Min, {2} = Max and {3} = Percent value between 0 and 100.
+
 03-May-2020
 - Major internal improvement for LinkLabel/MonthView/ComboBoxW/FontCombo as no WM_MOUSEACTIVATE overhead necessary anymore.
 - Other minor internal improvements.
