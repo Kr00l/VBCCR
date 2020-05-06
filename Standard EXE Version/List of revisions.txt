@@ -1,5 +1,9 @@
 List of revisions:
 
+06-May-2020
+- Removed the BackColor property in the DTPicker control for simplification.
+  It was anyhow not possible anymore as of Vista+ ..
+
 04-May-2020
 - Included Font/Text/TextColor property in the ProgressBar control.
   Text placeholders: {0} = Value, {1} = Min, {2} = Max and {3} = Percent value between 0 and 100.

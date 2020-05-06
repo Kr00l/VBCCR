@@ -8,6 +8,7 @@ Begin VB.Form MainForm
    KeyPreview      =   -1  'True
    ScaleHeight     =   8805
    ScaleWidth      =   9915
+   StartUpPosition =   3  'Windows Default
    Begin ComCtlsDemo.StatusBar StatusBar1 
       Align           =   2  'Align Bottom
       Height          =   345
@@ -280,7 +281,6 @@ Begin VB.Form MainForm
       Value           =   41455
       Format          =   3
       CustomFormat    =   "MainForm.frx":1E29
-      AllowUserInput  =   -1  'True
    End
    Begin VB.PictureBox Picture2 
       AutoRedraw      =   -1  'True
@@ -661,14 +661,6 @@ End Sub
 
 Private Sub DTPicker1_FormatString(ByVal CallbackField As String, FormattedString As String)
 If CallbackField = "X" Then FormattedString = "M" & Format$(DTPicker1.Month, "00")
-End Sub
-
-Private Sub DTPicker1_GotFocus()
-DTPicker1.BackColor = vbYellow
-End Sub
-
-Private Sub DTPicker1_LostFocus()
-DTPicker1.BackColor = vbWindowBackground
 End Sub
 
 Private Sub MonthView1_GetDayBold(ByVal StartDate As Date, ByVal Count As Long, State() As Boolean)
