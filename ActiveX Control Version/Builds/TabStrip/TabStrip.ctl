@@ -325,6 +325,7 @@ Private Const TCN_SELCHANGE As Long = (TCN_FIRST - 1)
 Private Const TCN_SELCHANGING As Long = (TCN_FIRST - 2)
 Private Const TCN_GETOBJECT As Long = (TCN_FIRST - 3)
 Private Const TCN_FOCUSCHANGE As Long = (TCN_FIRST - 4)
+Private Const TTF_RTLREADING As Long = &H4
 Private Const TTN_FIRST As Long = (-520)
 Private Const TTN_GETDISPINFOA As Long = (TTN_FIRST - 0)
 Private Const TTN_GETDISPINFOW As Long = (TTN_FIRST - 10)
@@ -2222,10 +2223,15 @@ Select Case wMsg
                     Dim NMTTDI As NMTTDISPINFO
                     CopyMemory NMTTDI, ByVal lParam, LenB(NMTTDI)
                     With NMTTDI
+                    If PropRightToLeft = True And PropRightToLeftLayout = False Then
+                        If Not (.uFlags And TTF_RTLREADING) = TTF_RTLREADING Then
+                            .uFlags = .uFlags Or TTF_RTLREADING
+                            CopyMemory ByVal lParam, NMTTDI, LenB(NMTTDI)
+                        End If
+                    End If
                     Dim Text As String
                     Text = Me.Tabs(.hdr.IDFrom + 1).ToolTipText
                     If Not Text = vbNullString Then
-                        If PropRightToLeft = True And PropRightToLeftLayout = False Then Text = ChrW(&H202B) & Text ' Right-to-left Embedding (RLE)
                         If Len(Text) <= 80 Then
                             Text = Left$(Text & vbNullChar, 80)
                             CopyMemory .szText(0), ByVal StrPtr(Text), LenB(Text)
