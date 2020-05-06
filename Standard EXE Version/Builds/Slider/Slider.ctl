@@ -225,6 +225,7 @@ Private Const TBTS_TOP As Long = 0
 Private Const TBTS_LEFT As Long = 1
 Private Const TBTS_BOTTOM As Long = 2
 Private Const TBTS_RIGHT As Long = 3
+Private Const TTF_RTLREADING As Long = &H4
 Private Const TTN_FIRST As Long = (-520)
 Private Const TTN_GETDISPINFOA As Long = (TTN_FIRST - 0)
 Private Const TTN_GETDISPINFOW As Long = (TTN_FIRST - 10)
@@ -1619,6 +1620,12 @@ Select Case wMsg
                     Dim NMTTDI As NMTTDISPINFO
                     CopyMemory NMTTDI, ByVal lParam, LenB(NMTTDI)
                     With NMTTDI
+                    If PropRightToLeft = True And PropRightToLeftLayout = False Then
+                        If Not (.uFlags And TTF_RTLREADING) = TTF_RTLREADING Then
+                            .uFlags = .uFlags Or TTF_RTLREADING
+                            CopyMemory ByVal lParam, NMTTDI, LenB(NMTTDI)
+                        End If
+                    End If
                     Dim Text As String, Length As Long, OldText As String
                     If .lpszText <> 0 Then Length = lstrlen(.lpszText)
                     If Length > 0 Then
@@ -1629,7 +1636,6 @@ Select Case wMsg
                     End If
                     OldText = Text
                     RaiseEvent ModifyTipText(Text)
-                    If PropRightToLeft = True And PropRightToLeftLayout = False Then Text = ChrW(&H202B) & Text ' Right-to-left Embedding (RLE)
                     If StrComp(Text, OldText) <> 0 Then
                         With NMTTDI
                         If Len(Text) <= 80 Then

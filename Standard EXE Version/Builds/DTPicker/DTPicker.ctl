@@ -174,11 +174,6 @@ Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal 
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
-Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
-Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
-Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
-Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
-Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
@@ -225,9 +220,7 @@ Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SETFONT As Long = &H30
-Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_CONTEXTMENU As Long = &H7B
-Private Const WM_CTLCOLOREDIT As Long = &H133
 Private Const DTS_UPDOWN As Long = &H1
 Private Const DTS_SHOWNONE As Long = &H2
 Private Const DTS_SHORTDATEFORMAT As Long = &H0
@@ -303,7 +296,6 @@ Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private DTPickerHandle As Long
 Private DTPickerFontHandle As Long
-Private DTPickerBackColorBrush As Long
 Private DTPickerCharCodeCache As Long
 Private DTPickerIsClick As Boolean
 Private DTPickerMouseOver As Boolean
@@ -325,7 +317,6 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropBackColor As OLE_COLOR
 Private PropCalendarBackColor As OLE_COLOR
 Private PropCalendarForeColor As OLE_COLOR
 Private PropCalendarTitleBackColor As OLE_COLOR
@@ -449,7 +440,6 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropBackColor = vbWindowBackground
 PropCalendarBackColor = vbWindowBackground
 PropCalendarForeColor = vbButtonText
 PropCalendarTitleBackColor = vbActiveTitleBar
@@ -493,7 +483,6 @@ PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropBackColor = .ReadProperty("BackColor", vbWindowBackground)
 PropCalendarBackColor = .ReadProperty("CalendarBackColor", vbWindowBackground)
 PropCalendarForeColor = .ReadProperty("CalendarForeColor", vbButtonText)
 PropCalendarTitleBackColor = .ReadProperty("CalendarTitleBackColor", vbActiveTitleBar)
@@ -532,7 +521,6 @@ With PropBag
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
-.WriteProperty "BackColor", PropBackColor, vbWindowBackground
 .WriteProperty "CalendarBackColor", PropCalendarBackColor, vbWindowBackground
 .WriteProperty "CalendarForeColor", PropCalendarForeColor, vbButtonText
 .WriteProperty "CalendarTitleBackColor", PropCalendarTitleBackColor, vbActiveTitleBar
@@ -972,21 +960,6 @@ Select Case Value
 End Select
 Me.RightToLeft = PropRightToLeft
 UserControl.PropertyChanged "RightToLeftMode"
-End Property
-
-Public Property Get BackColor() As OLE_COLOR
-Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object. Only applicable if the enabled property is set to true. This property is ignored at design time or if the version of comctl32.dll is 6.1 or higher."
-BackColor = PropBackColor
-End Property
-
-Public Property Let BackColor(ByVal Value As OLE_COLOR)
-PropBackColor = Value
-If DTPickerHandle <> 0 And ComCtlsSupportLevel() <= 1 And DTPickerDesignMode = False Then
-    If DTPickerBackColorBrush <> 0 Then DeleteObject DTPickerBackColorBrush
-    DTPickerBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
-End If
-Me.Refresh
-UserControl.PropertyChanged "BackColor"
 End Property
 
 Public Property Get CalendarBackColor() As OLE_COLOR
@@ -1668,10 +1641,7 @@ Me.MaxDate = PropMaxDate
 Me.Value = PropValue
 Me.CustomFormat = PropCustomFormat
 If DTPickerDesignMode = False Then
-    If DTPickerHandle <> 0 Then
-        If DTPickerBackColorBrush = 0 And ComCtlsSupportLevel() <= 1 Then DTPickerBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
-        Call ComCtlsSetSubclass(DTPickerHandle, Me, 1)
-    End If
+    If DTPickerHandle <> 0 Then Call ComCtlsSetSubclass(DTPickerHandle, Me, 1)
 End If
 End Sub
 
@@ -1705,10 +1675,6 @@ DTPickerHandle = 0
 If DTPickerFontHandle <> 0 Then
     DeleteObject DTPickerFontHandle
     DTPickerFontHandle = 0
-End If
-If DTPickerBackColorBrush <> 0 Then
-    DeleteObject DTPickerBackColorBrush
-    DTPickerBackColorBrush = 0
 End If
 End Sub
 
@@ -1893,16 +1859,6 @@ Select Case wMsg
                 DTPickerEditHandle = 0
                 If lParam <> 0 Then Call ComCtlsRemoveSubclass(lParam)
         End Select
-    Case WM_ERASEBKGND
-        If Me.Enabled = True And PropBackColor <> vbWindowBackground And DTPickerBackColorBrush <> 0 Then
-            Const SM_CXHTHUMB As Long = &HA
-            Dim RC As RECT
-            GetClientRect hWnd, RC
-            RC.Right = RC.Right - GetSystemMetrics(SM_CXHTHUMB)
-            FillRect wParam, RC, DTPickerBackColorBrush
-            WindowProcControl = 1
-            Exit Function
-        End If
     Case WM_NOTIFY
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
@@ -2007,13 +1963,6 @@ Select Case wMsg
             End If
             If Handled = True Then Exit Function
         End If
-    Case WM_CTLCOLOREDIT
-        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-        If DTPickerBackColorBrush <> 0 Then
-            SetBkColor wParam, WinColor(PropBackColor)
-            WindowProcControl = DTPickerBackColorBrush
-        End If
-        Exit Function
     Case UM_DATETIMECHANGE
         RaiseEvent Change
         Exit Function
