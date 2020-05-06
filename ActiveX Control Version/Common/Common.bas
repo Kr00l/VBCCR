@@ -18,6 +18,10 @@ Top As Long
 Right As Long
 Bottom As Long
 End Type
+Private Type POINTAPI
+X As Long
+Y As Long
+End Type
 Private Type BITMAP
 BMType As Long
 BMWidth As Long
@@ -99,6 +103,27 @@ dwFileSubtype As Long
 dwFileDateMS As Long
 dwFileDateLS As Long
 End Type
+Private Type MONITORINFO
+cbSize As Long
+RCMonitor As RECT
+RCWork As RECT
+dwFlags As Long
+End Type
+Private Type WINDOWPLACEMENT
+cbSize As Long
+Flags As Long
+CmdShow As Long
+PTMinPosition As POINTAPI
+PTMaxPosition As POINTAPI
+RCNormalPosition As RECT
+End Type
+Private Type FLASHWINFO
+cbSize As Long
+hWnd As Long
+dwFlags As Long
+uCount As Long
+dwTimeout As Long
+End Type
 Private Const LF_FACESIZE As Long = 32
 Private Const DEFAULT_QUALITY As Long = 0
 Private Type LOGFONT
@@ -134,6 +159,10 @@ Private Declare Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime A
 Private Declare Function FindFirstFile Lib "kernel32" Alias "FindFirstFileW" (ByVal lpFileName As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare Function FindNextFile Lib "kernel32" Alias "FindNextFileW" (ByVal hFindFile As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare Function FindClose Lib "kernel32" (ByVal hFindFile As Long) As Long
+Private Declare Function GetWindowPlacement Lib "user32" (ByVal hWnd As Long, ByRef lpWNDPL As WINDOWPLACEMENT) As Long
+Private Declare Function SetWindowPlacement Lib "user32" (ByVal hWnd As Long, ByRef lpWNDPL As WINDOWPLACEMENT) As Long
+Private Declare Function MonitorFromWindow Lib "user32" (ByVal hWnd As Long, ByVal dwFlags As Long) As Long
+Private Declare Function GetMonitorInfo Lib "user32" Alias "GetMonitorInfoW" (ByVal hMonitor As Long, ByRef lpMI As MONITORINFO) As Long
 Private Declare Function GetVolumePathName Lib "kernel32" Alias "GetVolumePathNameW" (ByVal lpFileName As Long, ByVal lpVolumePathName As Long, ByVal cch As Long) As Long
 Private Declare Function GetVolumeInformation Lib "kernel32" Alias "GetVolumeInformationW" (ByVal lpRootPathName As Long, ByVal lpVolumeNameBuffer As Long, ByVal nVolumeNameSize As Long, ByRef lpVolumeSerialNumber As Long, ByRef lpMaximumComponentLength As Long, ByRef lpFileSystemFlags As Long, ByVal lpFileSystemNameBuffer As Long, ByVal nFileSystemNameSize As Long) As Long
 Private Declare Function CreateDirectory Lib "kernel32" Alias "CreateDirectoryW" (ByVal lpPathName As Long, ByVal lpSecurityAttributes As Long) As Long
@@ -162,6 +191,7 @@ Private Declare Function GetSystemWindowsDirectory Lib "kernel32" Alias "GetSyst
 Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirectoryW" (ByVal lpBuffer As Long, ByVal nSize As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetMenu Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function FlashWindowEx Lib "user32" (ByRef pFWI As FLASHWINFO) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function GetObjectAPI Lib "gdi32" Alias "GetObjectW" (ByVal hObject As Long, ByVal nCount As Long, ByRef lpObject As Any) As Long
@@ -748,6 +778,40 @@ Buffer = String(256, vbNullChar)
 RetVal = GetClassName(hWnd, StrPtr(Buffer), Len(Buffer))
 If RetVal <> 0 Then GetWindowClassName = Left$(Buffer, RetVal)
 End Function
+
+Public Sub CenterFormToScreen(ByVal Form As VB.Form, Optional ByVal RefForm As VB.Form)
+Const MONITOR_DEFAULTTOPRIMARY As Long = &H1
+If RefForm Is Nothing Then Set RefForm = Form
+Dim hMonitor As Long, MI As MONITORINFO
+hMonitor = MonitorFromWindow(RefForm.hWnd, MONITOR_DEFAULTTOPRIMARY)
+MI.cbSize = LenB(MI)
+GetMonitorInfo hMonitor, MI
+Dim WNDPL As WINDOWPLACEMENT, Width As Long, Height As Long
+WNDPL.cbSize = LenB(WNDPL)
+GetWindowPlacement Form.hWnd, WNDPL
+With WNDPL.RCNormalPosition
+Width = (.Right - .Left)
+Height = (.Bottom - .Top)
+.Left = MI.RCMonitor.Left + (((MI.RCMonitor.Right - MI.RCMonitor.Left) - Width) \ 2)
+.Right = .Left + Width
+.Top = MI.RCMonitor.Top + (((MI.RCMonitor.Bottom - MI.RCMonitor.Top) - Height) \ 2)
+.Bottom = .Top + Height
+End With
+SetWindowPlacement Form.hWnd, WNDPL
+End Sub
+
+Public Sub FlashForm(ByVal Form As VB.Form)
+Const FLASHW_CAPTION As Long = &H1, FLASHW_TRAY As Long = &H2, FLASHW_TIMERNOFG As Long = &HC
+Dim FWI As FLASHWINFO
+With FWI
+.cbSize = LenB(FWI)
+.dwFlags = FLASHW_CAPTION Or FLASHW_TRAY Or FLASHW_TIMERNOFG
+.hWnd = Form.hWnd
+.dwTimeout = 0 ' Default cursor blink rate
+.uCount = 0
+End With
+FlashWindowEx FWI
+End Sub
 
 Public Function GetFormTitleBarHeight(ByVal Form As VB.Form) As Single
 Const SM_CYCAPTION As Long = 4, SM_CYMENU As Long = 15
