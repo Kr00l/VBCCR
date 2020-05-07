@@ -1817,16 +1817,11 @@ End Sub
 
 Private Function GetGoodWidth(ByVal Index As Long) As Long
 If StatusBarHandle <> 0 Then
+    GetGoodWidth = PropShadowPanels(Index).MinWidth
     If PropShadowPanels(Index).Visible = True Then
         Select Case PropShadowPanels(Index).AutoSize
             Case SbrPanelAutoSizeNone
-                If PropShadowPanels(Index).FixedWidth > -1 Then
-                    GetGoodWidth = PropShadowPanels(Index).FixedWidth
-                Else
-                    GetGoodWidth = PropShadowPanels(Index).MinWidth
-                End If
-            Case SbrPanelAutoSizeSpring
-                GetGoodWidth = PropShadowPanels(Index).MinWidth
+                If PropShadowPanels(Index).FixedWidth > -1 Then GetGoodWidth = PropShadowPanels(Index).FixedWidth
             Case SbrPanelAutoSizeContent
                 Dim Width As Long
                 Width = GetTextWidth(Index)
