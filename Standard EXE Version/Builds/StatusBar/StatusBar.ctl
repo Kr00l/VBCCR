@@ -184,6 +184,7 @@ Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode
 Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
 Private Declare Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As Long, ByVal hBrush As Long, ByVal lpDrawStateProc As Long, ByVal lData As Long, ByVal wData As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -204,6 +205,7 @@ Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const GWL_STYLE As Long = (-16)
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const TA_RTLREADING As Long = &H100
+Private Const SM_CXVSCROLL As Long = 2
 Private Const DST_TEXT As Long = &H1
 Private Const DSS_DISABLED As Long = &H20
 Private Const WS_VISIBLE As Long = &H10000000
@@ -345,6 +347,7 @@ Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
 PictureRenderFlag As Integer
+FixedWidth As Long
 End Type
 Private StatusBarHandle As Long, StatusBarToolTipHandle As Long
 Private StatusBarSizeGripAllowable As Boolean
@@ -413,6 +416,7 @@ Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+PropShadowDefaultPanel.FixedWidth = -1
 End Sub
 
 Private Sub UserControl_Show()
@@ -704,26 +708,20 @@ Private Sub TimerUpdatePanels_Timer()
 If StatusBarHandle = 0 Then Exit Sub
 Dim NeedUpdate As Boolean
 If PropShadowPanelsCount > 0 Then
-    Dim RC As RECT
-    Dim Text As String
-    Dim StringIsNew As Boolean
-    Dim i As Long
-    Dim Enabled As Boolean
+    Dim i As Long, Text As String, Enabled As Boolean, RC As RECT
     For i = 1 To PropShadowPanelsCount
         With PropShadowPanels(i)
         If .Visible = True Then
             Call GetDisplayText(i, Text, Enabled)
-            StringIsNew = CBool(StrComp(Text, .DisplayText))
-            If StringIsNew = True Then
+            If StrComp(Text, .DisplayText) <> 0 Then
                 InvalidateRect StatusBarHandle, ByVal 0&, 1
                 Call SetParts
                 NeedUpdate = True
                 Exit For
-            End If
-            If StringIsNew = True Or (Enabled Xor .Enabled) Then
+            ElseIf Enabled Xor .Enabled Then
                 Call GetPanelRect(i, RC)
-                NeedUpdate = True
                 InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+                NeedUpdate = True
             End If
         End If
         End With
@@ -1207,8 +1205,8 @@ If PanelIndex < PropShadowPanelsCount Then
     For i = PropShadowPanelsCount To PanelIndex + 1 Step -1
         LSet PropShadowPanels(i) = PropShadowPanels(i - 1)
     Next i
-    LSet PropShadowPanels(i) = PropShadowDefaultPanel
 End If
+LSet PropShadowPanels(PanelIndex) = PropShadowDefaultPanel
 With PropShadowPanels(PanelIndex)
 .Text = Replace(Text, vbTab, vbNullString)
 .ToolTipText = vbNullString
@@ -1479,6 +1477,22 @@ If StatusBarHandle <> 0 Then
     Dim RC As RECT
     Call GetPanelRect(Index, RC)
     FPanelWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize)
+End If
+End Property
+
+Friend Property Let FPanelWidth(ByVal Index As Long, ByVal Value As Single)
+If Value < 0 Then Err.Raise 380
+If StatusBarHandle <> 0 Then
+    If PropShadowPanels(Index).AutoSize <> SbrPanelAutoSizeSpring Then
+        Select Case PropShadowPanels(Index).AutoSize
+            Case SbrPanelAutoSizeNone
+                PropShadowPanels(Index).FixedWidth = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+            Case SbrPanelAutoSizeContent
+                PropShadowPanels(Index).MinWidth = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+        End Select
+        Call SetParts
+        Call SetPanels
+    End If
 End If
 End Property
 
@@ -1763,7 +1777,7 @@ If StatusBarHandle <> 0 Then
             If i < PropShadowPanelsCount Then TotalWidth = TotalWidth + Borders(SBB_DIVIDER)
         Next i
         TotalWidth = TotalWidth + Borders(SBB_HORIZONTAL) + Borders(SBB_HORIZONTAL)
-        If Me.IncludesSizeGrip = True Then TotalWidth = TotalWidth + 16 ' GetSystemMetrics(SM_CXVSCROLL) is here not applicable.
+        If Me.IncludesSizeGrip = True Then TotalWidth = TotalWidth + GetSystemMetrics(SM_CXVSCROLL)
         If TotalWidth < (UserControl.ScaleWidth - 1) Then
             Dim CountSpring As Long
             For i = 1 To PropShadowPanelsCount
@@ -1793,7 +1807,7 @@ If StatusBarHandle <> 0 Then
         Next i
         SendMessage StatusBarHandle, SB_SETPARTS, PropShadowPanelsCount, ByVal VarPtr(Parts(0))
     Else
-        ReDim Parts(0)
+        ReDim Parts(0) As Long
         Parts(0) = -1
         SendMessage StatusBarHandle, SB_SETPARTS, 1, ByVal VarPtr(Parts(0))
         SendMessage StatusBarHandle, SB_SETTEXT, 0, ByVal 0&
@@ -1803,16 +1817,24 @@ End Sub
 
 Private Function GetGoodWidth(ByVal Index As Long) As Long
 If StatusBarHandle <> 0 Then
-    GetGoodWidth = PropShadowPanels(Index).MinWidth
     If PropShadowPanels(Index).Visible = True Then
-        If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
-            Dim Width As Long
-            Width = GetTextWidth(Index)
-            If Width > GetGoodWidth Then GetGoodWidth = Width
-            If Not PropShadowPanels(Index).Picture Is Nothing Then
-                If PropShadowPanels(Index).Picture.Handle <> 0 Then GetGoodWidth = GetGoodWidth + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 2
-            End If
-        End If
+        Select Case PropShadowPanels(Index).AutoSize
+            Case SbrPanelAutoSizeNone
+                If PropShadowPanels(Index).FixedWidth > -1 Then
+                    GetGoodWidth = PropShadowPanels(Index).FixedWidth
+                Else
+                    GetGoodWidth = PropShadowPanels(Index).MinWidth
+                End If
+            Case SbrPanelAutoSizeSpring
+                GetGoodWidth = PropShadowPanels(Index).MinWidth
+            Case SbrPanelAutoSizeContent
+                Dim Width As Long
+                Width = GetTextWidth(Index)
+                If Width > GetGoodWidth Then GetGoodWidth = Width
+                If Not PropShadowPanels(Index).Picture Is Nothing Then
+                    If PropShadowPanels(Index).Picture.Handle <> 0 Then GetGoodWidth = GetGoodWidth + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 2
+                End If
+        End Select
     Else
         GetGoodWidth = 0
     End If
