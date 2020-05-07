@@ -109,14 +109,6 @@ RCMonitor As RECT
 RCWork As RECT
 dwFlags As Long
 End Type
-Private Type WINDOWPLACEMENT
-cbSize As Long
-Flags As Long
-CmdShow As Long
-PTMinPosition As POINTAPI
-PTMaxPosition As POINTAPI
-RCNormalPosition As RECT
-End Type
 Private Type FLASHWINFO
 cbSize As Long
 hWnd As Long
@@ -159,8 +151,7 @@ Private Declare Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime A
 Private Declare Function FindFirstFile Lib "kernel32" Alias "FindFirstFileW" (ByVal lpFileName As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare Function FindNextFile Lib "kernel32" Alias "FindNextFileW" (ByVal hFindFile As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare Function FindClose Lib "kernel32" (ByVal hFindFile As Long) As Long
-Private Declare Function GetWindowPlacement Lib "user32" (ByVal hWnd As Long, ByRef lpWNDPL As WINDOWPLACEMENT) As Long
-Private Declare Function SetWindowPlacement Lib "user32" (ByVal hWnd As Long, ByRef lpWNDPL As WINDOWPLACEMENT) As Long
+Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function MonitorFromWindow Lib "user32" (ByVal hWnd As Long, ByVal dwFlags As Long) As Long
 Private Declare Function GetMonitorInfo Lib "user32" Alias "GetMonitorInfoW" (ByVal hMonitor As Long, ByRef lpMI As MONITORINFO) As Long
 Private Declare Function GetVolumePathName Lib "kernel32" Alias "GetVolumePathNameW" (ByVal lpFileName As Long, ByVal lpVolumePathName As Long, ByVal cch As Long) As Long
@@ -782,22 +773,18 @@ End Function
 Public Sub CenterFormToScreen(ByVal Form As VB.Form, Optional ByVal RefForm As VB.Form)
 Const MONITOR_DEFAULTTOPRIMARY As Long = &H1
 If RefForm Is Nothing Then Set RefForm = Form
-Dim hMonitor As Long, MI As MONITORINFO
+Dim hMonitor As Long, MI As MONITORINFO, WndRect As RECT
 hMonitor = MonitorFromWindow(RefForm.hWnd, MONITOR_DEFAULTTOPRIMARY)
 MI.cbSize = LenB(MI)
 GetMonitorInfo hMonitor, MI
-Dim WNDPL As WINDOWPLACEMENT, Width As Long, Height As Long
-WNDPL.cbSize = LenB(WNDPL)
-GetWindowPlacement Form.hWnd, WNDPL
-With WNDPL.RCNormalPosition
-Width = (.Right - .Left)
-Height = (.Bottom - .Top)
-.Left = MI.RCMonitor.Left + (((MI.RCMonitor.Right - MI.RCMonitor.Left) - Width) \ 2)
-.Right = .Left + Width
-.Top = MI.RCMonitor.Top + (((MI.RCMonitor.Bottom - MI.RCMonitor.Top) - Height) \ 2)
-.Bottom = .Top + Height
-End With
-SetWindowPlacement Form.hWnd, WNDPL
+GetWindowRect Form.hWnd, WndRect
+If TypeOf Form Is VB.MDIForm Then
+    Dim MDIForm As VB.MDIForm
+    Set MDIForm = Form
+    MDIForm.Move (MI.RCMonitor.Left + (((MI.RCMonitor.Right - MI.RCMonitor.Left) - (WndRect.Right - WndRect.Left)) \ 2)) * (1440 / DPI_X()), (MI.RCMonitor.Top + (((MI.RCMonitor.Bottom - MI.RCMonitor.Top) - (WndRect.Bottom - WndRect.Top)) \ 2)) * (1440 / DPI_Y())
+Else
+    Form.Move (MI.RCMonitor.Left + (((MI.RCMonitor.Right - MI.RCMonitor.Left) - (WndRect.Right - WndRect.Left)) \ 2)) * (1440 / DPI_X()), (MI.RCMonitor.Top + (((MI.RCMonitor.Bottom - MI.RCMonitor.Top) - (WndRect.Bottom - WndRect.Top)) \ 2)) * (1440 / DPI_Y())
+End If
 End Sub
 
 Public Sub FlashForm(ByVal Form As VB.Form)
