@@ -1,5 +1,8 @@
 List of revisions:
 
+07-May-2020
+- Width property of a Panel in the StatusBar control not read-only anymore. It behaves as the MS StatusBar.
+
 06-May-2020
 - Removed the BackColor property in the DTPicker control for simplification.
   It was anyhow not possible anymore as of Vista+ ..
