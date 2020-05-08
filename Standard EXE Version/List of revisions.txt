@@ -1,5 +1,9 @@
 List of revisions:
 
+08-May-2020
+- The IPAddress control supports now the WM_PRINTCLIENT message.
+  This was lost due to the rebuild from scratch as of 17-Apr-2020. (no longer use of SysIPAddress32 class)
+
 07-May-2020
 - Width property of a Panel in the StatusBar control not read-only anymore. It behaves as the MS StatusBar.
 
