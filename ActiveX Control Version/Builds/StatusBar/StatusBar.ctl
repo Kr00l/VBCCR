@@ -1480,12 +1480,21 @@ End If
 End Property
 
 Friend Property Let FPanelWidth(ByVal Index As Long, ByVal Value As Single)
-If Value < 0 Then Err.Raise 380
+If Value < 0 Then
+    If Value = -1 And PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeNone Then
+    Else
+        Err.Raise 380
+    End If
+End If
 If StatusBarHandle <> 0 Then
     If PropShadowPanels(Index).AutoSize <> SbrPanelAutoSizeSpring Then
         Select Case PropShadowPanels(Index).AutoSize
             Case SbrPanelAutoSizeNone
-                PropShadowPanels(Index).FixedWidth = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+                If Value > -1 Then
+                    PropShadowPanels(Index).FixedWidth = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+                Else
+                    PropShadowPanels(Index).FixedWidth = -1
+                End If
             Case SbrPanelAutoSizeContent
                 PropShadowPanels(Index).MinWidth = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
         End Select
