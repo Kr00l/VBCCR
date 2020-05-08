@@ -193,7 +193,7 @@ Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
 Public Property Get Width() As Single
-Attribute Width.VB_Description = "Returns the width of the panel."
+Attribute Width.VB_Description = "Returns/sets the width of the panel."
 Width = ShadowStatusBar.FPanelWidth(PropIndex)
 End Property
 
