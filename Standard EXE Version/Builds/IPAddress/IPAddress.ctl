@@ -7,6 +7,7 @@ Begin VB.UserControl IPAddress
    ClientTop       =   0
    ClientWidth     =   2400
    ForeColor       =   &H80000008&
+   HasDC           =   0   'False
    MousePointer    =   3  'I-Beam
    PropertyPages   =   "IPAddress.ctx":0000
    ScaleHeight     =   120
@@ -413,6 +414,7 @@ End Sub
 
 Private Sub UserControl_Paint()
 With UserControl
+.Cls
 Dim hFontOld As Long
 If IPAddressFontHandle <> 0 Then hFontOld = SelectObject(.hDC, IPAddressFontHandle)
 Dim X As Long, Y As Long, CX As Long
