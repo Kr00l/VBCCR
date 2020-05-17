@@ -113,15 +113,19 @@ Private Declare Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function PtInRect Lib "user32" (ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
 Private Declare Function GetClassLong Lib "user32" Alias "GetClassLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
+Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
+Private Declare Function GetKeyNameText Lib "user32" Alias "GetKeyNameTextW" (ByVal lParam As Long, ByVal lpBuffer As Long, ByVal nSize As Long) As Long
+Private Declare Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualKeyExW" (ByVal wCode As Long, ByVal wMapType As Long, ByVal hKL As Long) As Long
 Private Const ICC_HOTKEY_CLASS As Long = &H40
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const GCL_STYLE As Long = (-26)
 Private Const CS_DBLCLKS As Long = &H8
+Private Const MAPVK_VK_TO_VSC As Long = 0
+Private Const HOTKEYF_EXT As Long = &H8
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const SW_HIDE As Long = &H0
 Private Const GA_ROOT As Long = 2
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_KEYDOWN As Long = &H100
@@ -142,6 +146,8 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DESTROY As Long = &H2
+Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_COMMAND As Long = &H111
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_ERASEBKGND As Long = &H14
@@ -162,11 +168,12 @@ Private HotKeyBackColorBrush As Long
 Private HotKeyCharCodeCache As Long
 Private HotKeyIsClick As Boolean
 Private HotKeyMouseOver As Boolean
-Private HotKeyDesignMode As Boolean, HotKeyTopDesignMode As Boolean
+Private HotKeyDesignMode As Boolean
 Private HotKeyDblClickSupported As Boolean, HotKeyIsDblClick As Boolean
 Private HotKeyDblClickTime As Long, HotKeyDblClickTickCount As Double
 Private HotKeyDblClickCX As Long, HotKeyDblClickCY As Long
 Private HotKeyDblClickX As Long, HotKeyDblClickY As Long
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -244,7 +251,6 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 HotKeyDesignMode = Not Ambient.UserMode
-HotKeyTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -259,7 +265,6 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 HotKeyDesignMode = Not Ambient.UserMode
-HotKeyTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -616,13 +621,14 @@ UserControl.PropertyChanged "MouseTrack"
 End Property
 
 Public Property Get BackColor() As OLE_COLOR
-Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object. Only applicable if the enabled property is set to true. This property is ignored at design time."
+Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object."
+Attribute BackColor.VB_UserMemId = -501
 BackColor = PropBackColor
 End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If HotKeyHandle <> 0 And HotKeyDesignMode = False Then
+If HotKeyHandle <> 0 Then
     If HotKeyBackColorBrush <> 0 Then DeleteObject HotKeyBackColorBrush
     HotKeyBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
@@ -667,6 +673,11 @@ If HotKeyDesignMode = False Then
         Call ComCtlsSetSubclass(HotKeyHandle, Me, 1)
     End If
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+Else
+    If HotKeyHandle <> 0 Then
+        If HotKeyBackColorBrush = 0 Then HotKeyBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
+        Call ComCtlsSetSubclass(HotKeyHandle, Me, 3)
+    End If
 End If
 End Sub
 
@@ -721,6 +732,47 @@ Public Property Let RawValue(ByVal Value As Long)
 If HotKeyHandle <> 0 Then SendMessage HotKeyHandle, HKM_SETHOTKEY, Value, ByVal 0&
 End Property
 
+Public Property Get Text() As String
+Attribute Text.VB_Description = "Returns the text contained in an object."
+Attribute Text.VB_MemberFlags = "400"
+If HotKeyHandle <> 0 Then
+    Dim hKL As Long
+    hKL = GetKeyboardLayout(0)
+    Dim RetVal As Integer, KeyCode As Integer, Modifiers As Integer
+    RetVal = LoWord(SendMessage(HotKeyHandle, HKM_GETHOTKEY, 0, ByVal 0&))
+    KeyCode = LoByte(RetVal)
+    Modifiers = HiByte(RetVal)
+    Dim ScanCode As Long
+    ScanCode = MapVirtualKeyEx(KeyCode, MAPVK_VK_TO_VSC, hKL)
+    Dim Buffer As String, StrKey As String
+    Buffer = String$(100, vbNullChar)
+    GetKeyNameText MakeDWord(0, MakeWord(LoByte(LoWord(ScanCode)), IIf((Modifiers And HOTKEYF_EXT) = HOTKEYF_EXT, 1, 0))), StrPtr(Buffer), 100
+    StrKey = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Dim StrCtrl As String, StrShift As String, StrAlt As String
+    Buffer = String$(100, vbNullChar)
+    ScanCode = MapVirtualKeyEx(vbKeyControl, MAPVK_VK_TO_VSC, hKL)
+    GetKeyNameText MakeDWord(0, MakeWord(LoByte(LoWord(ScanCode)), 0)), StrPtr(Buffer), 100
+    StrCtrl = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Buffer = String$(100, vbNullChar)
+    ScanCode = MapVirtualKeyEx(vbKeyShift, MAPVK_VK_TO_VSC, hKL)
+    GetKeyNameText MakeDWord(0, MakeWord(LoByte(LoWord(ScanCode)), 0)), StrPtr(Buffer), 100
+    StrShift = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Buffer = String$(100, vbNullChar)
+    ScanCode = MapVirtualKeyEx(vbKeyMenu, MAPVK_VK_TO_VSC, hKL)
+    GetKeyNameText MakeDWord(0, MakeWord(LoByte(LoWord(ScanCode)), 0)), StrPtr(Buffer), 100
+    StrAlt = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Dim StrModifiers As String
+    If (Modifiers And vbCtrlMask) <> 0 Then StrModifiers = StrCtrl
+    If (Modifiers And vbShiftMask) <> 0 Then
+        If Not StrModifiers = vbNullString Then StrModifiers = StrModifiers & " + " & StrShift Else StrModifiers = StrShift
+    End If
+    If (Modifiers And vbAltMask) <> 0 Then
+        If Not StrModifiers = vbNullString Then StrModifiers = StrModifiers & " + " & StrAlt Else StrModifiers = StrAlt
+    End If
+    If Not StrModifiers = vbNullString Then Text = StrModifiers & " + " & StrKey Else Text = StrKey
+End If
+End Property
+
 Public Sub SetRules(ByVal InvalidKeyCombinations As HkeInvalidKeyCombinationConstants, Optional ByVal DefaultModifiers As VBRUN.ShiftConstants)
 Attribute SetRules.VB_Description = "Defines the invalid key combinations and the default modifiers for the hot key control."
 Select Case InvalidKeyCombinations
@@ -745,6 +797,8 @@ Select Case dwRefData
         ISubclass_Message = WindowProcControl(hWnd, wMsg, wParam, lParam)
     Case 2
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+    Case 3
+        ISubclass_Message = WindowProcControlDesignMode(hWnd, wMsg, wParam, lParam)
 End Select
 End Function
 
@@ -787,33 +841,6 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If HotKeyTopDesignMode = False And GetFocus() <> HotKeyHandle Then
-            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -829,7 +856,7 @@ Select Case wMsg
             End If
         End If
     Case WM_ERASEBKGND
-        If Me.Enabled = True And PropBackColor <> vbWindowBackground And HotKeyBackColorBrush <> 0 Then
+        If HotKeyBackColorBrush <> 0 Then
             SetBkMode wParam, 1
             Dim RC As RECT
             GetClientRect hWnd, RC
@@ -838,6 +865,9 @@ Select Case wMsg
             Exit Function
         End If
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN
+        If wMsg = WM_LBUTTONDOWN Then
+            If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        End If
         If HotKeyDblClickSupported = False Then
             If HotKeyDblClickTickCount = 0 Then
                 HotKeyDblClickTickCount = CLngToULng(GetTickCount())
@@ -930,5 +960,18 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI HotKeyHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI HotKeyHandle
+End Function
+
+Private Function WindowProcControlDesignMode(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Select Case wMsg
+    Case WM_ERASEBKGND
+        WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
+        Exit Function
+End Select
+WindowProcControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_DESTROY, WM_NCDESTROY
+        Call ComCtlsRemoveSubclass(hWnd)
+End Select
 End Function

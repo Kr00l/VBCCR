@@ -69,6 +69,10 @@ Attribute Picture.VB_Description = "Returns/sets the image picture."
 Set Picture = PropPicture
 End Property
 
+Public Property Let Picture(ByVal Value As IPictureDisp)
+Err.Raise Number:=383, Description:="Property is read-only"
+End Property
+
 Public Property Set Picture(ByVal Value As IPictureDisp)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
