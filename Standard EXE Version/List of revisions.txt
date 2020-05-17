@@ -1,6 +1,7 @@
 List of revisions:
 
 17-May-2020
+- Bugfix in the Add method of LvwColumnHeaders in the ListView control.
 - Included Text property (read-only) in the HotKey control.
 - BackColor property in the HotKey control works now also when Enabled = False.
 - Major internal improvement for HotKey as no WM_MOUSEACTIVATE overhead necessary anymore.
