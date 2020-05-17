@@ -59,7 +59,6 @@ If IsMissing(Icon) Then
 Else
     Call ComCtlsImlListImageIndex(ShadowListView, ShadowListView.ColumnHeaderIcons, Icon, IconIndex)
 End If
-ShadowListView.FColumnHeadersAdd Index, Text, Width, Alignment, IconIndex
 Dim NewColumnHeader As New LvwColumnHeader
 NewColumnHeader.FInit ShadowObjectPointer, Key, Icon, IconIndex
 If Key = vbNullString Then
@@ -83,6 +82,7 @@ Else
         Me.Item(i).Index = i
     Next i
 End If
+ShadowListView.FColumnHeadersAdd Index, Text, Width, Alignment, IconIndex
 Set Add = NewColumnHeader
 End Function
 
