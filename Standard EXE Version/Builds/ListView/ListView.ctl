@@ -33,7 +33,7 @@ Private LvwColumnHeaderAutoSizeToItems, LvwColumnHeaderAutoSizeToHeader
 Private LvwColumnHeaderFilterTypeText, LvwColumnHeaderFilterTypeNumber
 Private LvwLabelEditAutomatic, LvwLabelEditManual, LvwLabelEditDisabled
 Private LvwSortOrderAscending, LvwSortOrderDescending
-Private LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate
+Private LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate, LvwSortTypeLogical
 Private LvwPictureAlignmentTopLeft, LvwPictureAlignmentTopRight, LvwPictureAlignmentBottomLeft, LvwPictureAlignmentBottomRight, LvwPictureAlignmentCenter, LvwPictureAlignmentTile
 Private LvwGroupHeaderAlignmentLeft, LvwGroupHeaderAlignmentRight, LvwGroupHeaderAlignmentCenter
 Private LvwGroupFooterAlignmentLeft, LvwGroupFooterAlignmentRight, LvwGroupFooterAlignmentCenter
@@ -87,6 +87,7 @@ LvwSortTypeText = 1
 LvwSortTypeNumeric = 2
 LvwSortTypeCurrency = 3
 LvwSortTypeDate = 4
+LvwSortTypeLogical = 5
 End Enum
 Public Enum LvwPictureAlignmentConstants
 LvwPictureAlignmentTopLeft = 0
@@ -515,6 +516,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Desti
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrcmp Lib "kernel32" Alias "lstrcmpW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function lstrcmpi Lib "kernel32" Alias "lstrcmpiW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
+Private Declare Function StrCmpLogical Lib "shlwapi" Alias "StrCmpLogicalW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function SetWindowTheme Lib "uxtheme" (ByVal hWnd As Long, ByVal pSubAppName As Long, ByVal pSubIDList As Long) As Long
 Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -2912,7 +2914,7 @@ End Property
 
 Public Property Let SortType(ByVal Value As LvwSortTypeConstants)
 Select Case Value
-    Case LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate
+    Case LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate, LvwSortTypeLogical
         PropSortType = Value
     Case Else
         Err.Raise 380
@@ -6756,6 +6758,8 @@ If ListViewHandle <> 0 Then
                 Address = ProcPtr(AddressOf ComCtlsLvwSortingFunctionCurrency)
             Case LvwSortTypeDate
                 Address = ProcPtr(AddressOf ComCtlsLvwSortingFunctionDate)
+            Case LvwSortTypeLogical
+                Address = ProcPtr(AddressOf ComCtlsLvwSortingFunctionLogical)
         End Select
         If Address <> 0 Then
             Dim This As ISubclass
@@ -6821,6 +6825,14 @@ ListItemsSortingFunctionDate = Sgn(Date1 - Date2)
 If PropSortOrder = LvwSortOrderDescending Then ListItemsSortingFunctionDate = -ListItemsSortingFunctionDate
 End Function
 
+Private Function ListItemsSortingFunctionLogical(ByVal lParam1 As Long, ByVal lParam2 As Long) As Long
+Dim Text1 As String, Text2 As String
+Text1 = Me.FListItemText(lParam1 + 1, PropSortKey)
+Text2 = Me.FListItemText(lParam2 + 1, PropSortKey)
+ListItemsSortingFunctionLogical = StrCmpLogical(StrPtr(Text1), StrPtr(Text2))
+If PropSortOrder = LvwSortOrderDescending Then ListItemsSortingFunctionLogical = -ListItemsSortingFunctionLogical
+End Function
+
 Private Function GroupsSortingFunctionBinary(ByVal lParam1 As Long, ByVal lParam2 As Long, ByVal SortOrder As LvwSortOrderConstants) As Long
 Dim Text1 As String, Text2 As String
 Text1 = Me.FGroupHeader(lParam1)
@@ -6874,6 +6886,14 @@ Date2 = CDate(Text2)
 On Error GoTo 0
 GroupsSortingFunctionDate = Sgn(Date1 - Date2)
 If SortOrder = LvwSortOrderDescending Then GroupsSortingFunctionDate = -GroupsSortingFunctionDate
+End Function
+
+Private Function GroupsSortingFunctionLogical(ByVal lParam1 As Long, ByVal lParam2 As Long, ByVal SortOrder As LvwSortOrderConstants) As Long
+Dim Text1 As String, Text2 As String
+Text1 = Me.FGroupHeader(lParam1)
+Text2 = Me.FGroupHeader(lParam2)
+GroupsSortingFunctionLogical = StrCmpLogical(StrPtr(Text1), StrPtr(Text2))
+If SortOrder = LvwSortOrderDescending Then GroupsSortingFunctionLogical = -GroupsSortingFunctionLogical
 End Function
 
 Private Function NextGroupID() As Long
@@ -6969,6 +6989,8 @@ Select Case dwRefData
         ISubclass_Message = ListItemsSortingFunctionCurrency(wParam, lParam)
     Case 14
         ISubclass_Message = ListItemsSortingFunctionDate(wParam, lParam)
+    Case 15
+        ISubclass_Message = ListItemsSortingFunctionLogical(wParam, lParam)
     Case 20
         ISubclass_Message = GroupsSortingFunctionBinary(wParam, lParam, wMsg)
     Case 21
@@ -6979,6 +7001,8 @@ Select Case dwRefData
         ISubclass_Message = GroupsSortingFunctionCurrency(wParam, lParam, wMsg)
     Case 24
         ISubclass_Message = GroupsSortingFunctionDate(wParam, lParam, wMsg)
+    Case 25
+        ISubclass_Message = GroupsSortingFunctionLogical(wParam, lParam, wMsg)
 End Select
 End Function
 

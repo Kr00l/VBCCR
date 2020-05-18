@@ -139,7 +139,7 @@ End Property
 
 Public Property Let SortType(ByVal Value As LvwSortTypeConstants)
 Select Case Value
-    Case LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate
+    Case LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate, LvwSortTypeLogical
         PropSortType = Value
     Case Else
         Err.Raise 380
@@ -159,6 +159,8 @@ Select Case PropSortType
         dwRefData = 23
     Case LvwSortTypeDate
         dwRefData = 24
+    Case LvwSortTypeLogical
+        dwRefData = 25
 End Select
 On Error Resume Next
 Dim This As ISubclass
