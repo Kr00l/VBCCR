@@ -825,6 +825,10 @@ Public Function ComCtlsLvwSortingFunctionDate(ByVal lParam1 As Long, ByVal lPara
 ComCtlsLvwSortingFunctionDate = This.Message(0, 0, lParam1, lParam2, 14)
 End Function
 
+Public Function ComCtlsLvwSortingFunctionLogical(ByVal lParam1 As Long, ByVal lParam2 As Long, ByVal This As ISubclass) As Long
+ComCtlsLvwSortingFunctionLogical = This.Message(0, 0, lParam1, lParam2, 15)
+End Function
+
 Public Function ComCtlsLvwSortingFunctionGroups(ByVal lParam1 As Long, ByVal lParam2 As Long, ByVal This As ISubclass) As Long
 ComCtlsLvwSortingFunctionGroups = This.Message(0, 0, lParam1, lParam2, 0)
 End Function
