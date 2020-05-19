@@ -221,6 +221,7 @@ Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
 Private Const WM_PASTE As Long = &H302
+Private Const WM_PAINT As Long = &HF
 Private Const WM_NCPAINT As Long = &H85
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
@@ -1344,18 +1345,14 @@ Select Case wMsg
             End If
         End If
     Case WM_PRINTCLIENT
-        Dim ClientRect As RECT, Brush1 As Long
-        GetClientRect UserControl.hWnd, ClientRect
-        Brush1 = CreateSolidBrush(WinColor(UserControl.BackColor))
-        FillRect wParam, ClientRect, Brush1
-        DeleteObject Brush1
+        SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
         Call DrawDots(wParam)
         Dim WndRect1 As RECT, P As POINTAPI, i As Long
         For i = 1 To 4
             GetWindowRect IPAddressEditHandle(i), WndRect1
             MapWindowPoints HWND_DESKTOP, UserControl.hWnd, WndRect1, 2
             SetViewportOrgEx wParam, WndRect1.Left, WndRect1.Top, P
-            SendMessage IPAddressEditHandle(i), WM_PRINTCLIENT, wParam, ByVal lParam
+            SendMessage IPAddressEditHandle(i), WM_PAINT, wParam, ByVal 0&
             SetViewportOrgEx wParam, P.X, P.Y, P
         Next i
         WindowProcUserControl = 0
@@ -1396,20 +1393,20 @@ Select Case wMsg
                         ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
                         Dim EditPart As Long, EditState As Long
                         EditPart = EP_EDITBORDER_NOSCROLL
-                        Dim Brush2 As Long
+                        Dim Brush As Long
                         If Me.Enabled = False Then
                             EditState = EPSN_DISABLED
-                            Brush2 = CreateSolidBrush(WinColor(vbButtonFace))
+                            Brush = CreateSolidBrush(WinColor(vbButtonFace))
                         Else
                             If IPAddressEditFocusHwnd <> 0 Then
                                 EditState = EPSN_FOCUSED
                             Else
                                 EditState = EPSN_NORMAL
                             End If
-                            Brush2 = CreateSolidBrush(WinColor(Me.BackColor))
+                            Brush = CreateSolidBrush(WinColor(Me.BackColor))
                         End If
-                        FillRect hDC, RC2, Brush2
-                        DeleteObject Brush2
+                        FillRect hDC, RC2, Brush
+                        DeleteObject Brush
                         If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
                         DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
                         ReleaseDC hWnd, hDC
