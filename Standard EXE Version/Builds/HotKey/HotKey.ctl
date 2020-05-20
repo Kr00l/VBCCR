@@ -17,6 +17,9 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+
+#Const ImplementThemedBorder = True
+
 #If False Then
 Private HkeInvalidKeyCombinationNone, HkeInvalidKeyCombinationShift, HkeInvalidKeyCombinationCtrl, HkeInvalidKeyCombinationAlt, HkeInvalidKeyCombinationShiftCtrl, HkeInvalidKeyCombinationShiftAlt, HkeInvalidKeyCombinationCtrlAlt, HkeInvalidKeyCombinationShiftCtrlAlt
 #End If
@@ -93,10 +96,12 @@ Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation 
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
+Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
@@ -116,8 +121,51 @@ Private Declare Function GetClassLong Lib "user32" Alias "GetClassLongW" (ByVal 
 Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
 Private Declare Function GetKeyNameText Lib "user32" Alias "GetKeyNameTextW" (ByVal lParam As Long, ByVal lpBuffer As Long, ByVal nSize As Long) As Long
 Private Declare Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualKeyExW" (ByVal wCode As Long, ByVal wMapType As Long, ByVal hKL As Long) As Long
+
+#If ImplementThemedBorder = True Then
+
+Private Enum UxThemeEditParts
+EP_EDITTEXT = 1
+EP_CARET = 2
+EP_BACKGROUND = 3
+EP_PASSWORD = 4
+EP_BACKGROUNDWITHBORDER = 5
+EP_EDITBORDER_NOSCROLL = 6
+EP_EDITBORDER_HSCROLL = 7
+EP_EDITBORDER_VSCROLL = 8
+EP_EDITBORDER_HVSCROLL = 9
+End Enum
+Private Enum UxThemeEditBorderNoScrollStates
+EPSN_NORMAL = 1
+EPSN_HOT = 2
+EPSN_FOCUSED = 3
+EPSN_DISABLED = 4
+End Enum
+Private Declare Function OpenThemeData Lib "uxtheme" (ByVal hWnd As Long, ByVal pszClassList As Long) As Long
+Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As Long
+Private Declare Function IsThemeBackgroundPartiallyTransparent Lib "uxtheme" (ByVal Theme As Long, iPartId As Long, iStateId As Long) As Long
+Private Declare Function DrawThemeParentBackground Lib "uxtheme" (ByVal hWnd As Long, ByVal hDC As Long, ByRef pRect As RECT) As Long
+Private Declare Function DrawThemeBackground Lib "uxtheme" (ByVal Theme As Long, ByVal hDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, ByRef pRect As RECT, ByRef pClipRect As RECT) As Long
+Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
+Private Declare Function GetWindowDC Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetDCEx Lib "user32" (ByVal hWnd As Long, ByVal hRgnClip As Long, ByVal fdwOptions As Long) As Long
+Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
+Private Declare Function ExcludeClipRect Lib "gdi32" (ByVal hDC As Long, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
+Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
+
+#End If
+
 Private Const ICC_HOTKEY_CLASS As Long = &H40
-Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80, RDW_NOCHILDREN As Long = &H40, RDW_FRAME As Long = &H400
+Private Const SWP_FRAMECHANGED As Long = &H20
+Private Const SWP_DRAWFRAME As Long = SWP_FRAMECHANGED
+Private Const SWP_NOMOVE As Long = &H2
+Private Const SWP_NOOWNERZORDER As Long = &H200
+Private Const SWP_NOSIZE As Long = &H1
+Private Const SWP_NOZORDER As Long = &H4
+Private Const DCX_WINDOW As Long = &H1
+Private Const DCX_INTERSECTRGN As Long = &H80
+Private Const DCX_USESTYLE As Long = &H10000
 Private Const GCL_STYLE As Long = (-26)
 Private Const CS_DBLCLKS As Long = &H8
 Private Const MAPVK_VK_TO_VSC As Long = 0
@@ -128,6 +176,9 @@ Private Const SW_HIDE As Long = &H0
 Private Const GA_ROOT As Long = 2
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
+Private Const WM_ENABLE As Long = &HA
+Private Const WM_THEMECHANGED As Long = &H31A
+Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
@@ -148,6 +199,7 @@ Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
+Private Const WM_NCPAINT As Long = &H85
 Private Const WM_COMMAND As Long = &H111
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_ERASEBKGND As Long = &H14
@@ -169,6 +221,8 @@ Private HotKeyCharCodeCache As Long
 Private HotKeyIsClick As Boolean
 Private HotKeyMouseOver As Boolean
 Private HotKeyDesignMode As Boolean
+Private HotKeyFocused As Boolean
+Private HotKeyEnabledVisualStyles As Boolean
 Private HotKeyDblClickSupported As Boolean, HotKeyIsDblClick As Boolean
 Private HotKeyDblClickTime As Long, HotKeyDblClickTickCount As Double
 Private HotKeyDblClickCX As Long, HotKeyDblClickCY As Long
@@ -530,7 +584,8 @@ End Property
 
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
-If HotKeyHandle <> 0 And EnabledVisualStyles() = True Then
+HotKeyEnabledVisualStyles = EnabledVisualStyles()
+If HotKeyHandle <> 0 And HotKeyEnabledVisualStyles = True Then
     If PropVisualStyles = True Then
         ActivateVisualStyles HotKeyHandle
     Else
@@ -633,6 +688,16 @@ If HotKeyHandle <> 0 Then
     HotKeyBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
 Me.Refresh
+
+#If ImplementThemedBorder = True Then
+
+If PropBorderStyle = CCBorderStyleSunken Then
+    ' Redraw the border to consider the new back color for the themed border, if any.
+    RedrawWindow UserControl.hWnd, 0, 0, RDW_FRAME Or RDW_INVALIDATE Or RDW_UPDATENOW Or RDW_NOCHILDREN
+End If
+
+#End If
+
 UserControl.PropertyChanged "BackColor"
 End Property
 
@@ -864,6 +929,77 @@ Select Case wMsg
             WindowProcControl = 1
             Exit Function
         End If
+    
+    #If ImplementThemedBorder = True Then
+    
+    Case WM_THEMECHANGED, WM_STYLECHANGED, WM_ENABLE
+        If wMsg = WM_THEMECHANGED Then HotKeyEnabledVisualStyles = EnabledVisualStyles()
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
+            If HotKeyEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+        End If
+    Case WM_NCPAINT
+        ' Bugfix for msctls_hotkey32 class as it always draws a themed border.
+        ' However, it should only draw themed when the border style is sunken. (like the edit control)
+        ' In addition the disabled and focused state will be handled.
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True And HotKeyEnabledVisualStyles = True Then
+            Dim Theme As Long
+            Theme = OpenThemeData(hWnd, StrPtr("Edit"))
+            If Theme <> 0 Then
+                Dim hDC As Long
+                If wParam = 1 Then ' Alias for entire window
+                    hDC = GetWindowDC(hWnd)
+                Else
+                    hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
+                End If
+                If hDC <> 0 Then
+                    Dim BorderX As Long, BorderY As Long
+                    Dim RC1 As RECT, RC2 As RECT, WndRect2 As RECT
+                    Const SM_CXEDGE As Long = 45
+                    Const SM_CYEDGE As Long = 46
+                    BorderX = GetSystemMetrics(SM_CXEDGE)
+                    BorderY = GetSystemMetrics(SM_CYEDGE)
+                    GetWindowRect hWnd, WndRect2
+                    With UserControl
+                    SetRect RC1, BorderX, BorderY, (WndRect2.Right - WndRect2.Left) - BorderX, (WndRect2.Bottom - WndRect2.Top) - BorderY
+                    SetRect RC2, 0, 0, (WndRect2.Right - WndRect2.Left), (WndRect2.Bottom - WndRect2.Top)
+                    End With
+                    ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
+                    Dim EditPart As Long, EditState As Long
+                    EditPart = EP_EDITBORDER_NOSCROLL
+                    Dim Brush As Long
+                    If Me.Enabled = False Then
+                        EditState = EPSN_DISABLED
+                        Brush = CreateSolidBrush(WinColor(vbButtonFace))
+                    Else
+                        If HotKeyFocused = True Then
+                            EditState = EPSN_FOCUSED
+                        Else
+                            EditState = EPSN_NORMAL
+                        End If
+                        Brush = CreateSolidBrush(WinColor(Me.BackColor))
+                    End If
+                    FillRect hDC, RC2, Brush
+                    DeleteObject Brush
+                    If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
+                    DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
+                    ReleaseDC hWnd, hDC
+                End If
+                CloseThemeData Theme
+                WindowProcControl = 0
+                Exit Function
+            End If
+        End If
+        WindowProcControl = DefWindowProc(hWnd, wMsg, wParam, lParam)
+        Exit Function
+    
+    #Else
+    
+    Case WM_NCPAINT
+        WindowProcControl = DefWindowProc(hWnd, wMsg, wParam, lParam)
+        Exit Function
+    
+    #End If
+    
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN
         If wMsg = WM_LBUTTONDOWN Then
             If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
@@ -903,6 +1039,17 @@ Select Case wMsg
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
+    
+    #If ImplementThemedBorder = True Then
+    
+    Case WM_SETFOCUS, WM_KILLFOCUS
+        HotKeyFocused = CBool(wMsg = WM_SETFOCUS)
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
+            If HotKeyEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
+        End If
+    
+    #End If
+    
     Case WM_LBUTTONDBLCLK, WM_MBUTTONDBLCLK, WM_RBUTTONDBLCLK
         RaiseEvent DblClick
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -965,7 +1112,16 @@ End Function
 
 Private Function WindowProcControlDesignMode(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
-    Case WM_ERASEBKGND
+    
+    #If ImplementThemedBorder = True Then
+    
+    Case WM_THEMECHANGED, WM_STYLECHANGED, WM_ENABLE
+        WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
+        Exit Function
+    
+    #End If
+    
+    Case WM_ERASEBKGND, WM_NCPAINT
         WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
         Exit Function
 End Select

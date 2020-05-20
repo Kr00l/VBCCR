@@ -1366,54 +1366,52 @@ Select Case wMsg
             If IPAddressEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
         End If
     Case WM_NCPAINT
-        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True Then
-            If IPAddressEnabledVisualStyles = True Then
-                Dim Theme As Long
-                Theme = OpenThemeData(hWnd, StrPtr("Edit"))
-                If Theme <> 0 Then
-                    WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-                    Dim hDC As Long
-                    If wParam = 1 Then ' Alias for entire window
-                        hDC = GetWindowDC(hWnd)
-                    Else
-                        hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
-                    End If
-                    If hDC <> 0 Then
-                        Dim BorderX As Long, BorderY As Long
-                        Dim RC1 As RECT, RC2 As RECT, WndRect2 As RECT
-                        Const SM_CXEDGE As Long = 45
-                        Const SM_CYEDGE As Long = 46
-                        BorderX = GetSystemMetrics(SM_CXEDGE)
-                        BorderY = GetSystemMetrics(SM_CYEDGE)
-                        GetWindowRect hWnd, WndRect2
-                        With UserControl
-                        SetRect RC1, BorderX, BorderY, (WndRect2.Right - WndRect2.Left) - BorderX, (WndRect2.Bottom - WndRect2.Top) - BorderY
-                        SetRect RC2, 0, 0, (WndRect2.Right - WndRect2.Left), (WndRect2.Bottom - WndRect2.Top)
-                        End With
-                        ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
-                        Dim EditPart As Long, EditState As Long
-                        EditPart = EP_EDITBORDER_NOSCROLL
-                        Dim Brush As Long
-                        If Me.Enabled = False Then
-                            EditState = EPSN_DISABLED
-                            Brush = CreateSolidBrush(WinColor(vbButtonFace))
-                        Else
-                            If IPAddressEditFocusHwnd <> 0 Then
-                                EditState = EPSN_FOCUSED
-                            Else
-                                EditState = EPSN_NORMAL
-                            End If
-                            Brush = CreateSolidBrush(WinColor(Me.BackColor))
-                        End If
-                        FillRect hDC, RC2, Brush
-                        DeleteObject Brush
-                        If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
-                        DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
-                        ReleaseDC hWnd, hDC
-                    End If
-                    CloseThemeData Theme
-                    Exit Function
+        If PropBorderStyle = CCBorderStyleSunken And PropVisualStyles = True And IPAddressEnabledVisualStyles = True Then
+            Dim Theme As Long
+            Theme = OpenThemeData(hWnd, StrPtr("Edit"))
+            If Theme <> 0 Then
+                Dim hDC As Long
+                If wParam = 1 Then ' Alias for entire window
+                    hDC = GetWindowDC(hWnd)
+                Else
+                    hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
                 End If
+                If hDC <> 0 Then
+                    Dim BorderX As Long, BorderY As Long
+                    Dim RC1 As RECT, RC2 As RECT, WndRect2 As RECT
+                    Const SM_CXEDGE As Long = 45
+                    Const SM_CYEDGE As Long = 46
+                    BorderX = GetSystemMetrics(SM_CXEDGE)
+                    BorderY = GetSystemMetrics(SM_CYEDGE)
+                    GetWindowRect hWnd, WndRect2
+                    With UserControl
+                    SetRect RC1, BorderX, BorderY, (WndRect2.Right - WndRect2.Left) - BorderX, (WndRect2.Bottom - WndRect2.Top) - BorderY
+                    SetRect RC2, 0, 0, (WndRect2.Right - WndRect2.Left), (WndRect2.Bottom - WndRect2.Top)
+                    End With
+                    ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
+                    Dim EditPart As Long, EditState As Long
+                    EditPart = EP_EDITBORDER_NOSCROLL
+                    Dim Brush As Long
+                    If Me.Enabled = False Then
+                        EditState = EPSN_DISABLED
+                        Brush = CreateSolidBrush(WinColor(vbButtonFace))
+                    Else
+                        If IPAddressEditFocusHwnd <> 0 Then
+                            EditState = EPSN_FOCUSED
+                        Else
+                            EditState = EPSN_NORMAL
+                        End If
+                        Brush = CreateSolidBrush(WinColor(Me.BackColor))
+                    End If
+                    FillRect hDC, RC2, Brush
+                    DeleteObject Brush
+                    If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
+                    DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
+                    ReleaseDC hWnd, hDC
+                End If
+                CloseThemeData Theme
+                WindowProcUserControl = 0
+                Exit Function
             End If
         End If
     
