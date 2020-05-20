@@ -1,5 +1,10 @@
 List of revisions:
 
+20-May-2020
+- Major internal improvement for ImageCombo as no WM_MOUSEACTIVATE overhead necessary anymore.
+- Improvement for the WM_NCPAINT handler in the RichTextBox control.
+- Included a WM_NCPAINT handler for the HotKey control to resolve msctls_hotkey32 class bugs. (it behaves then like an edit control)
+
 18-May-2020
 - Included SortType LvwSortTypeLogical in the ListView control.
 - Bugfix related to 08-May-2020 update. (WM_PRINTCLIENT in IPAddress control)
