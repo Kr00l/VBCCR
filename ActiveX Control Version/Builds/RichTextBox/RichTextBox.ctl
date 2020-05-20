@@ -3510,72 +3510,70 @@ Select Case wMsg
             If RichTextBoxEnabledVisualStyles = True Then SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_DRAWFRAME
         End If
     Case WM_NCPAINT
-        ' For some reason, Microsoft never updated its rich edit library after the release
-        ' of Windows XP to make the rich edit control theme-aware.
+        ' For some reason, Microsoft never updated its rich edit library after the release of Windows XP to make the rich edit control theme-aware.
         ' In order to support themes it is necessary to do a workaround.
-        If PropBorder = True And PropVisualStyles = True Then
-            If RichTextBoxEnabledVisualStyles = True Then
-                Dim Theme As Long
-                Theme = OpenThemeData(hWnd, StrPtr("Edit"))
-                If Theme <> 0 Then
-                    WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-                    Dim hDC As Long
-                    If wParam = 1 Then ' Alias for entire window
-                        hDC = GetWindowDC(hWnd)
-                    Else
-                        hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
-                    End If
-                    If hDC <> 0 Then
-                        Dim BorderX As Long, BorderY As Long
-                        Dim RC1 As RECT, RC2 As RECT
-                        Const SM_CXEDGE As Long = 45
-                        Const SM_CYEDGE As Long = 46
-                        BorderX = GetSystemMetrics(SM_CXEDGE)
-                        BorderY = GetSystemMetrics(SM_CYEDGE)
-                        With UserControl
-                        SetRect RC1, BorderX, BorderY, .ScaleWidth - BorderX, .ScaleHeight - BorderY
-                        SetRect RC2, 0, 0, .ScaleWidth, .ScaleHeight
-                        End With
-                        ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
-                        Dim dwStyle As Long
-                        dwStyle = GetWindowLong(hWnd, GWL_STYLE)
-                        Dim EditPart As Long, EditState As Long
-                        If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
-                            If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                                EditPart = EP_EDITBORDER_HVSCROLL
-                            Else
-                                EditPart = EP_EDITBORDER_HSCROLL
-                            End If
-                        Else
-                            If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                                EditPart = EP_EDITBORDER_VSCROLL
-                            Else
-                                EditPart = EP_EDITBORDER_NOSCROLL
-                            End If
-                        End If
-                        Dim Brush As Long
-                        If Me.Enabled = False Then
-                            EditState = EPSN_DISABLED
-                            Brush = CreateSolidBrush(WinColor(vbButtonFace))
-                        Else
-                            If RichTextBoxFocused = True Then
-                                EditState = EPSN_FOCUSED
-                            ElseIf RichTextBoxMouseOver(0) = True Then
-                                EditState = EPSN_HOT
-                            Else
-                                EditState = EPSN_NORMAL
-                            End If
-                            Brush = CreateSolidBrush(WinColor(PropBackColor))
-                        End If
-                        FillRect hDC, RC2, Brush
-                        DeleteObject Brush
-                        If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
-                        DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
-                        ReleaseDC hWnd, hDC
-                    End If
-                    CloseThemeData Theme
-                    Exit Function
+        ' In addition the disabled and focused state will be handled.
+        If PropBorder = True And PropVisualStyles = True And RichTextBoxEnabledVisualStyles = True Then
+            Dim Theme As Long
+            Theme = OpenThemeData(hWnd, StrPtr("Edit"))
+            If Theme <> 0 Then
+                Dim hDC As Long
+                If wParam = 1 Then ' Alias for entire window
+                    hDC = GetWindowDC(hWnd)
+                Else
+                    hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
                 End If
+                If hDC <> 0 Then
+                    Dim BorderX As Long, BorderY As Long
+                    Dim RC1 As RECT, RC2 As RECT
+                    Const SM_CXEDGE As Long = 45
+                    Const SM_CYEDGE As Long = 46
+                    BorderX = GetSystemMetrics(SM_CXEDGE)
+                    BorderY = GetSystemMetrics(SM_CYEDGE)
+                    With UserControl
+                    SetRect RC1, BorderX, BorderY, .ScaleWidth - BorderX, .ScaleHeight - BorderY
+                    SetRect RC2, 0, 0, .ScaleWidth, .ScaleHeight
+                    End With
+                    ExcludeClipRect hDC, RC1.Left, RC1.Top, RC1.Right, RC1.Bottom
+                    Dim dwStyle As Long
+                    dwStyle = GetWindowLong(hWnd, GWL_STYLE)
+                    Dim EditPart As Long, EditState As Long
+                    If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
+                        If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                            EditPart = EP_EDITBORDER_HVSCROLL
+                        Else
+                            EditPart = EP_EDITBORDER_HSCROLL
+                        End If
+                    Else
+                        If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                            EditPart = EP_EDITBORDER_VSCROLL
+                        Else
+                            EditPart = EP_EDITBORDER_NOSCROLL
+                        End If
+                    End If
+                    Dim Brush As Long
+                    If Me.Enabled = False Then
+                        EditState = EPSN_DISABLED
+                        Brush = CreateSolidBrush(WinColor(vbButtonFace))
+                    Else
+                        If RichTextBoxFocused = True Then
+                            EditState = EPSN_FOCUSED
+                        ElseIf RichTextBoxMouseOver(0) = True Then
+                            EditState = EPSN_HOT
+                        Else
+                            EditState = EPSN_NORMAL
+                        End If
+                        Brush = CreateSolidBrush(WinColor(PropBackColor))
+                    End If
+                    FillRect hDC, RC2, Brush
+                    DeleteObject Brush
+                    If IsThemeBackgroundPartiallyTransparent(Theme, EditPart, EditState) <> 0 Then DrawThemeParentBackground hWnd, hDC, RC2
+                    DrawThemeBackground Theme, hDC, EditPart, EditState, RC2, RC2
+                    ReleaseDC hWnd, hDC
+                End If
+                CloseThemeData Theme
+                WindowProcControl = 0
+                Exit Function
             End If
         End If
     

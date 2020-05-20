@@ -93,6 +93,7 @@ Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation 
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
@@ -141,6 +142,7 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_NCPAINT As Long = &H85
 Private Const WM_COMMAND As Long = &H111
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_ERASEBKGND As Long = &H14
@@ -806,6 +808,13 @@ Select Case wMsg
             GetClientRect hWnd, RC
             FillRect wParam, RC, HotKeyBackColorBrush
             WindowProcControl = 1
+            Exit Function
+        End If
+    Case WM_NCPAINT
+        ' Bugfix for msctls_hotkey32 class as it always draws a themed border.
+        ' However, it should only draw themed when the border style is sunken. (like the edit control)
+        If PropBorderStyle <> CCBorderStyleSunken Then
+            WindowProcControl = DefWindowProc(hWnd, wMsg, wParam, lParam)
             Exit Function
         End If
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN

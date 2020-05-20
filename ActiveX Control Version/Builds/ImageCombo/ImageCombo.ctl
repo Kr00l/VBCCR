@@ -214,7 +214,6 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const SW_HIDE As Long = &H0
 Private Const WS_VSCROLL As Long = &H200000
-Private Const WM_MOUSEACTIVATE As Long = &H21, MA_ACTIVATE As Long = &H1, MA_ACTIVATEANDEAT As Long = &H2, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTVSCROLL As Long = 7
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETFOCUS As Long = &H7
@@ -243,7 +242,7 @@ Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_VSCROLL As Long = &H115
 Private Const SB_VERT As Long = 1
-Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
+Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
 Private Const SIF_POS As Long = &H4
 Private Const SIF_TRACKPOS As Long = &H10
 Private Const WM_SETFONT As Long = &H30
@@ -353,10 +352,11 @@ Private ImageComboBackColorBrush As Long
 Private ImageComboIMCHandle As Long
 Private ImageComboCharCodeCache As Long
 Private ImageComboMouseOver(0 To 2) As Boolean
-Private ImageComboDesignMode As Boolean, ImageComboTopDesignMode As Boolean
+Private ImageComboDesignMode As Boolean
 Private ImageComboTopIndex As Long
 Private ImageComboDragIndexBuffer As Long, ImageComboDragIndex As Long
 Private ImageComboImageListObjectPointer As Long
+Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -468,7 +468,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 ImageComboDesignMode = Not Ambient.UserMode
-ImageComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -502,7 +501,6 @@ If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer"
 If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 ImageComboDesignMode = Not Ambient.UserMode
-ImageComboTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -2012,33 +2010,6 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
-    Case WM_MOUSEACTIVATE
-        Static InProc As Boolean
-        If ImageComboTopDesignMode = False And GetFocus() <> ImageComboHandle And (GetFocus() <> ImageComboComboHandle Or ImageComboComboHandle = 0) And (GetFocus() <> ImageComboEditHandle Or ImageComboEditHandle = 0) Then
-            If InProc = True Then WindowProcControl = MA_ACTIVATEANDEAT: Exit Function
-            Select Case HiWord(lParam)
-                Case WM_LBUTTONDOWN
-                    On Error Resume Next
-                    With UserControl
-                    If .Extender.CausesValidation = True Then
-                        InProc = True
-                        Call ComCtlsTopParentValidateControls(Me)
-                        InProc = False
-                        If Err.Number = 380 Then
-                            WindowProcControl = MA_ACTIVATEANDEAT
-                        Else
-                            SetFocusAPI .hWnd
-                            WindowProcControl = MA_NOACTIVATE
-                        End If
-                    Else
-                        SetFocusAPI .hWnd
-                        WindowProcControl = MA_NOACTIVATE
-                    End If
-                    End With
-                    On Error GoTo 0
-                    Exit Function
-            End Select
-        End If
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
@@ -2073,6 +2044,11 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
+    Case WM_RBUTTONDOWN
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         If PropStyle = ImcStyleDropDownList Then
             Dim KeyCode As Integer
@@ -2153,10 +2129,6 @@ Select Case wMsg
                 If HiWord(wParam) = EN_UPDATE Then RedrawWindow ImageComboEditHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
             End If
         End If
-    Case WM_LBUTTONDOWN
-        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
-    Case WM_RBUTTONDOWN
-        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case UM_BUTTONDOWN
         ' The control enters a modal message loop on WM_LBUTTONDOWN and WM_RBUTTONDOWN. (DragDetect)
         ' This workaround is necessary to raise 'MouseDown' before the button was released or the mouse was moved.
@@ -2172,6 +2144,9 @@ Select Case wMsg
         Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
+                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' Otherwise not. So check and change focus, if needed.
+                If GetFocus() <> hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
                 If ComCtlsSupportLevel() = 0 Then
                     ' The WM_LBUTTONUP message is not sent if the comctl32.dll version is 5.8x. (bug?)
@@ -2446,5 +2421,5 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS Then SetFocusAPI ImageComboHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI ImageComboHandle
 End Function
