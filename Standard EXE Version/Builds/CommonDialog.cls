@@ -2633,8 +2633,7 @@ Select Case dwRefData
             If wMsg = WM_NOTIFY Then
                 Dim NM As NMHDR, NMOFN As NMOFNOTIFY
                 CopyMemory NM, ByVal lParam, LenB(NM)
-                Const H_MAX As Long = (&HFFFF + 1)
-                Const CDN_FIRST As Long = (H_MAX - 601)
+                Const CDN_FIRST As Long = (-601)
                 Const CDN_INITDONE As Long = (CDN_FIRST - 0)
                 Const CDN_SHAREVIOLATION As Long = (CDN_FIRST - 3)
                 Const CDN_FILEOK As Long = (CDN_FIRST - 5)

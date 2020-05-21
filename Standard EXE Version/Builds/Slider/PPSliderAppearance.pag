@@ -10,11 +10,19 @@ Begin VB.PropertyPage PPSliderAppearance
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3450
    ScaleWidth      =   5925
+   Begin VB.ComboBox ComboDrawMode 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   11
+      Top             =   1920
+      Width           =   2235
+   End
    Begin VB.CheckBox CheckMouseTrack 
       Caption         =   "&MouseTrack"
       Height          =   285
       Left            =   4200
-      TabIndex        =   10
+      TabIndex        =   12
       Top             =   120
       Width           =   1620
    End
@@ -22,7 +30,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Caption         =   "&HideThumb"
       Height          =   285
       Left            =   4200
-      TabIndex        =   13
+      TabIndex        =   15
       Top             =   1200
       Width           =   1620
    End
@@ -30,7 +38,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Caption         =   "Sho&wTip"
       Height          =   285
       Left            =   4200
-      TabIndex        =   11
+      TabIndex        =   13
       Top             =   480
       Width           =   1620
    End
@@ -38,7 +46,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Caption         =   "T&ransparent"
       Height          =   285
       Left            =   4200
-      TabIndex        =   12
+      TabIndex        =   14
       Top             =   840
       Width           =   1620
    End
@@ -81,8 +89,16 @@ Begin VB.PropertyPage PPSliderAppearance
       Top             =   120
       Width           =   2235
    End
+   Begin VB.Label LabelDrawMode 
+      Caption         =   "DrawMode:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   10
+      Top             =   1920
+      Width           =   1620
+   End
    Begin VB.Label LabelTipSide 
-      Caption         =   "Tip&Side:"
+      Caption         =   "TipSide:"
       Height          =   240
       Left            =   120
       TabIndex        =   8
@@ -90,7 +106,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Width           =   1620
    End
    Begin VB.Label LabelTickFrequency 
-      Caption         =   "Tick&Frequency:"
+      Caption         =   "TickFrequency:"
       Height          =   240
       Left            =   120
       TabIndex        =   6
@@ -98,7 +114,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Width           =   1620
    End
    Begin VB.Label LabelTickStyle 
-      Caption         =   "&TickStyle:"
+      Caption         =   "TickStyle:"
       Height          =   240
       Left            =   120
       TabIndex        =   4
@@ -106,7 +122,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Width           =   1620
    End
    Begin VB.Label LabelOrientation 
-      Caption         =   "&Orientation:"
+      Caption         =   "Orientation:"
       Height          =   240
       Left            =   120
       TabIndex        =   2
@@ -114,7 +130,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Width           =   1620
    End
    Begin VB.Label LabelMousePointer 
-      Caption         =   "Mouse&Pointer:"
+      Caption         =   "MousePointer:"
       Height          =   240
       Left            =   120
       TabIndex        =   0
@@ -155,6 +171,12 @@ With ComboTipSide
 .AddItem SldTipSideBelowRight & " - BelowRight"
 .ItemData(.NewIndex) = SldTipSideBelowRight
 End With
+With ComboDrawMode
+.AddItem SldDrawModeNormal & " - Normal"
+.ItemData(.NewIndex) = SldDrawModeNormal
+.AddItem SldDrawModeOwnerDraw & " - OwnerDraw"
+.ItemData(.NewIndex) = SldDrawModeOwnerDraw
+End With
 End Sub
 
 Private Sub PropertyPage_ApplyChanges()
@@ -168,6 +190,7 @@ With PropertyPage.SelectedControls(0)
 .TickStyle = ComboTickStyle.ItemData(ComboTickStyle.ListIndex)
 .TickFrequency = CLng(TextTickFrequency.Text)
 .TipSide = ComboTipSide.ItemData(ComboTipSide.ListIndex)
+.DrawMode = ComboDrawMode.ItemData(ComboDrawMode.ListIndex)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .ShowTip = CBool(CheckShowTip.Value = vbChecked)
 .Transparent = CBool(CheckTransparent.Value = vbChecked)
@@ -202,6 +225,12 @@ TextTickFrequency.Text = .TickFrequency
 For i = 0 To ComboTipSide.ListCount - 1
     If ComboTipSide.ItemData(i) = .TipSide Then
         ComboTipSide.ListIndex = i
+        Exit For
+    End If
+Next i
+For i = 0 To ComboDrawMode.ListCount - 1
+    If ComboDrawMode.ItemData(i) = .DrawMode Then
+        ComboDrawMode.ListIndex = i
         Exit For
     End If
 Next i
@@ -275,6 +304,11 @@ End If
 End Sub
 
 Private Sub ComboTipSide_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub ComboDrawMode_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

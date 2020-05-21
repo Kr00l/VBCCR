@@ -22,6 +22,8 @@ Option Explicit
 Private SldOrientationHorizontal, SldOrientationVertical
 Private SldTipSideAboveLeft, SldTipSideBelowRight
 Private SldTickStyleBottomRight, SldTickStyleTopLeft, SldTickStyleBoth, SldTickStyleNone
+Private SldDrawModeNormal, SldDrawModeOwnerDraw
+Private SldOwnerDrawItemTics, SldOwnerDrawItemThumb, SldOwnerDrawItemChannel
 #End If
 Public Enum SldOrientationConstants
 SldOrientationHorizontal = 0
@@ -37,6 +39,18 @@ SldTickStyleTopLeft = 1
 SldTickStyleBoth = 2
 SldTickStyleNone = 3
 End Enum
+Public Enum SldDrawModeConstants
+SldDrawModeNormal = 0
+SldDrawModeOwnerDraw = 1
+End Enum
+Private Const TBCD_TICS As Long = &H1
+Private Const TBCD_THUMB As Long = &H2
+Private Const TBCD_CHANNEL As Long = &H3
+Public Enum SldOwnerDrawItemConstants
+SldOwnerDrawItemTics = TBCD_TICS
+SldOwnerDrawItemThumb = TBCD_THUMB
+SldOwnerDrawItemChannel = TBCD_CHANNEL
+End Enum
 Private Type RECT
 Left As Long
 Top As Long
@@ -51,6 +65,21 @@ Private Type NMHDR
 hWndFrom As Long
 IDFrom As Long
 Code As Long
+End Type
+Private Const CDDS_PREPAINT As Long = &H1
+Private Const CDDS_ITEM As Long = &H10000
+Private Const CDDS_ITEMPREPAINT As Long = (CDDS_ITEM + 1)
+Private Const CDRF_DODEFAULT As Long = &H0
+Private Const CDRF_SKIPDEFAULT As Long = &H4
+Private Const CDRF_NOTIFYITEMDRAW As Long = &H20
+Private Type NMCUSTOMDRAW
+hdr As NMHDR
+dwDrawStage As Long
+hDC As Long
+RC As RECT
+dwItemSpec As Long
+uItemState As Long
+lItemlParam As Long
 End Type
 Private Type NMTTDISPINFO
 hdr As NMHDR
@@ -70,6 +99,8 @@ Public Event ContextMenu(ByVal X As Single, ByVal Y As Single)
 Attribute ContextMenu.VB_Description = "Occurs when the user clicked the right mouse button or types SHIFT + F10."
 Public Event ModifyTipText(ByRef Text As String)
 Attribute ModifyTipText.VB_Description = "Occurs if the slider control is about to display a position tip. This is a request to modify the text to display. This will only occur if the show tips property is set to true."
+Public Event ItemDraw(ByVal Item As SldOwnerDrawItemConstants, ByRef Cancel As Boolean, ByVal ItemState As Long, ByVal hDC As Long, ByVal Left As Long, ByVal Top As Long, ByVal Right As Long, ByVal Bottom As Long)
+Attribute ItemDraw.VB_Description = "Occurs when a visual aspect of an owner-drawn slider has changed."
 Public Event PreviewKeyDown(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
 Attribute PreviewKeyDown.VB_Description = "Occurs before the KeyDown event."
 Public Event PreviewKeyUp(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
@@ -225,6 +256,8 @@ Private Const TBTS_TOP As Long = 0
 Private Const TBTS_LEFT As Long = 1
 Private Const TBTS_BOTTOM As Long = 2
 Private Const TBTS_RIGHT As Long = 3
+Private Const NM_FIRST As Long = 0
+Private Const NM_CUSTOMDRAW As Long = (NM_FIRST - 12)
 Private Const TTF_RTLREADING As Long = &H4
 Private Const TTN_FIRST As Long = (-520)
 Private Const TTN_GETDISPINFOA As Long = (TTN_FIRST - 0)
@@ -263,6 +296,7 @@ Private PropSelStart As Long, PropSelLength As Long
 Private PropTransparent As Boolean
 Private PropHideThumb As Boolean
 Private PropReversed As Boolean
+Private PropDrawMode As SldDrawModeConstants
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -353,6 +387,7 @@ PropSelLength = 0
 PropTransparent = False
 PropHideThumb = False
 PropReversed = False
+PropDrawMode = SldDrawModeNormal
 Call CreateSlider
 End Sub
 
@@ -389,6 +424,7 @@ PropSelLength = .ReadProperty("SelLength", 0)
 PropTransparent = .ReadProperty("Transparent", False)
 PropHideThumb = .ReadProperty("HideThumb", False)
 PropReversed = .ReadProperty("Reversed", False)
+PropDrawMode = .ReadProperty("DrawMode", SldDrawModeNormal)
 End With
 Call CreateSlider
 End Sub
@@ -421,6 +457,7 @@ With PropBag
 .WriteProperty "Transparent", PropTransparent, False
 .WriteProperty "HideThumb", PropHideThumb, False
 .WriteProperty "Reversed", PropReversed, False
+.WriteProperty "DrawMode", PropDrawMode, SldDrawModeNormal
 End With
 End Sub
 
@@ -1277,10 +1314,30 @@ End If
 UserControl.PropertyChanged "Reversed"
 End Property
 
+Public Property Get DrawMode() As SldDrawModeConstants
+Attribute DrawMode.VB_Description = "Returns/sets a value indicating whether your code or the operating system will handle drawing of the elements."
+DrawMode = PropDrawMode
+End Property
+
+Public Property Let DrawMode(ByVal Value As SldDrawModeConstants)
+Select Case Value
+    Case SldDrawModeNormal, SldDrawModeOwnerDraw
+        PropDrawMode = Value
+    Case Else
+        Err.Raise 380
+End Select
+If SliderHandle <> 0 Then Call ReCreateSlider
+UserControl.PropertyChanged "DrawMode"
+End Property
+
 Private Sub CreateSlider()
 If SliderHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or TBS_AUTOTICKS
+If SliderDesignMode = True And PropDrawMode = SldDrawModeOwnerDraw Then
+    ' To avoid subclassing the UserControl at design-time just hide the window to visualize unhandled ownerdraw.
+    dwStyle = dwStyle And Not WS_VISIBLE
+End If
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
 If PropOrientation = SldOrientationHorizontal Then
     dwStyle = dwStyle Or TBS_HORZ
@@ -1611,47 +1668,6 @@ End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
-    Case WM_NOTIFY
-        Dim NM As NMHDR
-        CopyMemory NM, ByVal lParam, LenB(NM)
-        If NM.hWndFrom = SliderToolTipHandle And SliderToolTipHandle <> 0 Then
-            Select Case NM.Code
-                Case TTN_GETDISPINFO
-                    Dim NMTTDI As NMTTDISPINFO
-                    CopyMemory NMTTDI, ByVal lParam, LenB(NMTTDI)
-                    With NMTTDI
-                    If PropRightToLeft = True And PropRightToLeftLayout = False Then
-                        If Not (.uFlags And TTF_RTLREADING) = TTF_RTLREADING Then
-                            .uFlags = .uFlags Or TTF_RTLREADING
-                            CopyMemory ByVal lParam, NMTTDI, LenB(NMTTDI)
-                        End If
-                    End If
-                    Dim Text As String, Length As Long, OldText As String
-                    If .lpszText <> 0 Then Length = lstrlen(.lpszText)
-                    If Length > 0 Then
-                        Text = String(Length, vbNullChar)
-                        CopyMemory ByVal StrPtr(Text), ByVal .lpszText, Length * 2
-                    Else
-                        Text = Left$(.szText(), InStr(.szText(), vbNullChar) - 1)
-                    End If
-                    OldText = Text
-                    RaiseEvent ModifyTipText(Text)
-                    If StrComp(Text, OldText) <> 0 Then
-                        With NMTTDI
-                        If Len(Text) <= 80 Then
-                            Text = Left$(Text & vbNullChar, 80)
-                            CopyMemory .szText(0), ByVal StrPtr(Text), LenB(Text)
-                        Else
-                            Erase .szText()
-                        End If
-                        .lpszText = StrPtr(Text) ' Apparently the string address must be always set.
-                        .hInst = 0
-                        End With
-                        CopyMemory ByVal lParam, NMTTDI, LenB(NMTTDI)
-                    End If
-                    End With
-            End Select
-        End If
     Case WM_VSCROLL, WM_HSCROLL
         If lParam = SliderHandle Then
             Dim RetVal As Long
@@ -1715,6 +1731,71 @@ Select Case wMsg
                 ScreenToClient SliderHandle, P2
                 RaiseEvent ContextMenu(UserControl.ScaleX(P2.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P2.Y, vbPixels, vbContainerPosition))
             End If
+        End If
+    Case WM_NOTIFY
+        Dim NM As NMHDR
+        CopyMemory NM, ByVal lParam, LenB(NM)
+        If NM.hWndFrom = SliderHandle Then
+            Select Case NM.Code
+                Case NM_CUSTOMDRAW
+                    Dim NMCD As NMCUSTOMDRAW
+                    CopyMemory NMCD, ByVal lParam, LenB(NMCD)
+                    Select Case NMCD.dwDrawStage
+                        Case CDDS_PREPAINT
+                            If PropDrawMode = SldDrawModeOwnerDraw Then
+                                WindowProcUserControl = CDRF_NOTIFYITEMDRAW
+                            Else
+                                WindowProcUserControl = CDRF_DODEFAULT
+                            End If
+                            Exit Function
+                        Case CDDS_ITEMPREPAINT
+                            If PropDrawMode = SldDrawModeOwnerDraw Then
+                                Dim Cancel As Boolean
+                                RaiseEvent ItemDraw(NMCD.dwItemSpec, Cancel, NMCD.uItemState, NMCD.hDC, NMCD.RC.Left, NMCD.RC.Top, NMCD.RC.Right, NMCD.RC.Bottom)
+                                If Cancel = False Then WindowProcUserControl = CDRF_SKIPDEFAULT Else WindowProcUserControl = CDRF_DODEFAULT
+                            Else
+                                WindowProcUserControl = CDRF_DODEFAULT
+                            End If
+                            Exit Function
+                    End Select
+            End Select
+        ElseIf NM.hWndFrom = SliderToolTipHandle And SliderToolTipHandle <> 0 Then
+            Select Case NM.Code
+                Case TTN_GETDISPINFO
+                    Dim NMTTDI As NMTTDISPINFO
+                    CopyMemory NMTTDI, ByVal lParam, LenB(NMTTDI)
+                    With NMTTDI
+                    If PropRightToLeft = True And PropRightToLeftLayout = False Then
+                        If Not (.uFlags And TTF_RTLREADING) = TTF_RTLREADING Then
+                            .uFlags = .uFlags Or TTF_RTLREADING
+                            CopyMemory ByVal lParam, NMTTDI, LenB(NMTTDI)
+                        End If
+                    End If
+                    Dim Text As String, Length As Long, OldText As String
+                    If .lpszText <> 0 Then Length = lstrlen(.lpszText)
+                    If Length > 0 Then
+                        Text = String(Length, vbNullChar)
+                        CopyMemory ByVal StrPtr(Text), ByVal .lpszText, Length * 2
+                    Else
+                        Text = Left$(.szText(), InStr(.szText(), vbNullChar) - 1)
+                    End If
+                    OldText = Text
+                    RaiseEvent ModifyTipText(Text)
+                    If StrComp(Text, OldText) <> 0 Then
+                        With NMTTDI
+                        If Len(Text) <= 80 Then
+                            Text = Left$(Text & vbNullChar, 80)
+                            CopyMemory .szText(0), ByVal StrPtr(Text), LenB(Text)
+                        Else
+                            Erase .szText()
+                        End If
+                        .lpszText = StrPtr(Text) ' Apparently the string address must be always set.
+                        .hInst = 0
+                        End With
+                        CopyMemory ByVal lParam, NMTTDI, LenB(NMTTDI)
+                    End If
+                    End With
+            End Select
         End If
     Case WM_NOTIFYFORMAT
         Const NF_QUERY As Long = 3
