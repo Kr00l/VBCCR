@@ -1,5 +1,8 @@
 List of revisions:
 
+21-May-2020
+- Included the DrawMode property in the Slider control.
+
 20-May-2020
 - Major internal improvement for ImageCombo as no WM_MOUSEACTIVATE overhead necessary anymore.
 - Improvement for the WM_NCPAINT handler in the RichTextBox control.

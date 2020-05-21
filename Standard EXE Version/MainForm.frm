@@ -252,7 +252,6 @@ Begin VB.Form MainForm
       _ExtentY        =   1058
       Value           =   5
       SelStart        =   5
-      Transparent     =   -1  'True
    End
    Begin ComCtlsDemo.MonthView MonthView1 
       Bindings        =   "MainForm.frx":1E1E
