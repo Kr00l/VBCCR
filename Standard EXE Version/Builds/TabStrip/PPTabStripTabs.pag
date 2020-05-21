@@ -2,13 +2,13 @@ VERSION 5.00
 Begin VB.PropertyPage PPTabStripTabs 
    AutoRedraw      =   -1  'True
    Caption         =   "Tabs"
-   ClientHeight    =   4350
+   ClientHeight    =   4875
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   5925
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4350
+   ScaleHeight     =   4875
    ScaleWidth      =   5925
    Begin VB.TextBox TextToolTipText 
       BackColor       =   &H8000000F&
