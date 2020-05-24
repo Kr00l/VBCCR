@@ -1,5 +1,5 @@
 VERSION 5.00
-Begin VB.UserControl FontCombo 
+Begin VB.UserControl VirtualCombo 
    BackColor       =   &H80000005&
    ClientHeight    =   1800
    ClientLeft      =   0
@@ -7,43 +7,25 @@ Begin VB.UserControl FontCombo
    ClientWidth     =   2400
    ForeColor       =   &H80000008&
    HasDC           =   0   'False
-   PropertyPages   =   "FontCombo.ctx":0000
+   PropertyPages   =   "VirtualCombo.ctx":0000
    ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   160
-   ToolboxBitmap   =   "FontCombo.ctx":0035
-   Begin VB.Timer TimerBuddyControl 
-      Enabled         =   0   'False
-      Interval        =   1
-      Left            =   0
-      Top             =   0
-   End
+   ToolboxBitmap   =   "VirtualCombo.ctx":0035
 End
-Attribute VB_Name = "FontCombo"
+Attribute VB_Name = "VirtualCombo"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 #If False Then
-Private FtcStyleDropDownCombo, FtcStyleSimpleCombo, FtcStyleDropDownList
-Private FtcFontTypeTrueType, FtcFontTypeBitmap, FtcFontTypeBitmapTrueType
-Private FtcFontPitchAll, FtcFontPitchFixed, FtcFontPitchVariable
+Private VcbStyleDropDownCombo, VcbStyleSimpleCombo, VcbStyleDropDownList
 #End If
-Public Enum FtcStyleConstants
-FtcStyleDropDownCombo = 0
-FtcStyleSimpleCombo = 1
-FtcStyleDropDownList = 2
-End Enum
-Public Enum FtcFontTypeConstants
-FtcFontTypeTrueType = 0
-FtcFontTypeBitmap = 1
-FtcFontTypeBitmapTrueType = 2
-End Enum
-Public Enum FtcFontPitchConstants
-FtcFontPitchAll = 0
-FtcFontPitchFixed = 1
-FtcFontPitchVariable = 2
+Public Enum VcbStyleConstants
+VcbStyleDropDownCombo = 0
+VcbStyleSimpleCombo = 1
+VcbStyleDropDownList = 2
 End Enum
 Private Type RECT
 Left As Long
@@ -59,39 +41,6 @@ Private Type SIZEAPI
 CX As Long
 CY As Long
 End Type
-Private Const RASTER_FONTTYPE As Long = &H1
-Private Const TRUETYPE_FONTTYPE As Long = &H4
-Private Const ANSI_CHARSET As Long = 0
-Private Const SYMBOL_CHARSET As Long = 2
-Private Const LF_FACESIZE As Long = 32
-Private Const LF_FULLFACESIZE As Long = 64
-Private Const FW_NORMAL As Long = 400
-Private Const DEFAULT_QUALITY As Long = 0
-Private Const DEFAULT_PITCH As Long = 0
-Private Const FIXED_PITCH As Long = 1
-Private Const VARIABLE_PITCH As Long = 2
-Private Type LOGFONT
-LFHeight As Long
-LFWidth As Long
-LFEscapement As Long
-LFOrientation As Long
-LFWeight As Long
-LFItalic As Byte
-LFUnderline As Byte
-LFStrikeOut As Byte
-LFCharset As Byte
-LFOutPrecision As Byte
-LFClipPrecision As Byte
-LFQuality As Byte
-LFPitchAndFamily As Byte
-LFFaceName(0 To ((LF_FACESIZE * 2) - 1)) As Byte
-End Type
-Private Type ENUMLOGFONT
-LF As LOGFONT
-ELFFullName(0 To ((LF_FULLFACESIZE * 2) - 1)) As Byte
-ELFStyle(0 To ((LF_FACESIZE * 2) - 1)) As Byte
-End Type
-Private Const TMPF_TRUETYPE As Long = &H4
 Private Type TEXTMETRIC
 TMHeight As Long
 TMAscent As Long
@@ -114,8 +63,6 @@ TMStruckOut As Byte
 TMPitchAndFamily As Byte
 TMCharset As Byte
 End Type
-Private Const FONTHEIGHT_NUMERATOR As Long = 3
-Private Const FONTHEIGHT_DENOMINATOR As Long = 4
 Private Type DRAWITEMSTRUCT
 CtlType As Long
 CtlID As Long
@@ -157,6 +104,12 @@ Public Event Change()
 Attribute Change.VB_Description = "Occurs when the contents of a control have changed."
 Public Event ContextMenu(ByRef Handled As Boolean, ByVal X As Single, ByVal Y As Single)
 Attribute ContextMenu.VB_Description = "Occurs when the user clicked the right mouse button or types SHIFT + F10."
+Public Event GetVirtualItem(ByVal Index As Long, ByRef Text As String)
+Attribute GetVirtualItem.VB_Description = "Occurs when the no-data list box requests for an item text."
+Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByRef FoundIndex As Long)
+Attribute FindVirtualItem.VB_Description = "Occurs when the no-data list box needs to find a particular item."
+Public Event IncrementalSearch(ByVal KeyChar As Integer, ByVal StartIndex As Long, ByRef FoundIndex As Long)
+Attribute IncrementalSearch.VB_Description = "Occurs when the no-data list box needs to translate a character key to a particular item."
 Public Event DropDown()
 Attribute DropDown.VB_Description = "Occurs when the drop-down list is about to drop down."
 Public Event CloseUp()
@@ -212,7 +165,6 @@ Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd A
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
-Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
@@ -221,17 +173,15 @@ Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, B
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As Long, ByRef lpMetrics As TEXTMETRIC) As Long
-Private Declare Function EnumFontFamiliesEx Lib "gdi32" Alias "EnumFontFamiliesExW" (ByVal hDC As Long, ByVal lpLF As Long, ByVal lpEnumFontFamExProc As Long, ByVal lParam As ISubclass, ByVal dwFlags As Long) As Long
-Private Declare Function CreateFontIndirect Lib "gdi32" Alias "CreateFontIndirectW" (ByRef lpLogFont As LOGFONT) As Long
-Private Declare Function MulDiv Lib "kernel32" (ByVal nNumber As Long, ByVal nNumerator As Long, ByVal nDenominator As Long) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
+Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
-Private Declare Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As Long, ByVal lpchText As Long, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
+Private Declare Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal lpString As Long, ByVal nCount As Long) As Long
 Private Declare Function DrawFocusRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT) As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
@@ -251,13 +201,8 @@ Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_E
 Private Const HWND_DESKTOP As Long = &H0
 Private Const GWL_STYLE As Long = (-16)
 Private Const CF_UNICODETEXT As Long = 13
+Private Const TA_RTLREADING = &H100, TA_RIGHT As Long = &H2
 Private Const SM_CYBORDER As Long = 6
-Private Const DT_LEFT As Long = &H0
-Private Const DT_NOCLIP As Long = &H100
-Private Const DT_RIGHT As Long = &H2
-Private Const DT_RTLREADING As Long = &H20000
-Private Const DT_SINGLELINE As Long = &H20
-Private Const DT_VCENTER As Long = &H4
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
@@ -276,6 +221,7 @@ Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
 Private Const WM_IME_CHAR As Long = &H286
+Private Const WM_CHARTOITEM As Long = &H2F
 Private Const WM_LBUTTONDOWN As Long = &H201
 Private Const WM_LBUTTONUP As Long = &H202
 Private Const WM_MBUTTONDOWN As Long = &H207
@@ -293,7 +239,6 @@ Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_DRAWITEM As Long = &H2B, ODT_COMBOBOX As Long = &H3, ODS_SELECTED As Long = &H1, ODS_DISABLED As Long = &H4, ODS_FOCUS As Long = &H10, ODS_COMBOBOXEDIT As Long = &H1000
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
-Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_VSCROLL As Long = &H115
 Private Const SB_VERT As Long = 1
 Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
@@ -311,15 +256,13 @@ Private Const EM_SETREADONLY As Long = &HCF
 Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
 Private Const LB_ERR As Long = (-1)
+Private Const LB_ERRSPACE As Long = (-2)
 Private Const LB_SETTOPINDEX As Long = &H197
+Private Const LB_SETCOUNT As Long = &H1A7
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
-Private Const CB_ADDSTRING As Long = &H143
-Private Const CB_DELETESTRING As Long = &H144
 Private Const CB_GETCOUNT As Long = &H146
 Private Const CB_GETCURSEL As Long = &H147
-Private Const CB_INSERTSTRING As Long = &H14A
-Private Const CB_FINDSTRING As Long = &H14C
 Private Const CB_SETCURSEL As Long = &H14E
 Private Const CB_GETDROPPEDCONTROLRECT As Long = &H152
 Private Const CB_GETTOPINDEX As Long = &H15B
@@ -328,22 +271,15 @@ Private Const CB_GETHORIZONTALEXTENT As Long = &H15D
 Private Const CB_SETHORIZONTALEXTENT As Long = &H15E
 Private Const CB_GETDROPPEDWIDTH As Long = &H15F
 Private Const CB_SETDROPPEDWIDTH As Long = &H160
-Private Const CB_GETLBTEXT As Long = &H148
-Private Const CB_GETLBTEXTLEN As Long = &H149
 Private Const CB_GETEDITSEL As Long = &H140
 Private Const CB_SETEDITSEL As Long = &H142
-Private Const CB_RESETCONTENT As Long = &H14B
-Private Const CB_SELECTSTRING As Long = &H14D
 Private Const CB_SETITEMHEIGHT As Long = &H153
 Private Const CB_GETITEMHEIGHT As Long = &H154
 Private Const CB_GETDROPPEDSTATE As Long = &H157
 Private Const CB_GETCOMBOBOXINFO As Long = &H164 ' Unsupported on W2K
 Private Const CB_SHOWDROPDOWN As Long = &H14F
-Private Const CB_GETITEMDATA As Long = &H150
-Private Const CB_SETITEMDATA As Long = &H151
 Private Const CB_SETEXTENDEDUI As Long = &H155
 Private Const CB_GETEXTENDEDUI As Long = &H156
-Private Const CB_FINDSTRINGEXACT As Long = &H158
 Private Const CBM_FIRST As Long = &H1700
 Private Const CB_SETMINVISIBLE As Long = (CBM_FIRST + 1)
 Private Const CB_GETMINVISIBLE As Long = (CBM_FIRST + 2)
@@ -351,17 +287,11 @@ Private Const EM_GETSEL As Long = &HB0
 Private Const EM_POSFROMCHAR As Long = &HD6
 Private Const EM_CHARFROMPOS As Long = &HD7
 Private Const ES_NUMBER As Long = &H2000
-Private Const WM_USER As Long = &H400
-Private Const UM_SETBUDDY As Long = (WM_USER + 800)
-Private Const UM_GETBUDDY As Long = (WM_USER + 801)
-Private Const UM_UPDATEBUDDY As Long = (WM_USER + 802)
 Private Const CBS_AUTOHSCROLL As Long = &H40
 Private Const CBS_SIMPLE As Long = &H1
 Private Const CBS_DROPDOWN As Long = &H2
 Private Const CBS_DROPDOWNLIST As Long = &H3
 Private Const CBS_OWNERDRAWFIXED As Long = &H10
-Private Const CBS_SORT As Long = &H100
-Private Const CBS_HASSTRINGS As Long = &H200
 Private Const CBS_NOINTEGRALHEIGHT As Long = &H400
 Private Const CBN_SELCHANGE As Long = 1
 Private Const CBN_DBLCLK As Long = 2
@@ -375,26 +305,20 @@ Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IPerPropertyBrowsingVB
-Private FontComboHandle As Long, FontComboEditHandle As Long, FontComboListHandle As Long
-Private FontComboFontHandle As Long
-Private FontComboRecentCount As Integer
-Private FontComboRecentItems() As String
-Private FontComboRecentBackColorBrush As Long
-Private FontComboDroppedDownIndex As Long
-Private FontComboIMCHandle As Long
-Private FontComboCharCodeCache As Long
-Private FontComboMouseOver(0 To 2) As Boolean
-Private FontComboDesignMode As Boolean
-Private FontComboTopIndex As Long
-Private FontComboResizeFrozen As Boolean
-Private FontComboAutoDragInSel As Boolean, FontComboAutoDragIsActive As Boolean
-Private FontComboAutoDragSelStart As Integer, FontComboAutoDragSelEnd As Integer
-Private FontComboLFHeightSpacing As Long
-Private FontComboBuddyControlHandle As Long
-Private FontComboBuddyObjectPointer As Long, FontComboBuddyShadowObjectPointer As Long
+Private VirtualComboHandle As Long, VirtualComboEditHandle As Long, VirtualComboListHandle As Long
+Private VirtualComboFontHandle As Long
+Private VirtualComboListBackColorBrush As Long
+Private VirtualComboIMCHandle As Long
+Private VirtualComboCharCodeCache As Long
+Private VirtualComboMouseOver(0 To 2) As Boolean
+Private VirtualComboDesignMode As Boolean
+Private VirtualComboTopIndex As Long
+Private VirtualComboResizeFrozen As Boolean
+Private VirtualComboAutoDragInSel As Boolean, VirtualComboAutoDragIsActive As Boolean
+Private VirtualComboAutoDragSelStart As Integer, VirtualComboAutoDragSelEnd As Integer
+Private VirtualComboLFHeightSpacing As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
-Private DispIDBuddyControl As Long, BuddyControlArray() As String
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -404,23 +328,22 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
-Private PropBuddyName As String, PropBuddyControlInit As Boolean
-Private PropStyle As FtcStyleConstants
-Private PropFontType As FtcFontTypeConstants
-Private PropFontPitch As FtcFontPitchConstants
+Private PropStyle As VcbStyleConstants
 Private PropLocked As Boolean
 Private PropText As String
 Private PropExtendedUI As Boolean
 Private PropMaxDropDownItems As Integer
 Private PropIntegralHeight As Boolean
 Private PropMaxLength As Long
+Private PropUseListBackColor As Boolean
+Private PropUseListForeColor As Boolean
+Private PropListBackColor As OLE_COLOR
+Private PropListForeColor As OLE_COLOR
 Private PropHorizontalExtent As Long
 Private PropIMEMode As CCIMEModeConstants
 Private PropScrollTrack As Boolean
 Private PropAutoSelect As Boolean
-Private PropRecentMax As Integer
-Private PropRecentBackColor As OLE_COLOR
-Private PropRecentForeColor As OLE_COLOR
+Private PropListCount As Long
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -443,10 +366,10 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyTab, vbKeyReturn, vbKeyEscape
             If KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape Then
-                If SendMessage(FontComboHandle, CB_GETDROPPEDSTATE, 0, ByVal 0&) = 0 Or PropStyle = FtcStyleSimpleCombo Then
+                If SendMessage(VirtualComboHandle, CB_GETDROPPEDSTATE, 0, ByVal 0&) = 0 Or PropStyle = VcbStyleSimpleCombo Then
                     If IsInputKey = False Then Exit Sub
                 Else
-                    If PropStyle = FtcStyleDropDownCombo Then SendMessage FontComboHandle, CB_SHOWDROPDOWN, 0, ByVal 0&
+                    If PropStyle = VcbStyleDropDownCombo Then SendMessage VirtualComboHandle, CB_SHOWDROPDOWN, 0, ByVal 0&
                 End If
             ElseIf KeyCode = vbKeyTab Then
                 If IsInputKey = False Then Exit Sub
@@ -461,42 +384,12 @@ Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, By
 If DispID = DispIDMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDBuddyControl Then
-    DisplayName = PropBuddyName
-    Handled = True
 End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
 If DispID = DispIDMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispID = DispIDBuddyControl Then
-    On Error GoTo CATCH_EXCEPTION
-    Dim ControlEnum As Object, PropUBound As Long
-    PropUBound = UBound(StringsOut())
-    ReDim Preserve StringsOut(PropUBound + 1) As String
-    ReDim Preserve CookiesOut(PropUBound + 1) As Long
-    StringsOut(PropUBound) = "(None)"
-    CookiesOut(PropUBound) = PropUBound
-    For Each ControlEnum In UserControl.ParentControls
-        If Not ControlEnum Is Extender Then
-            If TypeOf ControlEnum Is FontCombo Then
-                PropUBound = UBound(StringsOut())
-                ReDim Preserve StringsOut(PropUBound + 1) As String
-                ReDim Preserve CookiesOut(PropUBound + 1) As Long
-                StringsOut(PropUBound) = ProperControlName(ControlEnum)
-                CookiesOut(PropUBound) = PropUBound
-            End If
-        End If
-    Next ControlEnum
-    PropUBound = UBound(StringsOut())
-    ReDim BuddyControlArray(0 To PropUBound) As String
-    Dim i As Long
-    For i = 0 To PropUBound
-        BuddyControlArray(i) = StringsOut(i)
-    Next i
-    On Error GoTo 0
     Handled = True
 End If
 Exit Sub
@@ -508,27 +401,22 @@ Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, 
 If DispID = DispIDMousePointer Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDBuddyControl Then
-    If Cookie < UBound(BuddyControlArray()) Then Value = BuddyControlArray(Cookie)
-    Handled = True
 End If
 End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
+Call VcbWndRegisterClass
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
-FontComboLFHeightSpacing = (2 * GetSystemMetrics(SM_CYBORDER))
-FontComboDroppedDownIndex = -1
-ReDim BuddyControlArray(0) As String
+VirtualComboLFHeightSpacing = (2 * GetSystemMetrics(SM_CYBORDER))
 End Sub
 
 Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
 On Error Resume Next
-FontComboDesignMode = Not Ambient.UserMode
+VirtualComboDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -540,31 +428,29 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropBuddyName = "(None)"
-PropStyle = FtcStyleDropDownList
-PropFontType = FtcFontTypeTrueType
-PropFontPitch = FtcFontPitchAll
+PropStyle = VcbStyleDropDownCombo
 PropLocked = False
 PropText = Ambient.DisplayName
 PropExtendedUI = False
 PropMaxDropDownItems = 9
 PropIntegralHeight = True
 PropMaxLength = 0
+PropUseListBackColor = False
+PropUseListForeColor = False
+PropListBackColor = vbWindowBackground
+PropListForeColor = vbWindowText
 PropHorizontalExtent = 0
 PropIMEMode = CCIMEModeNoControl
 PropScrollTrack = True
-PropAutoSelect = True
-PropRecentMax = 0
-PropRecentBackColor = vbInfoBackground
-PropRecentForeColor = vbInfoText
-Call CreateFontCombo
+PropAutoSelect = False
+PropListCount = 0
+Call CreateVirtualCombo
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
 On Error Resume Next
-FontComboDesignMode = Not Ambient.UserMode
+VirtualComboDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
@@ -581,26 +467,24 @@ PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
-PropBuddyName = .ReadProperty("BuddyControl", "(None)")
-PropStyle = .ReadProperty("Style", FtcStyleDropDownList)
-PropFontType = .ReadProperty("FontType", FtcFontTypeTrueType)
-PropFontPitch = .ReadProperty("FontPitch", FtcFontPitchAll)
+PropStyle = .ReadProperty("Style", VcbStyleDropDownCombo)
 PropLocked = .ReadProperty("Locked", False)
 PropText = VarToStr(.ReadProperty("Text", vbNullString))
 PropExtendedUI = .ReadProperty("ExtendedUI", False)
 PropMaxDropDownItems = .ReadProperty("MaxDropDownItems", 9)
 PropIntegralHeight = .ReadProperty("IntegralHeight", True)
 PropMaxLength = .ReadProperty("MaxLength", 0)
+PropUseListBackColor = .ReadProperty("UseListBackColor", False)
+PropUseListForeColor = .ReadProperty("UseListForeColor", False)
+PropListBackColor = .ReadProperty("ListBackColor", vbWindowBackground)
+PropListForeColor = .ReadProperty("ListForeColor", vbWindowText)
 PropHorizontalExtent = .ReadProperty("HorizontalExtent", 0)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
-PropAutoSelect = .ReadProperty("AutoSelect", True)
-PropRecentMax = .ReadProperty("RecentMax", 0)
-PropRecentBackColor = .ReadProperty("RecentBackColor", vbInfoBackground)
-PropRecentForeColor = .ReadProperty("RecentForeColor", vbInfoText)
+PropAutoSelect = .ReadProperty("AutoSelect", False)
+PropListCount = .ReadProperty("ListCount", 0)
 End With
-Call CreateFontCombo
-If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = Ambient.UserMode
+Call CreateVirtualCombo
 End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
@@ -618,37 +502,36 @@ With PropBag
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
-.WriteProperty "BuddyControl", PropBuddyName, "(None)"
-.WriteProperty "Style", PropStyle, FtcStyleDropDownList
-.WriteProperty "FontType", PropFontType, FtcFontTypeTrueType
-.WriteProperty "FontPitch", PropFontPitch, FtcFontPitchAll
+.WriteProperty "Style", PropStyle, VcbStyleDropDownCombo
 .WriteProperty "Locked", PropLocked, False
 .WriteProperty "Text", StrToVar(PropText), vbNullString
 .WriteProperty "ExtendedUI", PropExtendedUI, False
 .WriteProperty "MaxDropDownItems", PropMaxDropDownItems, 9
 .WriteProperty "IntegralHeight", PropIntegralHeight, True
 .WriteProperty "MaxLength", PropMaxLength, 0
+.WriteProperty "UseListBackColor", PropUseListBackColor, False
+.WriteProperty "UseListForeColor", PropUseListForeColor, False
+.WriteProperty "ListBackColor", PropListBackColor, vbWindowBackground
+.WriteProperty "ListForeColor", PropListForeColor, vbWindowText
 .WriteProperty "HorizontalExtent", PropHorizontalExtent, 0
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "ScrollTrack", PropScrollTrack, True
-.WriteProperty "AutoSelect", PropAutoSelect, True
-.WriteProperty "RecentMax", PropRecentMax, 0
-.WriteProperty "RecentBackColor", PropRecentBackColor, vbInfoBackground
-.WriteProperty "RecentForeColor", PropRecentForeColor, vbInfoText
+.WriteProperty "AutoSelect", PropAutoSelect, False
+.WriteProperty "ListCount", PropListCount, 0
 End With
 End Sub
 
 Private Sub UserControl_OLECompleteDrag(Effect As Long)
-If PropOLEDragMode = vbOLEDragAutomatic And FontComboAutoDragIsActive = True And Effect = vbDropEffectMove Then
-    If FontComboEditHandle <> 0 Then
-        SendMessage FontComboEditHandle, EM_SETSEL, FontComboAutoDragSelStart, ByVal FontComboAutoDragSelEnd
-        SendMessage FontComboEditHandle, WM_CLEAR, 0, ByVal 0&
+If PropOLEDragMode = vbOLEDragAutomatic And VirtualComboAutoDragIsActive = True And Effect = vbDropEffectMove Then
+    If VirtualComboEditHandle <> 0 Then
+        SendMessage VirtualComboEditHandle, EM_SETSEL, VirtualComboAutoDragSelStart, ByVal VirtualComboAutoDragSelEnd
+        SendMessage VirtualComboEditHandle, WM_CLEAR, 0, ByVal 0&
     End If
 End If
 RaiseEvent OLECompleteDrag(Effect)
-FontComboAutoDragIsActive = False
-FontComboAutoDragSelStart = 0
-FontComboAutoDragSelEnd = 0
+VirtualComboAutoDragIsActive = False
+VirtualComboAutoDragSelStart = 0
+VirtualComboAutoDragSelEnd = 0
 End Sub
 
 Private Sub UserControl_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
@@ -674,10 +557,10 @@ If PropOLEDragMode = vbOLEDragAutomatic Then
     Data.SetData StrToVar(Text & vbNullChar), CF_UNICODETEXT
     Data.SetData Text, vbCFText
     AllowedEffects = vbDropEffectCopy Or vbDropEffectMove
-    FontComboAutoDragIsActive = True
+    VirtualComboAutoDragIsActive = True
 End If
 RaiseEvent OLEStartDrag(Data, AllowedEffects)
-If AllowedEffects = vbDropEffectNone Then FontComboAutoDragIsActive = False
+If AllowedEffects = vbDropEffectNone Then VirtualComboAutoDragIsActive = False
 End Sub
 
 Public Sub OLEDrag()
@@ -686,30 +569,20 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_AmbientChanged(PropertyName As String)
-If FontComboDesignMode = True And PropertyName = "DisplayName" And PropStyle = FtcStyleDropDownList Then
-    If FontComboHandle <> 0 Then
-        If SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
-            Dim Buffer As String
-            Buffer = Ambient.DisplayName
-            SendMessage FontComboHandle, CB_RESETCONTENT, 0, ByVal 0&
-            SendMessage FontComboHandle, CB_ADDSTRING, 0, ByVal StrPtr(Buffer)
-            SendMessage FontComboHandle, CB_SETCURSEL, 0, ByVal 0&
-        End If
-    End If
-End If
+If VirtualComboDesignMode = True And PropertyName = "DisplayName" And PropStyle = VcbStyleDropDownList Then Me.Refresh
 End Sub
 
 Private Sub UserControl_Resize()
 Static InProc As Boolean
-If InProc = True Or FontComboResizeFrozen = True Then Exit Sub
+If InProc = True Or VirtualComboResizeFrozen = True Then Exit Sub
 InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-If FontComboHandle = 0 Then InProc = False: Exit Sub
+If VirtualComboHandle = 0 Then InProc = False: Exit Sub
 Dim WndRect As RECT
-If PropStyle <> FtcStyleSimpleCombo Then
-    If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    GetWindowRect FontComboHandle, WndRect
+If PropStyle <> VcbStyleSimpleCombo Then
+    If .ScaleHeight > 0 Then MoveWindow VirtualComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    GetWindowRect VirtualComboHandle, WndRect
     If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
         .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
         If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
@@ -717,10 +590,10 @@ If PropStyle <> FtcStyleSimpleCombo Then
     Call CheckDropDownHeight(True)
 Else
     Dim ListRect As RECT, EditHeight As Long, Height As Long
-    MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
-    GetWindowRect FontComboHandle, WndRect
-    If FontComboListHandle <> 0 Then GetWindowRect FontComboListHandle, ListRect
-    MapWindowPoints HWND_DESKTOP, FontComboHandle, ListRect, 2
+    MoveWindow VirtualComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + IIf(PropIntegralHeight = True, 1, 0), 1
+    GetWindowRect VirtualComboHandle, WndRect
+    If VirtualComboListHandle <> 0 Then GetWindowRect VirtualComboListHandle, ListRect
+    MapWindowPoints HWND_DESKTOP, VirtualComboHandle, ListRect, 2
     EditHeight = ListRect.Top
     Const SM_CYEDGE As Long = 46
     If (ListRect.Bottom - ListRect.Top) > (GetSystemMetrics(SM_CYEDGE) * 2) Then
@@ -730,7 +603,7 @@ Else
     End If
     .Extender.Height = .ScaleY(Height, vbPixels, vbContainerSize)
     If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-    MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    MoveWindow VirtualComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     Me.Refresh
 End If
 End With
@@ -740,16 +613,9 @@ End Sub
 Private Sub UserControl_Terminate()
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
-Call DestroyFontCombo
+Call DestroyVirtualCombo
+Call VcbWndReleaseClass
 Call ComCtlsReleaseShellMod
-End Sub
-
-Private Sub TimerBuddyControl_Timer()
-If PropBuddyControlInit = False Then
-    Me.BuddyControl = PropBuddyName
-    PropBuddyControlInit = True
-End If
-TimerBuddyControl.Enabled = False
 End Sub
 
 Public Property Get Name() As String
@@ -896,7 +762,7 @@ End Sub
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
 Attribute hWnd.VB_UserMemId = -515
-hWnd = FontComboHandle
+hWnd = VirtualComboHandle
 End Property
 
 Public Property Get hWndUserControl() As Long
@@ -906,12 +772,12 @@ End Property
 
 Public Property Get hWndEdit() As Long
 Attribute hWndEdit.VB_Description = "Returns a handle to a control."
-hWndEdit = FontComboEditHandle
+hWndEdit = VirtualComboEditHandle
 End Property
 
 Public Property Get hWndList() As Long
 Attribute hWndList.VB_Description = "Returns a handle to a control."
-hWndList = FontComboListHandle
+hWndList = VirtualComboListHandle
 End Property
 
 Public Property Get Font() As StdFont
@@ -928,62 +794,58 @@ Public Property Set Font(ByVal NewFont As StdFont)
 If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As Long
 Set PropFont = NewFont
-OldFontHandle = FontComboFontHandle
-FontComboFontHandle = CreateGDIFontFromOLEFont(PropFont)
-If FontComboHandle <> 0 Then SendMessage FontComboHandle, WM_SETFONT, FontComboFontHandle, ByVal 1&
+OldFontHandle = VirtualComboFontHandle
+VirtualComboFontHandle = CreateGDIFontFromOLEFont(PropFont)
+If VirtualComboHandle <> 0 Then SendMessage VirtualComboHandle, WM_SETFONT, VirtualComboFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     Dim hDCScreen As Long
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
         Dim TM As TEXTMETRIC, hFontOld As Long
-        If FontComboFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, FontComboFontHandle)
+        If VirtualComboFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, VirtualComboFontHandle)
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
-            TM.TMHeight = TM.TMHeight + FontComboLFHeightSpacing
-            SendMessage FontComboHandle, CB_SETITEMHEIGHT, -1, ByVal TM.TMHeight
-            TM.TMHeight = ((TM.TMHeight / FONTHEIGHT_NUMERATOR) * FONTHEIGHT_DENOMINATOR)
-            SendMessage FontComboHandle, CB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
+            SendMessage VirtualComboHandle, CB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
+            TM.TMHeight = TM.TMHeight + VirtualComboLFHeightSpacing
+            SendMessage VirtualComboHandle, CB_SETITEMHEIGHT, -1, ByVal TM.TMHeight
             If PropIntegralHeight = True Then
-                MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
-                MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
+                MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
+                MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
             End If
         End If
         If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
         ReleaseDC 0, hDCScreen
     End If
 End If
-Call SetupFontComboItems
 Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Property
 
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As Long
-OldFontHandle = FontComboFontHandle
-FontComboFontHandle = CreateGDIFontFromOLEFont(PropFont)
-If FontComboHandle <> 0 Then SendMessage FontComboHandle, WM_SETFONT, FontComboFontHandle, ByVal 1&
+OldFontHandle = VirtualComboFontHandle
+VirtualComboFontHandle = CreateGDIFontFromOLEFont(PropFont)
+If VirtualComboHandle <> 0 Then SendMessage VirtualComboHandle, WM_SETFONT, VirtualComboFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     Dim hDCScreen As Long
     hDCScreen = GetDC(0)
     If hDCScreen <> 0 Then
         Dim TM As TEXTMETRIC, hFontOld As Long
-        If FontComboFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, FontComboFontHandle)
+        If VirtualComboFontHandle <> 0 Then hFontOld = SelectObject(hDCScreen, VirtualComboFontHandle)
         If GetTextMetrics(hDCScreen, TM) <> 0 Then
-            TM.TMHeight = TM.TMHeight + FontComboLFHeightSpacing
-            SendMessage FontComboHandle, CB_SETITEMHEIGHT, -1, ByVal TM.TMHeight
-            TM.TMHeight = ((TM.TMHeight / FONTHEIGHT_NUMERATOR) * FONTHEIGHT_DENOMINATOR)
-            SendMessage FontComboHandle, CB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
+            SendMessage VirtualComboHandle, CB_SETITEMHEIGHT, 0, ByVal TM.TMHeight
+            TM.TMHeight = TM.TMHeight + VirtualComboLFHeightSpacing
+            SendMessage VirtualComboHandle, CB_SETITEMHEIGHT, -1, ByVal TM.TMHeight
             If PropIntegralHeight = True Then
-                MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
-                MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
+                MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 1, 0
+                MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
             End If
         End If
         If hFontOld <> 0 Then SelectObject hDCScreen, hFontOld
         ReleaseDC 0, hDCScreen
     End If
 End If
-Call SetupFontComboItems
 Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Sub
@@ -995,11 +857,11 @@ End Property
 
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
-If FontComboHandle <> 0 And EnabledVisualStyles() = True Then
+If VirtualComboHandle <> 0 And EnabledVisualStyles() = True Then
     If PropVisualStyles = True Then
-        ActivateVisualStyles FontComboHandle
+        ActivateVisualStyles VirtualComboHandle
     Else
-        RemoveVisualStyles FontComboHandle
+        RemoveVisualStyles VirtualComboHandle
     End If
     Me.Refresh
 End If
@@ -1038,7 +900,7 @@ End Property
 
 Public Property Let Enabled(ByVal Value As Boolean)
 UserControl.Enabled = Value
-If FontComboHandle <> 0 Then EnableWindow FontComboHandle, IIf(Value = True, 1, 0)
+If VirtualComboHandle <> 0 Then EnableWindow VirtualComboHandle, IIf(Value = True, 1, 0)
 UserControl.PropertyChanged "Enabled"
 End Property
 
@@ -1103,7 +965,7 @@ Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
         Set PropMouseIcon = Value
     Else
-        If FontComboDesignMode = True Then
+        If VirtualComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1136,16 +998,16 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True Then dwMask = WS_EX_RTLREADING Or WS_EX_RIGHT Or WS_EX_LEFTSCROLLBAR
-If FontComboHandle <> 0 Then Call ComCtlsSetRightToLeft(FontComboHandle, dwMask)
-If FontComboEditHandle <> 0 Then Call ComCtlsSetRightToLeft(FontComboEditHandle, dwMask)
-If PropRightToLeft = False And FontComboEditHandle <> 0 Then
+If VirtualComboHandle <> 0 Then Call ComCtlsSetRightToLeft(VirtualComboHandle, dwMask)
+If VirtualComboEditHandle <> 0 Then Call ComCtlsSetRightToLeft(VirtualComboEditHandle, dwMask)
+If PropRightToLeft = False And VirtualComboEditHandle <> 0 Then
     Const ES_RIGHT As Long = &H2
     Dim dwStyle As Long
-    dwStyle = GetWindowLong(FontComboEditHandle, GWL_STYLE)
+    dwStyle = GetWindowLong(VirtualComboEditHandle, GWL_STYLE)
     If (dwStyle And ES_RIGHT) = ES_RIGHT Then dwStyle = dwStyle And Not ES_RIGHT
-    SetWindowLong FontComboEditHandle, GWL_STYLE, dwStyle
+    SetWindowLong VirtualComboEditHandle, GWL_STYLE, dwStyle
 End If
-If FontComboListHandle <> 0 Then Call ComCtlsSetRightToLeft(FontComboListHandle, dwMask)
+If VirtualComboListHandle <> 0 Then Call ComCtlsSetRightToLeft(VirtualComboListHandle, dwMask)
 UserControl.PropertyChanged "RightToLeft"
 End Property
 
@@ -1165,95 +1027,21 @@ Me.RightToLeft = PropRightToLeft
 UserControl.PropertyChanged "RightToLeftMode"
 End Property
 
-Public Property Get BuddyControl() As Variant
-Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
-If FontComboDesignMode = False Then
-    If PropBuddyControlInit = False And PropBuddyControl Is Nothing Then
-        If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
-        PropBuddyControlInit = True
-    End If
-    Set BuddyControl = PropBuddyControl
-Else
-    BuddyControl = PropBuddyName
-End If
-End Property
-
-Public Property Set BuddyControl(ByVal Value As Variant)
-Me.BuddyControl = Value
-End Property
-
-Public Property Let BuddyControl(ByVal Value As Variant)
-If FontComboDesignMode = False Then
-    If FontComboHandle <> 0 Then
-        Dim Success As Boolean, Handle As Long, ShadowFontCombo As FontCombo
-        Set ShadowFontCombo = Me
-        On Error Resume Next
-        If IsObject(Value) Then
-            If Not Value Is Extender Then
-                If TypeOf Value Is FontCombo Then
-                    Handle = Value.hWnd
-                    Success = CBool(Err.Number = 0 And Handle <> 0 And FontComboBuddyShadowObjectPointer = 0)
-                    If Success = True Then
-                        FontComboBuddyControlHandle = Handle
-                        SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
-                        FontComboBuddyObjectPointer = ObjPtr(Value)
-                        PropBuddyName = ProperControlName(Value)
-                    End If
-                End If
-            End If
-        ElseIf VarType(Value) = vbString Then
-            Dim ControlEnum As Object, CompareName As String
-            For Each ControlEnum In UserControl.ParentControls
-                If Not ControlEnum Is Extender Then
-                    If TypeOf ControlEnum Is FontCombo Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Err.Clear
-                            Handle = ControlEnum.hWnd
-                            Success = CBool(Err.Number = 0 And Handle <> 0 And FontComboBuddyShadowObjectPointer = 0)
-                            If Success = True Then
-                                FontComboBuddyControlHandle = Handle
-                                SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
-                                FontComboBuddyObjectPointer = ObjPtr(ControlEnum)
-                                PropBuddyName = Value
-                                Exit For
-                            End If
-                        End If
-                    End If
-                End If
-            Next ControlEnum
-        End If
-        On Error GoTo 0
-        If Success = False Then
-            If FontComboBuddyControlHandle <> 0 Then
-                SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal 0&
-                FontComboBuddyControlHandle = 0
-            End If
-            FontComboBuddyObjectPointer = 0
-            PropBuddyName = "(None)"
-        End If
-    End If
-Else
-    PropBuddyName = Value
-End If
-UserControl.PropertyChanged "BuddyControl"
-End Property
-
-Public Property Get Style() As FtcStyleConstants
+Public Property Get Style() As VcbStyleConstants
 Attribute Style.VB_Description = "Returns/sets a value that determines the type of control and the behavior of its list box portion."
 Style = PropStyle
 End Property
 
-Public Property Let Style(ByVal Value As FtcStyleConstants)
+Public Property Let Style(ByVal Value As VcbStyleConstants)
 Select Case Value
-    Case FtcStyleDropDownCombo, FtcStyleSimpleCombo, FtcStyleDropDownList
-        If FontComboDesignMode = False Then
+    Case VcbStyleDropDownCombo, VcbStyleSimpleCombo, VcbStyleDropDownList
+        If VirtualComboDesignMode = False Then
             Err.Raise Number:=382, Description:="Style property is read-only at run time"
         Else
             PropStyle = Value
-            If FontComboHandle <> 0 Then
-                Call DestroyFontCombo
-                Call CreateFontCombo
+            If VirtualComboHandle <> 0 Then
+                Call DestroyVirtualCombo
+                Call CreateVirtualCombo
                 Call UserControl_Resize
             End If
         End If
@@ -1263,38 +1051,6 @@ End Select
 UserControl.PropertyChanged "Style"
 End Property
 
-Public Property Get FontType() As FtcFontTypeConstants
-Attribute FontType.VB_Description = "Returns/sets a value that determines which type of font names are contained in a control's list portion."
-FontType = PropFontType
-End Property
-
-Public Property Let FontType(ByVal Value As FtcFontTypeConstants)
-Select Case Value
-    Case FtcFontTypeTrueType, FtcFontTypeBitmap, FtcFontTypeBitmapTrueType
-        PropFontType = Value
-        Call SetupFontComboItems
-    Case Else
-        Err.Raise 380
-End Select
-UserControl.PropertyChanged "FontType"
-End Property
-
-Public Property Get FontPitch() As FtcFontPitchConstants
-Attribute FontPitch.VB_Description = "Returns/sets a value that indicates if fonts that have a fixed or variable width are contained in a control's list portion."
-FontPitch = PropFontPitch
-End Property
-
-Public Property Let FontPitch(ByVal Value As FtcFontPitchConstants)
-Select Case Value
-    Case FtcFontPitchAll, FtcFontPitchFixed, FtcFontPitchVariable
-        PropFontPitch = Value
-        Call SetupFontComboItems
-    Case Else
-        Err.Raise 380
-End Select
-UserControl.PropertyChanged "FontPitch"
-End Property
-
 Public Property Get Locked() As Boolean
 Attribute Locked.VB_Description = "Returns/sets a value indicating whether the contents can be edited."
 Locked = PropLocked
@@ -1302,7 +1058,7 @@ End Property
 
 Public Property Let Locked(ByVal Value As Boolean)
 PropLocked = Value
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, EM_SETREADONLY, IIf(PropLocked = True, 1, 0), ByVal 0&
+If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then SendMessage VirtualComboEditHandle, EM_SETREADONLY, IIf(PropLocked = True, 1, 0), ByVal 0&
 UserControl.PropertyChanged "Locked"
 End Property
 
@@ -1311,17 +1067,17 @@ Attribute Text.VB_Description = "Returns/sets the text contained in an object."
 Attribute Text.VB_UserMemId = -517
 Attribute Text.VB_MemberFlags = "200"
 Select Case PropStyle
-    Case FtcStyleDropDownCombo, FtcStyleSimpleCombo
-        If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then
-            Text = String(SendMessage(FontComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
-            SendMessage FontComboEditHandle, WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
+    Case VcbStyleDropDownCombo, VcbStyleSimpleCombo
+        If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then
+            Text = String(SendMessage(VirtualComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
+            SendMessage VirtualComboEditHandle, WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
         Else
             Text = PropText
         End If
-    Case FtcStyleDropDownList
-        If FontComboHandle <> 0 And FontComboDesignMode = False Then
+    Case VcbStyleDropDownList
+        If VirtualComboHandle <> 0 And VirtualComboDesignMode = False Then
             Dim SelIndex As Long
-            SelIndex = SendMessage(FontComboHandle, CB_GETCURSEL, 0, ByVal 0&)
+            SelIndex = SendMessage(VirtualComboHandle, CB_GETCURSEL, 0, ByVal 0&)
             If Not SelIndex = CB_ERR Then Text = Me.List(SelIndex)
         Else
             Text = Ambient.DisplayName
@@ -1332,15 +1088,16 @@ End Property
 Public Property Let Text(ByVal Value As String)
 Dim Changed As Boolean
 Select Case PropStyle
-    Case FtcStyleDropDownCombo, FtcStyleSimpleCombo
+    Case VcbStyleDropDownCombo, VcbStyleSimpleCombo
         If PropMaxLength > 0 Then Value = Left$(Value, PropMaxLength)
         Changed = CBool(Me.Text <> Value)
         PropText = Value
-        If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
-    Case FtcStyleDropDownList
-        If FontComboHandle <> 0 And FontComboDesignMode = False Then
+        If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then SendMessage VirtualComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
+    Case VcbStyleDropDownList
+        If VirtualComboHandle <> 0 And VirtualComboDesignMode = False Then
             Dim Index As Long
-            Index = SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(Value))
+            Index = CB_ERR
+            RaiseEvent FindVirtualItem(-1, Value, False, Index)
             If Not Index = CB_ERR Then
                 Me.ListIndex = Index
             Else
@@ -1361,8 +1118,8 @@ End Property
 
 Public Property Get ExtendedUI() As Boolean
 Attribute ExtendedUI.VB_Description = "Returns/sets a value that determines whether the default UI or the extended UI is used."
-If FontComboHandle <> 0 And PropStyle <> FtcStyleSimpleCombo Then
-    ExtendedUI = CBool(SendMessage(FontComboHandle, CB_GETEXTENDEDUI, 0, ByVal 0&) = 1)
+If VirtualComboHandle <> 0 And PropStyle <> VcbStyleSimpleCombo Then
+    ExtendedUI = CBool(SendMessage(VirtualComboHandle, CB_GETEXTENDEDUI, 0, ByVal 0&) = 1)
 Else
     ExtendedUI = PropExtendedUI
 End If
@@ -1370,7 +1127,7 @@ End Property
 
 Public Property Let ExtendedUI(ByVal Value As Boolean)
 PropExtendedUI = Value
-If FontComboHandle <> 0 And PropStyle <> FtcStyleSimpleCombo Then SendMessage FontComboHandle, CB_SETEXTENDEDUI, IIf(PropExtendedUI = True, 1, 0), ByVal 0&
+If VirtualComboHandle <> 0 And PropStyle <> VcbStyleSimpleCombo Then SendMessage VirtualComboHandle, CB_SETEXTENDEDUI, IIf(PropExtendedUI = True, 1, 0), ByVal 0&
 UserControl.PropertyChanged "ExtendedUI"
 End Property
 
@@ -1384,7 +1141,7 @@ Select Case Value
     Case 1 To 30
         PropMaxDropDownItems = Value
     Case Else
-        If FontComboDesignMode = True Then
+        If VirtualComboDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
             Exit Property
         Else
@@ -1401,13 +1158,13 @@ IntegralHeight = PropIntegralHeight
 End Property
 
 Public Property Let IntegralHeight(ByVal Value As Boolean)
-If FontComboDesignMode = False Then
+If VirtualComboDesignMode = False Then
     Err.Raise Number:=382, Description:="IntegralHeight property is read-only at run time"
 Else
     PropIntegralHeight = Value
-    If FontComboHandle <> 0 Then
-        Call DestroyFontCombo
-        Call CreateFontCombo
+    If VirtualComboHandle <> 0 Then
+        Call DestroyVirtualCombo
+        Call CreateVirtualCombo
         Call UserControl_Resize
     End If
 End If
@@ -1421,7 +1178,7 @@ End Property
 
 Public Property Let MaxLength(ByVal Value As Long)
 If Value < 0 Then
-    If FontComboDesignMode = True Then
+    If VirtualComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1429,14 +1186,62 @@ If Value < 0 Then
     End If
 End If
 PropMaxLength = Value
-If FontComboHandle <> 0 Then SendMessage FontComboHandle, CB_LIMITTEXT, IIf(PropMaxLength = 0, 255, PropMaxLength), ByVal 0&
+If VirtualComboHandle <> 0 Then SendMessage VirtualComboHandle, CB_LIMITTEXT, IIf(PropMaxLength = 0, 255, PropMaxLength), ByVal 0&
 UserControl.PropertyChanged "MaxLength"
+End Property
+
+Public Property Get UseListBackColor() As Boolean
+Attribute UseListBackColor.VB_Description = "Returns/sets a value which determines if the combo box control will use the list back color property."
+UseListBackColor = PropUseListBackColor
+End Property
+
+Public Property Let UseListBackColor(ByVal Value As Boolean)
+PropUseListBackColor = Value
+Me.Refresh
+UserControl.PropertyChanged "UseListBackColor"
+End Property
+
+Public Property Get UseListForeColor() As Boolean
+Attribute UseListForeColor.VB_Description = "Returns/sets a value which determines if the combo box control will use the list fore color property."
+UseListForeColor = PropUseListForeColor
+End Property
+
+Public Property Let UseListForeColor(ByVal Value As Boolean)
+PropUseListForeColor = Value
+Me.Refresh
+UserControl.PropertyChanged "UseListForeColor"
+End Property
+
+Public Property Get ListBackColor() As OLE_COLOR
+Attribute ListBackColor.VB_Description = "Returns/sets the background color used to display text and graphics in the control's list portion. This property is ignored at design time."
+ListBackColor = PropListBackColor
+End Property
+
+Public Property Let ListBackColor(ByVal Value As OLE_COLOR)
+PropListBackColor = Value
+If VirtualComboHandle <> 0 Then
+    If VirtualComboListBackColorBrush <> 0 Then DeleteObject VirtualComboListBackColorBrush
+    VirtualComboListBackColorBrush = CreateSolidBrush(WinColor(PropListBackColor))
+End If
+Me.Refresh
+UserControl.PropertyChanged "ListBackColor"
+End Property
+
+Public Property Get ListForeColor() As OLE_COLOR
+Attribute ListForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in the control's list portion. This property is ignored at design time."
+ListForeColor = PropListForeColor
+End Property
+
+Public Property Let ListForeColor(ByVal Value As OLE_COLOR)
+PropListForeColor = Value
+Me.Refresh
+UserControl.PropertyChanged "ListForeColor"
 End Property
 
 Public Property Get HorizontalExtent() As Single
 Attribute HorizontalExtent.VB_Description = "Returns/sets the width by which a drop-down list can be scrolled horizontally."
-If FontComboHandle <> 0 Then
-    HorizontalExtent = UserControl.ScaleX(SendMessage(FontComboHandle, CB_GETHORIZONTALEXTENT, 0, ByVal 0&), vbPixels, vbContainerSize)
+If VirtualComboHandle <> 0 Then
+    HorizontalExtent = UserControl.ScaleX(SendMessage(VirtualComboHandle, CB_GETHORIZONTALEXTENT, 0, ByVal 0&), vbPixels, vbContainerSize)
 Else
     HorizontalExtent = UserControl.ScaleX(PropHorizontalExtent, vbPixels, vbContainerSize)
 End If
@@ -1444,7 +1249,7 @@ End Property
 
 Public Property Let HorizontalExtent(ByVal Value As Single)
 If Value < 0 Then
-    If FontComboDesignMode = True Then
+    If VirtualComboDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
@@ -1452,7 +1257,7 @@ If Value < 0 Then
     End If
 End If
 PropHorizontalExtent = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
-If FontComboHandle <> 0 Then SendMessage FontComboHandle, CB_SETHORIZONTALEXTENT, PropHorizontalExtent, ByVal 0&
+If VirtualComboHandle <> 0 Then SendMessage VirtualComboHandle, CB_SETHORIZONTALEXTENT, PropHorizontalExtent, ByVal 0&
 UserControl.PropertyChanged "HorizontalExtent"
 End Property
 
@@ -1468,8 +1273,8 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 And FontComboDesignMode = False Then
-    If GetFocus() = FontComboEditHandle Then Call ComCtlsSetIMEMode(FontComboEditHandle, FontComboIMCHandle, PropIMEMode)
+If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 And VirtualComboDesignMode = False Then
+    If GetFocus() = VirtualComboEditHandle Then Call ComCtlsSetIMEMode(VirtualComboEditHandle, VirtualComboIMCHandle, PropIMEMode)
 End If
 UserControl.PropertyChanged "IMEMode"
 End Property
@@ -1494,93 +1299,36 @@ PropAutoSelect = Value
 UserControl.PropertyChanged "AutoSelect"
 End Property
 
-Public Property Get RecentMax() As Integer
-Attribute RecentMax.VB_Description = "Returns/sets the maximum number of items to be shown in the drop-down recent list. A value of 0 indicates that no recent list items are displayed."
-RecentMax = PropRecentMax
-End Property
-
-Public Property Let RecentMax(ByVal Value As Integer)
-Select Case Value
-    Case 0 To 9
-        PropRecentMax = Value
-        If FontComboRecentCount > GetRecentMax() Then
-            Dim i As Long
-            For i = (GetRecentMax() + 1) To FontComboRecentCount
-                SendMessage FontComboHandle, CB_DELETESTRING, (GetRecentMax() + 1) - 1, ByVal 0&
-            Next i
-            FontComboRecentCount = GetRecentMax()
-        End If
-        If GetRecentMax() > 0 Then
-            ReDim Preserve FontComboRecentItems(1 To GetRecentMax()) As String
-        Else
-            Erase FontComboRecentItems()
-        End If
-    Case Else
-        If FontComboDesignMode = True Then
-            MsgBox "Invalid property value", vbCritical + vbOKOnly
-            Exit Property
-        Else
-            Err.Raise 380
-        End If
-End Select
-UserControl.PropertyChanged "RecentMax"
-End Property
-
-Public Property Get RecentBackColor() As OLE_COLOR
-Attribute RecentBackColor.VB_Description = "Returns/sets the background color used to display the drop-down recent list."
-RecentBackColor = PropRecentBackColor
-End Property
-
-Public Property Let RecentBackColor(ByVal Value As OLE_COLOR)
-PropRecentBackColor = Value
-If FontComboHandle <> 0 And FontComboDesignMode = False Then
-    If FontComboRecentBackColorBrush <> 0 Then DeleteObject FontComboRecentBackColorBrush
-    FontComboRecentBackColorBrush = CreateSolidBrush(WinColor(PropRecentBackColor))
-End If
-Me.Refresh
-UserControl.PropertyChanged "RecentBackColor"
-End Property
-
-Public Property Get RecentForeColor() As OLE_COLOR
-Attribute RecentForeColor.VB_Description = "Returns/sets the foreground color used to display the drop-down recent list."
-RecentForeColor = PropRecentForeColor
-End Property
-
-Public Property Let RecentForeColor(ByVal Value As OLE_COLOR)
-PropRecentForeColor = Value
-Me.Refresh
-UserControl.PropertyChanged "RecentForeColor"
-End Property
-
-Public Property Get RecentCount() As Long
-Attribute RecentCount.VB_Description = "Returns the number of items in the recent list portion of a control."
-Attribute RecentCount.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then
-    Dim Count As Long
-    Count = SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&)
-    If Count >= FontComboRecentCount Then
-        RecentCount = FontComboRecentCount
-    Else
-        RecentCount = Count
-    End If
-End If
-End Property
-
 Public Property Get ListCount() As Long
-Attribute ListCount.VB_Description = "Returns the number of items in the list portion of a control."
-Attribute ListCount.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then ListCount = SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&)
+Attribute ListCount.VB_Description = "Returns/sets the number of items in the list portion of a control."
+If VirtualComboHandle <> 0 And VirtualComboDesignMode = False Then
+    ListCount = SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&)
+Else
+    ListCount = PropListCount
+End If
+End Property
+
+Public Property Let ListCount(ByVal Value As Long)
+If Value < 0 Then Err.Raise 380
+If VirtualComboHandle <> 0 And VirtualComboListHandle <> 0 And VirtualComboDesignMode = False Then
+    Select Case SendMessage(VirtualComboListHandle, LB_SETCOUNT, Value, ByVal 0&)
+        Case LB_ERR, LB_ERRSPACE
+            Err.Raise 380
+        Case Else
+            PropListCount = Value
+    End Select
+Else
+    PropListCount = Value
+End If
+UserControl.PropertyChanged "ListCount"
 End Property
 
 Public Property Get List(ByVal Index As Long) As String
 Attribute List.VB_Description = "Returns the items contained in a control's list portion."
 Attribute List.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then
-    Dim Length As Long
-    Length = SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&)
-    If Not Length = CB_ERR Then
-        List = String(Length, vbNullChar)
-        SendMessage FontComboHandle, CB_GETLBTEXT, Index, ByVal StrPtr(List)
+If VirtualComboHandle <> 0 Then
+    If Index > -1 And Index < SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&) Then
+        RaiseEvent GetVirtualItem(Index, List)
     Else
         Err.Raise 5
     End If
@@ -1590,78 +1338,53 @@ End Property
 Public Property Get ListIndex() As Long
 Attribute ListIndex.VB_Description = "Returns/sets the index of the currently selected item in the control."
 Attribute ListIndex.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then ListIndex = SendMessage(FontComboHandle, CB_GETCURSEL, 0, ByVal 0&)
+If VirtualComboHandle <> 0 Then ListIndex = SendMessage(VirtualComboHandle, CB_GETCURSEL, 0, ByVal 0&)
 End Property
 
 Public Property Let ListIndex(ByVal Value As Long)
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     Dim Changed As Boolean
-    Changed = CBool(SendMessage(FontComboHandle, CB_GETCURSEL, 0, ByVal 0&) <> Value)
+    Changed = CBool(SendMessage(VirtualComboHandle, CB_GETCURSEL, 0, ByVal 0&) <> Value)
     If Not Value = -1 Then
-        If SendMessage(FontComboHandle, CB_SETCURSEL, Value, ByVal 0&) = CB_ERR Then Err.Raise 380
+        If SendMessage(VirtualComboHandle, CB_SETCURSEL, Value, ByVal 0&) = CB_ERR Then Err.Raise 380
     Else
-        SendMessage FontComboHandle, CB_SETCURSEL, -1, ByVal 0&
+        SendMessage VirtualComboHandle, CB_SETCURSEL, -1, ByVal 0&
     End If
-    If Changed = True Then
-        If FontComboBuddyControlHandle <> 0 Then SendMessage FontComboBuddyControlHandle, UM_UPDATEBUDDY, 0, ByVal 0&
-        RaiseEvent Click
-    End If
+    If Changed = True Then RaiseEvent Click
 End If
 End Property
 
-Public Property Get ItemData(ByVal Index As Long) As Long
-Attribute ItemData.VB_Description = "Returns/sets a specific number for each item in a font combo."
-Attribute ItemData.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then
-    If Not SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Then
-        ItemData = SendMessage(FontComboHandle, CB_GETITEMDATA, Index, ByVal 0&)
-    Else
-        Err.Raise 381
-    End If
-End If
-End Property
-
-Public Property Let ItemData(ByVal Index As Long, ByVal Value As Long)
-If FontComboHandle <> 0 Then
-    If Not SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Then
-        SendMessage FontComboHandle, CB_SETITEMDATA, Index, ByVal Value
-    Else
-        Err.Raise 381
-    End If
-End If
-End Property
-
-Private Sub CreateFontCombo()
-If FontComboHandle <> 0 Then Exit Sub
+Private Sub CreateVirtualCombo()
+If VirtualComboHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE Or CBS_AUTOHSCROLL Or WS_VSCROLL Or WS_HSCROLL Or CBS_SORT Or CBS_OWNERDRAWFIXED Or CBS_HASSTRINGS
+dwStyle = WS_CHILD Or WS_VISIBLE Or CBS_AUTOHSCROLL Or WS_VSCROLL Or WS_HSCROLL Or CBS_OWNERDRAWFIXED
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING Or WS_EX_RIGHT Or WS_EX_LEFTSCROLLBAR
 Select Case PropStyle
-    Case FtcStyleDropDownCombo
+    Case VcbStyleDropDownCombo
         dwStyle = dwStyle Or CBS_DROPDOWN
-    Case FtcStyleSimpleCombo
+    Case VcbStyleSimpleCombo
         dwStyle = dwStyle Or CBS_SIMPLE
-    Case FtcStyleDropDownList
+    Case VcbStyleDropDownList
         dwStyle = dwStyle Or CBS_DROPDOWNLIST
 End Select
 If PropIntegralHeight = False Then dwStyle = dwStyle Or CBS_NOINTEGRALHEIGHT
-FontComboHandle = CreateWindowEx(dwExStyle, StrPtr("ComboBox"), StrPtr("Font Combo"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
-If FontComboHandle <> 0 Then
+VirtualComboHandle = CreateWindowEx(dwExStyle, StrPtr("VComboBoxWndClass"), StrPtr("Virtual Combo"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+If VirtualComboHandle <> 0 Then
     Dim CBI As COMBOBOXINFO
     CBI.cbSize = LenB(CBI)
-    GetComboBoxInfo FontComboHandle, CBI
-    If PropStyle = FtcStyleDropDownCombo Then
-        FontComboEditHandle = CBI.hWndItem
-        If FontComboEditHandle = 0 Then FontComboEditHandle = FindWindowEx(FontComboHandle, 0, StrPtr("Edit"), 0)
-    ElseIf PropStyle = FtcStyleSimpleCombo Then
-        FontComboEditHandle = FindWindowEx(FontComboHandle, 0, StrPtr("Edit"), 0)
-        If PropIntegralHeight = False Then MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 2, 1
+    GetComboBoxInfo VirtualComboHandle, CBI
+    If PropStyle = VcbStyleDropDownCombo Then
+        VirtualComboEditHandle = CBI.hWndItem
+        If VirtualComboEditHandle = 0 Then VirtualComboEditHandle = FindWindowEx(VirtualComboHandle, 0, StrPtr("Edit"), 0)
+    ElseIf PropStyle = VcbStyleSimpleCombo Then
+        VirtualComboEditHandle = FindWindowEx(VirtualComboHandle, 0, StrPtr("Edit"), 0)
+        If PropIntegralHeight = False Then MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + 2, 1
     End If
-    FontComboListHandle = CBI.hWndList
-    SendMessage FontComboHandle, CB_LIMITTEXT, IIf(PropMaxLength = 0, 255, PropMaxLength), ByVal 0&
-    If PropStyle <> FtcStyleDropDownList And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
-    If PropHorizontalExtent > 0 Then SendMessage FontComboHandle, CB_SETHORIZONTALEXTENT, PropHorizontalExtent, ByVal 0&
-    FontComboTopIndex = 0
+    VirtualComboListHandle = CBI.hWndList
+    SendMessage VirtualComboHandle, CB_LIMITTEXT, IIf(PropMaxLength = 0, 255, PropMaxLength), ByVal 0&
+    If PropStyle <> VcbStyleDropDownList And VirtualComboEditHandle <> 0 Then SendMessage VirtualComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
+    If PropHorizontalExtent > 0 Then SendMessage VirtualComboHandle, CB_SETHORIZONTALEXTENT, PropHorizontalExtent, ByVal 0&
+    VirtualComboTopIndex = 0
 End If
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
@@ -1669,54 +1392,51 @@ Me.Enabled = UserControl.Enabled
 If PropLocked = True Then Me.Locked = PropLocked
 Me.ExtendedUI = PropExtendedUI
 Me.MaxDropDownItems = PropMaxDropDownItems
-Me.RecentMax = GetRecentMax()
-If FontComboDesignMode = False Then
-    If FontComboHandle <> 0 Then
-        If FontComboRecentBackColorBrush = 0 Then FontComboRecentBackColorBrush = CreateSolidBrush(WinColor(PropRecentBackColor))
-        Call ComCtlsSetSubclass(FontComboHandle, Me, 1)
-        If FontComboEditHandle <> 0 Then
-            Call ComCtlsSetSubclass(FontComboEditHandle, Me, 2)
-            Call ComCtlsCreateIMC(FontComboEditHandle, FontComboIMCHandle)
+Me.ListCount = PropListCount
+If VirtualComboDesignMode = False Then
+    If VirtualComboHandle <> 0 Then
+        If VirtualComboListBackColorBrush = 0 Then VirtualComboListBackColorBrush = CreateSolidBrush(WinColor(PropListBackColor))
+        Call ComCtlsSetSubclass(VirtualComboHandle, Me, 1)
+        If VirtualComboEditHandle <> 0 Then
+            Call ComCtlsSetSubclass(VirtualComboEditHandle, Me, 2)
+            Call ComCtlsCreateIMC(VirtualComboEditHandle, VirtualComboIMCHandle)
         End If
-        If FontComboListHandle <> 0 Then Call ComCtlsSetSubclass(FontComboListHandle, Me, 3)
+        If VirtualComboListHandle <> 0 Then Call ComCtlsSetSubclass(VirtualComboListHandle, Me, 3)
         Call ComCtlsSetSubclass(UserControl.hWnd, Me, 4)
     End If
 Else
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
-    Me.Refresh
-    If PropStyle = FtcStyleDropDownList Then
-        If FontComboHandle <> 0 Then
-            Dim Buffer As String
-            Buffer = Ambient.DisplayName
-            SendMessage FontComboHandle, CB_ADDSTRING, 0, ByVal StrPtr(Buffer)
-            SendMessage FontComboHandle, CB_SETCURSEL, 0, ByVal 0&
+    If PropStyle = VcbStyleDropDownList Then
+        If VirtualComboHandle <> 0 And VirtualComboListHandle <> 0 Then
+            SendMessage VirtualComboListHandle, LB_SETCOUNT, 1, ByVal 0&
+            SendMessage VirtualComboHandle, CB_SETCURSEL, 0, ByVal 0&
         End If
     End If
 End If
 End Sub
 
-Private Sub DestroyFontCombo()
-If FontComboHandle = 0 Then Exit Sub
-Call ComCtlsRemoveSubclass(FontComboHandle)
-If FontComboEditHandle <> 0 Then
-    Call ComCtlsRemoveSubclass(FontComboEditHandle)
-    Call ComCtlsDestroyIMC(FontComboEditHandle, FontComboIMCHandle)
+Private Sub DestroyVirtualCombo()
+If VirtualComboHandle = 0 Then Exit Sub
+Call ComCtlsRemoveSubclass(VirtualComboHandle)
+If VirtualComboEditHandle <> 0 Then
+    Call ComCtlsRemoveSubclass(VirtualComboEditHandle)
+    Call ComCtlsDestroyIMC(VirtualComboEditHandle, VirtualComboIMCHandle)
 End If
-If FontComboListHandle <> 0 Then Call ComCtlsRemoveSubclass(FontComboListHandle)
+If VirtualComboListHandle <> 0 Then Call ComCtlsRemoveSubclass(VirtualComboListHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
-ShowWindow FontComboHandle, SW_HIDE
-SetParent FontComboHandle, 0
-DestroyWindow FontComboHandle
-FontComboHandle = 0
-FontComboEditHandle = 0
-FontComboListHandle = 0
-If FontComboFontHandle <> 0 Then
-    DeleteObject FontComboFontHandle
-    FontComboFontHandle = 0
+ShowWindow VirtualComboHandle, SW_HIDE
+SetParent VirtualComboHandle, 0
+DestroyWindow VirtualComboHandle
+VirtualComboHandle = 0
+VirtualComboEditHandle = 0
+VirtualComboListHandle = 0
+If VirtualComboFontHandle <> 0 Then
+    DeleteObject VirtualComboFontHandle
+    VirtualComboFontHandle = 0
 End If
-If FontComboRecentBackColorBrush <> 0 Then
-    DeleteObject FontComboRecentBackColorBrush
-    FontComboRecentBackColorBrush = 0
+If VirtualComboListBackColorBrush <> 0 Then
+    DeleteObject VirtualComboListBackColorBrush
+    VirtualComboListBackColorBrush = 0
 End If
 End Sub
 
@@ -1730,13 +1450,13 @@ End Sub
 Public Property Get SelStart() As Long
 Attribute SelStart.VB_Description = "Returns/sets the starting point of text selected; indicates the position of the insertion point if no text is selected."
 Attribute SelStart.VB_MemberFlags = "400"
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then SendMessage FontComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal 0&
+If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then SendMessage VirtualComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal 0&
 End Property
 
 Public Property Let SelStart(ByVal Value As Long)
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then
+If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then
     If Value >= 0 Then
-        SendMessage FontComboEditHandle, EM_SETSEL, Value, ByVal Value
+        SendMessage VirtualComboEditHandle, EM_SETSEL, Value, ByVal Value
     Else
         Err.Raise 380
     End If
@@ -1746,19 +1466,19 @@ End Property
 Public Property Get SelLength() As Long
 Attribute SelLength.VB_Description = "Returns/sets the number of characters selected."
 Attribute SelLength.VB_MemberFlags = "400"
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then
+If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then
     Dim SelStart As Long, SelEnd As Long
-    SendMessage FontComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+    SendMessage VirtualComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
     SelLength = SelEnd - SelStart
 End If
 End Property
 
 Public Property Let SelLength(ByVal Value As Long)
-If FontComboHandle <> 0 And FontComboEditHandle <> 0 Then
+If VirtualComboHandle <> 0 And VirtualComboEditHandle <> 0 Then
     If Value >= 0 Then
         Dim SelStart As Long
-        SendMessage FontComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal 0&
-        SendMessage FontComboEditHandle, EM_SETSEL, SelStart, ByVal SelStart + Value
+        SendMessage VirtualComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal 0&
+        SendMessage VirtualComboEditHandle, EM_SETSEL, SelStart, ByVal SelStart + Value
     Else
         Err.Raise 380
     End If
@@ -1768,10 +1488,10 @@ End Property
 Public Property Get SelText() As String
 Attribute SelText.VB_Description = "Returns/sets the string containing the currently selected text."
 Attribute SelText.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then
-    If FontComboEditHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
+    If VirtualComboEditHandle <> 0 Then
         Dim SelStart As Long, SelEnd As Long
-        SendMessage FontComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+        SendMessage VirtualComboHandle, CB_GETEDITSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
         On Error Resume Next
         SelText = Mid$(Me.Text, SelStart + 1, (SelEnd - SelStart))
         On Error GoTo 0
@@ -1782,9 +1502,9 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If FontComboHandle <> 0 Then
-    If FontComboEditHandle <> 0 Then
-        SendMessage FontComboEditHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+If VirtualComboHandle <> 0 Then
+    If VirtualComboEditHandle <> 0 Then
+        SendMessage VirtualComboEditHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
     Else
         Err.Raise 380
     End If
@@ -1794,9 +1514,9 @@ End Property
 Public Property Get ItemHeight() As Single
 Attribute ItemHeight.VB_Description = "Returns the height of an item in the drop-down list."
 Attribute ItemHeight.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     Dim RetVal As Long
-    RetVal = SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)
+    RetVal = SendMessage(VirtualComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)
     If Not RetVal = CB_ERR Then
         ItemHeight = UserControl.ScaleY(RetVal, vbPixels, vbContainerSize)
     Else
@@ -1806,27 +1526,38 @@ End If
 End Property
 
 Public Property Get FieldHeight() As Single
-Attribute FieldHeight.VB_Description = "Returns the height of the edit-control (or static-text) portion of the font combo."
+Attribute FieldHeight.VB_Description = "Returns/sets the height of the edit-control (or static-text) portion of the virtual combo."
 Attribute FieldHeight.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then FieldHeight = UserControl.ScaleY(SendMessage(FontComboHandle, CB_GETITEMHEIGHT, -1, ByVal 0&), vbPixels, vbContainerSize)
+If VirtualComboHandle <> 0 Then FieldHeight = UserControl.ScaleY(SendMessage(VirtualComboHandle, CB_GETITEMHEIGHT, -1, ByVal 0&), vbPixels, vbContainerSize)
+End Property
+
+Public Property Let FieldHeight(ByVal Value As Single)
+If Value < 0 Then Err.Raise 380
+If VirtualComboHandle <> 0 Then
+    If Not SendMessage(VirtualComboHandle, CB_SETITEMHEIGHT, -1, ByVal CLng(UserControl.ScaleY(Value, vbContainerSize, vbPixels))) = CB_ERR Then
+        Me.Refresh
+    Else
+        Err.Raise 5
+    End If
+End If
 End Property
 
 Public Property Get DroppedDown() As Boolean
 Attribute DroppedDown.VB_Description = "Returns/sets a value that determines whether the drop-down list is dropped down or not."
 Attribute DroppedDown.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then DroppedDown = CBool(SendMessage(FontComboHandle, CB_GETDROPPEDSTATE, 0, ByVal 0&) <> 0)
+If VirtualComboHandle <> 0 Then DroppedDown = CBool(SendMessage(VirtualComboHandle, CB_GETDROPPEDSTATE, 0, ByVal 0&) <> 0)
 End Property
 
 Public Property Let DroppedDown(ByVal Value As Boolean)
-If FontComboHandle <> 0 Then SendMessage FontComboHandle, CB_SHOWDROPDOWN, IIf(Value = True, 1, 0), ByVal 0&
+If VirtualComboHandle <> 0 Then SendMessage VirtualComboHandle, CB_SHOWDROPDOWN, IIf(Value = True, 1, 0), ByVal 0&
 End Property
 
 Public Property Get DropDownWidth() As Single
-Attribute DropDownWidth.VB_Description = "Returns/sets the width of the drop-down list. This property is not supported in a simple font combo."
+Attribute DropDownWidth.VB_Description = "Returns/sets the width of the drop-down list. This property is not supported in a simple virtual combo."
 Attribute DropDownWidth.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     Dim RetVal As Long
-    RetVal = SendMessage(FontComboHandle, CB_GETDROPPEDWIDTH, 0, ByVal 0&)
+    RetVal = SendMessage(VirtualComboHandle, CB_GETDROPPEDWIDTH, 0, ByVal 0&)
     If Not RetVal = CB_ERR Then
         DropDownWidth = UserControl.ScaleX(RetVal, vbPixels, vbContainerSize)
     Else
@@ -1837,21 +1568,21 @@ End Property
 
 Public Property Let DropDownWidth(ByVal Value As Single)
 If Value < 0 Then Err.Raise 380
-If FontComboHandle <> 0 Then
-    If SendMessage(FontComboHandle, CB_SETDROPPEDWIDTH, CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels)), ByVal 0&) = CB_ERR Then Err.Raise 5
+If VirtualComboHandle <> 0 Then
+    If SendMessage(VirtualComboHandle, CB_SETDROPPEDWIDTH, CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels)), ByVal 0&) = CB_ERR Then Err.Raise 5
 End If
 End Property
 
 Public Property Get TopIndex() As Long
 Attribute TopIndex.VB_Description = "Returns/sets which item in a control is displayed in the topmost position."
 Attribute TopIndex.VB_MemberFlags = "400"
-If FontComboHandle <> 0 Then TopIndex = SendMessage(FontComboHandle, CB_GETTOPINDEX, 0, ByVal 0&)
+If VirtualComboHandle <> 0 Then TopIndex = SendMessage(VirtualComboHandle, CB_GETTOPINDEX, 0, ByVal 0&)
 End Property
 
 Public Property Let TopIndex(ByVal Value As Long)
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     If Value >= 0 Then
-        If SendMessage(FontComboHandle, CB_SETTOPINDEX, Value, ByVal 0&) = CB_ERR Then Err.Raise 380
+        If SendMessage(VirtualComboHandle, CB_SETTOPINDEX, Value, ByVal 0&) = CB_ERR Then Err.Raise 380
     Else
         Err.Raise 380
     End If
@@ -1859,14 +1590,13 @@ End If
 End Property
 
 Public Function FindItem(ByVal Text As String, Optional ByVal Index As Long = -1, Optional ByVal Partial As Boolean) As Long
-Attribute FindItem.VB_Description = "Finds an item in the font combo and returns the index of that item."
-If FontComboHandle <> 0 Then
-    If Not SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Or Index = -1 Then
-        If Partial = True Then
-            FindItem = SendMessage(FontComboHandle, CB_FINDSTRING, Index, ByVal StrPtr(Text))
-        Else
-            FindItem = SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, Index, ByVal StrPtr(Text))
-        End If
+Attribute FindItem.VB_Description = "Finds an item in the virtual combo and returns the index of that item."
+If VirtualComboHandle <> 0 Then
+    If (Index > -1 And Index < SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&)) Or Index = -1 Then
+        Dim RetVal As Long
+        RetVal = CB_ERR
+        RaiseEvent FindVirtualItem(Index, Text, Partial, RetVal)
+        FindItem = RetVal
     Else
         Err.Raise 381
     End If
@@ -1875,48 +1605,28 @@ End Function
 
 Public Function GetIdealHorizontalExtent() As Single
 Attribute GetIdealHorizontalExtent.VB_Description = "Gets the ideal value for the horizontal extent property."
-If FontComboHandle <> 0 And FontComboListHandle <> 0 Then
+If VirtualComboHandle <> 0 And VirtualComboListHandle <> 0 Then
     Dim Count As Long
-    Count = SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&)
+    Count = SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&)
     If Count > 0 Then
-        Dim RC(0 To 1) As RECT, CX As Long, ScrollWidth As Long, hDC As Long, i As Long, Length As Long, Text As String, Size As SIZEAPI
-        GetWindowRect FontComboListHandle, RC(0)
-        GetClientRect FontComboListHandle, RC(1)
-        If (GetWindowLong(FontComboListHandle, GWL_STYLE) And WS_VSCROLL) = WS_VSCROLL Then
+        Dim RC(0 To 1) As RECT, CX As Long, ScrollWidth As Long, hDC As Long, i As Long, Text As String, Size As SIZEAPI
+        GetWindowRect VirtualComboListHandle, RC(0)
+        GetClientRect VirtualComboListHandle, RC(1)
+        If (GetWindowLong(VirtualComboListHandle, GWL_STYLE) And WS_VSCROLL) = WS_VSCROLL Then
             Const SM_CXVSCROLL As Long = 2
             ScrollWidth = GetSystemMetrics(SM_CXVSCROLL)
         End If
-        hDC = GetDC(FontComboHandle)
-        Dim hFontTemp As Long, hFontOld As Long
-        Dim LF As LOGFONT, FontName As String
+        hDC = GetDC(VirtualComboHandle)
+        Dim hFontOld As Long
+        hFontOld = SelectObject(hDC, VirtualComboFontHandle)
         For i = 0 To Count - 1
-            Length = SendMessage(FontComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)
-            If Not Length = CB_ERR Then
-                Text = String(Length, vbNullChar)
-                SendMessage FontComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Text)
-                FontName = Left$(Text, LF_FACESIZE)
-                With LF
-                Erase .LFFaceName()
-                CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
-                .LFHeight = .LFHeight - FontComboLFHeightSpacing
-                .LFHeight = ((SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&) / FONTHEIGHT_DENOMINATOR) * FONTHEIGHT_NUMERATOR)
-                .LFHeight = -.LFHeight
-                .LFWeight = FW_NORMAL
-                .LFItalic = 0
-                .LFStrikeOut = 0
-                .LFUnderline = 0
-                .LFQuality = DEFAULT_QUALITY
-                .LFCharset = ANSI_CHARSET
-                End With
-                hFontTemp = CreateFontIndirect(LF)
-                hFontOld = SelectObject(hDC, hFontTemp)
-                GetTextExtentPoint32 hDC, StrPtr(FontName), Len(FontName), Size
-                If (Size.CX - ScrollWidth) > CX Then CX = (Size.CX - ScrollWidth)
-                If hFontOld <> 0 Then SelectObject hDC, hFontOld
-                If hFontTemp <> 0 Then DeleteObject hFontTemp
-            End If
+            RaiseEvent GetVirtualItem(i, Text)
+            GetTextExtentPoint32 hDC, ByVal StrPtr(Text), Len(Text), Size
+            Text = vbNullString
+            If (Size.CX - ScrollWidth) > CX Then CX = (Size.CX - ScrollWidth)
         Next i
-        ReleaseDC FontComboHandle, hDC
+        If hFontOld <> 0 Then SelectObject hDC, hFontOld
+        ReleaseDC VirtualComboHandle, hDC
         If CX > 0 Then GetIdealHorizontalExtent = UserControl.ScaleX(CX + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left)), vbPixels, vbContainerSize)
     End If
 End If
@@ -1924,97 +1634,27 @@ End Function
 
 Public Function SelectItem(ByVal Text As String, Optional ByVal Index As Long = -1) As Long
 Attribute SelectItem.VB_Description = "Searches for an item that begins with the characters in a specified string. If a matching item is found, the item is selected. The search is not case sensitive."
-If FontComboHandle <> 0 Then
-    If Not SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Or Index = -1 Then
-        SelectItem = SendMessage(FontComboHandle, CB_SELECTSTRING, Index, ByVal StrPtr(Text))
+If VirtualComboHandle <> 0 Then
+    If (Index > -1 And Index < SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&)) Or Index = -1 Then
+        Dim RetVal As Long
+        RetVal = CB_ERR
+        RaiseEvent FindVirtualItem(Index, Text, True, RetVal)
+        If Not RetVal = CB_ERR Then
+            Me.ListIndex = RetVal
+            If PropStyle <> VcbStyleDropDownList Then Me.Text = Text
+        End If
+        SelectItem = RetVal
     Else
         Err.Raise 381
     End If
 End If
 End Function
 
-Public Function SaveRecent() As Variant
-Attribute SaveRecent.VB_Description = "Saves a drop-down recent list."
-If FontComboRecentCount > 0 Then
-    Dim ArgList() As String, i As Long
-    ReDim ArgList(0 To (FontComboRecentCount - 1)) As String
-    For i = 0 To (FontComboRecentCount - 1)
-        ArgList(i) = FontComboRecentItems(i + 1)
-    Next i
-    SaveRecent = ArgList()
-Else
-    SaveRecent = Empty
-End If
-End Function
-
-Public Sub RestoreRecent(ByVal ArgList As Variant)
-Attribute RestoreRecent.VB_Description = "Restores a drop-down recent list to its previously saved state."
-If FontComboHandle <> 0 Then
-    If IsArray(ArgList) Then
-        Dim Ptr As Long
-        CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
-        If Ptr <> 0 Then
-            Dim DimensionCount As Integer
-            CopyMemory DimensionCount, ByVal Ptr, 2
-            If DimensionCount = 1 Then
-                Dim Arr() As String, Count As Long, i As Long
-                For i = LBound(ArgList) To UBound(ArgList)
-                    Select Case VarType(ArgList(i))
-                        Case vbString
-                            If Not ArgList(i) = vbNullString Then
-                                ReDim Preserve Arr(0 To Count) As String
-                                Arr(Count) = ArgList(i)
-                                Count = Count + 1
-                            End If
-                    End Select
-                Next i
-                For i = 1 To FontComboRecentCount
-                    SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
-                Next i
-                FontComboRecentCount = Count
-                Me.RecentMax = GetRecentMax()
-                If FontComboRecentCount > 0 Then
-                    Dim FontName As String, Offset As Integer
-                    For i = 1 To FontComboRecentCount
-                        FontName = Arr(i - 1)
-                        If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontName)) = CB_ERR Then
-                            FontComboRecentItems(i - Offset) = FontName
-                            SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
-                        Else
-                            FontComboRecentItems(i) = vbNullString
-                            Offset = Offset + 1
-                        End If
-                    Next i
-                    FontComboRecentCount = FontComboRecentCount - Offset
-                End If
-            Else
-                Err.Raise Number:=5, Description:="Array must be single dimensioned"
-            End If
-        Else
-            Err.Raise Number:=91, Description:="Array is not allocated"
-        End If
-    ElseIf IsEmpty(ArgList) Then
-        Me.ClearRecent
-    Else
-        Err.Raise 380
-    End If
-End If
-End Sub
-
-Public Sub ClearRecent()
-Attribute ClearRecent.VB_Description = "Clears the contents of the drop-down recent list."
-Dim i As Long
-For i = 1 To FontComboRecentCount
-    If FontComboHandle <> 0 Then SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
-Next i
-FontComboRecentCount = 0
-End Sub
-
 Private Sub CheckDropDownHeight(ByVal Calculate As Boolean)
 Static LastCount As Long, ItemHeight As Long
-If FontComboHandle <> 0 Then
+If VirtualComboHandle <> 0 Then
     Dim Count As Long, Height As Long
-    Count = SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&)
+    Count = SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&)
     Select Case Count
         Case 0
             Count = 1
@@ -2024,14 +1664,14 @@ If FontComboHandle <> 0 Then
     If Calculate = False Then
         If Count = LastCount Then Exit Sub
     Else
-        ItemHeight = SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)
+        ItemHeight = SendMessage(VirtualComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)
     End If
     Height = (ItemHeight * Count)
-    If PropStyle <> FtcStyleSimpleCombo Then
-        MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
-        If PropIntegralHeight = True And ComCtlsSupportLevel() >= 1 Then SendMessage FontComboHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
+    If PropStyle <> VcbStyleSimpleCombo Then
+        MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
+        If PropIntegralHeight = True And ComCtlsSupportLevel() >= 1 Then SendMessage VirtualComboHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
     Else
-        RedrawWindow FontComboHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+        RedrawWindow VirtualComboHandle, 0, 0, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
     End If
     LastCount = Count
 End If
@@ -2039,9 +1679,9 @@ End Sub
 
 Private Sub CheckTopIndex()
 Dim TopIndex As Long
-If FontComboHandle <> 0 Then TopIndex = SendMessage(FontComboHandle, CB_GETTOPINDEX, 0, ByVal 0&)
-If TopIndex <> FontComboTopIndex Then
-    FontComboTopIndex = TopIndex
+If VirtualComboHandle <> 0 Then TopIndex = SendMessage(VirtualComboHandle, CB_GETTOPINDEX, 0, ByVal 0&)
+If TopIndex <> VirtualComboTopIndex Then
+    VirtualComboTopIndex = TopIndex
     RaiseEvent Scroll
 End If
 End Sub
@@ -2049,189 +1689,20 @@ End Sub
 Private Sub CheckAutoSelect()
 If PropAutoSelect = True Then
     Select Case PropStyle
-        Case FtcStyleDropDownCombo, FtcStyleSimpleCombo
-            Dim Index As Long
-            If FontComboHandle <> 0 Then
-                Index = SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(Me.Text))
+        Case VcbStyleDropDownCombo, VcbStyleSimpleCombo
+            Dim Index As Long, Text As String
+            If VirtualComboHandle <> 0 Then
+                Index = CB_ERR
+                Text = Me.Text
+                RaiseEvent FindVirtualItem(-1, Text, False, Index)
                 If Not Index = CB_ERR Then
                     Me.ListIndex = Index
-                    Me.SelStart = Len(Me.Text)
+                    Me.SelStart = Len(Text)
                 End If
             End If
     End Select
 End If
 End Sub
-
-Private Sub SetupFontComboItems()
-If FontComboDesignMode = True Then
-    If PropStyle <> FtcStyleSimpleCombo Then Exit Sub
-End If
-If FontComboHandle <> 0 Then
-    If SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
-        SendMessage FontComboHandle, CB_RESETCONTENT, 0, ByVal 0&
-        If PropStyle <> FtcStyleDropDownList And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
-    End If
-    Dim hDC As Long, i As Long, LF As LOGFONT
-    If FontComboBuddyShadowObjectPointer = 0 Then
-        hDC = GetDC(FontComboHandle)
-        If hDC <> 0 Then
-            With LF
-            .LFPitchAndFamily = 0
-            .LFCharset = ANSI_CHARSET
-            EnumFontFamiliesEx hDC, VarPtr(LF), AddressOf ComCtlsFtcEnumFontFunction, Me, 0
-            .LFPitchAndFamily = 0
-            .LFCharset = SYMBOL_CHARSET
-            EnumFontFamiliesEx hDC, VarPtr(LF), AddressOf ComCtlsFtcEnumFontFunction, Me, 0
-            End With
-            ReleaseDC FontComboHandle, hDC
-        End If
-        If FontComboRecentCount > 0 Then
-            Dim Offset As Integer
-            For i = 1 To FontComboRecentCount
-                If Not SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, FontComboRecentCount - 1, ByVal StrPtr(FontComboRecentItems(i))) = CB_ERR Then
-                    SendMessage FontComboHandle, CB_INSERTSTRING, (i - Offset) - 1, ByVal StrPtr(FontComboRecentItems(i))
-                Else
-                    FontComboRecentItems(i) = vbNullString
-                    Offset = Offset + 1
-                End If
-            Next i
-            FontComboRecentCount = FontComboRecentCount - Offset
-        End If
-    Else
-        Dim ShadowFontCombo As FontCombo, FontName As String
-        ComCtlsPtrToShadowObj ShadowFontCombo, FontComboBuddyShadowObjectPointer
-        FontName = Left$(ShadowFontCombo.Text, LF_FACESIZE)
-        If Not FontName = vbNullString Then
-            hDC = GetDC(0)
-            If hDC <> 0 Then
-                Dim TM As TEXTMETRIC, hFont As Long, hFontOld As Long
-                Dim IsTrueType As Boolean, FontSize As Long
-                With LF
-                CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
-                .LFHeight = 0
-                .LFQuality = DEFAULT_QUALITY
-                .LFCharset = ANSI_CHARSET
-                hFont = CreateFontIndirect(LF)
-                If hFont <> 0 Then
-                    hFontOld = SelectObject(hDC, hFont)
-                    If GetTextMetrics(hDC, TM) <> 0 Then IsTrueType = CBool((TM.TMPitchAndFamily And TMPF_TRUETYPE) = TMPF_TRUETYPE)
-                    SelectObject hDC, hFontOld
-                    DeleteObject hFont
-                    hFont = 0
-                    hFontOld = 0
-                End If
-                If IsTrueType = True Then
-                    For i = 1 To 16
-                        FontSize = VBA.Choose(i, 72, 48, 36, 28, 26, 24, 22, 20, 18, 16, 14, 12, 11, 10, 9, 8)
-                        SendMessage FontComboHandle, CB_INSERTSTRING, 0, ByVal StrPtr(CStr(FontSize))
-                    Next i
-                Else
-                    For i = 1 To 18
-                        FontSize = VBA.Choose(i, 72, 48, 36, 28, 26, 24, 22, 20, 18, 16, 14, 12, 11, 10, 9, 8, 7, 6)
-                        .LFHeight = -MulDiv(FontSize, DPI_Y(), 72)
-                        hFont = CreateFontIndirect(LF)
-                        If hFont <> 0 Then
-                            hFontOld = SelectObject(hDC, hFont)
-                            If GetTextMetrics(hDC, TM) <> 0 Then
-                                If FontSize = MulDiv(TM.TMHeight - TM.TMInternalLeading, 72, DPI_Y()) Then SendMessage FontComboHandle, CB_INSERTSTRING, 0, ByVal StrPtr(CStr(FontSize))
-                            End If
-                            SelectObject hDC, hFontOld
-                            DeleteObject hFont
-                            hFont = 0
-                            hFontOld = 0
-                        End If
-                    Next i
-                End If
-                End With
-                ReleaseDC FontComboHandle, hDC
-            End If
-        End If
-    End If
-End If
-End Sub
-
-Private Sub AddRecentItem(ByVal Index As Long)
-If FontComboHandle <> 0 Then
-    If Index > (FontComboRecentCount - 1) And GetRecentMax() > 0 Then
-        Dim Length As Long, Buffer As String, FontName As String
-        Length = SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&)
-        If Not Length = CB_ERR Then
-            Buffer = String(Length, vbNullChar)
-            SendMessage FontComboHandle, CB_GETLBTEXT, Index, ByVal StrPtr(Buffer)
-            FontName = Left$(Buffer, LF_FACESIZE)
-        End If
-        If Not FontName = vbNullString Then
-            Dim MatchIndex As Long, i As Long
-            MatchIndex = SendMessage(FontComboHandle, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(FontName))
-            If MatchIndex > (FontComboRecentCount - 1) Then MatchIndex = CB_ERR
-            If Not MatchIndex = CB_ERR Then
-                For i = (MatchIndex + 1) To (1 + 1) Step -1
-                    FontComboRecentItems(i) = FontComboRecentItems(i - 1)
-                Next i
-                FontComboRecentItems(1) = FontName
-                For i = 1 To FontComboRecentCount
-                    SendMessage FontComboHandle, CB_DELETESTRING, i - 1, ByVal 0&
-                    SendMessage FontComboHandle, CB_INSERTSTRING, i - 1, ByVal StrPtr(FontComboRecentItems(i))
-                Next i
-            Else
-                Dim Overflow As Boolean
-                If FontComboRecentCount < GetRecentMax() Then
-                    FontComboRecentCount = FontComboRecentCount + 1
-                Else
-                    Overflow = True
-                End If
-                For i = (FontComboRecentCount - 1) To 1 Step -1
-                    FontComboRecentItems(i + 1) = FontComboRecentItems(i)
-                Next i
-                FontComboRecentItems(1) = FontName
-                If Overflow = True Then SendMessage FontComboHandle, CB_DELETESTRING, GetRecentMax() - 1, ByVal 0&
-                SendMessage FontComboHandle, CB_INSERTSTRING, 0, ByVal StrPtr(FontComboRecentItems(1))
-            End If
-        End If
-    End If
-End If
-End Sub
-
-Private Function GetRecentMax() As Integer
-If FontComboBuddyShadowObjectPointer = 0 Then
-    GetRecentMax = PropRecentMax
-Else
-    GetRecentMax = 0
-End If
-End Function
-
-Private Function EnumFontFunction(ByVal lpELF As Long, ByVal lpTM As Long, ByVal FontType As Long) As Long
-Dim FontTypeMatch As Boolean
-Select Case PropFontType
-    Case FtcFontTypeTrueType
-        If FontType = TRUETYPE_FONTTYPE Then FontTypeMatch = True
-    Case FtcFontTypeBitmap
-        If FontType = RASTER_FONTTYPE Then FontTypeMatch = True
-    Case FtcFontTypeBitmapTrueType
-        If FontType = RASTER_FONTTYPE Or FontType = TRUETYPE_FONTTYPE Then FontTypeMatch = True
-End Select
-If FontTypeMatch = True Then
-    Dim ELF As ENUMLOGFONT, FontName As String
-    CopyMemory ELF, ByVal lpELF, LenB(ELF)
-    With ELF.LF
-    FontName = Left$(.LFFaceName(), InStr(CStr(.LFFaceName()) & vbNullChar, vbNullChar) - 1)
-    If Left$(FontName, 1) <> "@" Then
-        Select Case PropFontPitch
-            Case FtcFontPitchFixed
-                If (.LFPitchAndFamily And FIXED_PITCH) = 0 Then FontName = vbNullString
-            Case FtcFontPitchVariable
-                If (.LFPitchAndFamily And VARIABLE_PITCH) = 0 Then FontName = vbNullString
-        End Select
-        If Not FontName = vbNullString Then SendMessage FontComboHandle, CB_ADDSTRING, 0, ByVal StrPtr(FontName)
-    End If
-    End With
-End If
-EnumFontFunction = 1
-End Function
-
-Private Function PropBuddyControl() As Object
-If FontComboBuddyObjectPointer <> 0 Then Set PropBuddyControl = PtrToObj(FontComboBuddyObjectPointer)
-End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
 Select Case dwRefData
@@ -2245,8 +1716,6 @@ Select Case dwRefData
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
     Case 5
         ISubclass_Message = WindowProcUserControlDesignMode(hWnd, wMsg, wParam, lParam)
-    Case 10
-        ISubclass_Message = EnumFontFunction(wMsg, wParam, lParam)
 End Select
 End Function
 
@@ -2273,8 +1742,12 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_CTLCOLORLISTBOX
+        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+        If PropUseListBackColor = True And VirtualComboListBackColorBrush <> 0 Then WindowProcControl = VirtualComboListBackColorBrush
+        Exit Function
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
-        If PropStyle = FtcStyleDropDownList Then
+        If PropStyle = VcbStyleDropDownList Then
             Dim KeyCode As Integer
             KeyCode = wParam And &HFF&
             If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -2283,7 +1756,7 @@ Select Case wMsg
                 ElseIf wMsg = WM_KEYUP Then
                     RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
                 End If
-                FontComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
+                VirtualComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
             ElseIf wMsg = WM_SYSKEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
             ElseIf wMsg = WM_SYSKEYUP Then
@@ -2292,11 +1765,11 @@ Select Case wMsg
             wParam = KeyCode
         End If
     Case WM_CHAR
-        If PropStyle = FtcStyleDropDownList Then
+        If PropStyle = VcbStyleDropDownList Then
             Dim KeyChar As Integer
-            If FontComboCharCodeCache <> 0 Then
-                KeyChar = CUIntToInt(FontComboCharCodeCache And &HFFFF&)
-                FontComboCharCodeCache = 0
+            If VirtualComboCharCodeCache <> 0 Then
+                KeyChar = CUIntToInt(VirtualComboCharCodeCache And &HFFFF&)
+                VirtualComboCharCodeCache = 0
             Else
                 KeyChar = CUIntToInt(wParam And &HFFFF&)
             End If
@@ -2304,17 +1777,24 @@ Select Case wMsg
             wParam = CIntToUInt(KeyChar)
         End If
     Case WM_UNICHAR
-        If PropStyle = FtcStyleDropDownList Then
+        If PropStyle = VcbStyleDropDownList Then
             If wParam = UNICODE_NOCHAR Then WindowProcControl = 1 Else SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
             Exit Function
         End If
     Case WM_IME_CHAR
-        If PropStyle = FtcStyleDropDownList Then
+        If PropStyle = VcbStyleDropDownList Then
             SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
             Exit Function
         End If
+    Case WM_CHARTOITEM
+        Dim Result As Long
+        Result = CB_ERR
+        ' HiWord not used as it carries only 16 bits.
+        RaiseEvent IncrementalSearch(LoWord(wParam), Me.ListIndex, Result)
+        WindowProcControl = Result
+        Exit Function
     Case WM_CONTEXTMENU
-        If wParam = FontComboHandle Then
+        If wParam = VirtualComboHandle Then
             Dim P As POINTAPI, Handled As Boolean
             P.X = Get_X_lParam(lParam)
             P.Y = Get_Y_lParam(lParam)
@@ -2322,67 +1802,24 @@ Select Case wMsg
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient FontComboHandle, P
+                ScreenToClient VirtualComboHandle, P
                 RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
         End If
     Case WM_SIZE
-        If FontComboResizeFrozen = False Then
+        If VirtualComboResizeFrozen = False Then
             Dim WndRect As RECT
             GetWindowRect hWnd, WndRect
             With UserControl
             If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-                FontComboResizeFrozen = True
+                VirtualComboResizeFrozen = True
                 .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
                 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-                FontComboResizeFrozen = False
+                VirtualComboResizeFrozen = False
             End If
             End With
         End If
-    Case UM_SETBUDDY
-        FontComboBuddyShadowObjectPointer = lParam
-        Me.RecentMax = PropRecentMax
-        Call SetupFontComboItems
-        If FontComboEditHandle <> 0 Then
-            Dim dwStyle As Long
-            dwStyle = GetWindowLong(FontComboEditHandle, GWL_STYLE)
-            If FontComboBuddyShadowObjectPointer <> 0 Then
-                If Not (dwStyle And ES_NUMBER) = ES_NUMBER Then dwStyle = dwStyle Or ES_NUMBER
-            Else
-                If (dwStyle And ES_NUMBER) = ES_NUMBER Then dwStyle = dwStyle And Not ES_NUMBER
-            End If
-            SetWindowLong FontComboEditHandle, GWL_STYLE, dwStyle
-            If FontComboBuddyShadowObjectPointer <> 0 And PropStyle <> FtcStyleDropDownList Then
-                Dim Text As String
-                Text = Me.Text
-                If Not Text = vbNullString Then
-                    Dim i As Long, InvalidText As Boolean
-                    For i = 1 To Len(Text)
-                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
-                            InvalidText = True
-                            Exit For
-                        End If
-                    Next i
-                    If InvalidText = True Then Me.Text = vbNullString
-                End If
-            End If
-        End If
-        Exit Function
-    Case UM_GETBUDDY
-        WindowProcControl = FontComboBuddyShadowObjectPointer
-        Exit Function
-    Case UM_UPDATEBUDDY
-        Dim Locked As Boolean
-        Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
-        PropText = Me.Text
-        Call SetupFontComboItems
-        On Error Resume Next
-        Me.Text = PropText
-        On Error GoTo 0
-        If Locked = True Then LockWindowUpdate 0
-        Me.Refresh
-        Exit Function
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -2399,10 +1836,10 @@ Select Case wMsg
             Case WM_RBUTTONDOWN
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
             Case WM_MOUSEMOVE
-                If (FontComboMouseOver(0) = False And PropMouseTrack = True) Or (FontComboMouseOver(2) = False And PropMouseTrack = True) Then
-                    If FontComboMouseOver(0) = False And PropMouseTrack = True Then FontComboMouseOver(0) = True
-                    If FontComboMouseOver(2) = False And PropMouseTrack = True Then
-                        FontComboMouseOver(2) = True
+                If (VirtualComboMouseOver(0) = False And PropMouseTrack = True) Or (VirtualComboMouseOver(2) = False And PropMouseTrack = True) Then
+                    If VirtualComboMouseOver(0) = False And PropMouseTrack = True Then VirtualComboMouseOver(0) = True
+                    If VirtualComboMouseOver(2) = False And PropMouseTrack = True Then
+                        VirtualComboMouseOver(2) = True
                         RaiseEvent MouseEnter
                     End If
                     Call ComCtlsRequestMouseLeave(hWnd)
@@ -2419,12 +1856,12 @@ Select Case wMsg
                 End Select
         End Select
     Case WM_MOUSELEAVE
-        FontComboMouseOver(0) = False
-        If FontComboMouseOver(2) = True Then
+        VirtualComboMouseOver(0) = False
+        If VirtualComboMouseOver(2) = True Then
             Dim Pos As Long
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> FontComboEditHandle Or FontComboEditHandle = 0 Then
-                FontComboMouseOver(2) = False
+            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> VirtualComboEditHandle Or VirtualComboEditHandle = 0 Then
+                VirtualComboMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If
         End If
@@ -2436,7 +1873,7 @@ End Function
 Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_SETFOCUS
-        If wParam <> FontComboHandle Then SetFocusAPI UserControl.hWnd: Exit Function
+        If wParam <> VirtualComboHandle Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
@@ -2447,20 +1884,20 @@ Select Case wMsg
                 Dim CharPos As Long, CaretPos As Long
                 Dim SelStart As Long, SelEnd As Long
                 GetCursorPos P1
-                ScreenToClient FontComboEditHandle, P1
-                CharPos = LoWord(SendMessage(FontComboEditHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P1.X, P1.Y)))
-                CaretPos = SendMessage(FontComboEditHandle, EM_POSFROMCHAR, CharPos, ByVal 0&)
-                SendMessage FontComboEditHandle, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
-                FontComboAutoDragInSel = CBool(CharPos >= SelStart And CharPos <= SelEnd And CaretPos > -1 And (SelEnd - SelStart) > 0)
-                If FontComboAutoDragInSel = True Then
-                    FontComboAutoDragSelStart = SelStart
-                    FontComboAutoDragSelEnd = SelEnd
+                ScreenToClient VirtualComboEditHandle, P1
+                CharPos = LoWord(SendMessage(VirtualComboEditHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P1.X, P1.Y)))
+                CaretPos = SendMessage(VirtualComboEditHandle, EM_POSFROMCHAR, CharPos, ByVal 0&)
+                SendMessage VirtualComboEditHandle, EM_GETSEL, VarPtr(SelStart), ByVal VarPtr(SelEnd)
+                VirtualComboAutoDragInSel = CBool(CharPos >= SelStart And CharPos <= SelEnd And CaretPos > -1 And (SelEnd - SelStart) > 0)
+                If VirtualComboAutoDragInSel = True Then
+                    VirtualComboAutoDragSelStart = SelStart
+                    VirtualComboAutoDragSelEnd = SelEnd
                     SetCursor LoadCursor(0, MousePointerID(vbArrow))
                     WindowProcEdit = 1
                     Exit Function
                 End If
             Else
-                FontComboAutoDragInSel = False
+                VirtualComboAutoDragInSel = False
             End If
         End If
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
@@ -2472,7 +1909,7 @@ Select Case wMsg
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
-            FontComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
+            VirtualComboCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
         ElseIf wMsg = WM_SYSKEYUP Then
@@ -2481,9 +1918,9 @@ Select Case wMsg
         wParam = KeyCode
     Case WM_CHAR
         Dim KeyChar As Integer
-        If FontComboCharCodeCache <> 0 Then
-            KeyChar = CUIntToInt(FontComboCharCodeCache And &HFFFF&)
-            FontComboCharCodeCache = 0
+        If VirtualComboCharCodeCache <> 0 Then
+            KeyChar = CUIntToInt(VirtualComboCharCodeCache And &HFFFF&)
+            VirtualComboCharCodeCache = 0
         Else
             KeyChar = CUIntToInt(wParam And &HFFFF&)
         End If
@@ -2497,19 +1934,19 @@ Select Case wMsg
         If wParam = UNICODE_NOCHAR Then WindowProcEdit = 1 Else SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
     Case WM_INPUTLANGCHANGE
-        Call ComCtlsSetIMEMode(hWnd, FontComboIMCHandle, PropIMEMode)
+        Call ComCtlsSetIMEMode(hWnd, VirtualComboIMCHandle, PropIMEMode)
     Case WM_IME_SETCONTEXT
-        If wParam <> 0 Then Call ComCtlsSetIMEMode(hWnd, FontComboIMCHandle, PropIMEMode)
+        If wParam <> 0 Then Call ComCtlsSetIMEMode(hWnd, VirtualComboIMCHandle, PropIMEMode)
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
     Case WM_LBUTTONDOWN
-        If PropOLEDragMode = vbOLEDragAutomatic And FontComboAutoDragInSel = True Then
+        If PropOLEDragMode = vbOLEDragAutomatic And VirtualComboAutoDragInSel = True Then
             Dim P2 As POINTAPI
             P2.X = Get_X_lParam(lParam)
             P2.Y = Get_Y_lParam(lParam)
-            ClientToScreen FontComboEditHandle, P2
-            If DragDetect(FontComboEditHandle, CUIntToInt(P2.X And &HFFFF&), CUIntToInt(P2.Y And &HFFFF&)) <> 0 Then
+            ClientToScreen VirtualComboEditHandle, P2
+            If DragDetect(VirtualComboEditHandle, CUIntToInt(P2.X And &HFFFF&), CUIntToInt(P2.Y And &HFFFF&)) <> 0 Then
                 Me.OLEDrag
                 WindowProcEdit = 0
             Else
@@ -2533,22 +1970,20 @@ Select Case wMsg
             If Handled = True Then Exit Function
         End If
     Case WM_PASTE
-        If FontComboBuddyShadowObjectPointer <> 0 Then
-            If ComCtlsSupportLevel() <= 1 Then
-                Dim Text As String
-                Text = GetClipboardText()
-                If Not Text = vbNullString Then
-                    Dim i As Long, InvalidText As Boolean
-                    For i = 1 To Len(Text)
-                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
-                            InvalidText = True
-                            Exit For
-                        End If
-                    Next i
-                    If InvalidText = True Then
-                        VBA.Interaction.Beep
-                        Exit Function
+        If ComCtlsSupportLevel() <= 1 Then
+            Dim Text As String
+            Text = GetClipboardText()
+            If Not Text = vbNullString Then
+                Dim i As Long, InvalidText As Boolean
+                For i = 1 To Len(Text)
+                    If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
+                        InvalidText = True
+                        Exit For
                     End If
+                Next i
+                If InvalidText = True Then
+                    VBA.Interaction.Beep
+                    Exit Function
                 End If
             End If
         End If
@@ -2559,7 +1994,7 @@ Select Case wMsg
         Dim P4 As POINTAPI
         P4.X = Get_X_lParam(lParam)
         P4.Y = Get_Y_lParam(lParam)
-        If FontComboHandle <> 0 Then MapWindowPoints hWnd, FontComboHandle, P4, 1
+        If VirtualComboHandle <> 0 Then MapWindowPoints hWnd, VirtualComboHandle, P4, 1
         Dim X As Single
         Dim Y As Single
         X = UserControl.ScaleX(P4.X, vbPixels, vbTwips)
@@ -2572,10 +2007,10 @@ Select Case wMsg
             Case WM_RBUTTONDOWN
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
             Case WM_MOUSEMOVE
-                If (FontComboMouseOver(1) = False And PropMouseTrack = True) Or (FontComboMouseOver(2) = False And PropMouseTrack = True) Then
-                    If FontComboMouseOver(1) = False And PropMouseTrack = True Then FontComboMouseOver(1) = True
-                    If FontComboMouseOver(2) = False And PropMouseTrack = True Then
-                        FontComboMouseOver(2) = True
+                If (VirtualComboMouseOver(1) = False And PropMouseTrack = True) Or (VirtualComboMouseOver(2) = False And PropMouseTrack = True) Then
+                    If VirtualComboMouseOver(1) = False And PropMouseTrack = True Then VirtualComboMouseOver(1) = True
+                    If VirtualComboMouseOver(2) = False And PropMouseTrack = True Then
+                        VirtualComboMouseOver(2) = True
                         RaiseEvent MouseEnter
                     End If
                     Call ComCtlsRequestMouseLeave(hWnd)
@@ -2592,12 +2027,12 @@ Select Case wMsg
                 End Select
         End Select
     Case WM_MOUSELEAVE
-        FontComboMouseOver(1) = False
-        If FontComboMouseOver(2) = True Then
+        VirtualComboMouseOver(1) = False
+        If VirtualComboMouseOver(2) = True Then
             Dim Pos As Long
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> FontComboHandle Or FontComboHandle = 0 Then
-                FontComboMouseOver(2) = False
+            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> VirtualComboHandle Or VirtualComboHandle = 0 Then
+                VirtualComboMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If
         End If
@@ -2629,12 +2064,12 @@ Select Case wMsg
                 ' HiWord carries only 16 bits of scroll box position data.
                 ' Below workaround will circumvent the 16-bit barrier by using the 32-bit GetScrollInfo function.
                 Dim dwStyle As Long
-                dwStyle = GetWindowLong(FontComboListHandle, GWL_STYLE)
+                dwStyle = GetWindowLong(VirtualComboListHandle, GWL_STYLE)
                 If lParam = 0 And (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
                     Dim SCI As SCROLLINFO, PrevPos As Long
                     SCI.cbSize = LenB(SCI)
                     SCI.fMask = SIF_POS Or SIF_TRACKPOS
-                    GetScrollInfo FontComboListHandle, SB_VERT, SCI
+                    GetScrollInfo VirtualComboListHandle, SB_VERT, SCI
                     PrevPos = SCI.nPos
                     Select Case LoWord(wParam)
                         Case SB_THUMBPOSITION
@@ -2644,7 +2079,7 @@ Select Case wMsg
                     End Select
                     If PrevPos <> SCI.nPos Then
                         ' SetScrollInfo function not needed as CB_SETTOPINDEX itself will do the scrolling.
-                        SendMessage FontComboHandle, CB_SETTOPINDEX, SCI.nPos, ByVal 0&
+                        SendMessage VirtualComboHandle, CB_SETTOPINDEX, SCI.nPos, ByVal 0&
                     End If
                     WindowProcList = 0
                     Exit Function
@@ -2668,14 +2103,8 @@ Select Case wMsg
                 Dim SelIndex As Long
                 SelIndex = SendMessage(lParam, CB_GETCURSEL, 0, ByVal 0&)
                 If Not SelIndex = CB_ERR Then
-                    If PropStyle <> FtcStyleDropDownList And FontComboEditHandle <> 0 Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(Me.List(SelIndex))
+                    If PropStyle <> VcbStyleDropDownList And VirtualComboEditHandle <> 0 Then SendMessage VirtualComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(Me.List(SelIndex))
                     Call CheckTopIndex
-                    If Me.DroppedDown = False Then
-                        Call AddRecentItem(SelIndex)
-                    Else
-                        FontComboDroppedDownIndex = SelIndex
-                    End If
-                    If FontComboBuddyControlHandle <> 0 Then SendMessage FontComboBuddyControlHandle, UM_UPDATEBUDDY, 0, ByVal 0&
                     RaiseEvent Click
                 End If
             Case CBN_DBLCLK
@@ -2689,95 +2118,59 @@ Select Case wMsg
                 RaiseEvent Change
             Case CBN_DROPDOWN
                 RaiseEvent DropDown
-                FontComboDroppedDownIndex = -1
             Case CBN_CLOSEUP
-                If FontComboDroppedDownIndex > -1 Then
-                    Call AddRecentItem(FontComboDroppedDownIndex)
-                    FontComboDroppedDownIndex = -1
-                End If
                 RaiseEvent CloseUp
         End Select
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = FontComboHandle And DIS.ItemID > -1 Then
+        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = VirtualComboHandle And DIS.ItemID > -1 Then
             Dim BackColorBrush As Long, BackColorSelBrush As Long
-            BackColorBrush = CreateSolidBrush(WinColor(UserControl.BackColor))
+            If PropUseListBackColor = False Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                BackColorBrush = CreateSolidBrush(WinColor(UserControl.BackColor))
+            Else
+                BackColorBrush = CreateSolidBrush(WinColor(PropListBackColor))
+            End If
             If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then BackColorSelBrush = CreateSolidBrush(WinColor(vbHighlight))
             If BackColorSelBrush <> 0 Then
                 FillRect DIS.hDC, DIS.RCItem, BackColorSelBrush
                 DeleteObject BackColorSelBrush
             Else
-                If DIS.ItemID > (FontComboRecentCount - 1) Or FontComboRecentBackColorBrush = 0 Then
-                    FillRect DIS.hDC, DIS.RCItem, BackColorBrush
-                Else
-                    If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
-                        FillRect DIS.hDC, DIS.RCItem, FontComboRecentBackColorBrush
-                    Else
-                        FillRect DIS.hDC, DIS.RCItem, BackColorBrush
-                    End If
-                End If
+                FillRect DIS.hDC, DIS.RCItem, BackColorBrush
             End If
             DeleteObject BackColorBrush
-            Dim Length As Long
-            Length = SendMessage(FontComboHandle, CB_GETLBTEXTLEN, DIS.ItemID, ByVal 0&)
-            If Not Length = CB_ERR Then
-                Dim Text As String, LF As LOGFONT, FontName As String
-                Text = String(Length, vbNullChar)
-                SendMessage FontComboHandle, CB_GETLBTEXT, DIS.ItemID, ByVal StrPtr(Text)
-                FontName = Left$(Text, LF_FACESIZE)
-                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = 0 Then
-                    With LF
-                    CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
-                    .LFHeight = .LFHeight - FontComboLFHeightSpacing
-                    .LFHeight = ((SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&) / FONTHEIGHT_DENOMINATOR) * FONTHEIGHT_NUMERATOR)
-                    .LFHeight = -.LFHeight
-                    .LFWeight = FW_NORMAL
-                    .LFItalic = 0
-                    .LFStrikeOut = 0
-                    .LFUnderline = 0
-                    .LFQuality = DEFAULT_QUALITY
-                    .LFCharset = ANSI_CHARSET
-                    End With
-                End If
-                Dim OldBkMode As Long, OldTextColor As Long
-                OldBkMode = SetBkMode(DIS.hDC, 1)
-                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
-                ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
-                ElseIf DIS.ItemID > (FontComboRecentCount - 1) Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
-                Else
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.RecentForeColor))
-                End If
-                Dim hFontTemp As Long, hFontOld As Long
-                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = 0 Then
-                    hFontTemp = CreateFontIndirect(LF)
-                    hFontOld = SelectObject(DIS.hDC, hFontTemp)
-                End If
-                Dim Format As Long, TextRect As RECT
-                Format = DT_NOCLIP Or DT_SINGLELINE Or DT_VCENTER
-                LSet TextRect = DIS.RCItem
-                If PropRightToLeft = False Then
-                    TextRect.Left = TextRect.Left + (2 * PixelsPerDIP_X())
-                    DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, Format Or DT_LEFT
-                Else
-                    TextRect.Right = TextRect.Right - (2 * PixelsPerDIP_X())
-                    DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, Format Or DT_RTLREADING Or DT_RIGHT
-                End If
-                If hFontOld <> 0 Then SelectObject DIS.hDC, hFontOld
-                If hFontTemp <> 0 Then DeleteObject hFontTemp
-                SetBkMode DIS.hDC, OldBkMode
-                SetTextColor DIS.hDC, OldTextColor
+            Dim Text As String
+            If VirtualComboDesignMode = False Then
+                RaiseEvent GetVirtualItem(DIS.ItemID, Text)
+            Else
+                Text = Ambient.DisplayName
             End If
+            Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
+            If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
+            OldBkMode = SetBkMode(DIS.hDC, 1)
+            If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
+            ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
+                OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
+            ElseIf PropUseListForeColor = False Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
+            Else
+                OldTextColor = SetTextColor(DIS.hDC, WinColor(PropListForeColor))
+            End If
+            If PropRightToLeft = False Then
+                TextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text)
+            Else
+                TextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text)
+            End If
+            SetBkMode DIS.hDC, OldBkMode
+            SetTextColor DIS.hDC, OldTextColor
             If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then DrawFocusRect DIS.hDC, DIS.RCItem
             WindowProcUserControl = 1
             Exit Function
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI FontComboHandle
+If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI VirtualComboHandle
 End Function
 
 Private Function WindowProcUserControlDesignMode(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
