@@ -1,5 +1,11 @@
 List of revisions:
 
+25-May-2020
+- Included the VirtualCombo control. (super-classed combo box control with a no-data list box portion)
+  The .ListCount property is write-able and populates the list very quickly.
+  GetVirtualItem event retrieves the item strings.
+  IncrementalSearch/FindVirtualItem event can also be handled to enable full functionality.
+
 21-May-2020
 - Included the DrawMode property in the Slider control.
 
