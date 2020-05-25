@@ -2239,10 +2239,12 @@ Select Case wMsg
         LastResult = WindowProcList
         Exit Function
     Case LB_GETTEXTLEN, LB_GETTEXT
-        If wParam > -1 And wParam < SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) Then
+        If wParam > -1 And wParam < SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) And UserControl.EventsFrozen = False Then
             Dim Text As String
             RaiseEvent GetVirtualItem(wParam, Text)
-            If wMsg = LB_GETTEXT And lParam <> 0 Then CopyMemory ByVal lParam, ByVal StrPtr(Text), LenB(Text)
+            If wMsg = LB_GETTEXT And lParam <> 0 Then
+                If Len(Text) > 0 Then CopyMemory ByVal lParam, ByVal StrPtr(Text), LenB(Text)
+            End If
             WindowProcList = Len(Text)
         Else
             WindowProcList = LB_ERR
