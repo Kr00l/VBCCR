@@ -2215,31 +2215,39 @@ Select Case wMsg
                 End If
         End Select
     Case LB_FINDSTRING
-        ' If the style is CBS_SIMPLE or CBS_DROPDOWN then this handler is needed for correct top index behavior.
-        If PropStyle <> VcbStyleDropDownList Then
-            Dim Length As Long, SearchText As String
-            If lParam <> 0 Then Length = lstrlen(lParam)
-            If Length > 0 Then
-                SearchText = String$(Length, vbNullChar)
-                CopyMemory ByVal StrPtr(SearchText), ByVal lParam, Length * 2
-            End If
-            WindowProcList = LB_ERR
-            RaiseEvent FindVirtualItem(wParam, SearchText, True, WindowProcList)
-            Exit Function
-        End If
-    Case LB_GETTEXTLEN, LB_GETTEXT
-        ' If the style is CBS_SIMPLE or CBS_DROPDOWN then this handler is needed for correct top index behavior.
-        If PropStyle <> VcbStyleDropDownList Then
-            If wParam > -1 And wParam < SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) Then
-                Dim Text As String
-                RaiseEvent GetVirtualItem(wParam, Text)
-                If wMsg = LB_GETTEXT And lParam <> 0 Then CopyMemory ByVal lParam, ByVal StrPtr(Text), LenB(Text)
-                WindowProcList = Len(Text)
+        Static LastSearchText As String, LastStartIndex As Long, LastResult As Long
+        Dim Length As Long
+        If lParam <> 0 Then Length = lstrlen(lParam)
+        If Length > 0 And UserControl.EventsFrozen = False Then
+            Dim SearchText As String, Result As Long
+            SearchText = String$(Length, vbNullChar)
+            CopyMemory ByVal StrPtr(SearchText), ByVal lParam, Length * 2
+            Result = LB_ERR
+            If Not LastSearchText = vbNullString And SearchText = LastSearchText And wParam = LastStartIndex Then
+                If LastResult > SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) - 1 Then LastResult = LB_ERR
+                Result = LastResult
             Else
-                WindowProcList = LB_ERR
+                RaiseEvent FindVirtualItem(wParam, SearchText, True, Result)
             End If
-            Exit Function
+            WindowProcList = Result
+            LastSearchText = SearchText
+        Else
+            WindowProcList = LB_ERR
+            LastSearchText = vbNullString
         End If
+        LastStartIndex = wParam
+        LastResult = WindowProcList
+        Exit Function
+    Case LB_GETTEXTLEN, LB_GETTEXT
+        If wParam > -1 And wParam < SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) Then
+            Dim Text As String
+            RaiseEvent GetVirtualItem(wParam, Text)
+            If wMsg = LB_GETTEXT And lParam <> 0 Then CopyMemory ByVal lParam, ByVal StrPtr(Text), LenB(Text)
+            WindowProcList = Len(Text)
+        Else
+            WindowProcList = LB_ERR
+        End If
+        Exit Function
 End Select
 WindowProcList = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
