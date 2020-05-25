@@ -1,6 +1,11 @@
 List of revisions:
 
 25-May-2020
+- Behavior bugfixes in the VirtualCombo control when Style is <> DropDownList.
+- Included DrawMode property in the VirtualCombo control.
+  Only options are Normal and OwnerDrawFixed. (OwnerDrawVariable not possible due to LBS_NODATA restriction)
+
+24-May-2020
 - Included the VirtualCombo control. (super-classed combo box control with a no-data list box portion)
   The .ListCount property is write-able and populates the list very quickly.
   GetVirtualItem event retrieves the item strings.
