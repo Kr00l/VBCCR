@@ -1926,7 +1926,10 @@ Public Function SelectItem(ByVal Text As String, Optional ByVal Index As Long = 
 Attribute SelectItem.VB_Description = "Searches for an item that begins with the characters in a specified string. If a matching item is found, the item is selected. The search is not case sensitive."
 If FontComboHandle <> 0 Then
     If Not SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&) = CB_ERR Or Index = -1 Then
+        Dim OldIndex As Long
+        OldIndex = SendMessage(FontComboHandle, CB_GETCURSEL, 0, ByVal 0&)
         SelectItem = SendMessage(FontComboHandle, CB_SELECTSTRING, Index, ByVal StrPtr(Text))
+        If SelectItem <> OldIndex And Not SelectItem = CB_ERR Then RaiseEvent Click
     Else
         Err.Raise 381
     End If
@@ -2701,24 +2704,26 @@ Select Case wMsg
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
         If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = FontComboHandle And DIS.ItemID > -1 Then
-            Dim BackColorBrush As Long, BackColorSelBrush As Long
-            BackColorBrush = CreateSolidBrush(WinColor(UserControl.BackColor))
-            If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then BackColorSelBrush = CreateSolidBrush(WinColor(vbHighlight))
-            If BackColorSelBrush <> 0 Then
-                FillRect DIS.hDC, DIS.RCItem, BackColorSelBrush
-                DeleteObject BackColorSelBrush
+            Dim Brush As Long
+            If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
+                Brush = CreateSolidBrush(WinColor(vbHighlight))
+            Else
+                Brush = CreateSolidBrush(WinColor(UserControl.BackColor))
+            End If
+            If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
+                FillRect DIS.hDC, DIS.RCItem, Brush
             Else
                 If DIS.ItemID > (FontComboRecentCount - 1) Or FontComboRecentBackColorBrush = 0 Then
-                    FillRect DIS.hDC, DIS.RCItem, BackColorBrush
+                    FillRect DIS.hDC, DIS.RCItem, Brush
                 Else
                     If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
                         FillRect DIS.hDC, DIS.RCItem, FontComboRecentBackColorBrush
                     Else
-                        FillRect DIS.hDC, DIS.RCItem, BackColorBrush
+                        FillRect DIS.hDC, DIS.RCItem, Brush
                     End If
                 End If
             End If
-            DeleteObject BackColorBrush
+            DeleteObject Brush
             Dim Length As Long
             Length = SendMessage(FontComboHandle, CB_GETLBTEXTLEN, DIS.ItemID, ByVal 0&)
             If Not Length = CB_ERR Then

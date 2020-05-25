@@ -1319,11 +1319,11 @@ Select Case Value
             Err.Raise Number:=382, Description:="DrawMode property is read-only at run time"
         Else
             PropDrawMode = Value
+            If ComboBoxHandle <> 0 Then Call ReCreateComboBox
         End If
     Case Else
         Err.Raise 380
 End Select
-If ComboBoxHandle <> 0 Then Call ReCreateComboBox
 UserControl.PropertyChanged "DrawMode"
 End Property
 
@@ -1644,7 +1644,7 @@ If ComboBoxDesignMode = False Then
         End If
         .ListIndex = ListIndex
         .TopIndex = TopIndex
-        .Text = Text
+        If PropStyle <> CboStyleDropDownList Then .Text = Text
         If ComboBoxEditHandle <> 0 Then SendMessage ComboBoxEditHandle, EM_SETSEL, SelStart, ByVal SelEnd
         If Not DroppedWidth = CB_ERR Then SendMessage ComboBoxHandle, CB_SETDROPPEDWIDTH, DroppedWidth, ByVal 0&
         If FieldHeightCustomized = True Then SendMessage ComboBoxHandle, CB_SETITEMHEIGHT, -1, ByVal FieldHeight

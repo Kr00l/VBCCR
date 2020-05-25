@@ -1269,11 +1269,11 @@ Select Case Value
         Else
             PropDrawMode = Value
             If PropDrawMode <> LstDrawModeNormal Then PropStyle = vbListBoxStandard
+            If ListBoxHandle <> 0 Then Call ReCreateListBox
         End If
     Case Else
         Err.Raise 380
 End Select
-If ListBoxHandle <> 0 Then Call ReCreateListBox
 UserControl.PropertyChanged "DrawMode"
 End Property
 

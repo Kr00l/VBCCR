@@ -1440,11 +1440,11 @@ Select Case Value
             Err.Raise Number:=382, Description:="DrawMode property is read-only at run time"
         Else
             PropDrawMode = Value
+            If TabStripHandle <> 0 Then Call ReCreateTabStrip
         End If
     Case Else
         Err.Raise 380
 End Select
-If TabStripHandle <> 0 Then Call ReCreateTabStrip
 UserControl.PropertyChanged "DrawMode"
 End Property
 
