@@ -113,8 +113,8 @@ Public Event GetVirtualItem(ByVal Index As Long, ByRef Text As String)
 Attribute GetVirtualItem.VB_Description = "Occurs when the no-data list box requests for an item text."
 Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByRef FoundIndex As Long)
 Attribute FindVirtualItem.VB_Description = "Occurs when the no-data list box needs to find a particular item."
-Public Event IncrementalSearch(ByVal KeyChar As Integer, ByVal StartIndex As Long, ByRef FoundIndex As Long)
-Attribute IncrementalSearch.VB_Description = "Occurs when the no-data list box needs to translate a character key to a particular item."
+Public Event IncrementalSearch(ByVal SearchString As String, ByVal StartIndex As Long, ByRef FoundIndex As Long)
+Attribute IncrementalSearch.VB_Description = "Occurs when the no-data list box needs to translate character key inputs to a particular item."
 Public Event DropDown()
 Attribute DropDown.VB_Description = "Occurs when the drop-down list is about to drop down."
 Public Event CloseUp()
@@ -181,6 +181,8 @@ Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef l
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function GetTickCount Lib "kernel32" () As Long
+Private Declare Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As Long, ByRef lpMetrics As TEXTMETRIC) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
@@ -1916,11 +1918,16 @@ Select Case wMsg
             Exit Function
         End If
     Case WM_CHARTOITEM
-        Dim Result As Long
-        Result = CB_ERR
+        Static TickCount As Double, SearchString As String
+        If TickCount <> 0 Then
+            If (CLngToULng(GetTickCount()) - TickCount) < (GetDoubleClickTime() * 2) Then SearchString = SearchString & ChrW(LoWord(wParam)) Else SearchString = ChrW(LoWord(wParam))
+        Else
+            SearchString = ChrW(LoWord(wParam))
+        End If
+        TickCount = CLngToULng(GetTickCount())
         ' HiWord not used as it carries only 16 bits.
-        RaiseEvent IncrementalSearch(LoWord(wParam), Me.ListIndex, Result)
-        WindowProcControl = Result
+        WindowProcControl = CB_ERR
+        RaiseEvent IncrementalSearch(SearchString, Me.ListIndex, WindowProcControl)
         Exit Function
     Case WM_CONTEXTMENU
         If wParam = VirtualComboHandle Then
