@@ -1038,6 +1038,7 @@ Dim dwMask As Long
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL
 If StatusBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If StatusBarHandle <> 0 Then Call ComCtlsSetRightToLeft(StatusBarHandle, dwMask)
+Me.SimpleText = Me.SimpleText
 If StatusBarToolTipHandle <> 0 Then
     If PropRightToLeft = True Then
         If PropRightToLeftLayout = True Then dwMask = WS_EX_LAYOUTRTL Else dwMask = WS_EX_RTLREADING
@@ -1121,7 +1122,12 @@ End Property
 
 Public Property Let SimpleText(ByVal Value As String)
 PropSimpleText = Value
-If StatusBarHandle <> 0 Then SendMessage StatusBarHandle, SB_SETTEXT, SB_SIMPLEID, ByVal StrPtr(PropSimpleText)
+If StatusBarHandle <> 0 Then
+    Dim Style As Long
+    Style = 0
+    If PropRightToLeft = True And PropRightToLeftLayout = False Then Style = Style Or SBT_RTLREADING
+    SendMessage StatusBarHandle, SB_SETTEXT, SB_SIMPLEID Or Style, ByVal StrPtr(PropSimpleText)
+End If
 UserControl.PropertyChanged "SimpleText"
 End Property
 
