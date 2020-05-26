@@ -2,6 +2,7 @@ List of revisions:
 
 26-May-2020
 - SimpleText property now uses SBT_RTLREADING in case RightToLeft is True in the StatusBar control.
+- Changed IncrementalSearch event params in the VirtualCombo control.
 
 25-May-2020
 - Behavior bugfixes in the VirtualCombo control when Style is <> DropDownList.
