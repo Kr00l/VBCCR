@@ -222,7 +222,7 @@ Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
-Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
+Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_HORZ As Long = 0, SB_VERT As Long = 1
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7

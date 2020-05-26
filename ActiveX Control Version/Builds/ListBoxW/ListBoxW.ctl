@@ -282,7 +282,7 @@ Private Const WM_VSCROLL As Long = &H115
 Private Const WM_HSCROLL As Long = &H114
 Private Const SB_HORZ As Long = 0
 Private Const SB_VERT As Long = 1
-Private Const SB_THUMBPOSITION = 4, SB_THUMBTRACK As Long = 5
+Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const SIF_POS As Long = &H4
