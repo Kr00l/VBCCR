@@ -2305,7 +2305,19 @@ Select Case wMsg
         End If
     Case WM_UNICHAR
         If PropStyle = FtcStyleDropDownList Then
-            If wParam = UNICODE_NOCHAR Then WindowProcControl = 1 Else SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
+            If wParam = UNICODE_NOCHAR Then
+                WindowProcControl = 1
+            Else
+                Dim UTF16 As String
+                UTF16 = UTF32CodePoint_To_UTF16(wParam)
+                If Len(UTF16) = 1 Then
+                    SendMessage hWnd, WM_CHAR, CIntToUInt(AscW(UTF16)), ByVal lParam
+                ElseIf Len(UTF16) = 2 Then
+                    SendMessage hWnd, WM_CHAR, CIntToUInt(AscW(Left$(UTF16, 1))), ByVal lParam
+                    SendMessage hWnd, WM_CHAR, CIntToUInt(AscW(Right$(UTF16, 1))), ByVal lParam
+                End If
+                WindowProcControl = 0
+            End If
             Exit Function
         End If
     Case WM_IME_CHAR
@@ -2494,7 +2506,19 @@ Select Case wMsg
             wParam = CIntToUInt(KeyChar)
         End If
     Case WM_UNICHAR
-        If wParam = UNICODE_NOCHAR Then WindowProcEdit = 1 Else SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
+        If wParam = UNICODE_NOCHAR Then
+            WindowProcEdit = 1
+        Else
+            Dim UTF16 As String
+            UTF16 = UTF32CodePoint_To_UTF16(wParam)
+            If Len(UTF16) = 1 Then
+                SendMessage hWnd, WM_CHAR, CIntToUInt(AscW(UTF16)), ByVal lParam
+            ElseIf Len(UTF16) = 2 Then
+                SendMessage hWnd, WM_CHAR, CIntToUInt(AscW(Left$(UTF16, 1))), ByVal lParam
+                SendMessage hWnd, WM_CHAR, CIntToUInt(AscW(Right$(UTF16, 1))), ByVal lParam
+            End If
+            WindowProcEdit = 0
+        End If
         Exit Function
     Case WM_INPUTLANGCHANGE
         Call ComCtlsSetIMEMode(hWnd, FontComboIMCHandle, PropIMEMode)
