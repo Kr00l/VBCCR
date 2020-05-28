@@ -972,6 +972,21 @@ Get_Y_lParam = (lParam And &H7FFF0000) \ &H10000
 If lParam And &H80000000 Then Get_Y_lParam = Get_Y_lParam Or &HFFFF8000
 End Function
 
+Public Function UTF32CodePoint_To_UTF16(ByVal CodePoint As Long) As String
+If CodePoint >= &HFFFF8000 And CodePoint <= &H10FFFF Then
+    Dim HW As Integer, LW As Integer
+    If CodePoint < &H10000 Then
+        HW = 0
+        LW = CUIntToInt(CodePoint And &HFFFF&)
+    Else
+        CodePoint = CodePoint - &H10000
+        HW = (CodePoint \ &H400) + &HD800
+        LW = (CodePoint Mod &H400) + &HDC00
+    End If
+    If HW = 0 Then UTF32CodePoint_To_UTF16 = ChrW(LW) Else UTF32CodePoint_To_UTF16 = ChrW(HW) & ChrW(LW)
+End If
+End Function
+
 Public Function UTF16_To_UTF8(ByRef Source As String) As Byte()
 Const CP_UTF8 As Long = 65001
 Dim Length As Long, Pointer As Long, Size As Long
