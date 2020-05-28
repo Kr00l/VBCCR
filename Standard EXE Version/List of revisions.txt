@@ -1,5 +1,8 @@
 List of revisions:
 
+28-May-2020
+- WM_UNICHAR handler now supports surrogate pairs. (UTF32 conversion)
+
 26-May-2020
 - SimpleText property now uses SBT_RTLREADING in case RightToLeft is True in the StatusBar control.
 - Changed IncrementalSearch event params in the VirtualCombo control.
