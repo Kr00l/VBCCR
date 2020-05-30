@@ -2258,7 +2258,13 @@ Select Case wMsg
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_LBUTTONDOWN
-        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        If GetFocus() <> hWnd Then
+            If FontComboEditHandle = 0 Then
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            ElseIf GetFocus() <> FontComboEditHandle Then
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            End If
+        End If
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
