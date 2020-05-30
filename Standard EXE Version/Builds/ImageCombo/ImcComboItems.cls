@@ -87,7 +87,6 @@ Else
     End If
 End If
 If Index = 0 Then Index = PropComboItem.Count
-ShadowImageCombo.FComboItemsAdd Index, Text, ImageIndex, SelImageIndex, Indentation
 ReDim Preserve PropIndexPtrArr(1 To PropComboItem.Count) As TINDEXPTR
 Dim i As Long
 If Index < PropComboItem.Count Then
@@ -100,6 +99,7 @@ PropIndexPtrArr(Index).ShadowObjPtr = ObjPtr(NewComboItem)
 For i = Index To PropComboItem.Count
     PutMem4 PropIndexPtrArr(i).Ptr, i
 Next i
+ShadowImageCombo.FComboItemsAdd Index, Text, ImageIndex, SelImageIndex, Indentation
 Set Add = NewComboItem
 End Function
 

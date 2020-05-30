@@ -249,7 +249,6 @@ Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_CTLCOLOREDIT As Long = &H133
 Private Const WM_CTLCOLORSTATIC As Long = &H138
-Private Const WM_CTLCOLORLISTBOX As Long = &H134
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -287,6 +286,7 @@ Private Const CBS_DROPDOWNLIST As Long = &H3
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
 Private Const WM_USER As Long = &H400
+Private Const UM_SETFOCUS As Long = (WM_USER + 444)
 Private Const UM_BUTTONDOWN As Long = (WM_USER + 700)
 Private Const CBEM_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
 Private Const CBEM_INSERTITEMA As Long = (WM_USER + 1)
@@ -2031,8 +2031,6 @@ Select Case wMsg
             WindowProcControl = ImageComboBackColorBrush
         End If
         Exit Function
-    Case WM_CTLCOLORLISTBOX
-        If PropStyle = ImcStyleDropDownCombo Then SetFocusAPI ImageComboEditHandle
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
@@ -2044,7 +2042,13 @@ Select Case wMsg
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_LBUTTONDOWN
-        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        If GetFocus() <> hWnd Then
+            If ImageComboEditHandle = 0 Then
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            ElseIf GetFocus() <> ImageComboEditHandle Then
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            End If
+        End If
         PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case WM_RBUTTONDOWN
         PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
@@ -2261,6 +2265,9 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    Case UM_SETFOCUS
+        SetFocusAPI hWnd
+        Exit Function
 End Select
 WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -2391,6 +2398,7 @@ Select Case wMsg
                 End If
             Case CBN_DROPDOWN
                 RaiseEvent DropDown
+                If ImageComboEditHandle <> 0 Then PostMessage ImageComboEditHandle, UM_SETFOCUS, 0, ByVal 0&
             Case CBN_CLOSEUP
                 RaiseEvent CloseUp
         End Select
