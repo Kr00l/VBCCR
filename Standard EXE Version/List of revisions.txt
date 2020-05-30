@@ -1,5 +1,8 @@
 List of revisions:
 
+30-May-2020
+- Internal improvements in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo controls.
+
 28-May-2020
 - WM_UNICHAR handler now supports surrogate pairs. (UTF32 conversion)
 
