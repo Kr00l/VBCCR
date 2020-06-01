@@ -2039,16 +2039,23 @@ End Function
 Private Function WindowProcCombo(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_SETFOCUS
+        If wParam <> UserControl.hWnd And wParam <> ImageComboHandle And (wParam <> ImageComboEditHandle Or ImageComboEditHandle = 0) Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_LBUTTONDOWN
-        If GetFocus() <> hWnd Then
-            If ImageComboEditHandle = 0 Then
-                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
-            ElseIf GetFocus() <> ImageComboEditHandle Then
-                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
-            End If
+        If ImageComboEditHandle = 0 Then
+            Select Case GetFocus()
+                Case hWnd, ImageComboHandle
+                Case Else
+                    UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            End Select
+        Else
+            Select Case GetFocus()
+                Case hWnd, ImageComboHandle, ImageComboEditHandle
+                Case Else
+                    UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            End Select
         End If
         PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case WM_RBUTTONDOWN
@@ -2162,7 +2169,19 @@ Select Case wMsg
             Case WM_LBUTTONDOWN
                 ' In case DragDetect returns 0 then the control will set focus the focus automatically.
                 ' Otherwise not. So check and change focus, if needed.
-                If GetFocus() <> hWnd Then SetFocusAPI hWnd
+                If ImageComboEditHandle = 0 Then
+                    Select Case GetFocus()
+                        Case hWnd, ImageComboHandle
+                        Case Else
+                            SetFocusAPI hWnd
+                    End Select
+                Else
+                    Select Case GetFocus()
+                        Case hWnd, ImageComboHandle, ImageComboEditHandle
+                        Case Else
+                            SetFocusAPI ImageComboEditHandle
+                    End Select
+                End If
                 ' See UM_BUTTONDOWN
                 If ComCtlsSupportLevel() = 0 Then
                     ' The WM_LBUTTONUP message is not sent if the comctl32.dll version is 5.8x. (bug?)
@@ -2210,10 +2229,16 @@ End Function
 Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_SETFOCUS
-        If wParam <> ImageComboComboHandle Then SetFocusAPI UserControl.hWnd: Exit Function
+        If wParam <> UserControl.hWnd And wParam <> ImageComboHandle And wParam <> ImageComboComboHandle Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
+    Case WM_LBUTTONDOWN
+        Select Case GetFocus()
+            Case hWnd, ImageComboHandle, ImageComboComboHandle
+            Case Else
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        End Select
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
