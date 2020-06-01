@@ -1535,13 +1535,21 @@ Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wP
 Dim SelStart As Long, SelEnd As Long
 Select Case wMsg
     Case WM_SETFOCUS
-        If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        If wParam <> UserControl.hWnd And (wParam <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (wParam <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (wParam <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (wParam <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
         CheckMinMaxFromWindow hWnd
     Case WM_LBUTTONDOWN
-        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        If IPAddressEditHandle(1) = 0 Or IPAddressEditHandle(2) = 0 Or IPAddressEditHandle(3) = 0 Or IPAddressEditHandle(4) = 0 Then
+            If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        Else
+            Select Case GetFocus()
+                Case IPAddressEditHandle(1), IPAddressEditHandle(2), IPAddressEditHandle(3), IPAddressEditHandle(4)
+                Case Else
+                    UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+            End Select
+        End If
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = wParam And &HFF&
