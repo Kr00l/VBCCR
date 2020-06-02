@@ -121,8 +121,12 @@ Public Event FormatString(ByVal CallbackField As String, ByRef FormattedString A
 Attribute FormatString.VB_Description = "Occurs when the control is requesting text to be displayed in a callback field."
 Public Event FormatSize(ByVal CallbackField As String, ByRef Size As Integer)
 Attribute FormatSize.VB_Description = "Occurs when the control needs to know the maximum allowable size of a callback field."
+Public Event BeforeUserInput(ByVal hWndEdit As Long)
+Attribute BeforeUserInput.VB_Description = "Occurs when a user attempts to input a string."
 Public Event ParseUserInput(ByVal Text As String, ByRef ParseDate As Variant)
 Attribute ParseUserInput.VB_Description = "Occurs when the user input is finished. It is necessary to parse the input string and take action if necessary."
+Public Event AfterUserInput()
+Attribute AfterUserInput.VB_Description = "Occurs when the user input has been completed or canceled."
 Public Event PreviewKeyDown(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
 Attribute PreviewKeyDown.VB_Description = "Occurs before the KeyDown event."
 Public Event PreviewKeyUp(ByVal KeyCode As Integer, ByRef IsInputKey As Boolean)
@@ -249,7 +253,8 @@ Private Const GDT_NONE As Long = 1
 Private Const GDTR_MIN As Long = 1
 Private Const GDTR_MAX As Long = 2
 Private Const WM_USER As Long = &H400
-Private Const UM_DATETIMECHANGE As Long = (WM_USER + 500)
+Private Const UM_DATETIMECHANGE As Long = (WM_USER + 100)
+Private Const UM_ENDUSERINPUT As Long = (WM_USER + 400)
 Private Const DTM_FIRST As Long = &H1000
 Private Const DTM_GETSYSTEMTIME As Long = (DTM_FIRST + 1)
 Private Const DTM_SETSYSTEMTIME As Long = (DTM_FIRST + 2)
@@ -290,6 +295,8 @@ Private Const MCM_SETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 15)
 Private Const MCM_GETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 16)
 Private Const MCN_FIRST As Long = (-750)
 Private Const MCN_GETDAYSTATE As Long = (MCN_FIRST + 3)
+Private Const EN_SETFOCUS As Long = &H100
+Private Const EN_KILLFOCUS As Long = &H200
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
@@ -302,6 +309,7 @@ Private DTPickerMouseOver As Boolean
 Private DTPickerDesignMode As Boolean
 Private DTPickerIsValueInvalid As Boolean
 Private DTPickerEditHandle As Long
+Private DTPickerEditSubclassed As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private DTPickerDroppedDown As Boolean
@@ -1839,42 +1847,46 @@ End Function
 Private Function WindowProcControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_SETFOCUS
-        If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        If wParam <> UserControl.hWnd And (wParam <> DTPickerEditHandle Or DTPickerEditHandle = 0) Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_COMMAND
-        Const EN_SETFOCUS As Long = &H100, EN_KILLFOCUS As Long = &H200
         Select Case HiWord(wParam)
             Case EN_SETFOCUS
-                DTPickerEditHandle = lParam
                 If lParam <> 0 Then
                     If PropRightToLeft = True And PropRightToLeftLayout = False Then Call ComCtlsSetRightToLeft(lParam, WS_EX_RTLREADING)
                     Call ComCtlsSetSubclass(lParam, Me, 3)
                     Call ActivateIPAO(Me)
+                    DTPickerEditHandle = lParam
+                    DTPickerEditSubclassed = True
+                    RaiseEvent BeforeUserInput(DTPickerEditHandle)
                 End If
             Case EN_KILLFOCUS
                 ' Unlike the filter edit window in the list view control this here is sent in all cases.
                 ' However, it is more secure to handle both EN_KILLFOCUS and WM_KILLFOCUS.
-                DTPickerEditHandle = 0
-                If lParam <> 0 Then Call ComCtlsRemoveSubclass(lParam)
+                If lParam <> 0 Then
+                    Call ComCtlsRemoveSubclass(lParam)
+                    DTPickerEditSubclassed = False
+                    PostMessage hWnd, UM_ENDUSERINPUT, 0, ByVal lParam
+                End If
         End Select
     Case WM_NOTIFY
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
-        If NM.hWndFrom = Me.hWndCalendar Then
-            Select Case NM.Code
-                Case MCN_GETDAYSTATE
-                    If DTPickerDroppedDown = True Then
-                        Dim NMDS As NMDAYSTATE
-                        CopyMemory NMDS, ByVal lParam, LenB(NMDS)
-                        Dim DayState() As Long, State() As Boolean
-                        SetDayState DayState(), State()
-                        NMDS.prgDayState.LPMONTHDAYSTATE = VarPtr(DayState(1))
-                        CopyMemory ByVal lParam, NMDS, LenB(NMDS)
-                    End If
-            End Select
-        End If
+        Select Case NM.Code
+            Case MCN_GETDAYSTATE
+                Dim CalendarHandle As Long
+                CalendarHandle = Me.hWndCalendar
+                If NM.hWndFrom = CalendarHandle And DTPickerDroppedDown = True Then
+                    Dim NMDS As NMDAYSTATE
+                    CopyMemory NMDS, ByVal lParam, LenB(NMDS)
+                    Dim DayState() As Long, State() As Boolean
+                    SetDayState DayState(), State()
+                    NMDS.prgDayState.LPMONTHDAYSTATE = VarPtr(DayState(1))
+                    CopyMemory ByVal lParam, NMDS, LenB(NMDS)
+                End If
+        End Select
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_SETCURSOR
@@ -1978,6 +1990,12 @@ Select Case wMsg
     Case UM_DATETIMECHANGE
         RaiseEvent Change
         Exit Function
+    Case UM_ENDUSERINPUT
+        If lParam = DTPickerEditHandle And DTPickerEditHandle <> 0 Then
+            DTPickerEditHandle = 0
+            RaiseEvent AfterUserInput
+        End If
+        Exit Function
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -2028,7 +2046,6 @@ End Function
 Private Function WindowProcCalendar(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_COMMAND
-        Const EN_SETFOCUS As Long = &H100
         If HiWord(wParam) = EN_SETFOCUS Then
             Dim UpDownHandle As Long
             UpDownHandle = FindWindowEx(hWnd, 0, StrPtr("msctls_updown32"), 0)
@@ -2097,6 +2114,7 @@ End Function
 Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_SETFOCUS
+        If wParam <> UserControl.hWnd And wParam <> DTPickerHandle Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
@@ -2149,6 +2167,12 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    Case WM_LBUTTONDOWN
+        Select Case GetFocus()
+            Case hWnd, DTPickerHandle
+            Case Else
+                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        End Select
     Case WM_CONTEXTMENU
         If wParam = hWnd Then
             Dim P1 As POINTAPI, Handled As Boolean
@@ -2167,17 +2191,18 @@ End Select
 WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_KILLFOCUS
-        If DTPickerEditHandle <> 0 Then
-            ' Remove subclass only in case EN_KILLFOCUS was not processed.
-            DTPickerEditHandle = 0
+        If DTPickerEditSubclassed = True Then
+            ' Fallback in case EN_KILLFOCUS was not sent.
             Call ComCtlsRemoveSubclass(hWnd)
+            DTPickerEditSubclassed = False
+            PostMessage DTPickerHandle, UM_ENDUSERINPUT, 0, ByVal hWnd
         End If
-        If DTPickerHandle <> 0 Then SendMessage DTPickerHandle, WM_KEYDOWN, vbKeyRight, ByVal 0&
+        SendMessage DTPickerHandle, WM_KEYDOWN, vbKeyRight, ByVal 0&
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim P2 As POINTAPI
         P2.X = Get_X_lParam(lParam)
         P2.Y = Get_Y_lParam(lParam)
-        If DTPickerHandle <> 0 Then MapWindowPoints hWnd, DTPickerHandle, P2, 1
+        MapWindowPoints hWnd, DTPickerHandle, P2, 1
         Dim X As Single
         Dim Y As Single
         X = UserControl.ScaleX(P2.X, vbPixels, vbTwips)
@@ -2309,12 +2334,14 @@ Select Case wMsg
                             With NMDTKD
                             If .pszFormat <> 0 Then
                                 Length = lstrlen(.pszFormat)
-                                CallbackField = String(Length, vbNullChar)
-                                CopyMemory ByVal StrPtr(CallbackField), ByVal .pszFormat, Length * 2
+                                If Length > 0 Then
+                                    CallbackField = String(Length, vbNullChar)
+                                    CopyMemory ByVal StrPtr(CallbackField), ByVal .pszFormat, Length * 2
+                                End If
                             End If
                             With .ST
                             CallbackDate = DateSerial(.wYear, .wMonth, .wDay) + TimeSerial(.wHour, .wMinute, .wSecond)
-                            RaiseEvent CallbackKeyDown(NMDTKD.nVirtKey And &HFFFF&, GetShiftStateFromMsg(), CallbackField, CallbackDate)
+                            RaiseEvent CallbackKeyDown(NMDTKD.nVirtKey And &HFF&, GetShiftStateFromMsg(), CallbackField, CallbackDate)
                             .wYear = VBA.Year(CallbackDate)
                             .wMonth = VBA.Month(CallbackDate)
                             .wDay = VBA.Day(CallbackDate)
@@ -2332,19 +2359,17 @@ Select Case wMsg
                             With NMDTF
                             If .pszFormat <> 0 Then
                                 Length = lstrlen(.pszFormat)
-                                CallbackField = String(Length, vbNullChar)
-                                CopyMemory ByVal StrPtr(CallbackField), ByVal .pszFormat, Length * 2
+                                If Length > 0 Then
+                                    CallbackField = String(Length, vbNullChar)
+                                    CopyMemory ByVal StrPtr(CallbackField), ByVal .pszFormat, Length * 2
+                                End If
                             End If
-                            Dim FormattedString As String, TextB() As Byte
+                            Dim FormattedString As String
                             RaiseEvent FormatString(CallbackField, FormattedString)
                             If Not FormattedString = vbNullString Then
-                                If Len(FormattedString) > 64 Then
-                                    Length = 64 * 2
-                                Else
-                                    Length = LenB(FormattedString)
-                                End If
-                                TextB() = FormattedString
-                                CopyMemory .szDisplay(0), TextB(0), Length
+                                Dim Buffer As String
+                                Buffer = Left$(FormattedString, 64 - 1) & vbNullChar
+                                CopyMemory .szDisplay(0), ByVal StrPtr(Buffer), LenB(Buffer)
                             End If
                             End With
                             CopyMemory ByVal lParam, NMDTF, LenB(NMDTF)
@@ -2354,8 +2379,10 @@ Select Case wMsg
                             With NMDTFQ
                             If .pszFormat <> 0 Then
                                 Length = lstrlen(.pszFormat)
-                                CallbackField = String(Length, vbNullChar)
-                                CopyMemory ByVal StrPtr(CallbackField), ByVal .pszFormat, Length * 2
+                                If Length > 0 Then
+                                    CallbackField = String(Length, vbNullChar)
+                                    CopyMemory ByVal StrPtr(CallbackField), ByVal .pszFormat, Length * 2
+                                End If
                             End If
                             Dim Size As Integer, hDC As Long
                             RaiseEvent FormatSize(CallbackField, Size)
