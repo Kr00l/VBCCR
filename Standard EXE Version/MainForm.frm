@@ -280,6 +280,7 @@ Begin VB.Form MainForm
       Value           =   41455
       Format          =   3
       CustomFormat    =   "MainForm.frx":1E29
+      AllowUserInput  =   -1  'True
    End
    Begin VB.PictureBox Picture2 
       AutoRedraw      =   -1  'True

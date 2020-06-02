@@ -1,5 +1,10 @@
 List of revisions:
 
+02-Jun-2020
+- Included the BeforeUserInput/AfterUserInput event in the DTPicker control.
+  The BeforeUserInput provides a hWndEdit and AfterUserInput is always fired, even when canceled.
+  Existent ParseUserInput event only fires if the user did not cancel.
+
 01-Jun-2020
 - Internal improvements in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo controls.
 
