@@ -2114,7 +2114,6 @@ End Function
 Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Select Case wMsg
     Case WM_SETFOCUS
-        If wParam <> UserControl.hWnd And wParam <> DTPickerHandle Then SetFocusAPI UserControl.hWnd: Exit Function
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
@@ -2167,12 +2166,6 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_LBUTTONDOWN
-        Select Case GetFocus()
-            Case hWnd, DTPickerHandle
-            Case Else
-                UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
-        End Select
     Case WM_CONTEXTMENU
         If wParam = hWnd Then
             Dim P1 As POINTAPI, Handled As Boolean
@@ -2197,7 +2190,6 @@ Select Case wMsg
             DTPickerEditSubclassed = False
             PostMessage DTPickerHandle, UM_ENDUSERINPUT, 0, ByVal hWnd
         End If
-        SendMessage DTPickerHandle, WM_KEYDOWN, vbKeyRight, ByVal 0&
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim P2 As POINTAPI
         P2.X = Get_X_lParam(lParam)

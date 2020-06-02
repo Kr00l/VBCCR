@@ -7573,7 +7573,10 @@ Select Case wMsg
                                 Else
                                     WindowProcUserControl = 0
                                     LabelEditHandle = Me.hWndLabelEdit
-                                    If LabelEditHandle <> 0 Then Call ComCtlsSetSubclass(LabelEditHandle, Me, 2)
+                                    If LabelEditHandle <> 0 Then
+                                        If PropRightToLeft = True And PropRightToLeftLayout = False Then Call ComCtlsSetRightToLeft(LabelEditHandle, WS_EX_RTLREADING)
+                                        Call ComCtlsSetSubclass(LabelEditHandle, Me, 2)
+                                    End If
                                     ListViewLabelInEdit = True
                                 End If
                             End If
@@ -7583,8 +7586,10 @@ Select Case wMsg
                             If .pszText <> 0 Then
                                 Dim NewText As String
                                 Length = lstrlen(.pszText)
-                                NewText = String(Length, vbNullChar)
-                                CopyMemory ByVal StrPtr(NewText), ByVal .pszText, Length * 2
+                                If Length > 0 Then
+                                    NewText = String(Length, vbNullChar)
+                                    CopyMemory ByVal StrPtr(NewText), ByVal .pszText, Length * 2
+                                End If
                                 RaiseEvent AfterLabelEdit(Cancel, NewText)
                                 If Cancel = False Then
                                     If PropVirtualMode = False Then

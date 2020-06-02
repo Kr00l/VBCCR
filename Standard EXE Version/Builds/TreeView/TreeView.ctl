@@ -3218,10 +3218,9 @@ Select Case wMsg
             Select Case NM.Code
                 Case TVN_BEGINLABELEDIT, TVN_ENDLABELEDIT
                     Static LabelEditHandle As Long
-                    CopyMemory NMTVDI, ByVal lParam, LenB(NMTVDI)
                     Select Case NM.Code
                         Case TVN_BEGINLABELEDIT
-                            If Me.LabelEdit = TvwLabelEditManual And TreeViewStartLabelEdit = False Then
+                            If PropLabelEdit = TvwLabelEditManual And TreeViewStartLabelEdit = False Then
                                 WindowProcUserControl = 1
                             Else
                                 RaiseEvent BeforeLabelEdit(Cancel)
@@ -3237,14 +3236,16 @@ Select Case wMsg
                                     TreeViewLabelInEdit = True
                                 End If
                             End If
-                            Exit Function
                         Case TVN_ENDLABELEDIT
+                            CopyMemory NMTVDI, ByVal lParam, LenB(NMTVDI)
                             With NMTVDI.Item
                             If .pszText <> 0 Then
                                 Dim NewText As String
                                 Length = lstrlen(.pszText)
-                                NewText = String(Length, vbNullChar)
-                                CopyMemory ByVal StrPtr(NewText), ByVal .pszText, Length * 2
+                                If Length > 0 Then
+                                    NewText = String(Length, vbNullChar)
+                                    CopyMemory ByVal StrPtr(NewText), ByVal .pszText, Length * 2
+                                End If
                                 RaiseEvent AfterLabelEdit(Cancel, NewText)
                                 If Cancel = False Then
                                     WindowProcUserControl = 1
@@ -3260,8 +3261,8 @@ Select Case wMsg
                                 LabelEditHandle = 0
                             End If
                             TreeViewLabelInEdit = False
-                            Exit Function
                     End Select
+                    Exit Function
                 Case TVN_BEGINDRAG, TVN_BEGINRDRAG
                     CopyMemory NMTV, ByVal lParam, LenB(NMTV)
                     With NMTV.ItemNew
