@@ -1,16 +1,18 @@
 VERSION 5.00
 Begin VB.UserControl ImageCombo 
+   BackColor       =   &H80000005&
    ClientHeight    =   1800
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
    DataBindingBehavior=   1  'vbSimpleBound
+   ForeColor       =   &H80000008&
    HasDC           =   0   'False
    PropertyPages   =   "ImageCombo.ctx":0000
    ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   160
-   ToolboxBitmap   =   "ImageCombo.ctx":004B
+   ToolboxBitmap   =   "ImageCombo.ctx":003B
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
       Interval        =   1
@@ -187,9 +189,6 @@ Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef l
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
-Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
-Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
-Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As Long, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetScrollInfo Lib "user32" (ByVal hWnd As Long, ByVal wBar As Long, ByRef lpScrollInfo As SCROLLINFO) As Long
@@ -247,8 +246,6 @@ Private Const SIF_POS As Long = &H4
 Private Const SIF_TRACKPOS As Long = &H10
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
-Private Const WM_CTLCOLOREDIT As Long = &H133
-Private Const WM_CTLCOLORSTATIC As Long = &H138
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -287,7 +284,7 @@ Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
 Private Const WM_USER As Long = &H400
 Private Const UM_SETFOCUS As Long = (WM_USER + 444)
-Private Const UM_BUTTONDOWN As Long = (WM_USER + 700)
+Private Const UM_BUTTONDOWN As Long = (WM_USER + 500)
 Private Const CBEM_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
 Private Const CBEM_INSERTITEMA As Long = (WM_USER + 1)
 Private Const CBEM_INSERTITEMW As Long = (WM_USER + 11)
@@ -347,7 +344,6 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private ImageComboHandle As Long
 Private ImageComboComboHandle As Long, ImageComboEditHandle As Long, ImageComboListHandle As Long
 Private ImageComboFontHandle As Long
-Private ImageComboBackColorBrush As Long
 Private ImageComboIMCHandle As Long
 Private ImageComboCharCodeCache As Long
 Private ImageComboMouseOver(0 To 2) As Boolean
@@ -371,8 +367,6 @@ Private PropRightToLeftMode As CCRightToLeftModeConstants
 Private PropImageListName As String, PropImageListInit As Boolean
 Private PropStyle As ImcStyleConstants
 Private PropLocked As Boolean
-Private PropBackColor As OLE_COLOR
-Private PropForeColor As OLE_COLOR
 Private PropText As String
 Private PropIndentation As Long
 Private PropExtendedUI As Boolean
@@ -481,8 +475,6 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropImageListName = "(None)"
 PropStyle = ImcStyleDropDownCombo
 PropLocked = False
-PropBackColor = vbWindowBackground
-PropForeColor = vbWindowText
 PropText = Ambient.DisplayName
 PropIndentation = 0
 PropExtendedUI = False
@@ -517,8 +509,6 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropImageListName = .ReadProperty("ImageList", "(None)")
 PropStyle = .ReadProperty("Style", ImcStyleDropDownCombo)
 PropLocked = .ReadProperty("Locked", False)
-PropBackColor = .ReadProperty("BackColor", vbWindowBackground)
-PropForeColor = .ReadProperty("ForeColor", vbWindowText)
 PropText = VarToStr(.ReadProperty("Text", vbNullString))
 PropIndentation = .ReadProperty("Indentation", 0)
 PropExtendedUI = .ReadProperty("ExtendedUI", False)
@@ -549,8 +539,6 @@ With PropBag
 .WriteProperty "ImageList", PropImageListName, "(None)"
 .WriteProperty "Style", PropStyle, ImcStyleDropDownCombo
 .WriteProperty "Locked", PropLocked, False
-.WriteProperty "BackColor", PropBackColor, vbWindowBackground
-.WriteProperty "ForeColor", PropForeColor, vbWindowText
 .WriteProperty "Text", StrToVar(PropText), vbNullString
 .WriteProperty "Indentation", PropIndentation, 0
 .WriteProperty "ExtendedUI", PropExtendedUI, False
@@ -1168,34 +1156,6 @@ If ImageComboHandle <> 0 And ImageComboEditHandle <> 0 Then SendMessage ImageCom
 UserControl.PropertyChanged "Locked"
 End Property
 
-Public Property Get BackColor() As OLE_COLOR
-Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object. This property is ignored at design time."
-Attribute BackColor.VB_UserMemId = -501
-BackColor = PropBackColor
-End Property
-
-Public Property Let BackColor(ByVal Value As OLE_COLOR)
-PropBackColor = Value
-If ImageComboHandle <> 0 And ImageComboDesignMode = False Then
-    If ImageComboBackColorBrush <> 0 Then DeleteObject ImageComboBackColorBrush
-    ImageComboBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
-End If
-Me.Refresh
-UserControl.PropertyChanged "BackColor"
-End Property
-
-Public Property Get ForeColor() As OLE_COLOR
-Attribute ForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in an object. This property is ignored at design time."
-Attribute ForeColor.VB_UserMemId = -513
-ForeColor = PropForeColor
-End Property
-
-Public Property Let ForeColor(ByVal Value As OLE_COLOR)
-PropForeColor = Value
-Me.Refresh
-UserControl.PropertyChanged "ForeColor"
-End Property
-
 Public Property Get Text() As String
 Attribute Text.VB_Description = "Returns/sets the text contained in an object."
 Attribute Text.VB_UserMemId = -517
@@ -1675,7 +1635,6 @@ If PropShowImages = False Then Me.ShowImages = PropShowImages
 If PropEllipsisFormat <> ImcEllipsisFormatNone Then Me.EllipsisFormat = PropEllipsisFormat
 If ImageComboDesignMode = False Then
     If ImageComboHandle <> 0 Then
-        If ImageComboBackColorBrush = 0 Then ImageComboBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
         Call ComCtlsSetSubclass(ImageComboHandle, Me, 1)
         If ImageComboComboHandle <> 0 Then Call ComCtlsSetSubclass(ImageComboComboHandle, Me, 2)
         If ImageComboEditHandle <> 0 Then
@@ -1712,10 +1671,6 @@ ImageComboEditHandle = 0
 If ImageComboFontHandle <> 0 Then
     DeleteObject ImageComboFontHandle
     ImageComboFontHandle = 0
-End If
-If ImageComboBackColorBrush <> 0 Then
-    DeleteObject ImageComboBackColorBrush
-    ImageComboBackColorBrush = 0
 End If
 End Sub
 
@@ -2023,14 +1978,6 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_CTLCOLOREDIT, WM_CTLCOLORSTATIC
-        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-        If Me.Enabled = True Then SetTextColor wParam, WinColor(PropForeColor)
-        If ImageComboBackColorBrush <> 0 Then
-            SetBkColor wParam, WinColor(PropBackColor)
-            WindowProcControl = ImageComboBackColorBrush
-        End If
-        Exit Function
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function

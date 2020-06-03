@@ -227,7 +227,6 @@ Private Declare Function MulDiv Lib "kernel32" (ByVal nNumber As Long, ByVal nNu
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
-Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
@@ -293,7 +292,6 @@ Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_DRAWITEM As Long = &H2B, ODT_COMBOBOX As Long = &H3, ODS_SELECTED As Long = &H1, ODS_DISABLED As Long = &H4, ODS_FOCUS As Long = &H10, ODS_COMBOBOXEDIT As Long = &H1000
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
-Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_VSCROLL As Long = &H115
 Private Const SB_VERT As Long = 1
 Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
@@ -301,7 +299,6 @@ Private Const SIF_POS As Long = &H4
 Private Const SIF_TRACKPOS As Long = &H10
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
-Private Const WM_CTLCOLORLISTBOX As Long = &H134
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -352,9 +349,9 @@ Private Const EM_POSFROMCHAR As Long = &HD6
 Private Const EM_CHARFROMPOS As Long = &HD7
 Private Const ES_NUMBER As Long = &H2000
 Private Const WM_USER As Long = &H400
-Private Const UM_SETBUDDY As Long = (WM_USER + 800)
-Private Const UM_GETBUDDY As Long = (WM_USER + 801)
-Private Const UM_UPDATEBUDDY As Long = (WM_USER + 802)
+Private Const UM_SETBUDDY As Long = (WM_USER + 700)
+Private Const UM_GETBUDDY As Long = (WM_USER + 701)
+Private Const UM_UPDATEBUDDY As Long = (WM_USER + 702)
 Private Const CBS_AUTOHSCROLL As Long = &H40
 Private Const CBS_SIMPLE As Long = &H1
 Private Const CBS_DROPDOWN As Long = &H2
