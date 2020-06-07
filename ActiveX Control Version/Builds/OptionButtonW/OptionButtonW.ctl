@@ -132,6 +132,7 @@ Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
@@ -274,6 +275,8 @@ Private Const BM_GETSTATE As Long = &HF2
 Private Const BM_SETSTATE As Long = &HF3
 Private Const BM_GETIMAGE As Long = &HF6
 Private Const BM_SETIMAGE As Long = &HF7
+Private Const WM_USER As Long = &H400
+Private Const UM_CHECKVALUE As Long = (WM_USER + 300)
 Private Const BCM_FIRST As Long = &H1600
 Private Const BCM_SETIMAGELIST As Long = (BCM_FIRST + 2)
 Private Const BCM_GETIMAGELIST As Long = (BCM_FIRST + 3)
@@ -471,7 +474,7 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropImageListName = .ReadProperty("ImageList", "(None)")
 PropImageListAlignment = .ReadProperty("ImageListAlignment", OptImageListAlignmentLeft)
 PropImageListMargin = .ReadProperty("ImageListMargin", 0)
-PropValue = .ReadProperty("Value", True)
+PropValue = .ReadProperty("Value", False)
 PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropAlignment = .ReadProperty("Alignment", CCLeftRightAlignmentLeft)
 PropTextAlignment = .ReadProperty("TextAlignment", vbLeftJustify)
@@ -488,6 +491,7 @@ PropMaskColor = .ReadProperty("MaskColor", &HC0C0C0)
 PropDrawMode = .ReadProperty("DrawMode", OptDrawModeNormal)
 End With
 Call CreateOptionButton
+If PropValue = True And OptionButtonDesignMode = False Then PostMessage UserControl.hWnd, UM_CHECKVALUE, 0, ByVal 0&
 If Not PropImageListName = "(None)" Then TimerImageList.Enabled = True
 End Sub
 
@@ -508,7 +512,7 @@ With PropBag
 .WriteProperty "ImageList", PropImageListName, "(None)"
 .WriteProperty "ImageListAlignment", PropImageListAlignment, OptImageListAlignmentLeft
 .WriteProperty "ImageListMargin", PropImageListMargin, 0
-.WriteProperty "Value", PropValue, True
+.WriteProperty "Value", PropValue, False
 .WriteProperty "Caption", PropCaption, vbNullString ' Unicode not necessary
 .WriteProperty "Alignment", PropAlignment, CCLeftRightAlignmentLeft
 .WriteProperty "TextAlignment", PropTextAlignment, vbLeftJustify
@@ -1478,11 +1482,13 @@ If (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
     dwStyle = WS_CHILD Or WS_VISIBLE Or BS_OWNERDRAW
 End If
 OptionButtonHandle = CreateWindowEx(dwExStyle, StrPtr("Button"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
-If OptionButtonHandle <> 0 Then Call ComCtlsShowAllUIStates(OptionButtonHandle)
+If OptionButtonHandle <> 0 Then
+    Call ComCtlsShowAllUIStates(OptionButtonHandle)
+    If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then SendMessage OptionButtonHandle, BM_SETCHECK, IIf(PropValue = True, BST_CHECKED, BST_UNCHECKED), ByVal 0&
+End If
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
-Me.Value = PropValue
 Me.Caption = PropCaption
 If Not PropPicture Is Nothing Then Set Me.Picture = PropPicture
 If OptionButtonDesignMode = False Then
@@ -2129,6 +2135,11 @@ Select Case wMsg
             WindowProcUserControl = 1
             Exit Function
         End If
+    Case UM_CHECKVALUE
+        ' It is necessary to wait after all controls are initalized.
+        ' If the property value is still valid here then notify the container so that option groups behave correctly.
+        If PropValue = True Then UserControl.PropertyChanged "Value"
+        Exit Function
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI OptionButtonHandle
