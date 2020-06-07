@@ -684,29 +684,6 @@ End If
 ComCtlsW2KCompatibility = Value
 End Function
 
-Public Sub ComCtlsTopParentValidateControls(ByVal UserControl As Object)
-With GetTopUserControl(UserControl)
-If TypeOf .Parent Is VB.MDIForm Then
-    Dim MDIForm As VB.MDIForm
-    Set MDIForm = .Parent
-    MDIForm.ValidateControls
-ElseIf TypeOf .Parent Is VB.Form Then
-    Dim Form As VB.Form
-    Set Form = .Parent
-    Form.ValidateControls
-Else
-    Const IID_IPropertyPage As String = "{B196B28D-BAB4-101A-B69C-00AA00341D07}"
-    If VTableInterfaceSupported(.Parent, IID_IPropertyPage) = True Then
-        Dim PropertyPage As VB.PropertyPage, TempPropertyPage As VB.PropertyPage
-        CopyMemory TempPropertyPage, ObjPtr(.Parent), 4
-        Set PropertyPage = TempPropertyPage
-        CopyMemory TempPropertyPage, 0&, 4
-        PropertyPage.ValidateControls
-    End If
-End If
-End With
-End Sub
-
 Public Sub ComCtlsSetSubclass(ByVal hWnd As Long, ByVal This As ISubclass, ByVal dwRefData As Long, Optional ByVal Name As String)
 If hWnd = 0 Then Exit Sub
 If Name = vbNullString Then Name = "ComCtls"
