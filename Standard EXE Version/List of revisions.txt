@@ -1,5 +1,12 @@
 List of revisions:
 
+07-Jun-2020
+- Internal improvement in the OptionButtonW control.
+- Bugfix in the OptionButtonW control, the default value property should be False in Read/WriteProperties.
+  This change makes migration from VB.OptionButton to OptionButtonW easier at the cost of compatibility break to old OptionButtonW.
+- Major internal improvement for MCIWnd as no WM_MOUSEACTIVATE overhead necessary anymore.
+  This results for 'ComCtlsTopParentValidateControls' being obselete and was removed!
+
 02-Jun-2020
 - Included the BeforeUserInput/AfterUserInput event in the DTPicker control.
   The BeforeUserInput provides a hWndEdit and AfterUserInput is always fired, even when canceled.

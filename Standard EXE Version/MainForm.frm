@@ -116,7 +116,6 @@ Begin VB.Form MainForm
       Width           =   1815
       _ExtentX        =   3201
       _ExtentY        =   556
-      Value           =   0   'False
       Caption         =   "Op&tionButtonW2"
    End
    Begin ComCtlsDemo.OptionButtonW OptionButtonW1 
@@ -128,7 +127,6 @@ Begin VB.Form MainForm
       _ExtentX        =   3201
       _ExtentY        =   556
       MouseTrack      =   -1  'True
-      Value           =   0   'False
       Caption         =   "&OptionButtonW1"
       Picture         =   "MainForm.frx":0FFE
    End
