@@ -1226,7 +1226,7 @@ UserControl.PropertyChanged "UseListForeColor"
 End Property
 
 Public Property Get ListBackColor() As OLE_COLOR
-Attribute ListBackColor.VB_Description = "Returns/sets the background color used to display text and graphics in the control's list portion. This property is ignored at design time."
+Attribute ListBackColor.VB_Description = "Returns/sets the background color used to display text and graphics in the control's list portion."
 ListBackColor = PropListBackColor
 End Property
 
@@ -1241,7 +1241,7 @@ UserControl.PropertyChanged "ListBackColor"
 End Property
 
 Public Property Get ListForeColor() As OLE_COLOR
-Attribute ListForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in the control's list portion. This property is ignored at design time."
+Attribute ListForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in the control's list portion."
 ListForeColor = PropListForeColor
 End Property
 
@@ -1436,7 +1436,11 @@ If VirtualComboDesignMode = False Then
         Call ComCtlsSetSubclass(UserControl.hWnd, Me, 4)
     End If
 Else
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
+    If VirtualComboHandle <> 0 Then
+        If VirtualComboListBackColorBrush = 0 Then VirtualComboListBackColorBrush = CreateSolidBrush(WinColor(PropListBackColor))
+        Call ComCtlsSetSubclass(VirtualComboHandle, Me, 5)
+    End If
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 6)
     If PropStyle = VcbStyleDropDownList Then
         If VirtualComboHandle <> 0 And VirtualComboListHandle <> 0 Then
             SendMessage VirtualComboListHandle, LB_SETCOUNT, 1, ByVal 0&
@@ -1846,6 +1850,8 @@ Select Case dwRefData
     Case 4
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
     Case 5
+        ISubclass_Message = WindowProcControlDesignMode(hWnd, wMsg, wParam, lParam)
+    Case 6
         ISubclass_Message = WindowProcUserControlDesignMode(hWnd, wMsg, wParam, lParam)
 End Select
 End Function
@@ -2383,6 +2389,19 @@ Select Case wMsg
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI VirtualComboHandle
+End Function
+
+Private Function WindowProcControlDesignMode(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Select Case wMsg
+    Case WM_CTLCOLORLISTBOX
+        WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
+        Exit Function
+End Select
+WindowProcControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_DESTROY, WM_NCDESTROY
+        Call ComCtlsRemoveSubclass(hWnd)
+End Select
 End Function
 
 Private Function WindowProcUserControlDesignMode(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
