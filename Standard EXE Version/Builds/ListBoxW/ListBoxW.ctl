@@ -1678,7 +1678,6 @@ If ListBoxDesignMode = False Then
     .Refresh
     If PropRedraw = False Then .Redraw = PropRedraw
     End With
-    
 Else
     Call DestroyListBox
     Call ComCtlsRemoveSubclass(UserControl.hWnd)
@@ -2449,7 +2448,7 @@ Select Case wMsg
         If DIS.CtlType = ODT_LISTBOX And DIS.hWndItem = ListBoxHandle And DIS.ItemID > -1 Then
             If PropStyle <> LstStyleStandard Then
                 Dim BackColorBrush As Long, BackColorSelBrush As Long
-                BackColorBrush = CreateSolidBrush(WinColor(UserControl.BackColor))
+                BackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
                 If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then BackColorSelBrush = CreateSolidBrush(WinColor(vbHighlight))
                 Dim RC As RECT
                 With DIS.RCItem

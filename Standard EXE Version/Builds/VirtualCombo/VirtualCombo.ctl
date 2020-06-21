@@ -1398,7 +1398,7 @@ Select Case PropStyle
         dwStyle = dwStyle Or CBS_DROPDOWNLIST
 End Select
 If PropIntegralHeight = False Then dwStyle = dwStyle Or CBS_NOINTEGRALHEIGHT
-VirtualComboHandle = CreateWindowEx(dwExStyle, StrPtr("VComboBoxWndClass"), StrPtr("Virtual Combo"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+VirtualComboHandle = CreateWindowEx(dwExStyle, StrPtr("VComboBoxWndClass"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If VirtualComboHandle <> 0 Then
     Dim CBI As COMBOBOXINFO
     CBI.cbSize = LenB(CBI)
@@ -2346,7 +2346,7 @@ Select Case wMsg
                 If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
                     Brush = CreateSolidBrush(WinColor(vbHighlight))
                 ElseIf PropUseListBackColor = False Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
-                    Brush = CreateSolidBrush(WinColor(UserControl.BackColor))
+                    Brush = CreateSolidBrush(WinColor(Me.BackColor))
                 Else
                     Brush = CreateSolidBrush(WinColor(PropListBackColor))
                 End If
@@ -2377,6 +2377,7 @@ Select Case wMsg
                 End If
                 SetBkMode DIS.hDC, OldBkMode
                 SetTextColor DIS.hDC, OldTextColor
+                If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                 If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then DrawFocusRect DIS.hDC, DIS.RCItem
             Else
                 With DIS
