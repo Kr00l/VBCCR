@@ -1371,7 +1371,7 @@ If SliderDesignMode = False Then
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
-SliderHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_trackbar32"), StrPtr("Slider"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+SliderHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_trackbar32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If SliderHandle <> 0 Then
     SliderToolTipHandle = SendMessage(SliderHandle, TBM_GETTOOLTIPS, 0, ByVal 0&)
     If SliderToolTipHandle <> 0 Then Call ComCtlsInitToolTip(SliderToolTipHandle)

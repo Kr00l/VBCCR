@@ -1094,7 +1094,7 @@ If PropLocked = True Then dwStyleEdit = dwStyleEdit Or ES_READONLY
 If PropHideSelection = False Then dwStyleEdit = dwStyleEdit Or ES_NOHIDESEL
 SpinBoxEditHandle = CreateWindowEx(dwExStyleEdit, StrPtr("Edit"), 0, dwStyleEdit, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If SpinBoxEditHandle <> 0 Then
-    SpinBoxUpDownHandle = CreateWindowEx(0, StrPtr("msctls_updown32"), StrPtr("Up Down"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+    SpinBoxUpDownHandle = CreateWindowEx(0, StrPtr("msctls_updown32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
     If SpinBoxUpDownHandle <> 0 Then
         SendMessage SpinBoxUpDownHandle, UDM_SETUNICODEFORMAT, 1, ByVal 0&
         SendMessage SpinBoxUpDownHandle, UDM_SETRANGE32, PropMin, ByVal PropMax

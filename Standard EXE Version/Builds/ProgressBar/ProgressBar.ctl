@@ -1095,7 +1095,7 @@ Select Case PropScrolling
         End If
 End Select
 If PropSmoothReverse = True Then If ComCtlsSupportLevel() >= 1 Then dwStyle = dwStyle Or PBS_SMOOTHREVERSE
-ProgressBarHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_progress32"), StrPtr("Progress Bar"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+ProgressBarHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_progress32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If ProgressBarHandle <> 0 Then SendMessage ProgressBarHandle, PBM_SETRANGE32, PropRange.Min, ByVal PropRange.Max
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles

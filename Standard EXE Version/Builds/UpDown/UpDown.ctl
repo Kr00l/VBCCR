@@ -943,7 +943,7 @@ If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwEx
 If PropWrap = True Then dwStyle = dwStyle Or UDS_WRAP
 If PropHotTracking = True Then dwStyle = dwStyle Or UDS_HOTTRACK
 If PropOrientation = UdnOrientationHorizontal Then dwStyle = dwStyle Or UDS_HORZ
-UpDownHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_updown32"), StrPtr("Up Down"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+UpDownHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_updown32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If UpDownHandle <> 0 Then
     SendMessage UpDownHandle, UDM_SETUNICODEFORMAT, 1, ByVal 0&
     SendMessage UpDownHandle, UDM_SETRANGE32, PropMin, ByVal PropMax

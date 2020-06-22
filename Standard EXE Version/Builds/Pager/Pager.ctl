@@ -987,7 +987,7 @@ Select Case PropOrientation
         dwStyle = dwStyle Or PGS_HORZ
 End Select
 If PropAutoScroll = True Then dwStyle = dwStyle Or PGS_AUTOSCROLL
-PagerHandle = CreateWindowEx(dwExStyle, StrPtr("SysPager"), StrPtr("Pager"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+PagerHandle = CreateWindowEx(dwExStyle, StrPtr("SysPager"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If PagerHandle <> 0 Then
     SendMessage PagerHandle, PGM_FORWARDMOUSE, 1, ByVal 0&
     SendMessage PagerHandle, PGM_SETBORDER, 0, ByVal PropBorderWidth
