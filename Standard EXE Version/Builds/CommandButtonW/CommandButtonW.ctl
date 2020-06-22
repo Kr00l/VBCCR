@@ -2147,7 +2147,7 @@ Select Case wMsg
         If DIS.CtlType = ODT_BUTTON And DIS.hWndItem = CommandButtonHandle Then
             If PropStyle = vbButtonGraphical Then
                 Dim Brush As Long, Text As String, TextRect As RECT
-                Brush = CreateSolidBrush(WinColor(UserControl.BackColor))
+                Brush = CreateSolidBrush(WinColor(Me.BackColor))
                 Text = Me.Caption
                 Dim ButtonPicture As IPictureDisp, DisabledPictureAvailable As Boolean
                 If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then

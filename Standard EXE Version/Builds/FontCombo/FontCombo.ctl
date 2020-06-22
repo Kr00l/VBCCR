@@ -2743,7 +2743,7 @@ Select Case wMsg
             If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
                 Brush = CreateSolidBrush(WinColor(vbHighlight))
             Else
-                Brush = CreateSolidBrush(WinColor(UserControl.BackColor))
+                Brush = CreateSolidBrush(WinColor(Me.BackColor))
             End If
             If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
                 FillRect DIS.hDC, DIS.RCItem, Brush
