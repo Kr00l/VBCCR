@@ -163,7 +163,6 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Desti
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
-Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function GetComboBoxInfo Lib "user32" (ByVal hWndCombo As Long, ByRef CBI As COMBOBOXINFO) As Long
 Private Declare Function LBItemFromPt Lib "comctl32" (ByVal hLB As Long, ByVal PX As Long, ByVal PY As Long, ByVal bAutoScroll As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -1456,7 +1455,7 @@ If VirtualComboDesignMode = False Then
     With Me
     Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
     Dim ItemHeight As Long, ListIndex As Long, TopIndex As Long, Text As String, SelStart As Long, SelEnd As Long, DroppedWidth As Long, FieldHeight As Long
-    Dim Count As Long, i As Long, FieldHeightCustomized As Boolean
+    Dim Count As Long, FieldHeightCustomized As Boolean
     If VirtualComboHandle <> 0 Then
         ItemHeight = SendMessage(VirtualComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)
         Count = SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&)

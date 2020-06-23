@@ -325,7 +325,6 @@ Private Const LB_GETCARETINDEX As Long = &H19F
 Private Const LB_SETITEMHEIGHT As Long = &H1A0
 Private Const LB_GETITEMHEIGHT As Long = &H1A1
 Private Const LB_FINDSTRINGEXACT As Long = &H1A2
-Private Const LB_SETCOUNT As Long = &H1A7
 Private Const LB_ITEMFROMPOINT As Long = &H1A9 ' 16 bit
 Private Const LB_GETLISTBOXINFO As Long = &H1B2
 Private Const LBS_NOTIFY As Long = &H1

@@ -96,7 +96,6 @@ Private Declare Function DispatchMessage Lib "user32" Alias "DispatchMessageW" (
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
-Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
@@ -126,7 +125,7 @@ Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_COMMAND As Long = &H111
-Private Const BDR_RAISED As Long = &H5, BDR_RAISEDINNER As Long = &H4, BDR_RAISEDOUTER As Long = &H1, BDR_SUNKEN As Long = &HA, BDR_SUNKENINNER As Long = &H8, BDR_SUNKENOUTER As Long = &H2
+Private Const BDR_RAISEDINNER As Long = &H4, BDR_SUNKEN As Long = &HA, BDR_SUNKENOUTER As Long = &H2
 Private Const BF_LEFT As Long = &H1, BF_RIGHT As Long = &H4, BF_TOP As Long = &H2, BF_BOTTOM As Long = &H8
 Private Const ACS_CENTER As Long = &H1
 Private Const ACS_TRANSPARENT As Long = &H2

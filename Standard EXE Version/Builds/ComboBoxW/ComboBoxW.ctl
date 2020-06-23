@@ -1462,6 +1462,9 @@ If ComboBoxHandle <> 0 Then
             SendMessage ComboBoxHandle, CB_INSERTSTRING, Index, ByVal StrPtr(Value)
             SendMessage ComboBoxHandle, CB_SETCURSEL, SelIndex, ByVal 0&
             SendMessage ComboBoxHandle, CB_SETITEMDATA, Index, ByVal ItemData
+            On Error Resume Next
+            UserControl.Extender.DataChanged = True
+            On Error GoTo 0
         Else
             Err.Raise 5
         End If
