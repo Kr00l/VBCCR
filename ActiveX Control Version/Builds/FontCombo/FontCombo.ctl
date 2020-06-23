@@ -67,7 +67,6 @@ Private Const LF_FACESIZE As Long = 32
 Private Const LF_FULLFACESIZE As Long = 64
 Private Const FW_NORMAL As Long = 400
 Private Const DEFAULT_QUALITY As Long = 0
-Private Const DEFAULT_PITCH As Long = 0
 Private Const FIXED_PITCH As Long = 1
 Private Const VARIABLE_PITCH As Long = 2
 Private Type LOGFONT
