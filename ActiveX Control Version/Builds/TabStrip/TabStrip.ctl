@@ -1726,7 +1726,7 @@ If TabStripDesignMode = False Then
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
-TabStripHandle = CreateWindowEx(dwExStyle, StrPtr("SysTabControl32"), StrPtr("Tab Strip"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+TabStripHandle = CreateWindowEx(dwExStyle, StrPtr("SysTabControl32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If TabStripHandle <> 0 Then
     Call ComCtlsShowAllUIStates(TabStripHandle)
     TabStripToolTipHandle = SendMessage(TabStripHandle, TCM_GETTOOLTIPS, 0, ByVal 0&)
