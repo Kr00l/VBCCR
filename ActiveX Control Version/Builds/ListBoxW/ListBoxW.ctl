@@ -199,6 +199,7 @@ Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal lpString As Long, ByVal nCount As Long) As Long
+Private Declare Function TabbedTextOut Lib "user32" Alias "TabbedTextOutW" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal lpString As Long, ByVal nCount As Long, ByVal nTabPositions As Long, ByVal lpnTabStopPositions As Long, ByVal nTabOrigin As Long) As Long
 Private Declare Function DrawFocusRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT) As Long
 Private Declare Function DrawFrameControl Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal nCtlType As Long, ByVal nFlags As Long) As Long
 
@@ -242,6 +243,7 @@ Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As L
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const GWL_STYLE As Long = (-16)
+Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const TA_RTLREADING = &H100, TA_RIGHT As Long = &H2
 Private Const WS_VISIBLE As Long = &H10000000
@@ -285,6 +287,7 @@ Private Const SB_VERT As Long = 1
 Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
+Private Const SIF_RANGE As Long = &H1
 Private Const SIF_POS As Long = &H4
 Private Const SIF_TRACKPOS As Long = &H10
 Private Const RGN_COPY As Long = 5
@@ -303,16 +306,13 @@ Private Const LB_GETTEXT As Long = &H189
 Private Const LB_GETTEXTLEN As Long = &H18A
 Private Const LB_GETCOUNT As Long = &H18B
 Private Const LB_SELECTSTRING As Long = &H18C
-Private Const LB_DIR As Long = &H18D
 Private Const LB_GETTOPINDEX As Long = &H18E
 Private Const LB_FINDSTRING As Long = &H18F
 Private Const LB_GETSELCOUNT As Long = &H190
 Private Const LB_GETSELITEMS As Long = &H191
-Private Const LB_SETTABSTOPS As Long = &H192
 Private Const LB_GETHORIZONTALEXTENT As Long = &H193
 Private Const LB_SETHORIZONTALEXTENT As Long = &H194
 Private Const LB_SETCOLUMNWIDTH As Long = &H195
-Private Const LB_ADDFILE As Long = &H196
 Private Const LB_SETTOPINDEX As Long = &H197
 Private Const LB_GETITEMRECT As Long = &H198
 Private Const LB_GETITEMDATA As Long = &H199
@@ -325,10 +325,7 @@ Private Const LB_GETCARETINDEX As Long = &H19F
 Private Const LB_SETITEMHEIGHT As Long = &H1A0
 Private Const LB_GETITEMHEIGHT As Long = &H1A1
 Private Const LB_FINDSTRINGEXACT As Long = &H1A2
-Private Const LB_SETLOCALE As Long = &H1A5
-Private Const LB_GETLOCALE As Long = &H1A6
 Private Const LB_SETCOUNT As Long = &H1A7
-Private Const LB_INITSTORAGE As Long = &H1A8
 Private Const LB_ITEMFROMPOINT As Long = &H1A9 ' 16 bit
 Private Const LB_GETLISTBOXINFO As Long = &H1B2
 Private Const LBS_NOTIFY As Long = &H1
@@ -341,17 +338,12 @@ Private Const LBS_HASSTRINGS As Long = &H40
 Private Const LBS_USETABSTOPS As Long = &H80
 Private Const LBS_NOINTEGRALHEIGHT As Long = &H100
 Private Const LBS_MULTICOLUMN As Long = &H200
-Private Const LBS_WANTKEYBOARDINPUT As Long = &H400
 Private Const LBS_EXTENDEDSEL As Long = &H800
 Private Const LBS_DISABLENOSCROLL As Long = &H1000
-Private Const LBS_NODATA As Long = &H2000
 Private Const LBS_NOSEL As Long = &H4000
-Private Const LBN_ERRSPACE As Long = (-2)
 Private Const LBN_SELCHANGE As Long = 1
 Private Const LBN_DBLCLK As Long = 2
 Private Const LBN_SELCANCEL As Long = 3
-Private Const LBN_SETFOCUS As Long = 4
-Private Const LBN_KILLFOCUS As Long = 5
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
@@ -1678,7 +1670,6 @@ If ListBoxDesignMode = False Then
     .Refresh
     If PropRedraw = False Then .Redraw = PropRedraw
     End With
-    
 Else
     Call DestroyListBox
     Call ComCtlsRemoveSubclass(UserControl.hWnd)
@@ -2344,7 +2335,7 @@ Select Case wMsg
                     If lParam = 0 And ((wMsg = WM_HSCROLL And (dwStyle And WS_HSCROLL) = WS_HSCROLL) Or (wMsg = WM_VSCROLL And (dwStyle And WS_VSCROLL) = WS_VSCROLL)) Then
                         Dim SCI As SCROLLINFO, wBar As Long, PrevPos As Long
                         SCI.cbSize = LenB(SCI)
-                        SCI.fMask = SIF_POS Or SIF_TRACKPOS
+                        SCI.fMask = SIF_RANGE Or SIF_POS Or SIF_TRACKPOS
                         If wMsg = WM_HSCROLL Then
                             wBar = SB_HORZ
                         ElseIf wMsg = WM_VSCROLL Then
@@ -2359,7 +2350,10 @@ Select Case wMsg
                                 If PropScrollTrack = True Then SCI.nPos = SCI.nTrackPos
                         End Select
                         If PrevPos <> SCI.nPos Then
-                            If wMsg = WM_HSCROLL And PropMultiColumn = True Then SCI.nPos = SCI.nPos * Me.ItemsPerColumn
+                            If wMsg = WM_HSCROLL And PropMultiColumn = True Then
+                                If (GetWindowLong(ListBoxHandle, GWL_EXSTYLE) And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then SCI.nPos = (((SCI.nMax - SCI.nMin) - 1) - SCI.nPos)
+                                SCI.nPos = SCI.nPos * Me.ItemsPerColumn
+                            End If
                             ' SetScrollInfo function not needed as LB_SETTOPINDEX itself will do the scrolling.
                             SendMessage ListBoxHandle, LB_SETTOPINDEX, SCI.nPos, ByVal 0&
                         End If
@@ -2449,7 +2443,7 @@ Select Case wMsg
         If DIS.CtlType = ODT_LISTBOX And DIS.hWndItem = ListBoxHandle And DIS.ItemID > -1 Then
             If PropStyle <> LstStyleStandard Then
                 Dim BackColorBrush As Long, BackColorSelBrush As Long
-                BackColorBrush = CreateSolidBrush(WinColor(UserControl.BackColor))
+                BackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
                 If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then BackColorSelBrush = CreateSolidBrush(WinColor(vbHighlight))
                 Dim RC As RECT
                 With DIS.RCItem
@@ -2567,9 +2561,17 @@ Select Case wMsg
                         OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
                     End If
                     If PropRightToLeft = False Then
-                        TextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Length
+                        If PropUseTabStops = False Then
+                            TextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Length
+                        Else
+                            TabbedTextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, 0, 0
+                        End If
                     Else
-                        TextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Length
+                        If PropUseTabStops = False Then
+                            TextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Length
+                        Else
+                            TabbedTextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, 0, 0
+                        End If
                     End If
                     SetBkMode DIS.hDC, OldBkMode
                     SetTextColor DIS.hDC, OldTextColor

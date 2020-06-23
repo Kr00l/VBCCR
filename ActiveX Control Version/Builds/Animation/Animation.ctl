@@ -720,7 +720,7 @@ If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwEx
 If PropAutoPlay = True Then dwStyle = dwStyle Or ACS_AUTOPLAY
 If PropBackStyle = CCBackStyleTransparent Then dwStyle = dwStyle Or ACS_TRANSPARENT
 If PropCenter = True Then dwStyle = dwStyle Or ACS_CENTER
-AnimationHandle = CreateWindowEx(dwExStyle, StrPtr("SysAnimate32"), StrPtr("Animation"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+AnimationHandle = CreateWindowEx(dwExStyle, StrPtr("SysAnimate32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 Me.Enabled = UserControl.Enabled
 If AnimationDesignMode = False Then
     If AnimationHandle <> 0 Then Call ComCtlsSetSubclass(AnimationHandle, Me, 1)

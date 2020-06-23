@@ -628,7 +628,7 @@ Private Sub CreateIPAddress()
 If IPAddressHandle <> 0 Then Exit Sub
 Dim dwStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
-IPAddressHandle = CreateWindowEx(0, StrPtr("SysIPAddress32"), StrPtr("IP Address"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+IPAddressHandle = CreateWindowEx(0, StrPtr("SysIPAddress32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If IPAddressHandle <> 0 Then
     Dim hWnd(1 To 4) As Long
     hWnd(1) = FindWindowEx(IPAddressHandle, 0, StrPtr("Edit"), 0)

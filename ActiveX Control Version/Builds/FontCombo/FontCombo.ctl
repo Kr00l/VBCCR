@@ -2740,7 +2740,7 @@ Select Case wMsg
         CopyMemory DIS, ByVal lParam, LenB(DIS)
         If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = FontComboHandle And DIS.ItemID > -1 Then
             Dim BackColorBrush As Long, BackColorSelBrush As Long
-            BackColorBrush = CreateSolidBrush(WinColor(UserControl.BackColor))
+            BackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
             If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then BackColorSelBrush = CreateSolidBrush(WinColor(vbHighlight))
             If BackColorSelBrush <> 0 Then
                 FillRect DIS.hDC, DIS.RCItem, BackColorSelBrush

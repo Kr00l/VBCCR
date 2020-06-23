@@ -1634,7 +1634,7 @@ Select Case PropStyle
     Case ImcStyleDropDownList
         dwStyle = dwStyle Or CBS_DROPDOWNLIST
 End Select
-ImageComboHandle = CreateWindowEx(dwExStyle, StrPtr("ComboBoxEx32"), StrPtr("Image Combo"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
+ImageComboHandle = CreateWindowEx(dwExStyle, StrPtr("ComboBoxEx32"), 0, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
 If ImageComboHandle <> 0 Then
     SendMessage ImageComboHandle, CBEM_SETUNICODEFORMAT, 1, ByVal 0&
     ImageComboComboHandle = SendMessage(ImageComboHandle, CBEM_GETCOMBOCONTROL, 0, ByVal 0&)
