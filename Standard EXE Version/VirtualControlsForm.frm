@@ -1,22 +1,44 @@
 VERSION 5.00
 Begin VB.Form VirtualControlsForm 
    Caption         =   "VirtualControls Demo"
-   ClientHeight    =   3525
+   ClientHeight    =   3945
    ClientLeft      =   120
    ClientTop       =   450
-   ClientWidth     =   8175
+   ClientWidth     =   11490
    KeyPreview      =   -1  'True
-   ScaleHeight     =   3525
-   ScaleWidth      =   8175
+   ScaleHeight     =   3945
+   ScaleWidth      =   11490
    StartUpPosition =   3  'Windows Default
+   Begin ComCtlsDemo.VListBox VListBox1 
+      Height          =   2985
+      Left            =   8040
+      TabIndex        =   2
+      Top             =   240
+      Width           =   3255
+      _ExtentX        =   5741
+      _ExtentY        =   5265
+      BackColor       =   -2147483643
+      ForeColor       =   -2147483640
+   End
+   Begin ComCtlsDemo.VirtualCombo VirtualCombo1 
+      Height          =   315
+      Left            =   8040
+      TabIndex        =   1
+      Top             =   3360
+      Width           =   3255
+      _ExtentX        =   5741
+      _ExtentY        =   556
+      Style           =   2
+      Text            =   "VirtualControlsForm.frx":0000
+   End
    Begin ComCtlsDemo.ListView ListView1 
-      Height          =   3015
+      Height          =   3495
       Left            =   240
       TabIndex        =   0
       Top             =   240
       Width           =   7695
       _ExtentX        =   13573
-      _ExtentY        =   5318
+      _ExtentY        =   6165
       View            =   3
       AllowColumnReorder=   -1  'True
       MultiSelect     =   -1  'True
@@ -77,6 +99,8 @@ With ListView1.ColumnHeaders
 .Add , , "Col4"
 End With
 ListView1.VirtualItemCount = 100000
+VListBox1.ListCount = 100000
+VirtualCombo1.ListCount = 100000
 End Sub
 
 Private Sub ListView1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, FoundIndex As Long)
@@ -128,4 +152,70 @@ Private Sub ListView1_AfterLabelEdit(Cancel As Boolean, NewString As String)
 Dim ListItem As LvwListItem
 Set ListItem = ListView1.SelectedItem
 If Not ListItem Is Nothing Then VirtualLvwItems(ListItem.Index, 0).Text = NewString
+End Sub
+
+Private Sub VListBox1_GetVirtualItem(ByVal Index As Long, Text As String)
+If Index Mod 2 Then
+    Text = "Bob_" & Index
+Else
+    Text = "Arnold_" & Index
+End If
+End Sub
+
+Private Sub VListBox1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, FoundIndex As Long)
+'
+End Sub
+
+Private Sub VListBox1_IncrementalSearch(ByVal SearchString As String, ByVal StartIndex As Long, FoundIndex As Long)
+Dim SearchChar As String
+SearchChar = LCase$(Right$(SearchString, 1))
+Select Case SearchChar
+    Case "a"
+        If StartIndex Mod 2 Then
+            FoundIndex = StartIndex + 1
+        Else
+            FoundIndex = StartIndex + 2
+        End If
+        If FoundIndex > VListBox1.ListCount - 1 Then FoundIndex = 0
+    Case "b"
+        If StartIndex Mod 2 Then
+            FoundIndex = StartIndex + 2
+        Else
+            FoundIndex = StartIndex + 1
+        End If
+        If FoundIndex > VListBox1.ListCount - 1 Then FoundIndex = 1
+End Select
+End Sub
+
+Private Sub VirtualCombo1_GetVirtualItem(ByVal Index As Long, Text As String)
+If Index Mod 2 Then
+    Text = "Bob_" & Index
+Else
+    Text = "Arnold_" & Index
+End If
+End Sub
+
+Private Sub VirtualCombo1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, FoundIndex As Long)
+'
+End Sub
+
+Private Sub VirtualCombo1_IncrementalSearch(ByVal SearchString As String, ByVal StartIndex As Long, FoundIndex As Long)
+Dim SearchChar As String
+SearchChar = LCase$(Right$(SearchString, 1))
+Select Case SearchChar
+    Case "a"
+        If StartIndex Mod 2 Then
+            FoundIndex = StartIndex + 1
+        Else
+            FoundIndex = StartIndex + 2
+        End If
+        If FoundIndex > VirtualCombo1.ListCount - 1 Then FoundIndex = 0
+    Case "b"
+        If StartIndex Mod 2 Then
+            FoundIndex = StartIndex + 2
+        Else
+            FoundIndex = StartIndex + 1
+        End If
+        If FoundIndex > VirtualCombo1.ListCount - 1 Then FoundIndex = 1
+End Select
 End Sub

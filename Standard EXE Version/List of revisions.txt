@@ -1,8 +1,12 @@
 List of revisions:
 
 23-Jun-2020
+- Included the VListBox control. (virtual list box control)
+  The name 'VirtualList' would confuse as this is a common word for a virtual list view.
+  Thus to avoid that the name must contain 'ListBox' and to keep it short then 'VListBox'.
 - TabbedTextOut API now used in a Checkbox/Option Style ListBoxW control when UseTabStops property is True.
 - Bugfix in the 32-bit scrolling in a multi-column ListBoxW and when WS_EX_LEFTSCROLLBAR is set.
+- Text property in ListBoxW now data-bindable to a VB.Data control.
 
 07-Jun-2020
 - Internal improvement in the OptionButtonW control.
