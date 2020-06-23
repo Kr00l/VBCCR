@@ -1,5 +1,9 @@
 List of revisions:
 
+23-Jun-2020
+- TabbedTextOut API now used in a Checkbox/Option Style ListBoxW control when UseTabStops property is True.
+- Bugfix in the 32-bit scrolling in a multi-column ListBoxW and when WS_EX_LEFTSCROLLBAR is set.
+
 07-Jun-2020
 - Internal improvement in the OptionButtonW control.
 - Bugfix in the OptionButtonW control, the default value property should be False in Read/WriteProperties.
