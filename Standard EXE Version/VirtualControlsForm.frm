@@ -64,6 +64,7 @@ ForeColor As OLE_COLOR
 Checked As Boolean
 End Type
 Private VirtualLvwItems(1 To 100000, 0 To 3) As VirtualLvwItemStruct
+Private VirtualItems(0 To (100000 - 1)) As String
 
 Private Sub Form_Load()
 Call SetupVisualStylesFixes(Me)
@@ -99,6 +100,9 @@ With ListView1.ColumnHeaders
 .Add , , "Col4"
 End With
 ListView1.VirtualItemCount = 100000
+For i = 0 To 100000 - 1
+    VirtualItems(i) = "item" & i
+Next i
 VListBox1.ListCount = 100000
 VirtualCombo1.ListCount = 100000
 End Sub
@@ -154,68 +158,60 @@ Set ListItem = ListView1.SelectedItem
 If Not ListItem Is Nothing Then VirtualLvwItems(ListItem.Index, 0).Text = NewString
 End Sub
 
-Private Sub VListBox1_GetVirtualItem(ByVal Index As Long, Text As String)
-If Index Mod 2 Then
-    Text = "Bob_" & Index
-Else
-    Text = "Arnold_" & Index
-End If
+Private Sub VListBox1_GetVirtualItem(ByVal Item As Long, Text As String)
+Text = VirtualItems(Item) ' Item is zero-based
 End Sub
 
 Private Sub VListBox1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, FoundIndex As Long)
-'
+If VListBox1.ListCount = 0 Then Exit Sub
+Dim i As Long
+For i = StartIndex + 1 To VListBox1.ListCount - 1
+    If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+        FoundIndex = i
+        Exit For
+    End If
+Next i
+If FoundIndex = -1 Then
+    For i = 0 To StartIndex - 1
+        If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+            FoundIndex = i
+            Exit For
+        End If
+    Next i
+End If
 End Sub
 
 Private Sub VListBox1_IncrementalSearch(ByVal SearchString As String, ByVal StartIndex As Long, FoundIndex As Long)
 Dim SearchChar As String
 SearchChar = LCase$(Right$(SearchString, 1))
-Select Case SearchChar
-    Case "a"
-        If StartIndex Mod 2 Then
-            FoundIndex = StartIndex + 1
-        Else
-            FoundIndex = StartIndex + 2
-        End If
-        If FoundIndex > VListBox1.ListCount - 1 Then FoundIndex = 0
-    Case "b"
-        If StartIndex Mod 2 Then
-            FoundIndex = StartIndex + 2
-        Else
-            FoundIndex = StartIndex + 1
-        End If
-        If FoundIndex > VListBox1.ListCount - 1 Then FoundIndex = 1
-End Select
+FoundIndex = VListBox1.FindItem(SearchChar, StartIndex, True) ' Redirects to FindVirtualItem event
 End Sub
 
-Private Sub VirtualCombo1_GetVirtualItem(ByVal Index As Long, Text As String)
-If Index Mod 2 Then
-    Text = "Bob_" & Index
-Else
-    Text = "Arnold_" & Index
-End If
+Private Sub VirtualCombo1_GetVirtualItem(ByVal Item As Long, Text As String)
+Text = VirtualItems(Item) ' Item is zero-based
 End Sub
 
 Private Sub VirtualCombo1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, FoundIndex As Long)
-'
+If VirtualCombo1.ListCount = 0 Then Exit Sub
+Dim i As Long
+For i = StartIndex + 1 To VirtualCombo1.ListCount - 1
+    If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+        FoundIndex = i
+        Exit For
+    End If
+Next i
+If FoundIndex = -1 Then
+    For i = 0 To StartIndex - 1
+        If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+            FoundIndex = i
+            Exit For
+        End If
+    Next i
+End If
 End Sub
 
 Private Sub VirtualCombo1_IncrementalSearch(ByVal SearchString As String, ByVal StartIndex As Long, FoundIndex As Long)
 Dim SearchChar As String
 SearchChar = LCase$(Right$(SearchString, 1))
-Select Case SearchChar
-    Case "a"
-        If StartIndex Mod 2 Then
-            FoundIndex = StartIndex + 1
-        Else
-            FoundIndex = StartIndex + 2
-        End If
-        If FoundIndex > VirtualCombo1.ListCount - 1 Then FoundIndex = 0
-    Case "b"
-        If StartIndex Mod 2 Then
-            FoundIndex = StartIndex + 2
-        Else
-            FoundIndex = StartIndex + 1
-        End If
-        If FoundIndex > VirtualCombo1.ListCount - 1 Then FoundIndex = 1
-End Select
+FoundIndex = VirtualCombo1.FindItem(SearchChar, StartIndex, True) ' Redirects to FindVirtualItem event
 End Sub
