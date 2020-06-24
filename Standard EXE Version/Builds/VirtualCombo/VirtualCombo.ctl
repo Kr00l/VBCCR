@@ -109,7 +109,7 @@ Public Event Change()
 Attribute Change.VB_Description = "Occurs when the contents of a control have changed."
 Public Event ContextMenu(ByRef Handled As Boolean, ByVal X As Single, ByVal Y As Single)
 Attribute ContextMenu.VB_Description = "Occurs when the user clicked the right mouse button or types SHIFT + F10."
-Public Event GetVirtualItem(ByVal Index As Long, ByRef Text As String)
+Public Event GetVirtualItem(ByVal Item As Long, ByRef Text As String)
 Attribute GetVirtualItem.VB_Description = "Occurs when the no-data list box requests for an item text."
 Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByRef FoundIndex As Long)
 Attribute FindVirtualItem.VB_Description = "Occurs when the no-data list box needs to find a particular item."
