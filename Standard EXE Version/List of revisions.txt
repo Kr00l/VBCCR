@@ -1,5 +1,8 @@
 List of revisions:
 
+26-Jun-2020
+- Included the FontWeight property in the CommonDialog class.
+
 23-Jun-2020
 - Included the VListBox control. (virtual list box control)
   The name 'VirtualList' would confuse as this is a common word for a virtual list view.

@@ -12,7 +12,7 @@ Begin VB.Form VirtualControlsForm
    Begin ComCtlsDemo.VListBox VListBox1 
       Height          =   2985
       Left            =   8040
-      TabIndex        =   2
+      TabIndex        =   1
       Top             =   240
       Width           =   3255
       _ExtentX        =   5741
@@ -23,7 +23,7 @@ Begin VB.Form VirtualControlsForm
    Begin ComCtlsDemo.VirtualCombo VirtualCombo1 
       Height          =   315
       Left            =   8040
-      TabIndex        =   1
+      TabIndex        =   2
       Top             =   3360
       Width           =   3255
       _ExtentX        =   5741
