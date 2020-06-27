@@ -193,18 +193,34 @@ End Sub
 
 Private Sub PropertyPage_ApplyChanges()
 If CurrIndex > 0 Then
-    PropShadowListImages(CurrIndex).Key = TextKey.Text
     PropShadowListImages(CurrIndex).Tag = TextTag.Text
     Dim i As Long
     With PropertyPage.SelectedControls(0)
     .ListImages.Clear
     For i = 0 To UBound(PropShadowListImages())
         If i > 0 Then
-            With .ListImages.Add(i, PropShadowListImages(i).Key, PropShadowListImages(i).Picture)
-            .Tag = PropShadowListImages(i).Tag
-            End With
+            If i <> CurrIndex Then
+                With .ListImages.Add(i, PropShadowListImages(i).Key, PropShadowListImages(i).Picture)
+                .Tag = PropShadowListImages(i).Tag
+                End With
+            Else
+                With .ListImages.Add(i, , PropShadowListImages(i).Picture)
+                .Tag = PropShadowListImages(i).Tag
+                End With
+            End If
         End If
     Next i
+    If Not TextKey.Text = vbNullString Then
+        If .ListImages.Exists(TextKey.Text) = True Then
+            .ListImages(CurrIndex).Key = PropShadowListImages(CurrIndex).Key
+            MsgBox "This key is already associated with an element of this collection.", vbCritical + vbOKOnly
+        Else
+            PropShadowListImages(CurrIndex).Key = TextKey.Text
+            .ListImages(CurrIndex).Key = PropShadowListImages(CurrIndex).Key
+        End If
+    Else
+        PropShadowListImages(CurrIndex).Key = vbNullString
+    End If
     End With
 End If
 Call PropertyPage_SelectionChanged

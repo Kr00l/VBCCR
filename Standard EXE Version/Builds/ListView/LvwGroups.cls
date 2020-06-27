@@ -41,6 +41,19 @@ Friend Sub FInit(ByVal Object As ListView)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropGroup(Index)
+If NewKey = vbNullString Then
+    PropGroup.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropGroup.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropGroup.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Header As String, Optional ByVal HeaderAlignment As LvwGroupHeaderAlignmentConstants, Optional ByVal Footer As String, Optional ByVal FooterAlignment As LvwGroupFooterAlignmentConstants) As LvwGroup
 Attribute Add.VB_Description = "Adds a group to the groups collection."
 If Index > (PropGroup.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
