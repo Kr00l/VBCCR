@@ -127,8 +127,8 @@ If FoundIndex = 0 And Wrap = True Then
 End If
 End Sub
 
-Private Sub ListView1_GetVirtualItem(ByVal Index As Long, ByVal SubItemIndex As Long, ByVal VirtualProperty As LvwVirtualPropertyConstants, Value As Variant)
-With VirtualLvwItems(Index, SubItemIndex)
+Private Sub ListView1_GetVirtualItem(ByVal ItemIndex As Long, ByVal SubItemIndex As Long, ByVal VirtualProperty As LvwVirtualPropertyConstants, Value As Variant)
+With VirtualLvwItems(ItemIndex, SubItemIndex)
 Select Case VirtualProperty
     Case LvwVirtualPropertyText
         Value = .Text
