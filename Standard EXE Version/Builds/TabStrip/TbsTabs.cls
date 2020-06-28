@@ -37,6 +37,19 @@ Friend Sub FInit(ByVal Object As TabStrip)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropTab(Index)
+If NewKey = vbNullString Then
+    PropTab.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropTab.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropTab.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Caption As String, Optional ByVal Image As Variant) As TbsTab
 Attribute Add.VB_Description = "Adds a tab to the tabs collection."
 If Index > (PropTab.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"

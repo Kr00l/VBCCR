@@ -214,6 +214,9 @@ If CurrIndex > 0 Then
         If .ListImages.Exists(TextKey.Text) = True Then
             .ListImages(CurrIndex).Key = PropShadowListImages(CurrIndex).Key
             MsgBox "This key is already associated with an element of this collection.", vbCritical + vbOKOnly
+            FreezeChanged = True
+            TextKey.Text = PropShadowListImages(CurrIndex).Key
+            FreezeChanged = False
         Else
             PropShadowListImages(CurrIndex).Key = TextKey.Text
             .ListImages(CurrIndex).Key = PropShadowListImages(CurrIndex).Key

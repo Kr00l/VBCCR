@@ -201,7 +201,6 @@ On Error GoTo 0
 If CurrIndex > 0 Then
     With PropShadowTabs(CurrIndex)
     .Caption = TextCaption.Text
-    .Key = TextKey.Text
     .Tag = TextTag.Text
     .ToolTipText = TextToolTipText.Text
     If IsNumeric(TextImage.Text) Then
@@ -212,10 +211,24 @@ If CurrIndex > 0 Then
     End With
     With PropertyPage.SelectedControls(0)
     .Tabs.Remove CurrIndex
-    With .Tabs.Add(CurrIndex, PropShadowTabs(CurrIndex).Key, PropShadowTabs(CurrIndex).Caption, PropShadowTabs(CurrIndex).Image)
+    With .Tabs.Add(CurrIndex, , PropShadowTabs(CurrIndex).Caption, PropShadowTabs(CurrIndex).Image)
     .Tag = PropShadowTabs(CurrIndex).Tag
     .ToolTipText = PropShadowTabs(CurrIndex).ToolTipText
     End With
+    If Not TextKey.Text = vbNullString Then
+        If .Tabs.Exists(TextKey.Text) = True Then
+            .Tabs(CurrIndex).Key = PropShadowTabs(CurrIndex).Key
+            MsgBox "This key is already associated with an element of this collection.", vbCritical + vbOKOnly
+            FreezeChanged = True
+            TextKey.Text = PropShadowTabs(CurrIndex).Key
+            FreezeChanged = False
+        Else
+            PropShadowTabs(CurrIndex).Key = TextKey.Text
+            .Tabs(CurrIndex).Key = PropShadowTabs(CurrIndex).Key
+        End If
+    Else
+        PropShadowTabs(CurrIndex).Key = vbNullString
+    End If
     End With
 End If
 Call PropertyPage_SelectionChanged
