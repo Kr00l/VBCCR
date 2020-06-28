@@ -7,7 +7,7 @@ List of revisions:
   Thus it does not clash anymore with the 'Index As Integer' param in a control array.
 - ItemSelect event can now pass a ListItem 'As Nothing' in a virtual ListView control. (LVN_ITEMCHANGED, iItem = -1)
   Because a virtual list view does only inform about each selected item and not for each deselected item.
-  This is an alias that all is deselected. There is no other way for a virtual ListView control..
+- It is now possible for the TbsTabs collection to change the key on a particular TbsTab in the TabStrip control.
 
 27-Jun-2020
 - It is now possible for the LvwGroups collection to change the key on a particular LvwGroup in the ListView control.
