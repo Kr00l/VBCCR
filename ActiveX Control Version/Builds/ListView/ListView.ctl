@@ -319,6 +319,13 @@ hdr As NMHDR
 iStart As Long
 LVFI As LVFINDINFO
 End Type
+Private Type NMLVODSTATECHANGE
+hdr As NMHDR
+iFrom As Long
+iTo As Long
+uNewState As Long
+uOldState As Long
+End Type
 Private Type NMLVSCROLL
 hdr As NMHDR
 DX As Long
@@ -609,7 +616,7 @@ Private Const LVM_FINDITEMW As Long = (LVM_FIRST + 83)
 Private Const LVM_FINDITEM As Long = LVM_FINDITEMW
 Private Const LVM_RESETEMPTYTEXT As Long = (LVM_FIRST + 84) ' Undocumented
 Private Const LVM_GETITEMRECT As Long = (LVM_FIRST + 14)
-Private Const LVM_SETITEMPOSITION As Long = (LVM_FIRST + 15)
+Private Const LVM_SETITEMPOSITION As Long = (LVM_FIRST + 15) ' 16 bit
 Private Const LVM_GETITEMPOSITION As Long = (LVM_FIRST + 16)
 Private Const LVM_GETSTRINGWIDTHA As Long = (LVM_FIRST + 17)
 Private Const LVM_GETSTRINGWIDTHW As Long = (LVM_FIRST + 87)
@@ -846,7 +853,7 @@ Private Const HDM_EDITFILTER As Long = (HDM_FIRST + 23)
 Private Const HDM_CLEARFILTER As Long = (HDM_FIRST + 24)
 Private Const HDM_GETFOCUSEDITEM As Long = (HDM_FIRST + 27)
 Private Const HDSIL_NORMAL As Long = 0
-Private Const HDSIL_STATE As Long = 0
+Private Const HDSIL_STATE As Long = 1
 Private Const HHT_ONDIVIDER As Long = &H4
 Private Const HHT_ONDIVOPEN As Long = &H8
 Private Const HDI_WIDTH As Long = &H1
@@ -869,12 +876,6 @@ Private Const HDS_FILTERBAR As Long = &H100
 Private Const HDS_NOSIZING As Long = &H800
 Private Const HDS_OVERFLOW As Long = &H1000
 Private Const HDN_FIRST As Long = (-300)
-Private Const HDN_ITEMCHANGINGA As Long = (HDN_FIRST - 0)
-Private Const HDN_ITEMCHANGINGW As Long = (HDN_FIRST - 20)
-Private Const HDN_ITEMCHANGING As Long = HDN_ITEMCHANGINGW
-Private Const HDN_ITEMCHANGEDA As Long = (HDN_FIRST - 1)
-Private Const HDN_ITEMCHANGEDW As Long = (HDN_FIRST - 21)
-Private Const HDN_ITEMCHANGED As Long = HDN_ITEMCHANGEDW
 Private Const HDN_ITEMDBLCLICKA As Long = (HDN_FIRST - 3)
 Private Const HDN_ITEMDBLCLICKW As Long = (HDN_FIRST - 23)
 Private Const HDN_ITEMDBLCLICK As Long = HDN_ITEMDBLCLICKW
@@ -7307,21 +7308,29 @@ Select Case wMsg
                     CopyMemory NMLV, ByVal lParam, LenB(NMLV)
                     With NMLV
                     If .uChanged = LVIF_STATE Then
-                        If PropVirtualMode = False Then
-                            Set ListItem = Me.ListItems(.iItem + 1)
+                        If .iItem > -1 Then
+                            If PropVirtualMode = False Then
+                                Set ListItem = Me.ListItems(.iItem + 1)
+                            Else
+                                Set ListItem = New LvwListItem
+                                ListItem.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                            End If
+                            If CBool((.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED) Xor CBool((.uOldState And LVIS_FOCUSED) = LVIS_FOCUSED) Then
+                                If (.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED Then Call CheckItemFocus(.iItem + 1)
+                            End If
+                            If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
+                                RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                            End If
+                            If PropVirtualMode = False Then
+                                If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(ListItem, CBool((.uNewState And &H2000&) = &H2000&))
+                            End If
                         Else
-                            Set ListItem = New LvwListItem
-                            ListItem.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
-                        End If
-                        If CBool((.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED) Xor CBool((.uOldState And LVIS_FOCUSED) = LVIS_FOCUSED) Then
-                            If (.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED Then Call CheckItemFocus(.iItem + 1)
-                        End If
-                        If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
-                            Me.FListItemRedraw .iItem + 1
-                            RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
-                        End If
-                        If PropVirtualMode = False Then
-                            If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(ListItem, CBool((.uNewState And &H2000&) = &H2000&))
+                            ' The change has been applied to all items in the list view.
+                            ' AFAIK only a virtual list view uses this alias to inform that all is deselected.
+                            ' Because a virtual list view does only inform about each selected item and not for each deselected item.
+                            If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
+                                RaiseEvent ItemSelect(Nothing, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                            End If
                         End If
                     End If
                     End With
@@ -7730,6 +7739,18 @@ Select Case wMsg
                         End If
                         Exit Function
                     End If
+                Case LVN_ODSTATECHANGED
+                    Dim NMLVSC As NMLVODSTATECHANGE, iItem As Long
+                    CopyMemory NMLVSC, ByVal lParam, LenB(NMLVSC)
+                    With NMLVSC
+                    If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
+                        Set ListItem = New LvwListItem
+                        For iItem = .iFrom To .iTo
+                            ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                            RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                        Next iItem
+                    End If
+                    End With
                 Case LVN_GETEMPTYMARKUP
                     Dim Text As String, Centered As Boolean
                     RaiseEvent GetEmptyMarkup(Text, Centered)
