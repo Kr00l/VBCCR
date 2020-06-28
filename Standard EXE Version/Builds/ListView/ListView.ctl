@@ -266,7 +266,6 @@ Private Const CDDS_ITEM As Long = &H10000
 Private Const CDDS_ITEMPREPAINT As Long = (CDDS_ITEM + 1)
 Private Const CDDS_SUBITEM As Long = &H20000
 Private Const CDIS_HOT As Long = &H40
-Private Const CDRF_DODEFAULT As Long = &H0
 Private Const CDRF_NEWFONT As Long = &H2
 Private Const CDRF_NOTIFYITEMDRAW As Long = &H20
 Private Const CDRF_NOTIFYSUBITEMDRAW As Long = &H20
@@ -329,6 +328,18 @@ Private Type NMLVFINDITEM
 hdr As NMHDR
 iStart As Long
 LVFI As LVFINDINFO
+End Type
+Private Type NMLVCACHEHINT
+hdr As NMHDR
+iFrom As Long
+iTo As Long
+End Type
+Private Type NMLVODSTATECHANGE
+hdr As NMHDR
+iFrom As Long
+iTo As Long
+uNewState As Long
+uOldState As Long
 End Type
 Private Type NMLVSCROLL
 hdr As NMHDR
@@ -428,10 +439,12 @@ Public Event ItemDrag(ByVal Item As LvwListItem, ByVal Button As Integer)
 Attribute ItemDrag.VB_Description = "Occurs when a list item initiate a drag-and-drop operation."
 Public Event ItemBkColor(ByVal Item As LvwListItem, ByRef RGBColor As Long)
 Attribute ItemBkColor.VB_Description = "Occurs when a list item is about to draw the background in 'report' view. This is a request to provide an alternative back color. The back color is passed in an RGB format."
-Public Event GetVirtualItem(ByVal Index As Long, ByVal SubItemIndex As Long, ByVal VirtualProperty As LvwVirtualPropertyConstants, ByRef Value As Variant)
+Public Event GetVirtualItem(ByVal ItemIndex As Long, ByVal SubItemIndex As Long, ByVal VirtualProperty As LvwVirtualPropertyConstants, ByRef Value As Variant)
 Attribute GetVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and requests for an item or sub item property."
 Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, ByRef FoundIndex As Long)
 Attribute FindVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and needs to find a particular item."
+Public Event VirtualSetCacheHint(ByVal FromIndex As Long, ByVal ToIndex As Long)
+Attribute VirtualSetCacheHint.VB_Description = "Occurs when the list view is in virtual mode and the contents of its display area have changed. It contains information about the range of items to be cached."
 Public Event BeforeLabelEdit(ByRef Cancel As Boolean)
 Attribute BeforeLabelEdit.VB_Description = "Occurs when a user attempts to edit the label of the currently selected list item."
 Public Event AfterLabelEdit(ByRef Cancel As Boolean, ByRef NewString As String)
@@ -626,7 +639,7 @@ Private Const LVM_FINDITEMW As Long = (LVM_FIRST + 83)
 Private Const LVM_FINDITEM As Long = LVM_FINDITEMW
 Private Const LVM_RESETEMPTYTEXT As Long = (LVM_FIRST + 84) ' Undocumented
 Private Const LVM_GETITEMRECT As Long = (LVM_FIRST + 14)
-Private Const LVM_SETITEMPOSITION As Long = (LVM_FIRST + 15)
+Private Const LVM_SETITEMPOSITION As Long = (LVM_FIRST + 15) ' 16 bit
 Private Const LVM_GETITEMPOSITION As Long = (LVM_FIRST + 16)
 Private Const LVM_GETSTRINGWIDTHA As Long = (LVM_FIRST + 17)
 Private Const LVM_GETSTRINGWIDTHW As Long = (LVM_FIRST + 87)
@@ -769,7 +782,6 @@ Private Const LVN_SETDISPINFO As Long = LVN_SETDISPINFOW
 Private Const LVN_ODFINDITEMA As Long = (LVN_FIRST - 52)
 Private Const LVN_ODFINDITEMW As Long = (LVN_FIRST - 79)
 Private Const LVN_ODFINDITEM As Long = LVN_ODFINDITEMW
-Private Const LVN_KEYDOWN As Long = (LVN_FIRST - 55)
 Private Const LVN_MARQUEEBEGIN As Long = (LVN_FIRST - 56)
 Private Const LVN_GETINFOTIPA As Long = (LVN_FIRST - 57)
 Private Const LVN_GETINFOTIPW As Long = (LVN_FIRST - 58)
@@ -863,7 +875,7 @@ Private Const HDM_EDITFILTER As Long = (HDM_FIRST + 23)
 Private Const HDM_CLEARFILTER As Long = (HDM_FIRST + 24)
 Private Const HDM_GETFOCUSEDITEM As Long = (HDM_FIRST + 27)
 Private Const HDSIL_NORMAL As Long = 0
-Private Const HDSIL_STATE As Long = 0
+Private Const HDSIL_STATE As Long = 1
 Private Const HHT_ONDIVIDER As Long = &H4
 Private Const HHT_ONDIVOPEN As Long = &H8
 Private Const HHT_ONFILTER As Long = &H10
@@ -889,12 +901,6 @@ Private Const HDS_FILTERBAR As Long = &H100
 Private Const HDS_NOSIZING As Long = &H800
 Private Const HDS_OVERFLOW As Long = &H1000
 Private Const HDN_FIRST As Long = (-300)
-Private Const HDN_ITEMCHANGINGA As Long = (HDN_FIRST - 0)
-Private Const HDN_ITEMCHANGINGW As Long = (HDN_FIRST - 20)
-Private Const HDN_ITEMCHANGING As Long = HDN_ITEMCHANGINGW
-Private Const HDN_ITEMCHANGEDA As Long = (HDN_FIRST - 1)
-Private Const HDN_ITEMCHANGEDW As Long = (HDN_FIRST - 21)
-Private Const HDN_ITEMCHANGED As Long = HDN_ITEMCHANGEDW
 Private Const HDN_ITEMDBLCLICKA As Long = (HDN_FIRST - 3)
 Private Const HDN_ITEMDBLCLICKW As Long = (HDN_FIRST - 23)
 Private Const HDN_ITEMDBLCLICK As Long = HDN_ITEMDBLCLICKW
@@ -7542,21 +7548,29 @@ Select Case wMsg
                     CopyMemory NMLV, ByVal lParam, LenB(NMLV)
                     With NMLV
                     If .uChanged = LVIF_STATE Then
-                        If PropVirtualMode = False Then
-                            Set ListItem = Me.ListItems(.iItem + 1)
+                        If .iItem > -1 Then
+                            If PropVirtualMode = False Then
+                                Set ListItem = Me.ListItems(.iItem + 1)
+                            Else
+                                Set ListItem = New LvwListItem
+                                ListItem.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                            End If
+                            If CBool((.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED) Xor CBool((.uOldState And LVIS_FOCUSED) = LVIS_FOCUSED) Then
+                                If (.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED Then Call CheckItemFocus(.iItem + 1)
+                            End If
+                            If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
+                                RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                            End If
+                            If PropVirtualMode = False Then
+                                If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(ListItem, CBool((.uNewState And &H2000&) = &H2000&))
+                            End If
                         Else
-                            Set ListItem = New LvwListItem
-                            ListItem.FInit ObjPtr(Me), .iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
-                        End If
-                        If CBool((.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED) Xor CBool((.uOldState And LVIS_FOCUSED) = LVIS_FOCUSED) Then
-                            If (.uNewState And LVIS_FOCUSED) = LVIS_FOCUSED Then Call CheckItemFocus(.iItem + 1)
-                        End If
-                        If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
-                            Me.FListItemRedraw .iItem + 1
-                            RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
-                        End If
-                        If PropVirtualMode = False Then
-                            If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(ListItem, CBool((.uNewState And &H2000&) = &H2000&))
+                            ' The change has been applied to all items in the list view.
+                            ' AFAIK only a virtual list view uses this alias to inform that all is deselected.
+                            ' Because a virtual list view does only inform about each selected item and not for each deselected item.
+                            If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
+                                RaiseEvent ItemSelect(Nothing, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                            End If
                         End If
                     End If
                     End With
@@ -7970,6 +7984,22 @@ Select Case wMsg
                         End If
                         Exit Function
                     End If
+                Case LVN_ODCACHEHINT
+                    Dim NMLVCH As NMLVCACHEHINT
+                    CopyMemory NMLVCH, ByVal lParam, LenB(NMLVCH)
+                    RaiseEvent VirtualSetCacheHint(NMLVCH.iFrom + 1, NMLVCH.iTo + 1)
+                Case LVN_ODSTATECHANGED
+                    Dim NMLVSC As NMLVODSTATECHANGE, iItem As Long
+                    CopyMemory NMLVSC, ByVal lParam, LenB(NMLVSC)
+                    With NMLVSC
+                    If CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED) Xor CBool((.uOldState And LVIS_SELECTED) = LVIS_SELECTED) Then
+                        Set ListItem = New LvwListItem
+                        For iItem = .iFrom To .iTo
+                            ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                            RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
+                        Next iItem
+                    End If
+                    End With
                 Case LVN_GETEMPTYMARKUP
                     Dim Text As String, Centered As Boolean
                     RaiseEvent GetEmptyMarkup(Text, Centered)
