@@ -1,7 +1,11 @@
 List of revisions:
 
+30-Jun-2020
+- Included Left/Top/Width/Height (read-only) property in the ListSubItem of the ListView control. (LVM_GETSUBITEMRECT)
+- Included function 'FindNearestItem' in the ListView control. (LVFI_NEARESTXY)
+
 28-Jun-2020
-- Included VirtualSetCacheHint event in the ListView control. (LVN_ODCACHEHINT)
+- Included CacheVirtualItems event in the ListView control. (LVN_ODCACHEHINT)
 - LVN_ODSTATECHANGED processed to enhance the ItemSelect event in a virtual ListView control.
 - Renamed param 'Index' to 'ItemIndex' in the GetVirtualItem event in the ListView control.
   Thus it does not clash anymore with the 'Index As Integer' param in a control array.

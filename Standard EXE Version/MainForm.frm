@@ -494,12 +494,12 @@ Else
 End If
 Dim GroupsAvailable As Boolean
 If ComCtlsSupportLevel() >= 1 Then ' XP+
+    With ListView1.Groups.Add(, , "Group A")
     If ComCtlsSupportLevel() >= 2 Then ' Vista+
-        With ListView1.Groups.Add(, , "Group A")
         .SubsetLink = "Click here to display all items"
         .Subseted = True
-        End With
     End If
+    End With
     ListView1.Groups.Add , , "Group B"
     ListView1.Groups.Add , , "Group C"
     ListView1.Groups.Add , , "Group D"
