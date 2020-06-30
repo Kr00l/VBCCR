@@ -39,6 +39,7 @@ Private LvwGroupHeaderAlignmentLeft, LvwGroupHeaderAlignmentRight, LvwGroupHeade
 Private LvwGroupFooterAlignmentLeft, LvwGroupFooterAlignmentRight, LvwGroupFooterAlignmentCenter
 Private LvwVisualThemeStandard, LvwVisualThemeExplorer
 Private LvwVirtualPropertyText, LvwVirtualPropertyIcon, LvwVirtualPropertyIndentation, LvwVirtualPropertyToolTipText, LvwVirtualPropertyBold, LvwVirtualPropertyForeColor, LvwVirtualPropertyChecked
+Private LvwFindDirectionUndefined, LvwFindDirectionPrior, LvwFindDirectionNext, LvwFindDirectionEnd, LvwFindDirectionHome, LvwFindDirectionLeft, LvwFindDirectionUp, LvwFindDirectionRight, LvwFindDirectionDown
 #End If
 Public Enum LvwViewConstants
 LvwViewIcon = 0
@@ -119,6 +120,17 @@ LvwVirtualPropertyToolTipText = 8
 LvwVirtualPropertyBold = 16
 LvwVirtualPropertyForeColor = 32
 LvwVirtualPropertyChecked = 64
+End Enum
+Public Enum LvwFindDirectionConstants
+LvwFindDirectionUndefined = 0
+LvwFindDirectionPrior = vbKeyPageUp
+LvwFindDirectionNext = vbKeyPageDown
+LvwFindDirectionEnd = vbKeyEnd
+LvwFindDirectionHome = vbKeyHome
+LvwFindDirectionLeft = vbKeyLeft
+LvwFindDirectionUp = vbKeyUp
+LvwFindDirectionRight = vbKeyRight
+LvwFindDirectionDown = vbKeyDown
 End Enum
 Private Type POINTAPI
 X As Long
@@ -443,8 +455,8 @@ Public Event GetVirtualItem(ByVal ItemIndex As Long, ByVal SubItemIndex As Long,
 Attribute GetVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and requests for an item or sub item property."
 Public Event FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, ByVal Wrap As Boolean, ByRef FoundIndex As Long)
 Attribute FindVirtualItem.VB_Description = "Occurs when the list view is in virtual mode and needs to find a particular item."
-Public Event VirtualSetCacheHint(ByVal FromIndex As Long, ByVal ToIndex As Long)
-Attribute VirtualSetCacheHint.VB_Description = "Occurs when the list view is in virtual mode and the contents of its display area have changed. It contains information about the range of items to be cached."
+Public Event CacheVirtualItems(ByVal FromIndex As Long, ByVal ToIndex As Long)
+Attribute CacheVirtualItems.VB_Description = "Occurs when the list view is in virtual mode and the contents of its display area have changed. It contains information about the range of items to be cached."
 Public Event BeforeLabelEdit(ByRef Cancel As Boolean)
 Attribute BeforeLabelEdit.VB_Description = "Occurs when a user attempts to edit the label of the currently selected list item."
 Public Event AfterLabelEdit(ByRef Cancel As Boolean, ByRef NewString As String)
@@ -786,6 +798,9 @@ Private Const LVN_MARQUEEBEGIN As Long = (LVN_FIRST - 56)
 Private Const LVN_GETINFOTIPA As Long = (LVN_FIRST - 57)
 Private Const LVN_GETINFOTIPW As Long = (LVN_FIRST - 58)
 Private Const LVN_GETINFOTIP As Long = LVN_GETINFOTIPW
+Private Const LVN_INCREMENTALSEARCHA As Long = (LVN_FIRST - 62)
+Private Const LVN_INCREMENTALSEARCHW As Long = (LVN_FIRST - 63)
+Private Const LVN_INCREMENTALSEARCH As Long = LVN_INCREMENTALSEARCHW
 Private Const LVN_COLUMNOVERFLOWCLICK As Long = (LVN_FIRST - 66)
 Private Const LVN_BEGINSCROLL As Long = (LVN_FIRST - 80)
 Private Const LVN_ENDSCROLL As Long = (LVN_FIRST - 81)
@@ -4054,6 +4069,46 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 1 Then
 End If
 End Property
 
+Friend Property Get FListSubItemLeft(ByVal Index As Long, ByVal SubItemIndex As Long) As Single
+If ListViewHandle <> 0 Then
+    Dim RC As RECT
+    RC.Left = LVIR_BOUNDS
+    RC.Top = SubItemIndex
+    SendMessage ListViewHandle, LVM_GETSUBITEMRECT, Index - 1, ByVal VarPtr(RC)
+    FListSubItemLeft = UserControl.ScaleX(RC.Left, vbPixels, vbContainerPosition)
+End If
+End Property
+
+Friend Property Get FListSubItemTop(ByVal Index As Long, ByVal SubItemIndex As Long) As Single
+If ListViewHandle <> 0 Then
+    Dim RC As RECT
+    RC.Left = LVIR_BOUNDS
+    RC.Top = SubItemIndex
+    SendMessage ListViewHandle, LVM_GETSUBITEMRECT, Index - 1, ByVal VarPtr(RC)
+    FListSubItemTop = UserControl.ScaleX(RC.Top, vbPixels, vbContainerPosition)
+End If
+End Property
+
+Friend Property Get FListSubItemWidth(ByVal Index As Long, ByVal SubItemIndex As Long) As Single
+If ListViewHandle <> 0 Then
+    Dim RC As RECT
+    RC.Left = LVIR_BOUNDS
+    RC.Top = SubItemIndex
+    SendMessage ListViewHandle, LVM_GETSUBITEMRECT, Index - 1, ByVal VarPtr(RC)
+    FListSubItemWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize)
+End If
+End Property
+
+Friend Property Get FListSubItemHeight(ByVal Index As Long, ByVal SubItemIndex As Long) As Single
+If ListViewHandle <> 0 Then
+    Dim RC As RECT
+    RC.Left = LVIR_BOUNDS
+    RC.Top = SubItemIndex
+    SendMessage ListViewHandle, LVM_GETSUBITEMRECT, Index - 1, ByVal VarPtr(RC)
+    FListSubItemHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+End If
+End Property
+
 Public Property Get ColumnHeaders() As LvwColumnHeaders
 Attribute ColumnHeaders.VB_Description = "Returns a reference to a collection of the column header objects."
 If PropColumnHeaders Is Nothing Then
@@ -5608,6 +5663,33 @@ If ListViewHandle <> 0 Then
 End If
 End Function
 
+Public Function FindNearestItem(ByVal X As Single, ByVal Y As Single, Optional ByVal Direction As LvwFindDirectionConstants) As LvwListItem
+Attribute FindNearestItem.VB_Description = "Finds an item nearest to the position specified and returns a reference to that item."
+Select Case Direction
+    Case LvwFindDirectionUndefined, LvwFindDirectionPrior, LvwFindDirectionNext, LvwFindDirectionEnd, LvwFindDirectionHome, LvwFindDirectionLeft, LvwFindDirectionUp, LvwFindDirectionRight, LvwFindDirectionDown
+    Case Else
+        Err.Raise 380
+End Select
+If ListViewHandle <> 0 Then
+    Dim LVFI As LVFINDINFO, Index As Long
+    With LVFI
+    .PT.X = UserControl.ScaleX(X, vbContainerPosition, vbPixels)
+    .PT.Y = UserControl.ScaleY(Y, vbContainerPosition, vbPixels)
+    .VKDirection = Direction
+    .Flags = LVFI_NEARESTXY
+    End With
+    Index = SendMessage(ListViewHandle, LVM_FINDITEM, -1, ByVal VarPtr(LVFI))
+    If Index > -1 Then
+        If PropVirtualMode = False Then
+            Set FindNearestItem = Me.ListItems(Index + 1)
+        Else
+            Set FindNearestItem = New LvwListItem
+            FindNearestItem.FInit ObjPtr(Me), Index + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+        End If
+    End If
+End If
+End Function
+
 Public Function FindSubItem(ByVal Text As String, Optional ByVal Index As Long, Optional ByRef SubItemIndex As Long, Optional ByVal Partial As Boolean, Optional ByVal Wrap As Boolean) As LvwListItem
 Attribute FindSubItem.VB_Description = "Finds a sub item in the list and returns a reference to that item."
 If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
@@ -7059,7 +7141,7 @@ Select Case wMsg
                         Set ListItem = New LvwListItem
                         ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
                         RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
-                        Me.FListItemRedraw iItem + 1
+                        SendMessage ListViewHandle, LVM_UPDATE, iItem, ByVal 0&
                     End If
                 End If
             ElseIf wMsg = WM_KEYUP Then
@@ -7606,11 +7688,6 @@ Select Case wMsg
                                 End If
                                 RaiseEvent AfterLabelEdit(Cancel, NewText)
                                 If Cancel = False Then
-                                    If PropVirtualMode = False Then
-                                        With Me.ListItems(.iItem + 1)
-                                        .FInit ObjPtr(Me), .Index, .Key, NMLVDI.Item.lParam, NewText, .Icon, .IconIndex, .SmallIcon, .SmallIconIndex
-                                        End With
-                                    End If
                                     WindowProcUserControl = 1
                                 Else
                                     WindowProcUserControl = 0
@@ -7683,7 +7760,7 @@ Select Case wMsg
                             If (.Flags And LVHT_ONITEM) <> 0 And .iSubItem = 0 Then
                                 If (.Flags And LVHT_ONITEMSTATEICON) <> 0 Then
                                     RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, NMIA.iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
-                                    Me.FListItemRedraw NMIA.iItem + 1
+                                    SendMessage ListViewHandle, LVM_UPDATE, NMIA.iItem, ByVal 0&
                                 End If
                             End If
                             End With
@@ -7966,6 +8043,32 @@ Select Case wMsg
                         End If
                     End If
                     End With
+                Case LVN_SETDISPINFO
+                    CopyMemory NMLVDI, ByVal lParam, LenB(NMLVDI)
+                    With NMLVDI.Item
+                    If .iItem > -1 Then
+                        If PropVirtualMode = True Then
+                            ' Ignore as LVN_ENDLABELEDIT is sufficient to update the text property in a virtual list view.
+                        ElseIf .lParam <> 0 Then
+                            Set ListItem = PtrToObj(.lParam)
+                            If .iSubItem = 0 Then
+                                If (.Mask And LVIF_TEXT) = LVIF_TEXT Then
+                                    Dim SetText As String
+                                    If .pszText <> 0 Then Length = lstrlen(.pszText)
+                                    If Length > 0 Then
+                                        SetText = String(Length, vbNullChar)
+                                        CopyMemory ByVal StrPtr(SetText), ByVal .pszText, Length * 2
+                                    End If
+                                    With ListItem
+                                    .FInit ObjPtr(Me), .Index, .Key, NMLVDI.Item.lParam, SetText, .Icon, .IconIndex, .SmallIcon, .SmallIconIndex
+                                    End With
+                                End If
+                            Else
+                                ' Not supported.
+                            End If
+                        End If
+                    End If
+                    End With
                 Case LVN_ODFINDITEM
                     Dim NMLVFI As NMLVFINDITEM
                     CopyMemory NMLVFI, ByVal lParam, LenB(NMLVFI)
@@ -7987,7 +8090,7 @@ Select Case wMsg
                 Case LVN_ODCACHEHINT
                     Dim NMLVCH As NMLVCACHEHINT
                     CopyMemory NMLVCH, ByVal lParam, LenB(NMLVCH)
-                    RaiseEvent VirtualSetCacheHint(NMLVCH.iFrom + 1, NMLVCH.iTo + 1)
+                    RaiseEvent CacheVirtualItems(NMLVCH.iFrom + 1, NMLVCH.iTo + 1)
                 Case LVN_ODSTATECHANGED
                     Dim NMLVSC As NMLVODSTATECHANGE, iItem As Long
                     CopyMemory NMLVSC, ByVal lParam, LenB(NMLVSC)

@@ -138,3 +138,39 @@ End Property
 Public Property Let ToolTipText(ByVal Value As String)
 ShadowListItem.FListSubItemProp(PropSubItemIndex, 8) = Value
 End Property
+
+Public Property Get Left() As Single
+Attribute Left.VB_Description = "Returns the distance between the internal left edge of an object and the left edge of its container."
+If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Left = ShadowListView.FListSubItemLeft(PropIndex, PropSubItemIndex)
+End Property
+
+Public Property Let Left(ByVal Value As Single)
+Err.Raise Number:=383, Description:="Property is read-only"
+End Property
+
+Public Property Get Top() As Single
+Attribute Top.VB_Description = "Returns the distance between the internal top edge of an object and the top edge of its container."
+If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Top = ShadowListView.FListSubItemTop(PropIndex, PropSubItemIndex)
+End Property
+
+Public Property Let Top(ByVal Value As Single)
+Err.Raise Number:=383, Description:="Property is read-only"
+End Property
+
+Public Property Get Width() As Single
+Attribute Width.VB_Description = "Returns the width of the list sub item."
+If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Width = ShadowListView.FListSubItemWidth(PropIndex, PropSubItemIndex)
+End Property
+
+Public Property Let Width(ByVal Value As Single)
+Err.Raise Number:=383, Description:="Property is read-only"
+End Property
+
+Public Property Get Height() As Single
+Attribute Height.VB_Description = "Returns the height of the list sub item."
+If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Height = ShadowListView.FListSubItemHeight(PropIndex, PropSubItemIndex)
+End Property
+
+Public Property Let Height(ByVal Value As Single)
+Err.Raise Number:=383, Description:="Property is read-only"
+End Property
