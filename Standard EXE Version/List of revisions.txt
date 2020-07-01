@@ -2,6 +2,8 @@ List of revisions:
 
 01-Jul-2020
 - VirtualCombo control now works on comctl version 5.8x.
+- ItemBkColor now fired in a virtual ListView control.
+- Internal improvement for the HighlightHot property in the ListView control.
 
 30-Jun-2020
 - Included Left/Top/Width/Height (read-only) property in the ListSubItem of the ListView control. (LVM_GETSUBITEMRECT)
