@@ -771,8 +771,6 @@ Private Const LVN_LINKCLICK As Long = (LVN_FIRST - 84)
 Private Const LVN_GETEMPTYMARKUP As Long = (LVN_FIRST - 87)
 Private Const LVN_GROUPCHANGED As Long = (LVN_FIRST - 88) ' Undocumented
 Private Const LVA_DEFAULT As Long = &H0
-Private Const LVA_ALIGNLEFT As Long = &H1
-Private Const LVA_ALIGNTOP As Long = &H2
 Private Const LVA_SNAPTOGRID As Long = &H5
 Private Const LVNI_ALL As Long = &H0
 Private Const LVNI_FOCUSED As Long = &H1
@@ -960,14 +958,11 @@ Private Const I_COLUMNSCALLBACK As Long = (-1)
 Private Const I_GROUPIDCALLBACK As Long = (-1)
 Private Const I_GROUPIDNONE As Long = (-2)
 Private Const MAX_PATH As Long = 260
-Private Const H_MAX As Long = (&HFFFF + 1)
-Private Const NM_FIRST As Long = H_MAX
+Private Const NM_FIRST As Long = 0
 Private Const NM_CLICK As Long = (NM_FIRST - 2)
 Private Const NM_DBLCLK As Long = (NM_FIRST - 3)
 Private Const NM_RCLICK As Long = (NM_FIRST - 5)
 Private Const NM_RDBLCLK As Long = (NM_FIRST - 6)
-Private Const NM_SETFOCUS As Long = (NM_FIRST - 7)
-Private Const NM_KILLFOCUS As Long = (NM_FIRST - 8)
 Private Const NM_CUSTOMDRAW As Long = (NM_FIRST - 12)
 Private Const LVS_ICON As Long = &H0
 Private Const LVS_REPORT As Long = &H1
@@ -998,12 +993,7 @@ Private Const LVS_EX_ONECLICKACTIVATE As Long = &H40
 Private Const LVS_EX_INFOTIP As Long = &H400
 Private Const LVS_EX_LABELTIP As Long = &H4000
 Private Const LVS_EX_TRACKSELECT As Long = &H8
-Private Const LVS_EX_TWOCLICKACTIVATE As Long = &H80
-Private Const LVS_EX_UNDERLINEHOT As Long = &H800
-Private Const LVS_EX_BORDERSELECT As Long = &H8000&
 Private Const LVS_EX_SNAPTOGRID As Long = &H80000
-Private Const LVS_EX_TRANSPARENTBKGND As Long = &H400000
-Private Const LVS_EX_COLUMNOVERFLOW As Long = &H80000000 ' Malfunction
 Private Const LV_VIEW_ICON As Long = &H0
 Private Const LV_VIEW_DETAILS As Long = &H1
 Private Const LV_VIEW_SMALLICON As Long = &H2
@@ -1881,7 +1871,6 @@ If ListViewHandle <> 0 And EnabledVisualStyles() = True Then
     End If
     Call SetVisualStylesHeader
     Call SetVisualStylesToolTip
-    SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
     Me.Refresh
     If ComCtlsSupportLevel() >= 2 Then
         If Not PropPicture Is Nothing Then
@@ -2239,7 +2228,6 @@ If ListViewDesignMode = False Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal 0&
         Else
             SendMessage ListViewHandle, LVM_ARRANGE, LVA_DEFAULT, ByVal 0&
-            SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
         End If
     End If
 Else
@@ -2317,7 +2305,6 @@ If ListViewDesignMode = False Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal 0&
         Else
             SendMessage ListViewHandle, LVM_ARRANGE, LVA_DEFAULT, ByVal 0&
-            SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
             If PropView = LvwViewList Then
                 ImageList_GetIconSize Handle, Size.CX, Size.CY
                 ListViewMemoryColumnWidth = ListViewMemoryColumnWidth + Size.CX
@@ -2807,7 +2794,6 @@ If ListViewHandle <> 0 Then
         If Not (dwStyle And LVS_NOLABELWRAP) = LVS_NOLABELWRAP Then dwStyle = dwStyle Or LVS_NOLABELWRAP
     End If
     SetWindowLong ListViewHandle, GWL_STYLE, dwStyle
-    SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
 End If
 UserControl.PropertyChanged "LabelWrap"
 End Property
@@ -3060,7 +3046,7 @@ End Property
 
 Public Property Let HighlightHot(ByVal Value As Boolean)
 PropHighlightHot = Value
-If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_REDRAWITEMS, 0, ByVal SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&)
+Me.Refresh
 UserControl.PropertyChanged "HighlightHot"
 End Property
 
@@ -3071,7 +3057,7 @@ End Property
 
 Public Property Let UnderlineHot(ByVal Value As Boolean)
 PropUnderlineHot = Value
-If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_REDRAWITEMS, 0, ByVal SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&)
+Me.Refresh
 UserControl.PropertyChanged "UnderlineHot"
 End Property
 
@@ -3464,7 +3450,6 @@ If ListViewHandle <> 0 Then
             HDL.lpWPOS = VarPtr(WPOS)
             SendMessage ListViewHeaderHandle, HDM_LAYOUT, 0, ByVal VarPtr(HDL)
             SetWindowPos WPOS.hWnd, WPOS.hWndInsertAfter, WPOS.X, WPOS.Y, WPOS.CX, WPOS.CY, WPOS.Flags
-            SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
             ' Hide and show will force the necessary updates in the view area.
             ShowWindow ListViewHandle, SW_HIDE
             ShowWindow ListViewHandle, SW_SHOW
@@ -4165,7 +4150,6 @@ If ListViewHandle <> 0 Then
     Else
         SendMessage ListViewHandle, WM_SETREDRAW, 0, ByVal 0&
         SendMessage ListViewHandle, LVM_SETCOLUMN, Index - 1, ByVal VarPtr(LVC)
-        SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
         If PropRedraw = True Then SendMessage ListViewHandle, WM_SETREDRAW, 1, ByVal 0&
     End If
 End If
@@ -6529,7 +6513,6 @@ If ListViewHeaderHandle <> 0 Then
     Me.ResizableColumnHeaders = PropResizableColumnHeaders
     Me.UseColumnChevron = PropUseColumnChevron
     Me.UseColumnFilterBar = PropUseColumnFilterBar
-    SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
     Me.Refresh
 End If
 End Sub
@@ -6849,7 +6832,7 @@ Select Case wMsg
                         Set ListItem = New LvwListItem
                         ListItem.FInit ObjPtr(Me), iItem + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
                         RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
-                        Me.FListItemRedraw iItem + 1
+                        SendMessage ListViewHandle, LVM_UPDATE, iItem, ByVal 0&
                     End If
                 End If
             ElseIf wMsg = WM_KEYUP Then
@@ -7361,11 +7344,6 @@ Select Case wMsg
                                 CopyMemory ByVal StrPtr(NewText), ByVal .pszText, Length * 2
                                 RaiseEvent AfterLabelEdit(Cancel, NewText)
                                 If Cancel = False Then
-                                    If PropVirtualMode = False Then
-                                        With Me.ListItems(.iItem + 1)
-                                        .FInit ObjPtr(Me), .Index, .Key, NMLVDI.Item.lParam, NewText, .Icon, .IconIndex, .SmallIcon, .SmallIconIndex
-                                        End With
-                                    End If
                                     WindowProcUserControl = 1
                                 Else
                                     WindowProcUserControl = 0
@@ -7438,7 +7416,7 @@ Select Case wMsg
                             If (.Flags And LVHT_ONITEM) <> 0 And .iSubItem = 0 Then
                                 If (.Flags And LVHT_ONITEMSTATEICON) <> 0 Then
                                     RaiseEvent ItemCheck(ListItem, Not CBool(StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, NMIA.iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED))
-                                    Me.FListItemRedraw NMIA.iItem + 1
+                                    SendMessage ListViewHandle, LVM_UPDATE, NMIA.iItem, ByVal 0&
                                 End If
                             End If
                             End With
@@ -7509,7 +7487,11 @@ Select Case wMsg
                                     Else
                                         If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                     End If
-                                    If PropHighlightHot = False Then NMLVCD.ClrText = WinColor(.ForeColor)
+                                    If PropHighlightHot = False Then
+                                        NMLVCD.ClrText = WinColor(.ForeColor)
+                                    Else
+                                        NMLVCD.ClrText = WinColor(vbHighlight)
+                                    End If
                                 End If
                                 RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
                                 End With
@@ -7566,6 +7548,8 @@ Select Case wMsg
                                                     Else
                                                         NMLVCD.ClrText = WinColor(.FListSubItemProp(NMLVCD.iSubItem, 7))
                                                     End If
+                                                Else
+                                                    NMLVCD.ClrText = WinColor(vbHighlight)
                                                 End If
                                             End If
                                         End If
@@ -7584,7 +7568,11 @@ Select Case wMsg
                                         Else
                                             If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                         End If
-                                        If PropHighlightHot = False Then NMLVCD.ClrText = WinColor(.ForeColor)
+                                        If PropHighlightHot = False Then
+                                            NMLVCD.ClrText = WinColor(.ForeColor)
+                                        Else
+                                            NMLVCD.ClrText = WinColor(vbHighlight)
+                                        End If
                                     End If
                                     RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
                                 End If
@@ -7595,12 +7583,6 @@ Select Case wMsg
                             WindowProcUserControl = CDRF_NEWFONT
                             Exit Function
                     End Select
-                Case NM_SETFOCUS, NM_KILLFOCUS
-                    If PropView = LvwViewReport And PropFullRowSelect = False Then
-                        If Not PropSmallIconsName = "(None)" Then
-                            If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_REDRAWITEMS, 0, ByVal SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&)
-                        End If
-                    End If
                 Case LVN_GETINFOTIP
                     Dim NMLVGIT As NMLVGETINFOTIP
                     CopyMemory NMLVGIT, ByVal lParam, LenB(NMLVGIT)
@@ -7718,6 +7700,32 @@ Select Case wMsg
                                 End If
                             End If
                             CopyMemory ByVal lParam, NMLVDI, LenB(NMLVDI)
+                        End If
+                    End If
+                    End With
+                Case LVN_SETDISPINFO
+                    CopyMemory NMLVDI, ByVal lParam, LenB(NMLVDI)
+                    With NMLVDI.Item
+                    If .iItem > -1 Then
+                        If PropVirtualMode = True Then
+                            ' Ignore as LVN_ENDLABELEDIT is sufficient to update the text property in a virtual list view.
+                        ElseIf .lParam <> 0 Then
+                            Set ListItem = PtrToObj(.lParam)
+                            If .iSubItem = 0 Then
+                                If (.Mask And LVIF_TEXT) = LVIF_TEXT Then
+                                    Dim SetText As String
+                                    If .pszText <> 0 Then Length = lstrlen(.pszText)
+                                    If Length > 0 Then
+                                        SetText = String(Length, vbNullChar)
+                                        CopyMemory ByVal StrPtr(SetText), ByVal .pszText, Length * 2
+                                    End If
+                                    With ListItem
+                                    .FInit ObjPtr(Me), .Index, .Key, NMLVDI.Item.lParam, SetText, .Icon, .IconIndex, .SmallIcon, .SmallIconIndex
+                                    End With
+                                End If
+                            Else
+                                ' Not supported.
+                            End If
                         End If
                     End If
                     End With
