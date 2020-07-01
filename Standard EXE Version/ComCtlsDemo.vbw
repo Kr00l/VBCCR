@@ -102,6 +102,6 @@ TvwNodes = 0, 0, 0, 0, C
 PPTreeViewGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 UpDown = 100, 100, 1265, 773, C, 0, 0, 0, 0, C
 PPUpDownGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-VirtualComboBase = 0, 0, 0, 0, C
+VirtualComboBase = 25, 25, 1265, 509, C
 VirtualCombo = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 VListBox = 0, 0, 0, 0, C, 0, 0, 0, 0, C

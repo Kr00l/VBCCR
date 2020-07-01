@@ -1,5 +1,8 @@
 List of revisions:
 
+01-Jul-2020
+- VirtualCombo control now works on comctl version 5.8x.
+
 30-Jun-2020
 - Included Left/Top/Width/Height (read-only) property in the ListSubItem of the ListView control. (LVM_GETSUBITEMRECT)
 - Included function 'FindNearestItem' in the ListView control. (LVFI_NEARESTXY)
