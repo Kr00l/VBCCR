@@ -40,6 +40,7 @@ Private Declare Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVa
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Const WM_CREATE As Long = &H1
 Private Const GWL_WNDPROC As Long = (-4)
+Private Const GWL_STYLE As Long = (-16)
 Private Const GCL_WNDPROC As Long = (-24)
 Private Const WS_POPUP As Long = &H80000000
 Private Const LBS_NODATA As Long = &H2000
@@ -107,6 +108,7 @@ If wMsg = WM_CREATE Then
     CopyMemory CS, ByVal lParam, LenB(CS)
     CS.dwStyle = CS.dwStyle Or LBS_NODATA
     CopyMemory ByVal lParam, CS, LenB(CS)
+    SetWindowLong hWnd, GWL_STYLE, CS.dwStyle
     VcbComboLBoxHandle = hWnd
 End If
 If VcbComboLBoxOrigProcPtr <> 0 Then
