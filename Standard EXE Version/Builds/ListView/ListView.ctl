@@ -572,6 +572,7 @@ Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hIns
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Const ICC_LISTVIEW_CLASSES As Long = &H1
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -620,7 +621,9 @@ Private Const WM_SIZE As Long = &H5
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SETREDRAW As Long = &HB
 Private Const WM_CONTEXTMENU As Long = &H7B
+Private Const COLOR_HOTLIGHT As Long = 26
 Private Const CLR_NONE As Long = &HFFFFFFFF
+Private Const CLR_DEFAULT As Long = &HFF000000
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETVERSION As Long = (CCM_FIRST + 7)
 Private Const WM_USER As Long = &H400
@@ -731,6 +734,8 @@ Private Const LVM_GETHOVERTIME As Long = (LVM_FIRST + 72)
 Private Const LVM_GETNUMBEROFWORKAREAS As Long = (LVM_FIRST + 73)
 Private Const LVM_SETTOOLTIPS As Long = (LVM_FIRST + 74)
 Private Const LVM_GETTOOLTIPS As Long = (LVM_FIRST + 78)
+Private Const LVM_GETHOTLIGHTCOLOR As Long = (LVM_FIRST + 79) ' Undocumented
+Private Const LVM_SETHOTLIGHTCOLOR As Long = (LVM_FIRST + 80) ' Undocumented
 Private Const LVM_SORTITEMSEX As Long = (LVM_FIRST + 81)
 Private Const LVM_GETGROUPSTATE As Long = (LVM_FIRST + 92)
 Private Const LVM_GETFOCUSEDGROUP As Long = (LVM_FIRST + 93)
@@ -7818,7 +7823,11 @@ Select Case wMsg
                                     If PropHighlightHot = False Then
                                         NMLVCD.ClrText = WinColor(.ForeColor)
                                     Else
-                                        NMLVCD.ClrText = WinColor(vbHighlight)
+                                        If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                            NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                        Else
+                                            NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                        End If
                                     End If
                                 End If
                                 RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
@@ -7877,7 +7886,11 @@ Select Case wMsg
                                                         NMLVCD.ClrText = WinColor(.FListSubItemProp(NMLVCD.iSubItem, 7))
                                                     End If
                                                 Else
-                                                    NMLVCD.ClrText = WinColor(vbHighlight)
+                                                    If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                        NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                                    Else
+                                                        NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                    End If
                                                 End If
                                             End If
                                         End If
@@ -7899,7 +7912,11 @@ Select Case wMsg
                                         If PropHighlightHot = False Then
                                             NMLVCD.ClrText = WinColor(.ForeColor)
                                         Else
-                                            NMLVCD.ClrText = WinColor(vbHighlight)
+                                            If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                            Else
+                                                NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                            End If
                                         End If
                                     End If
                                     RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
