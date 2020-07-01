@@ -998,6 +998,7 @@ Private Const LVS_EX_ONECLICKACTIVATE As Long = &H40
 Private Const LVS_EX_INFOTIP As Long = &H400
 Private Const LVS_EX_LABELTIP As Long = &H4000
 Private Const LVS_EX_TRACKSELECT As Long = &H8
+Private Const LVS_EX_UNDERLINEHOT As Long = &H800
 Private Const LVS_EX_SNAPTOGRID As Long = &H80000
 Private Const LV_VIEW_ICON As Long = &H0
 Private Const LV_VIEW_DETAILS As Long = &H1
@@ -3033,11 +3034,12 @@ PropHotTracking = Value
 If ListViewHandle <> 0 Then
     If PropHotTracking = True Then
         SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE, ByVal LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE
+        If PropHighlightHot = True Or PropUnderlineHot = True Then SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_UNDERLINEHOT, ByVal LVS_EX_UNDERLINEHOT
     Else
         If PropHoverSelection = True Then
-            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_ONECLICKACTIVATE, ByVal 0&
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal 0&
         Else
-            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE, ByVal 0&
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal 0&
         End If
     End If
 End If
@@ -3051,7 +3053,15 @@ End Property
 
 Public Property Let HighlightHot(ByVal Value As Boolean)
 PropHighlightHot = Value
-Me.Refresh
+If ListViewHandle <> 0 Then
+    If PropHotTracking = True Then
+        If PropHighlightHot = True Or PropUnderlineHot = True Then
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_UNDERLINEHOT, ByVal LVS_EX_UNDERLINEHOT
+        Else
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_UNDERLINEHOT, ByVal 0&
+        End If
+    End If
+End If
 UserControl.PropertyChanged "HighlightHot"
 End Property
 
@@ -3062,7 +3072,15 @@ End Property
 
 Public Property Let UnderlineHot(ByVal Value As Boolean)
 PropUnderlineHot = Value
-Me.Refresh
+If ListViewHandle <> 0 Then
+    If PropHotTracking = True Then
+        If PropHighlightHot = True Or PropUnderlineHot = True Then
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_UNDERLINEHOT, ByVal LVS_EX_UNDERLINEHOT
+        Else
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_UNDERLINEHOT, ByVal 0&
+        End If
+    End If
+End If
 UserControl.PropertyChanged "UnderlineHot"
 End Property
 
@@ -7542,7 +7560,7 @@ Select Case wMsg
                                                     NMLVCD.ClrText = WinColor(.FListSubItemProp(NMLVCD.iSubItem, 7))
                                                 End If
                                             Else
-                                                If PropUnderlineHot = True Then
+                                                If PropUnderlineHot = True And PropView = LvwViewReport Then
                                                     If .FListSubItemProp(NMLVCD.iSubItem, 6) = True Then
                                                         FontHandle = ListViewBoldUnderlineFontHandle
                                                     Else
@@ -7551,7 +7569,7 @@ Select Case wMsg
                                                 Else
                                                     If .FListSubItemProp(NMLVCD.iSubItem, 6) = True Then FontHandle = ListViewBoldFontHandle
                                                 End If
-                                                If PropHighlightHot = False Then
+                                                If PropHighlightHot = False Or PropView <> LvwViewReport Then
                                                     If .FListSubItemProp(NMLVCD.iSubItem, 7) = -1 Then
                                                         NMLVCD.ClrText = WinColor(PropForeColor)
                                                     Else
