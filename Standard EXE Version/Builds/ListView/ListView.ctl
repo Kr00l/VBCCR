@@ -7810,16 +7810,46 @@ Select Case wMsg
                             If PropVirtualMode = True Then
                                 If NMLVCD.NMCD.dwItemSpec > -1 And NMLVCD.NMCD.dwItemSpec <= PropVirtualItemCount Then
                                     If NMLVCD.iSubItem = 0 Then
-                                        ' CDIS_HOT is not supported on a virtualized list view.
-                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
-                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                        If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                                RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                            End If
+                                            If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                            ForeColor = PropForeColor
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                                RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                            End If
+                                            NMLVCD.ClrText = WinColor(ForeColor)
+                                        Else
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                                RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                            End If
+                                            If PropUnderlineHot = True Then
+                                                If Bold = True Then
+                                                    FontHandle = ListViewBoldUnderlineFontHandle
+                                                Else
+                                                    FontHandle = ListViewUnderlineFontHandle
+                                                End If
+                                            Else
+                                                If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                            End If
+                                            If PropHighlightHot = True Then
+                                                If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                    NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                                Else
+                                                    NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                End If
+                                            Else
+                                                ForeColor = PropForeColor
+                                                If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                                    RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                                End If
+                                                NMLVCD.ClrText = WinColor(ForeColor)
+                                            End If
                                         End If
-                                        If Bold = True Then FontHandle = ListViewBoldFontHandle
-                                        ForeColor = PropForeColor
-                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
-                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
-                                        End If
-                                        NMLVCD.ClrText = WinColor(ForeColor)
+                                        Set ListItem = New LvwListItem
+                                        ListItem.FInit ObjPtr(Me), NMLVCD.NMCD.dwItemSpec + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                                        RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
                                     End If
                                 End If
                             ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
@@ -7838,14 +7868,14 @@ Select Case wMsg
                                     Else
                                         If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                     End If
-                                    If PropHighlightHot = False Then
-                                        NMLVCD.ClrText = WinColor(.ForeColor)
-                                    Else
+                                    If PropHighlightHot = True Then
                                         If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
                                             NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                         Else
                                             NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
                                         End If
+                                    Else
+                                        NMLVCD.ClrText = WinColor(.ForeColor)
                                     End If
                                 End If
                                 RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
@@ -7862,16 +7892,48 @@ Select Case wMsg
                                     Dim SubItemCount As Long
                                     SubItemCount = Me.ColumnHeaders.Count - 1 ' Deduct 1 for SubItem 0
                                     If NMLVCD.iSubItem >= 0 And NMLVCD.iSubItem <= SubItemCount Then
-                                        ' CDIS_HOT is not supported on a virtualized list view.
-                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
-                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                        If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                                RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                            End If
+                                            If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                            ForeColor = PropForeColor
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                                RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                            End If
+                                            NMLVCD.ClrText = WinColor(ForeColor)
+                                        Else
+                                            If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
+                                                RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
+                                            End If
+                                            If PropUnderlineHot = True And PropView = LvwViewReport Then
+                                                If Bold = True Then
+                                                    FontHandle = ListViewBoldUnderlineFontHandle
+                                                Else
+                                                    FontHandle = ListViewUnderlineFontHandle
+                                                End If
+                                            Else
+                                                If Bold = True Then FontHandle = ListViewBoldFontHandle
+                                            End If
+                                            If PropHighlightHot = True And PropView = LvwViewReport Then
+                                                If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                    NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                                Else
+                                                    NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                End If
+                                            Else
+                                                ForeColor = PropForeColor
+                                                If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
+                                                    RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
+                                                End If
+                                                NMLVCD.ClrText = WinColor(ForeColor)
+                                            End If
                                         End If
-                                        If Bold = True Then FontHandle = ListViewBoldFontHandle
-                                        ForeColor = PropForeColor
-                                        If (PropVirtualDisabledInfos And LvwVirtualPropertyForeColor) = 0 Then
-                                            RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyForeColor, ForeColor)
-                                        End If
-                                        NMLVCD.ClrText = WinColor(ForeColor)
+                                    End If
+                                    If NMLVCD.iSubItem = 0 Then
+                                        Set ListItem = New LvwListItem
+                                        ListItem.FInit ObjPtr(Me), NMLVCD.NMCD.dwItemSpec + 1, vbNullString, 0, vbNullString, 0, 0, 0, 0
+                                        RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
                                     End If
                                 End If
                             ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
@@ -7897,17 +7959,17 @@ Select Case wMsg
                                                 Else
                                                     If .FListSubItemProp(NMLVCD.iSubItem, 6) = True Then FontHandle = ListViewBoldFontHandle
                                                 End If
-                                                If PropHighlightHot = False Or PropView <> LvwViewReport Then
-                                                    If .FListSubItemProp(NMLVCD.iSubItem, 7) = -1 Then
-                                                        NMLVCD.ClrText = WinColor(PropForeColor)
-                                                    Else
-                                                        NMLVCD.ClrText = WinColor(.FListSubItemProp(NMLVCD.iSubItem, 7))
-                                                    End If
-                                                Else
+                                                If PropHighlightHot = True And PropView = LvwViewReport Then
                                                     If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
                                                         NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                                     Else
                                                         NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                    End If
+                                                Else
+                                                    If .FListSubItemProp(NMLVCD.iSubItem, 7) = -1 Then
+                                                        NMLVCD.ClrText = WinColor(PropForeColor)
+                                                    Else
+                                                        NMLVCD.ClrText = WinColor(.FListSubItemProp(NMLVCD.iSubItem, 7))
                                                     End If
                                                 End If
                                             End If
@@ -7927,14 +7989,14 @@ Select Case wMsg
                                         Else
                                             If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                         End If
-                                        If PropHighlightHot = False Then
-                                            NMLVCD.ClrText = WinColor(.ForeColor)
-                                        Else
+                                        If PropHighlightHot = True Then
                                             If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
                                                 NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                             Else
                                                 NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
                                             End If
+                                        Else
+                                            NMLVCD.ClrText = WinColor(.ForeColor)
                                         End If
                                     End If
                                     RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
