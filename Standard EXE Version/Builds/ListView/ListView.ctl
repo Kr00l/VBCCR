@@ -1072,6 +1072,7 @@ Private ListViewLabelInEdit As Boolean
 Private ListViewStartLabelEdit As Boolean
 Private ListViewButtonDown As Integer
 Private ListViewListItemsControl As Long
+Private ListViewHotLightColor As Long
 Private ListViewDragIndexBuffer As Long, ListViewDragIndex As Long
 Private ListViewDragOffsetX As Long, ListViewDragOffsetY As Long
 Private ListViewMemoryColumnWidth As Long
@@ -1260,6 +1261,7 @@ Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_LISTVIEW_CLASSES)
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+ListViewHotLightColor = CLR_DEFAULT
 ListViewHeaderToolTipItem = -1
 ReDim IconsArray(0) As String
 ReDim SmallIconsArray(0) As String
@@ -3071,12 +3073,20 @@ HoverSelection = PropHoverSelection
 End Property
 
 Public Property Let HoverSelection(ByVal Value As Boolean)
-If PropHotTracking = False Then PropHoverSelection = Value
+PropHoverSelection = Value
 If ListViewHandle <> 0 Then
-    If PropHoverSelection = True Then
-        SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT, ByVal LVS_EX_TRACKSELECT
+    If PropHotTracking = True Then
+        If PropHighlightHot = True Or PropUnderlineHot = True Then
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT
+        Else
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE
+        End If
     Else
-        If PropHotTracking = False Then SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT, ByVal 0&
+        If PropHoverSelection = True Then
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal LVS_EX_TRACKSELECT
+        Else
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal 0&
+        End If
     End If
 End If
 UserControl.PropertyChanged "HoverSelection"
@@ -3111,15 +3121,17 @@ HotTracking = PropHotTracking
 End Property
 
 Public Property Let HotTracking(ByVal Value As Boolean)
-If Value = True Then PropHoverSelection = True
 PropHotTracking = Value
 If ListViewHandle <> 0 Then
     If PropHotTracking = True Then
-        SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE, ByVal LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE
-        If PropHighlightHot = True Or PropUnderlineHot = True Then SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_UNDERLINEHOT, ByVal LVS_EX_UNDERLINEHOT
+        If PropHighlightHot = True Or PropUnderlineHot = True Then
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT
+        Else
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE
+        End If
     Else
         If PropHoverSelection = True Then
-            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal 0&
+            SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal LVS_EX_TRACKSELECT
         Else
             SendMessage ListViewHandle, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_TRACKSELECT Or LVS_EX_ONECLICKACTIVATE Or LVS_EX_UNDERLINEHOT, ByVal 0&
         End If
@@ -7450,6 +7462,9 @@ Select Case wMsg
             ListViewMouseOver = False
             RaiseEvent MouseLeave
         End If
+    Case LVM_SETHOTLIGHTCOLOR
+        ' Since this is a undocumented message it is safer to support it only indirectly.
+        If WindowProcControl <> 0 Then ListViewHotLightColor = SendMessage(hWnd, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
 End Select
 End Function
 
@@ -7834,10 +7849,10 @@ Select Case wMsg
                                                 If Bold = True Then FontHandle = ListViewBoldFontHandle
                                             End If
                                             If PropHighlightHot = True Then
-                                                If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                If ListViewHotLightColor = CLR_DEFAULT Then
                                                     NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                                 Else
-                                                    NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                    NMLVCD.ClrText = ListViewHotLightColor
                                                 End If
                                             Else
                                                 ForeColor = PropForeColor
@@ -7869,10 +7884,10 @@ Select Case wMsg
                                         If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                     End If
                                     If PropHighlightHot = True Then
-                                        If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                        If ListViewHotLightColor = CLR_DEFAULT Then
                                             NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                         Else
-                                            NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                            NMLVCD.ClrText = ListViewHotLightColor
                                         End If
                                     Else
                                         NMLVCD.ClrText = WinColor(.ForeColor)
@@ -7916,10 +7931,10 @@ Select Case wMsg
                                                 If Bold = True Then FontHandle = ListViewBoldFontHandle
                                             End If
                                             If PropHighlightHot = True And PropView = LvwViewReport Then
-                                                If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                If ListViewHotLightColor = CLR_DEFAULT Then
                                                     NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                                 Else
-                                                    NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                    NMLVCD.ClrText = ListViewHotLightColor
                                                 End If
                                             Else
                                                 ForeColor = PropForeColor
@@ -7960,10 +7975,10 @@ Select Case wMsg
                                                     If .FListSubItemProp(NMLVCD.iSubItem, 6) = True Then FontHandle = ListViewBoldFontHandle
                                                 End If
                                                 If PropHighlightHot = True And PropView = LvwViewReport Then
-                                                    If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                                    If ListViewHotLightColor = CLR_DEFAULT Then
                                                         NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                                     Else
-                                                        NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                        NMLVCD.ClrText = ListViewHotLightColor
                                                     End If
                                                 Else
                                                     If .FListSubItemProp(NMLVCD.iSubItem, 7) = -1 Then
@@ -7990,10 +8005,10 @@ Select Case wMsg
                                             If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                         End If
                                         If PropHighlightHot = True Then
-                                            If SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&) = CLR_DEFAULT Then
+                                            If ListViewHotLightColor = CLR_DEFAULT Then
                                                 NMLVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
                                             Else
-                                                NMLVCD.ClrText = SendMessage(ListViewHandle, LVM_GETHOTLIGHTCOLOR, 0, ByVal 0&)
+                                                NMLVCD.ClrText = ListViewHotLightColor
                                             End If
                                         Else
                                             NMLVCD.ClrText = WinColor(.ForeColor)

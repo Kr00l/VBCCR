@@ -131,6 +131,7 @@ Private Const CDDS_ITEMPREPAINT As Long = (CDDS_ITEM + 1)
 Private Const CDIS_SELECTED As Long = &H1
 Private Const CDIS_DISABLED As Long = &H4
 Private Const CDIS_FOCUS As Long = &H10
+Private Const CDIS_HOT As Long = &H40
 Private Const CDRF_DODEFAULT As Long = &H0
 Private Const CDRF_NEWFONT As Long = &H2
 Private Const CDRF_NOTIFYITEMDRAW As Long = &H20
@@ -276,6 +277,7 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetDoubleClickTime Lib "user32" () As Long
+Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Const ICC_TREEVIEW_CLASSES As Long = &H2
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const GWL_STYLE As Long = (-16)
@@ -314,6 +316,7 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SETREDRAW As Long = &HB
+Private Const COLOR_HOTLIGHT As Long = 26
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETVERSION As Long = (CCM_FIRST + 7)
 Private Const WM_USER As Long = &H400
@@ -3403,7 +3406,11 @@ Select Case wMsg
                                 With Node
                                 If (NMTVCD.NMCD.uItemState And CDIS_FOCUS) = 0 And (NMTVCD.NMCD.uItemState And CDIS_SELECTED) = 0 And (NMTVCD.NMCD.uItemState And CDIS_DISABLED) = 0 Then
                                     If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_DROPHILITE, ByVal 0&) <> NMTVCD.NMCD.dwItemSpec Then
-                                        NMTVCD.ClrText = WinColor(.ForeColor)
+                                        If (NMTVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                            NMTVCD.ClrText = WinColor(.ForeColor)
+                                        Else
+                                            NMTVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                        End If
                                         NMTVCD.ClrTextBk = WinColor(.BackColor)
                                         CopyMemory ByVal lParam, NMTVCD, LenB(NMTVCD)
                                     End If
