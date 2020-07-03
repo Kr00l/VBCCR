@@ -1,5 +1,8 @@
 List of revisions:
 
+03-Jul-2020
+- Internal improvement in the TreeView control.
+
 01-Jul-2020
 - VirtualCombo control now works on comctl version 5.8x.
 - ItemBkColor now fired in a virtual ListView control.
