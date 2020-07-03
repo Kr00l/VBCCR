@@ -2015,19 +2015,8 @@ If TreeViewHandle <> 0 Then
     .StateMask = TVIS_SELECTED
     If Value = True Then
         SendMessage TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal Handle
-        SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
-        If (.State And TVIS_SELECTED) = 0 Then
-            ' The TVN_SELCHANGING and TVN_SELCHANGED notification codes are not generated in this case.
-            Dim Ptr As Long, Node As TvwNode, Cancel As Boolean
-            Ptr = GetItemPtr(Handle)
-            If Ptr <> 0 Then Set Node = PtrToObj(Ptr)
-            RaiseEvent NodeBeforeSelect(Node, Cancel)
-            If Cancel = False Then
-                .State = .State Or TVIS_SELECTED
-                SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
-                RaiseEvent NodeSelect(Node)
-            End If
-        End If
+        .State = TVIS_SELECTED
+        SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
     Else
         .State = 0
         SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
@@ -2331,7 +2320,10 @@ If TreeViewHandle <> 0 Then
             If hParentTest = Handle Then Err.Raise Number:=35614, Description:="This would introduce a cycle"
             hParentTest = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hParentTest)
         Loop
-        SendMessage TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal MoveNodes(Handle, Value.Handle, TVI_FIRST)
+        Dim Node As TvwNode
+        Set Node = Me.SelectedItem
+        MoveNodes Handle, Value.Handle, TVI_FIRST
+        If Not Node Is Nothing Then Set Me.SelectedItem = Node
         SendMessage TreeViewHandle, TVM_DELETEITEM, 0, ByVal Handle
     End If
 End If
@@ -2491,7 +2483,10 @@ If TreeViewHandle <> 0 And Handle <> 0 Then
             hParentTest = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hParentTest)
         Loop
     End If
-    SendMessage TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal MoveNodes(Handle, hParent, hInsertAfter)
+    Dim Node As TvwNode
+    Set Node = Me.SelectedItem
+    MoveNodes Handle, hParent, hInsertAfter
+    If Not Node Is Nothing Then Set Me.SelectedItem = Node
     SendMessage TreeViewHandle, TVM_DELETEITEM, 0, ByVal Handle
 End If
 End Sub
