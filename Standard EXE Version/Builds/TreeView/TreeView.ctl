@@ -407,12 +407,6 @@ Private Const TVN_GETINFOTIPA As Long = (TVN_FIRST - 13)
 Private Const TVN_GETINFOTIPW As Long = (TVN_FIRST - 14)
 Private Const TVN_GETINFOTIP As Long = TVN_GETINFOTIPW
 Private Const TVN_SINGLEEXPAND As Long = (TVN_FIRST - 15)
-Private Const TVN_ITEMCHANGINGA As Long = (TVN_FIRST - 16)
-Private Const TVN_ITEMCHANGINGW As Long = (TVN_FIRST - 17)
-Private Const TVN_ITEMCHANGING As Long = TVN_ITEMCHANGINGW
-Private Const TVN_ITEMCHANGEDA As Long = (TVN_FIRST - 18)
-Private Const TVN_ITEMCHANGEDW As Long = (TVN_FIRST - 19)
-Private Const TVN_ITEMCHANGED As Long = TVN_ITEMCHANGEDW
 Private Const TVSIL_NORMAL As Long = 0
 Private Const TVSIL_STATE As Long = 2
 Private Const TVIF_TEXT As Long = &H1
@@ -2050,9 +2044,10 @@ If TreeViewHandle <> 0 Then
     .hItem = Handle
     .StateMask = TVIS_SELECTED
     If Value = True Then
-        SendMessage TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal Handle
-        .State = TVIS_SELECTED
-        SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+        If SendMessage(TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal Handle) <> 0 Then
+            .State = TVIS_SELECTED
+            SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+        End If
     Else
         .State = 0
         SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
