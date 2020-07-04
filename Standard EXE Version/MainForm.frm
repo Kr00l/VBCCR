@@ -33,11 +33,11 @@ Begin VB.Form MainForm
       Begin ComCtlsDemo.ImageCombo ImageCombo1 
          Bindings        =   "MainForm.frx":0A3C
          Height          =   330
-         Left            =   165
+         Left            =   195
          TabIndex        =   19
          Top             =   60
-         Width           =   3600
-         _ExtentX        =   6350
+         Width           =   3630
+         _ExtentX        =   6403
          _ExtentY        =   582
          OLEDragMode     =   1
          ImageList       =   "ImageList1"
@@ -47,7 +47,7 @@ Begin VB.Form MainForm
       Begin VB.CommandButton Command4 
          Caption         =   "Pager Demo"
          Height          =   360
-         Left            =   2355
+         Left            =   2415
          TabIndex        =   21
          Top             =   480
          Width           =   1410
@@ -55,7 +55,7 @@ Begin VB.Form MainForm
       Begin ComCtlsDemo.CheckBoxW CheckBoxW1 
          Bindings        =   "MainForm.frx":0A7D
          Height          =   360
-         Left            =   465
+         Left            =   495
          TabIndex        =   20
          Top             =   480
          Width           =   1665
@@ -155,7 +155,7 @@ Begin VB.Form MainForm
    End
    Begin ComCtlsDemo.ToolBar ToolBar1 
       Align           =   1  'Align Top
-      Height          =   360
+      Height          =   480
       Left            =   0
       Top             =   0
       Width           =   9915
@@ -166,6 +166,7 @@ Begin VB.Form MainForm
       TextAlignment   =   1
       ShowTips        =   -1  'True
       Wrappable       =   0   'False
+      ButtonHeight    =   30
       ButtonWidth     =   114
       InitButtons     =   "MainForm.frx":1046
    End
@@ -252,11 +253,11 @@ Begin VB.Form MainForm
    End
    Begin ComCtlsDemo.MonthView MonthView1 
       Bindings        =   "MainForm.frx":1E1E
-      Height          =   2355
+      Height          =   2340
       Left            =   120
       TabIndex        =   2
       Top             =   2520
-      Width           =   2490
+      Width           =   2580
       _ExtentX        =   4551
       _ExtentY        =   4128
       BorderStyle     =   3
