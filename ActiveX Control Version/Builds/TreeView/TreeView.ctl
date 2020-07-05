@@ -320,52 +320,54 @@ Private Const CCM_SETVERSION As Long = (CCM_FIRST + 7)
 Private Const WM_USER As Long = &H400
 Private Const UM_CHECKSTATECHANGED As Long = (WM_USER + 100) ' See KB 261289
 Private Const UM_BUTTONDOWN As Long = (WM_USER + 700)
-Private Const TV_FIRST As Long = &H1100
-Private Const TVM_INSERTITEMA As Long = (TV_FIRST + 0)
-Private Const TVM_INSERTITEMW As Long = (TV_FIRST + 50)
+Private Const TVM_FIRST As Long = &H1100
+Private Const TVM_INSERTITEMA As Long = (TVM_FIRST + 0)
+Private Const TVM_INSERTITEMW As Long = (TVM_FIRST + 50)
 Private Const TVM_INSERTITEM As Long = TVM_INSERTITEMW
-Private Const TVM_DELETEITEM As Long = (TV_FIRST + 1)
-Private Const TVM_EXPAND As Long = (TV_FIRST + 2)
-Private Const TVM_GETITEMRECT As Long = (TV_FIRST + 4)
-Private Const TVM_GETCOUNT As Long = (TV_FIRST + 5)
-Private Const TVM_GETINDENT As Long = (TV_FIRST + 6)
-Private Const TVM_SETINDENT As Long = (TV_FIRST + 7)
-Private Const TVM_GETIMAGELIST As Long = (TV_FIRST + 8)
-Private Const TVM_SETIMAGELIST As Long = (TV_FIRST + 9)
-Private Const TVM_GETNEXTITEM As Long = (TV_FIRST + 10)
-Private Const TVM_SELECTITEM As Long = (TV_FIRST + 11)
-Private Const TVM_GETITEMA As Long = (TV_FIRST + 12)
-Private Const TVM_GETITEMW As Long = (TV_FIRST + 62)
+Private Const TVM_DELETEITEM As Long = (TVM_FIRST + 1)
+Private Const TVM_EXPAND As Long = (TVM_FIRST + 2)
+Private Const TVM_GETITEMRECT As Long = (TVM_FIRST + 4)
+Private Const TVM_GETCOUNT As Long = (TVM_FIRST + 5)
+Private Const TVM_GETINDENT As Long = (TVM_FIRST + 6)
+Private Const TVM_SETINDENT As Long = (TVM_FIRST + 7)
+Private Const TVM_GETIMAGELIST As Long = (TVM_FIRST + 8)
+Private Const TVM_SETIMAGELIST As Long = (TVM_FIRST + 9)
+Private Const TVM_GETNEXTITEM As Long = (TVM_FIRST + 10)
+Private Const TVM_SELECTITEM As Long = (TVM_FIRST + 11)
+Private Const TVM_GETITEMA As Long = (TVM_FIRST + 12)
+Private Const TVM_GETITEMW As Long = (TVM_FIRST + 62)
 Private Const TVM_GETITEM As Long = TVM_GETITEMW
-Private Const TVM_SETITEMA As Long = (TV_FIRST + 13)
-Private Const TVM_SETITEMW As Long = (TV_FIRST + 63)
+Private Const TVM_SETITEMA As Long = (TVM_FIRST + 13)
+Private Const TVM_SETITEMW As Long = (TVM_FIRST + 63)
 Private Const TVM_SETITEM As Long = TVM_SETITEMW
-Private Const TVM_EDITLABELA As Long = (TV_FIRST + 14)
-Private Const TVM_EDITLABELW As Long = (TV_FIRST + 65)
+Private Const TVM_EDITLABELA As Long = (TVM_FIRST + 14)
+Private Const TVM_EDITLABELW As Long = (TVM_FIRST + 65)
 Private Const TVM_EDITLABEL As Long = TVM_EDITLABELW
-Private Const TVM_GETEDITCONTROL As Long = (TV_FIRST + 15)
-Private Const TVM_GETVISIBLECOUNT As Long = (TV_FIRST + 16)
-Private Const TVM_HITTEST As Long = (TV_FIRST + 17)
-Private Const TVM_CREATEDRAGIMAGE As Long = (TV_FIRST + 18)
-Private Const TVM_SORTCHILDREN As Long = (TV_FIRST + 19)
-Private Const TVM_ENSUREVISIBLE As Long = (TV_FIRST + 20)
-Private Const TVM_SORTCHILDRENCB As Long = (TV_FIRST + 21)
-Private Const TVM_ENDEDITLABELNOW As Long = (TV_FIRST + 22)
-Private Const TVM_GETISEARCHSTRINGA As Long = (TV_FIRST + 23)
-Private Const TVM_GETISEARCHSTRINGW As Long = (TV_FIRST + 64)
+Private Const TVM_GETEDITCONTROL As Long = (TVM_FIRST + 15)
+Private Const TVM_GETVISIBLECOUNT As Long = (TVM_FIRST + 16)
+Private Const TVM_HITTEST As Long = (TVM_FIRST + 17)
+Private Const TVM_CREATEDRAGIMAGE As Long = (TVM_FIRST + 18)
+Private Const TVM_SORTCHILDREN As Long = (TVM_FIRST + 19)
+Private Const TVM_ENSUREVISIBLE As Long = (TVM_FIRST + 20)
+Private Const TVM_SORTCHILDRENCB As Long = (TVM_FIRST + 21)
+Private Const TVM_ENDEDITLABELNOW As Long = (TVM_FIRST + 22)
+Private Const TVM_GETISEARCHSTRINGA As Long = (TVM_FIRST + 23)
+Private Const TVM_GETISEARCHSTRINGW As Long = (TVM_FIRST + 64)
 Private Const TVM_GETISEARCHSTRING As Long = TVM_GETISEARCHSTRINGW
-Private Const TVM_SETTOOLTIPS As Long = (TV_FIRST + 24)
-Private Const TVM_GETTOOLTIPS As Long = (TV_FIRST + 25)
-Private Const TVM_SETINSERTMARK As Long = (TV_FIRST + 26)
-Private Const TVM_SETITEMHEIGHT As Long = (TV_FIRST + 27)
-Private Const TVM_GETITEMHEIGHT As Long = (TV_FIRST + 28)
-Private Const TVM_SETBKCOLOR As Long = (TV_FIRST + 29)
-Private Const TVM_SETTEXTCOLOR As Long = (TV_FIRST + 30)
-Private Const TVM_SETINSERTMARKCOLOR As Long = (TV_FIRST + 37)
-Private Const TVM_SETLINECOLOR As Long = (TV_FIRST + 40)
-Private Const TVM_GETLINECOLOR As Long = (TV_FIRST + 41)
-Private Const TVM_SETEXTENDEDSTYLE As Long = (TV_FIRST + 44)
-Private Const TVM_GETEXTENDEDSTYLE As Long = (TV_FIRST + 45)
+Private Const TVM_SETTOOLTIPS As Long = (TVM_FIRST + 24)
+Private Const TVM_GETTOOLTIPS As Long = (TVM_FIRST + 25)
+Private Const TVM_SETINSERTMARK As Long = (TVM_FIRST + 26)
+Private Const TVM_SETITEMHEIGHT As Long = (TVM_FIRST + 27)
+Private Const TVM_GETITEMHEIGHT As Long = (TVM_FIRST + 28)
+Private Const TVM_SETBKCOLOR As Long = (TVM_FIRST + 29)
+Private Const TVM_SETTEXTCOLOR As Long = (TVM_FIRST + 30)
+Private Const TVM_SETINSERTMARKCOLOR As Long = (TVM_FIRST + 37)
+Private Const TVM_GETINSERTMARKCOLOR As Long = (TVM_FIRST + 38)
+Private Const TVM_GETITEMSTATE As Long = (TVM_FIRST + 39)
+Private Const TVM_SETLINECOLOR As Long = (TVM_FIRST + 40)
+Private Const TVM_GETLINECOLOR As Long = (TVM_FIRST + 41)
+Private Const TVM_SETEXTENDEDSTYLE As Long = (TVM_FIRST + 44)
+Private Const TVM_GETEXTENDEDSTYLE As Long = (TVM_FIRST + 45)
 Private Const TVN_FIRST As Long = (-400)
 Private Const TVN_SELCHANGINGA As Long = (TVN_FIRST - 1)
 Private Const TVN_SELCHANGINGW As Long = (TVN_FIRST - 50)
@@ -3354,29 +3356,30 @@ Select Case wMsg
                             WindowProcUserControl = CDRF_NOTIFYITEMDRAW
                             Exit Function
                         Case CDDS_ITEMPREPAINT
-                            If NMTVCD.NMCD.lItemlParam <> 0 Then
-                                Set Node = PtrToObj(NMTVCD.NMCD.lItemlParam)
-                                With Node
-                                If (NMTVCD.NMCD.uItemState And CDIS_FOCUS) = 0 And (NMTVCD.NMCD.uItemState And CDIS_SELECTED) = 0 And (NMTVCD.NMCD.uItemState And CDIS_DISABLED) = 0 Then
-                                    If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_DROPHILITE, ByVal 0&) <> NMTVCD.NMCD.dwItemSpec Then
-                                        If (NMTVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
-                                            NMTVCD.ClrText = WinColor(.ForeColor)
+                            With NMTVCD
+                            If .NMCD.lItemlParam <> 0 Then
+                                Set Node = PtrToObj(.NMCD.lItemlParam)
+                                If (.NMCD.uItemState And CDIS_FOCUS) = 0 And (.NMCD.uItemState And CDIS_SELECTED) = 0 And (.NMCD.uItemState And CDIS_DISABLED) = 0 Then
+                                    ' CDIS_DROPHILITED will never be set so check for TVIS_DROPHILITED instead.
+                                    If (SendMessage(TreeViewHandle, TVM_GETITEMSTATE, .NMCD.dwItemSpec, ByVal TVIS_DROPHILITED) And TVIS_DROPHILITED) = 0 Then
+                                        If (.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                            .ClrText = WinColor(Node.ForeColor)
                                         Else
-                                            NMTVCD.ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                            .ClrText = GetSysColor(COLOR_HOTLIGHT)
                                         End If
-                                        NMTVCD.ClrTextBk = WinColor(.BackColor)
+                                        .ClrTextBk = WinColor(Node.BackColor)
                                         CopyMemory ByVal lParam, NMTVCD, LenB(NMTVCD)
                                     End If
                                 End If
-                                If .NoImages = False Then
+                                If Node.NoImages = False Then
                                     WindowProcUserControl = CDRF_DODEFAULT
                                 Else
                                     WindowProcUserControl = TVCDRF_NOIMAGES
                                 End If
-                                End With
                             Else
                                 WindowProcUserControl = CDRF_DODEFAULT
                             End If
+                            End With
                             Exit Function
                     End Select
                 Case TVN_GETDISPINFO
