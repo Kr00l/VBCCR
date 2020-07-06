@@ -114,23 +114,22 @@ End Sub
 
 Public Sub Remove(ByVal Index As Variant)
 Attribute Remove.VB_Description = "Removes a node from the collection."
-With ShadowTreeView.FNodesRemove(PropNode(Index).Handle)
+Dim PtrColl As Collection
+Set PtrColl = ShadowTreeView.FNodesRemove(PropNode(Index).Handle)
 PropNode.Remove Index
-Dim Ptr As Long, Item As TvwNode, i As Long, j As Long
-For i = 1 To .Count
-    Ptr = .Item(CStr(i))
+Dim Ptr As Variant, Item As TvwNode, i As Long
+For Each Ptr In PtrColl
     For Each Item In PropNode
-        j = j + 1
+        i = i + 1
         If ObjPtr(Item) = Ptr Then
-            PropNode.Remove j
+            PropNode.Remove i
             Exit For
         End If
     Next Item
-    j = 0
-Next i
-End With
+    i = 0
+Next Ptr
 For Each Item In PropNode
-    j = j + 1
-    Item.Index = j
+    i = i + 1
+    Item.Index = i
 Next Item
 End Sub

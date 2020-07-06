@@ -169,14 +169,6 @@ cchTextMax As Long
 hItem As Long
 lParam As Long
 End Type
-Private Type NMTVITEMCHANGE
-hdr As NMHDR
-uChanged As Long
-hItem As Long
-uStateNew As Long
-uStateOld As Long
-lParam As Long
-End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -266,7 +258,6 @@ Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal 
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
-Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
@@ -1975,8 +1966,7 @@ End Sub
 Friend Function FNodesRemove(ByVal Handle As Long) As Collection
 Set FNodesRemove = New Collection
 If TreeViewHandle <> 0 Then
-    Dim i As Long
-    Call NodesRemoveRecursion(FNodesRemove, Handle, i)
+    Call NodesRemoveRecursion(FNodesRemove, Handle)
     SendMessage TreeViewHandle, TVM_DELETEITEM, 0, ByVal Handle
 End If
 End Function
@@ -2932,17 +2922,14 @@ If TreeViewHandle <> 0 And Handle <> 0 Then
 End If
 End Sub
 
-Private Sub NodesRemoveRecursion(ByVal ChildNodes As Collection, ByVal hChild As Long, ByRef i As Long)
+Private Sub NodesRemoveRecursion(ByVal ChildNodes As Collection, ByVal hChild As Long)
 If TreeViewHandle <> 0 Then
     Dim Ptr As Long
     hChild = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CHILD, ByVal hChild)
     Do While hChild <> 0
         Ptr = GetItemPtr(hChild)
-        If Ptr <> 0 Then
-            i = i + 1
-            ChildNodes.Add Ptr, CStr(i)
-        End If
-        Call NodesRemoveRecursion(ChildNodes, hChild, i)
+        If Ptr <> 0 Then ChildNodes.Add Ptr
+        Call NodesRemoveRecursion(ChildNodes, hChild)
         hChild = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hChild)
     Loop
 End If
