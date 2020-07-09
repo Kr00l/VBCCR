@@ -32,6 +32,7 @@ Private TvwLabelEditAutomatic, TvwLabelEditManual, TvwLabelEditDisabled
 Private TvwNodeRelationshipFirst, TvwNodeRelationshipLast, TvwNodeRelationshipNext, TvwNodeRelationshipPrevious, TvwNodeRelationshipChild
 Private TvwSortOrderAscending, TvwSortOrderDescending
 Private TvwSortTypeBinary, TvwSortTypeText
+Private TvwMultiSelectNone, TvwMultiSelectAll, TvwMultiSelectVisibleOnly, TvwMultiSelectRestrictSiblings
 Private TvwVisualThemeStandard, TvwVisualThemeExplorer
 #End If
 Public Enum TvwStyleConstants
@@ -67,6 +68,12 @@ End Enum
 Public Enum TvwSortTypeConstants
 TvwSortTypeBinary = 0
 TvwSortTypeText = 1
+End Enum
+Public Enum TvwMultiSelectConstants
+TvwMultiSelectNone = 0
+TvwMultiSelectAll = 1
+TvwMultiSelectVisibleOnly = 2
+TvwMultiSelectRestrictSiblings = 3
 End Enum
 Public Enum TvwVisualThemeConstants
 TvwVisualThemeStandard = 0
@@ -505,12 +512,18 @@ Private TreeViewExpandItem As Long, TreeViewPrevExpandItem As Long, TreeViewTick
 Private TreeViewSampleMode As Boolean
 Private TreeViewImageListObjectPointer As Long
 Private TreeViewAlignable As Boolean
+Private TreeViewFocused As Boolean
+Private TreeViewSelectedCount As Long
+Private TreeViewSelectedItems() As Long
+Private TreeViewMultiSelectSuppressLabelEdit As Boolean
+Private TreeViewAnchorItem As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropNodes As TvwNodes
+Private PropSelectedNodes As TvwSelectedNodes
 Private PropVisualStyles As Boolean
 Private PropVisualTheme As TvwVisualThemeConstants
 Private PropOLEDragMode As VBRUN.OLEDragConstants
@@ -545,6 +558,7 @@ Private PropSortType As TvwSortTypeConstants
 Private PropInsertMarkColor As OLE_COLOR
 Private PropDoubleBuffer As Boolean
 Private PropIMEMode As CCIMEModeConstants
+Private PropMultiSelect As TvwMultiSelectConstants
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -667,6 +681,7 @@ PropSortType = TvwSortTypeBinary
 PropInsertMarkColor = vbBlack
 PropDoubleBuffer = True
 PropIMEMode = CCIMEModeNoControl
+PropMultiSelect = TvwMultiSelectNone
 Call CreateTreeView
 If TreeViewDesignMode = True Then
     TreeViewSampleMode = True
@@ -728,6 +743,7 @@ PropSortType = .ReadProperty("SortType", TvwSortTypeBinary)
 PropInsertMarkColor = .ReadProperty("InsertMarkColor", vbBlack)
 PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
+PropMultiSelect = .ReadProperty("MultiSelect", TvwMultiSelectNone)
 End With
 Call CreateTreeView
 If TreeViewDesignMode = True Then
@@ -784,6 +800,7 @@ With PropBag
 .WriteProperty "InsertMarkColor", PropInsertMarkColor, vbBlack
 .WriteProperty "DoubleBuffer", PropDoubleBuffer, True
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
+.WriteProperty "MultiSelect", PropMultiSelect, TvwMultiSelectNone
 End With
 End Sub
 
@@ -1883,6 +1900,24 @@ End If
 UserControl.PropertyChanged "IMEMode"
 End Property
 
+Public Property Get MultiSelect() As TvwMultiSelectConstants
+Attribute MultiSelect.VB_Description = "Returns/sets a value indicating whether a user can make multiple selections in the tree view and how the multiple selections can be made."
+MultiSelect = PropMultiSelect
+End Property
+
+Public Property Let MultiSelect(ByVal Value As TvwMultiSelectConstants)
+Select Case Value
+    Case TvwMultiSelectNone, TvwMultiSelectAll, TvwMultiSelectVisibleOnly, TvwMultiSelectRestrictSiblings
+        PropMultiSelect = Value
+    Case Else
+        Err.Raise 380
+End Select
+TreeViewAnchorItem = ClearSelectedItems()
+TreeViewMultiSelectSuppressLabelEdit = False
+If PropMultiSelect = TvwMultiSelectNone Then Set PropSelectedNodes = Nothing
+UserControl.PropertyChanged "MultiSelect"
+End Property
+
 Public Property Get Nodes() As TvwNodes
 Attribute Nodes.VB_Description = "Returns a reference to a collection of the node objects."
 If PropNodes Is Nothing Then
@@ -2022,8 +2057,17 @@ If TreeViewHandle <> 0 Then
     .Mask = TVIF_HANDLE Or TVIF_STATE
     .hItem = Handle
     .StateMask = TVIS_SELECTED
-    SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
-    FNodeSelected = CBool((.State And TVIS_SELECTED) = TVIS_SELECTED)
+    If PropMultiSelect = TvwMultiSelectNone Then
+        SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
+        FNodeSelected = CBool((.State And TVIS_SELECTED) = TVIS_SELECTED)
+    Else
+        If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&) = Handle Then
+            SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI)
+            FNodeSelected = CBool((.State And TVIS_SELECTED) = TVIS_SELECTED)
+        Else
+            FNodeSelected = IsItemSelected(Handle)
+        End If
+    End If
     End With
 End If
 End Property
@@ -2036,13 +2080,28 @@ If TreeViewHandle <> 0 Then
     .hItem = Handle
     .StateMask = TVIS_SELECTED
     If Value = True Then
-        If SendMessage(TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal Handle) <> 0 Then
-            .State = TVIS_SELECTED
-            SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+        If PropMultiSelect = TvwMultiSelectNone Then
+            If SendMessage(TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal Handle) <> 0 Then
+                .State = TVIS_SELECTED
+                SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+            End If
+        Else
+            Select Case SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&)
+                Case Handle
+                    .State = TVIS_SELECTED
+                    SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+                Case 0
+                    If SendMessage(TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal Handle) <> 0 Then
+                        .State = TVIS_SELECTED
+                        SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+                    End If
+            End Select
+            Call SetItemSelected(Handle, True)
         End If
     Else
         .State = 0
         SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+        If PropMultiSelect <> TvwMultiSelectNone Then Call SetItemSelected(Handle, False)
     End If
     End With
 End If
@@ -2533,6 +2592,40 @@ If TreeViewHandle <> 0 Then
 End If
 End Function
 
+Public Property Get SelectedNodes() As TvwSelectedNodes
+Attribute SelectedNodes.VB_Description = "Returns a reference to a collection of the selected node objects."
+If PropSelectedNodes Is Nothing Then
+    If PropMultiSelect <> TvwMultiSelectNone Then
+        Set PropSelectedNodes = New TvwSelectedNodes
+        PropSelectedNodes.FInit Me
+    Else
+        Err.Raise Number:=91, Description:="This functionality is disabled when MultiSelect is 0 - None."
+    End If
+End If
+Set SelectedNodes = PropSelectedNodes
+End Property
+
+Friend Function FSelectedNodesCount() As Long
+FSelectedNodesCount = TreeViewSelectedCount
+End Function
+
+Friend Function FSelectedNodesItem(ByVal Index As Long) As TvwNode
+' Reverse index to return the most recent selected nodes first.
+' This also means that the caret item is always at index 1.
+Set FSelectedNodesItem = PtrToObj(GetItemPtr(TreeViewSelectedItems(TreeViewSelectedCount - Index + 1)))
+End Function
+
+Friend Function FSelectedNodesIndex(ByVal Handle As Long) As Long
+Dim i As Long
+For i = 1 To TreeViewSelectedCount
+    If TreeViewSelectedItems(i) = Handle Then
+        ' Reverse to return correct index.
+        FSelectedNodesIndex = TreeViewSelectedCount - i + 1
+        Exit For
+    End If
+Next i
+End Function
+
 Private Sub CreateTreeView()
 If TreeViewHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
@@ -2819,6 +2912,14 @@ If TreeViewDragItem <> 0 Then
 End If
 End Property
 
+Public Property Get AnchorItem() As TvwNode
+Attribute AnchorItem.VB_Description = "Returns a reference to the anchor item. That is the item from which a multiple selection starts."
+Attribute AnchorItem.VB_MemberFlags = "400"
+Dim Ptr As Long
+Ptr = GetItemPtr(TreeViewAnchorItem)
+If Ptr <> 0 Then Set AnchorItem = PtrToObj(Ptr)
+End Property
+
 Public Sub ResetForeColors()
 Attribute ResetForeColors.VB_Description = "Resets the foreground color of particular nodes that have been modified."
 If TreeViewHandle <> 0 Then
@@ -2934,6 +3035,172 @@ If TreeViewHandle <> 0 Then
     Loop
 End If
 End Sub
+
+Private Function GetSelectRange(ByVal hItem1 As Long, ByVal hItem2 As Long) As Collection
+Set GetSelectRange = New Collection
+If TreeViewHandle <> 0 Then
+    If hItem1 <> 0 And hItem2 <> 0 Then
+        GetSelectRange.Add hItem1
+        Dim hParent As Long
+        hParent = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem2)
+        Dim hItem As Long, RC As RECT
+        hItem = hItem1
+        Do Until hItem = hItem2
+            hItem = GetSelectRangeStep(hItem)
+            If hItem = 0 Then Exit Do
+            If PropMultiSelect = TvwMultiSelectAll Then
+                GetSelectRange.Add hItem
+            ElseIf PropMultiSelect = TvwMultiSelectVisibleOnly Then
+                RC.Left = hItem
+                If SendMessage(TreeViewHandle, TVM_GETITEMRECT, 0, ByVal VarPtr(RC)) <> 0 Then GetSelectRange.Add hItem
+            ElseIf PropMultiSelect = TvwMultiSelectRestrictSiblings Then
+                If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem) = hParent Then GetSelectRange.Add hItem
+            End If
+        Loop
+        If hItem = 0 Then
+            Set GetSelectRange = New Collection
+            GetSelectRange.Add hItem2
+            hItem = hItem2
+            Do Until hItem = hItem1
+                hItem = GetSelectRangeStep(hItem)
+                If hItem = 0 Then Exit Do
+                If PropMultiSelect = TvwMultiSelectAll Then
+                    GetSelectRange.Add hItem, , 1
+                ElseIf PropMultiSelect = TvwMultiSelectVisibleOnly Then
+                    RC.Left = hItem
+                    If SendMessage(TreeViewHandle, TVM_GETITEMRECT, 0, ByVal VarPtr(RC)) <> 0 Then GetSelectRange.Add hItem, , 1
+                ElseIf PropMultiSelect = TvwMultiSelectRestrictSiblings Then
+                    If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem) = hParent Then GetSelectRange.Add hItem, , 1
+                End If
+            Loop
+        End If
+    ElseIf hItem2 <> 0 Then
+        GetSelectRange.Add hItem2
+    End If
+End If
+End Function
+
+Private Function GetSelectRangeStep(ByVal hItem As Long) As Long
+If TreeViewHandle <> 0 And hItem <> 0 Then
+    Dim hStep As Long
+    hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CHILD, ByVal hItem)
+    If hStep <> 0 Then
+        GetSelectRangeStep = hStep
+        Exit Function
+    End If
+    hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hItem)
+    If hStep <> 0 Then
+        GetSelectRangeStep = hStep
+        Exit Function
+    End If
+    hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem)
+    If hStep = 0 Then Exit Function
+    hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hStep)
+    If hStep <> 0 Then
+        GetSelectRangeStep = hStep
+    Else
+        Dim hParent As Long
+        hParent = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem)
+        While hParent <> 0
+            hStep = hParent
+            hParent = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hParent)
+        Wend
+        hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hStep)
+        If hStep <> 0 Then GetSelectRangeStep = hStep
+    End If
+End If
+End Function
+
+Private Sub SetItemSelected(ByVal Handle As Long, ByVal State As Boolean, Optional ByVal NoRedraw As Boolean)
+Dim i As Long
+For i = 1 To TreeViewSelectedCount
+    If TreeViewSelectedItems(i) = Handle Then Exit For
+Next i
+If State = True Then
+    If i > TreeViewSelectedCount Then
+        TreeViewSelectedCount = TreeViewSelectedCount + 1
+        ReDim Preserve TreeViewSelectedItems(1 To TreeViewSelectedCount) As Long
+        TreeViewSelectedItems(TreeViewSelectedCount) = Handle
+    Else
+        NoRedraw = True
+    End If
+Else
+    If i <= TreeViewSelectedCount And TreeViewSelectedCount > 0 Then
+        Dim j As Long
+        For j = i To TreeViewSelectedCount - 1
+            TreeViewSelectedItems(j) = TreeViewSelectedItems(j + 1)
+        Next j
+        TreeViewSelectedCount = TreeViewSelectedCount - 1
+        If TreeViewSelectedCount > 0 Then
+            ReDim Preserve TreeViewSelectedItems(1 To TreeViewSelectedCount) As Long
+        Else
+            Erase TreeViewSelectedItems()
+        End If
+    Else
+        NoRedraw = True
+    End If
+End If
+If NoRedraw = False Then
+    If TreeViewHandle <> 0 Then
+        Dim RC As RECT
+        RC.Left = Handle
+        If SendMessage(TreeViewHandle, TVM_GETITEMRECT, 0, ByVal VarPtr(RC)) <> 0 Then
+            InvalidateRect TreeViewHandle, RC, 1
+            UpdateWindow TreeViewHandle
+        End If
+    End If
+End If
+End Sub
+
+Private Function IsItemSelected(ByVal Handle As Long) As Boolean
+Dim i As Long
+For i = 1 To TreeViewSelectedCount
+    If TreeViewSelectedItems(i) = Handle Then Exit For
+Next i
+If i <= TreeViewSelectedCount And TreeViewSelectedCount > 0 Then IsItemSelected = True
+End Function
+
+Private Function ClearSelectedItems(Optional ByVal Handle As Variant) As Long
+Dim RC As RECT, NeedUpdate As Boolean
+If TreeViewSelectedCount > 0 Then
+    If TreeViewHandle <> 0 Then
+        Dim i As Long
+        For i = 1 To TreeViewSelectedCount
+            RC.Left = TreeViewSelectedItems(i)
+            If SendMessage(TreeViewHandle, TVM_GETITEMRECT, 0, ByVal VarPtr(RC)) <> 0 Then
+                InvalidateRect TreeViewHandle, RC, 1
+                NeedUpdate = True
+            End If
+        Next i
+    End If
+    TreeViewSelectedCount = 0
+    Erase TreeViewSelectedItems()
+End If
+If TreeViewHandle <> 0 Then
+    If PropMultiSelect <> TvwMultiSelectNone Then
+        Dim hItem As Long
+        If IsMissing(Handle) Then
+            hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&)
+        Else
+            hItem = Handle
+        End If
+        If hItem <> 0 Then
+            ClearSelectedItems = hItem
+            If (SendMessage(TreeViewHandle, TVM_GETITEMSTATE, hItem, ByVal TVIS_SELECTED) And TVIS_SELECTED) <> 0 Then
+                TreeViewSelectedCount = 1
+                ReDim Preserve TreeViewSelectedItems(1 To TreeViewSelectedCount) As Long
+                TreeViewSelectedItems(TreeViewSelectedCount) = hItem
+                RC.Left = TreeViewSelectedItems(1)
+                If SendMessage(TreeViewHandle, TVM_GETITEMRECT, 0, ByVal VarPtr(RC)) <> 0 Then
+                    InvalidateRect TreeViewHandle, RC, 1
+                    NeedUpdate = True
+                End If
+            End If
+        End If
+    End If
+    If NeedUpdate = True Then UpdateWindow TreeViewHandle
+End If
+End Function
 
 Private Function NodesSortingFunctionBinary(ByVal lParam1 As Long, ByVal lParam2 As Long) As Long
 Dim Text1 As String, Text2 As String, Node1 As TvwNode, Node2 As TvwNode, ParentNode As TvwNode
@@ -3099,6 +3366,9 @@ Select Case wMsg
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
+    Case WM_SETFOCUS, WM_KILLFOCUS
+        TreeViewFocused = CBool(wMsg = WM_SETFOCUS)
+        If PropMultiSelect <> TvwMultiSelectNone Then Me.Refresh
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim X As Single
         Dim Y As Single
@@ -3194,8 +3464,8 @@ Select Case wMsg
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = TreeViewHandle Then
-            Dim Ptr As Long, Node As TvwNode
-            Dim Length As Long, Cancel As Boolean
+            Dim Ptr As Long, Node As TvwNode, hEnum As Variant
+            Dim Length As Long, Cancel As Boolean, Shift As Integer
             Dim NMTV As NMTREEVIEW, NMTVDI As NMTVDISPINFO, TVHTI As TVHITTESTINFO
             Select Case NM.Code
                 Case TVN_BEGINLABELEDIT, TVN_ENDLABELEDIT
@@ -3205,6 +3475,9 @@ Select Case wMsg
                             If PropLabelEdit = TvwLabelEditManual And TreeViewStartLabelEdit = False Then
                                 WindowProcUserControl = 1
                             Else
+                                If PropMultiSelect <> TvwMultiSelectNone Then
+                                    If TreeViewMultiSelectSuppressLabelEdit = True Then Cancel = True
+                                End If
                                 RaiseEvent BeforeLabelEdit(Cancel)
                                 If Cancel = True Then
                                     WindowProcUserControl = 1
@@ -3266,6 +3539,42 @@ Select Case wMsg
                     ScreenToClient TreeViewHandle, .PT
                     SendMessage TreeViewHandle, TVM_HITTEST, 0, ByVal VarPtr(TVHTI)
                     If .hItem <> 0 Then
+                        If PropMultiSelect <> TvwMultiSelectNone Then
+                            TreeViewMultiSelectSuppressLabelEdit = False
+                            Shift = GetShiftStateFromMsg()
+                            ' TVN_SELCHANGED will not be fired when a click is on the current focused item.
+                            ' Ensure the click is on the label or icon and would normally cause a TVN_SELCHANGED.
+                            If (.Flags And (TVHT_ONITEMICON Or TVHT_ONITEMLABEL)) <> 0 Then
+                                If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&) = .hItem Then
+                                    If (Shift And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                                        ' Clear all highlighted items in case it is a simple click.
+                                        If TreeViewSelectedCount <> 1 Then TreeViewMultiSelectSuppressLabelEdit = True
+                                        TreeViewAnchorItem = ClearSelectedItems()
+                                        Me.FNodeSelected(.hItem) = True
+                                    Else
+                                        TreeViewMultiSelectSuppressLabelEdit = True
+                                        If (Shift And vbShiftMask) = 0 And (Shift And vbCtrlMask) <> 0 Then
+                                            ' Toggle highlighted state in case it is just a control click.
+                                            Me.FNodeSelected(.hItem) = Not IsItemSelected(.hItem)
+                                        ElseIf (Shift And vbShiftMask) <> 0 Then
+                                            If TreeViewAnchorItem <> .hItem Then
+                                                If (Shift And vbCtrlMask) = 0 Then ClearSelectedItems 0&
+                                                For Each hEnum In GetSelectRange(TreeViewAnchorItem, .hItem)
+                                                    Me.FNodeSelected(hEnum) = True
+                                                Next hEnum
+                                            Else
+                                                ClearSelectedItems .hItem
+                                            End If
+                                        End If
+                                    End If
+                                End If
+                            ElseIf (.Flags And TVHT_ONITEMRIGHT) <> 0 Then
+                                If (Shift And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                                    ' Clear all highlighted items in case it is a simple click.
+                                    TreeViewAnchorItem = ClearSelectedItems()
+                                End If
+                            End If
+                        End If
                         Ptr = GetItemPtr(.hItem)
                         If Ptr <> 0 Then Set Node = PtrToObj(Ptr)
                         If (.Flags And TVHT_ONITEMBUTTON) = 0 Then
@@ -3295,11 +3604,20 @@ Select Case wMsg
                                 PostMessage TreeViewHandle, UM_CHECKSTATECHANGED, 0, ByVal Ptr
                             End If
                         End If
-                    ElseIf TreeViewButtonDown <> vbLeftButton And TreeViewButtonDown <> 0 Then
-                        RaiseEvent MouseUp(TreeViewButtonDown, GetShiftStateFromMsg(), UserControl.ScaleX(.PT.X, vbPixels, vbTwips), UserControl.ScaleY(.PT.Y, vbPixels, vbTwips))
-                        TreeViewButtonDown = 0
-                        TreeViewIsClick = False
-                        RaiseEvent Click
+                    Else
+                        If PropMultiSelect <> TvwMultiSelectNone Then
+                            ' TVN_SELCHANGED will not be fired when a click is nowhere.
+                            If (GetShiftStateFromMsg() And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                                ' Clear all highlighted items in case it is a simple click.
+                                TreeViewAnchorItem = ClearSelectedItems()
+                            End If
+                        End If
+                        If TreeViewButtonDown <> vbLeftButton And TreeViewButtonDown <> 0 Then
+                            RaiseEvent MouseUp(TreeViewButtonDown, GetShiftStateFromMsg(), UserControl.ScaleX(.PT.X, vbPixels, vbTwips), UserControl.ScaleY(.PT.Y, vbPixels, vbTwips))
+                            TreeViewButtonDown = 0
+                            TreeViewIsClick = False
+                            RaiseEvent Click
+                        End If
                     End If
                     End With
                 Case NM_DBLCLK, NM_RDBLCLK
@@ -3367,11 +3685,65 @@ Select Case wMsg
                 Case TVN_SELCHANGED
                     CopyMemory NMTV, ByVal lParam, LenB(NMTV)
                     With NMTV
-                    If .ItemNew.lParam <> 0 Then
-                        Set Node = PtrToObj(.ItemNew.lParam)
-                        RaiseEvent NodeSelect(Node)
+                    If .ItemNew.hItem <> 0 Then
+                        If PropMultiSelect <> TvwMultiSelectNone Then
+                            Select Case .Action
+                                Case TVC_BYMOUSE, TVC_BYKEYBOARD
+                                    Shift = GetShiftStateFromMsg()
+                                    If TreeViewAnchorItem = 0 Or (Shift And vbShiftMask) = 0 Then TreeViewAnchorItem = .ItemNew.hItem
+                                    If (Shift And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                                        ' Clear all highlighted items in case it is a simple click.
+                                        ClearSelectedItems .ItemNew.hItem
+                                    Else
+                                        If PropMultiSelect = TvwMultiSelectRestrictSiblings Then
+                                            If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal .ItemOld.hItem) <> SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal .ItemNew.hItem) Then
+                                                TreeViewAnchorItem = ClearSelectedItems(.ItemNew.hItem)
+                                                Shift = 0
+                                            End If
+                                        End If
+                                        If (Shift And vbShiftMask) = 0 And (Shift And vbCtrlMask) <> 0 Then
+                                            ' Toggle highlighted state in case it is just a control click.
+                                            Me.FNodeSelected(.ItemNew.hItem) = Not IsItemSelected(.ItemNew.hItem)
+                                        ElseIf (Shift And vbShiftMask) <> 0 Then
+                                            If TreeViewAnchorItem <> .ItemNew.hItem Then
+                                                If (Shift And vbCtrlMask) = 0 Then ClearSelectedItems 0&
+                                                For Each hEnum In GetSelectRange(TreeViewAnchorItem, .ItemNew.hItem)
+                                                    Me.FNodeSelected(hEnum) = True
+                                                Next hEnum
+                                            Else
+                                                ClearSelectedItems .ItemNew.hItem
+                                            End If
+                                        Else
+                                            ' Fallback in case the shift variable got cleared.
+                                            ClearSelectedItems .ItemNew.hItem
+                                        End If
+                                    End If
+                                Case Else
+                                    ' It is not safe to rely on TVC_UNKNOWN only. The action member can have an unknown value.
+                                    ' If the caret item was changed by code then the action value is TVC_UNKNOWN for sure.
+                                    ' However, if there is no caret item and the tree view received focus by tab key then the action value is &H1000.
+                                    ' Thus clear all highlighted items in case the focused item was changed by code or by an unknown action value.
+                                    TreeViewAnchorItem = ClearSelectedItems(.ItemNew.hItem)
+                            End Select
+                        End If
+                        If .ItemNew.lParam <> 0 Then
+                            Set Node = PtrToObj(.ItemNew.lParam)
+                            RaiseEvent NodeSelect(Node)
+                        End If
+                    Else
+                        ' If hItem is zero then there is no caret item anymore.
+                        ' Clear all selected items in case the tree view is multi select.
+                        If PropMultiSelect <> TvwMultiSelectNone Then TreeViewAnchorItem = ClearSelectedItems(0&)
                     End If
                     End With
+                Case TVN_DELETEITEM
+                    If PropMultiSelect <> TvwMultiSelectNone Then
+                        CopyMemory NMTV, ByVal lParam, LenB(NMTV)
+                        With NMTV.ItemOld
+                        If .hItem = TreeViewAnchorItem Then TreeViewAnchorItem = 0
+                        Call SetItemSelected(.hItem, False, True)
+                        End With
+                    End If
                 Case NM_CUSTOMDRAW
                     Dim NMTVCD As NMTVCUSTOMDRAW
                     CopyMemory NMTVCD, ByVal lParam, LenB(NMTVCD)
@@ -3383,16 +3755,39 @@ Select Case wMsg
                             With NMTVCD
                             If .NMCD.lItemlParam <> 0 Then
                                 Set Node = PtrToObj(.NMCD.lItemlParam)
-                                If (.NMCD.uItemState And CDIS_FOCUS) = 0 And (.NMCD.uItemState And CDIS_SELECTED) = 0 And (.NMCD.uItemState And CDIS_DISABLED) = 0 Then
+                                If (.NMCD.uItemState And CDIS_FOCUS) = 0 And (.NMCD.uItemState And CDIS_SELECTED) = 0 Then
                                     ' CDIS_DROPHILITED will never be set so check for TVIS_DROPHILITED instead.
                                     If (SendMessage(TreeViewHandle, TVM_GETITEMSTATE, .NMCD.dwItemSpec, ByVal TVIS_DROPHILITED) And TVIS_DROPHILITED) = 0 Then
-                                        If (.NMCD.uItemState And CDIS_HOT) = 0 Then
-                                            .ClrText = WinColor(Node.ForeColor)
-                                        Else
-                                            .ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                        Dim HighLighted As Boolean
+                                        If PropMultiSelect <> TvwMultiSelectNone Then
+                                            If IsItemSelected(.NMCD.dwItemSpec) = True Then
+                                                If TreeViewFocused = True Then
+                                                    .ClrText = WinColor(vbHighlightText)
+                                                    .ClrTextBk = WinColor(vbHighlight)
+                                                    CopyMemory ByVal lParam, NMTVCD, LenB(NMTVCD)
+                                                    HighLighted = True
+                                                ElseIf PropHideSelection = False Then
+                                                    .ClrText = WinColor(vbWindowText)
+                                                    .ClrTextBk = WinColor(vbButtonFace)
+                                                    CopyMemory ByVal lParam, NMTVCD, LenB(NMTVCD)
+                                                    HighLighted = True
+                                                End If
+                                            End If
                                         End If
-                                        .ClrTextBk = WinColor(Node.BackColor)
-                                        CopyMemory ByVal lParam, NMTVCD, LenB(NMTVCD)
+                                        If HighLighted = False Then
+                                            If (.NMCD.uItemState And CDIS_DISABLED) = 0 Then
+                                                If (.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                                    .ClrText = WinColor(Node.ForeColor)
+                                                Else
+                                                    .ClrText = GetSysColor(COLOR_HOTLIGHT)
+                                                End If
+                                                .ClrTextBk = WinColor(Node.BackColor)
+                                            Else
+                                                .ClrText = WinColor(vbGrayText)
+                                                .ClrTextBk = WinColor(vbButtonFace)
+                                            End If
+                                            CopyMemory ByVal lParam, NMTVCD, LenB(NMTVCD)
+                                        End If
                                     End If
                                 End If
                                 If Node.NoImages = False Then

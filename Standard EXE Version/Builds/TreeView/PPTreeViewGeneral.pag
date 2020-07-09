@@ -1,19 +1,27 @@
 VERSION 5.00
 Begin VB.PropertyPage PPTreeViewGeneral 
    Caption         =   "General"
-   ClientHeight    =   4875
+   ClientHeight    =   5625
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   5925
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4875
+   ScaleHeight     =   5625
    ScaleWidth      =   5925
+   Begin VB.ComboBox ComboMultiSelect 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   28
+      Top             =   4800
+      Width           =   2235
+   End
    Begin VB.CheckBox CheckMouseTrack 
       Caption         =   "MouseTrack"
       Height          =   285
       Left            =   4200
-      TabIndex        =   27
+      TabIndex        =   29
       Top             =   480
       Width           =   1620
    End
@@ -60,7 +68,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "Sorted"
       Height          =   285
       Left            =   4200
-      TabIndex        =   35
+      TabIndex        =   37
       Top             =   3360
       Width           =   1620
    End
@@ -68,7 +76,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "SingleSel"
       Height          =   285
       Left            =   4200
-      TabIndex        =   34
+      TabIndex        =   36
       Top             =   3000
       Width           =   1620
    End
@@ -76,7 +84,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "Scroll"
       Height          =   285
       Left            =   4200
-      TabIndex        =   33
+      TabIndex        =   35
       Top             =   2640
       Width           =   1620
    End
@@ -91,7 +99,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "HotTracking"
       Height          =   285
       Left            =   4200
-      TabIndex        =   32
+      TabIndex        =   34
       Top             =   2280
       Width           =   1620
    End
@@ -99,7 +107,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "FullRowSelect"
       Height          =   285
       Left            =   4200
-      TabIndex        =   31
+      TabIndex        =   33
       Top             =   1920
       Width           =   1620
    End
@@ -107,7 +115,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "HideSelection"
       Height          =   285
       Left            =   4200
-      TabIndex        =   30
+      TabIndex        =   32
       Top             =   1560
       Width           =   1620
    End
@@ -147,7 +155,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "ShowTips"
       Height          =   285
       Left            =   4200
-      TabIndex        =   29
+      TabIndex        =   31
       Top             =   1200
       Width           =   1620
    End
@@ -186,7 +194,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Caption         =   "Checkboxes"
       Height          =   285
       Left            =   4200
-      TabIndex        =   28
+      TabIndex        =   30
       Top             =   840
       Width           =   1620
    End
@@ -196,6 +204,14 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Left            =   120
       TabIndex        =   0
       Top             =   120
+      Width           =   1620
+   End
+   Begin VB.Label LabelMultiSelect 
+      Caption         =   "MultiSelect:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   27
+      Top             =   4800
       Width           =   1620
    End
    Begin VB.Label LabelIMEMode 
@@ -361,6 +377,16 @@ With ComboSortType
 .AddItem TvwSortTypeText & " - Text"
 .ItemData(.NewIndex) = TvwSortTypeText
 End With
+With ComboMultiSelect
+.AddItem TvwMultiSelectNone & " - None"
+.ItemData(.NewIndex) = TvwMultiSelectNone
+.AddItem TvwMultiSelectAll & " - All"
+.ItemData(.NewIndex) = TvwMultiSelectAll
+.AddItem TvwMultiSelectVisibleOnly & " - VisibleOnly"
+.ItemData(.NewIndex) = TvwMultiSelectVisibleOnly
+.AddItem TvwMultiSelectRestrictSiblings & " - RestrictSiblings"
+.ItemData(.NewIndex) = TvwMultiSelectRestrictSiblings
+End With
 Call ComCtlsPPInitComboIMEMode(ComboIMEMode)
 End Sub
 
@@ -385,6 +411,7 @@ With PropertyPage.SelectedControls(0)
 .SortType = ComboSortType.ItemData(ComboSortType.ListIndex)
 .OLEDragExpandTime = CLng(TextOLEDragExpandTime.Text)
 .IMEMode = ComboIMEMode.ItemData(ComboIMEMode.ListIndex)
+.MultiSelect = ComboMultiSelect.ItemData(ComboMultiSelect.ListIndex)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .Checkboxes = CBool(CheckCheckboxes.Value = vbChecked)
 .ShowTips = CBool(CheckShowTips.Value = vbChecked)
@@ -468,6 +495,12 @@ TextOLEDragExpandTime.Text = CStr(.OLEDragExpandTime)
 For i = 0 To ComboIMEMode.ListCount - 1
     If ComboIMEMode.ItemData(i) = .IMEMode Then
         ComboIMEMode.ListIndex = i
+        Exit For
+    End If
+Next i
+For i = 0 To ComboMultiSelect.ListCount - 1
+    If ComboMultiSelect.ItemData(i) = .MultiSelect Then
+        ComboMultiSelect.ListIndex = i
         Exit For
     End If
 Next i
@@ -638,6 +671,11 @@ End If
 End Sub
 
 Private Sub ComboIMEMode_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub ComboMultiSelect_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

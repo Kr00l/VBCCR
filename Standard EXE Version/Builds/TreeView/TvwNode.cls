@@ -464,3 +464,8 @@ Public Function CreateDragImage() As Long
 Attribute CreateDragImage.VB_Description = "Retrieves the handle to an image list containing a bitmap that can be used to visualize dragging of this node.Your application is responsible for destroying the image list when it is no longer needed."
 CreateDragImage = ShadowTreeView.FNodeCreateDragImage(PropHandle, PropImageIndex)
 End Function
+
+Public Function SelectedIndex() As Long
+Attribute SelectedIndex.VB_Description = "Returns the index of the selected nodes collection associated with this node."
+SelectedIndex = ShadowTreeView.FSelectedNodesIndex(PropHandle)
+End Function
