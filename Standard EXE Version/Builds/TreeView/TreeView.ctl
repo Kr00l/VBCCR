@@ -3491,8 +3491,8 @@ Select Case wMsg
                             Else
                                 If PropMultiSelect <> TvwMultiSelectNone Then
                                     ' Suppress label edits in a multi select tree view under certain conditions.
-                                    If PropLabelEdit = TvwLabelEditManual And TreeViewStartLabelEdit = True Then
-                                        ' Never suppress a manual label edit by code.
+                                    If TreeViewStartLabelEdit = True Then
+                                        ' Never suppress a label edit initiated by code.
                                     ElseIf TreeViewClickSelectedCount <> 1 Or (TreeViewClickShift And (vbShiftMask Or vbCtrlMask)) <> 0 Then
                                         Cancel = True
                                     End If
@@ -3585,6 +3585,7 @@ Select Case wMsg
                                                 Next hEnum
                                             Else
                                                 ClearSelectedItems .hItem
+                                                Me.FNodeSelected(.hItem) = True
                                             End If
                                         End If
                                     End If
