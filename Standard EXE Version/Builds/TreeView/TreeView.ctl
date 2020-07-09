@@ -515,7 +515,8 @@ Private TreeViewAlignable As Boolean
 Private TreeViewFocused As Boolean
 Private TreeViewSelectedCount As Long
 Private TreeViewSelectedItems() As Long
-Private TreeViewMultiSelectSuppressLabelEdit As Boolean
+Private TreeViewClickSelectedCount As Long
+Private TreeViewClickShift As Integer
 Private TreeViewAnchorItem As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
@@ -1913,7 +1914,8 @@ Select Case Value
         Err.Raise 380
 End Select
 TreeViewAnchorItem = ClearSelectedItems()
-TreeViewMultiSelectSuppressLabelEdit = False
+TreeViewClickSelectedCount = 0
+TreeViewClickShift = 0
 If PropMultiSelect = TvwMultiSelectNone Then Set PropSelectedNodes = Nothing
 UserControl.PropertyChanged "MultiSelect"
 End Property
@@ -2902,6 +2904,26 @@ If TreeViewHandle <> 0 Then
 End If
 End Property
 
+Public Property Get AnchorItem() As TvwNode
+Attribute AnchorItem.VB_Description = "Returns/sets a reference to the anchor item. That is the item from which a multiple selection starts."
+Attribute AnchorItem.VB_MemberFlags = "400"
+Dim Ptr As Long
+Ptr = GetItemPtr(TreeViewAnchorItem)
+If Ptr <> 0 Then Set AnchorItem = PtrToObj(Ptr)
+End Property
+
+Public Property Let AnchorItem(ByVal Value As TvwNode)
+Set Me.AnchorItem = Value
+End Property
+
+Public Property Set AnchorItem(ByVal Value As TvwNode)
+If Not Value Is Nothing Then
+    TreeViewAnchorItem = Value.Handle
+Else
+    TreeViewAnchorItem = 0
+End If
+End Property
+
 Public Property Get OLEDraggedItem() As TvwNode
 Attribute OLEDraggedItem.VB_Description = "Returns a reference to the currently dragged node during an OLE drag/drop operation."
 Attribute OLEDraggedItem.VB_MemberFlags = "400"
@@ -2910,14 +2932,6 @@ If TreeViewDragItem <> 0 Then
     Ptr = GetItemPtr(TreeViewDragItem)
     If Ptr <> 0 Then Set OLEDraggedItem = PtrToObj(Ptr)
 End If
-End Property
-
-Public Property Get AnchorItem() As TvwNode
-Attribute AnchorItem.VB_Description = "Returns a reference to the anchor item. That is the item from which a multiple selection starts."
-Attribute AnchorItem.VB_MemberFlags = "400"
-Dim Ptr As Long
-Ptr = GetItemPtr(TreeViewAnchorItem)
-If Ptr <> 0 Then Set AnchorItem = PtrToObj(Ptr)
 End Property
 
 Public Sub ResetForeColors()
@@ -3465,7 +3479,7 @@ Select Case wMsg
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = TreeViewHandle Then
             Dim Ptr As Long, Node As TvwNode, hEnum As Variant
-            Dim Length As Long, Cancel As Boolean, Shift As Integer
+            Dim Length As Long, Cancel As Boolean
             Dim NMTV As NMTREEVIEW, NMTVDI As NMTVDISPINFO, TVHTI As TVHITTESTINFO
             Select Case NM.Code
                 Case TVN_BEGINLABELEDIT, TVN_ENDLABELEDIT
@@ -3476,19 +3490,28 @@ Select Case wMsg
                                 WindowProcUserControl = 1
                             Else
                                 If PropMultiSelect <> TvwMultiSelectNone Then
-                                    If TreeViewMultiSelectSuppressLabelEdit = True Then Cancel = True
-                                End If
-                                RaiseEvent BeforeLabelEdit(Cancel)
-                                If Cancel = True Then
-                                    WindowProcUserControl = 1
-                                Else
-                                    WindowProcUserControl = 0
-                                    LabelEditHandle = Me.hWndLabelEdit
-                                    If LabelEditHandle <> 0 Then
-                                        If PropRightToLeft = True And PropRightToLeftLayout = False Then Call ComCtlsSetRightToLeft(LabelEditHandle, WS_EX_RTLREADING)
-                                        Call ComCtlsSetSubclass(LabelEditHandle, Me, 2)
+                                    ' Suppress label edits in a multi select tree view under certain conditions.
+                                    If PropLabelEdit = TvwLabelEditManual And TreeViewStartLabelEdit = True Then
+                                        ' Never suppress a manual label edit by code.
+                                    ElseIf TreeViewClickSelectedCount <> 1 Or (TreeViewClickShift And (vbShiftMask Or vbCtrlMask)) <> 0 Then
+                                        Cancel = True
                                     End If
-                                    TreeViewLabelInEdit = True
+                                End If
+                                If Cancel = False Then
+                                    RaiseEvent BeforeLabelEdit(Cancel)
+                                    If Cancel = True Then
+                                        WindowProcUserControl = 1
+                                    Else
+                                        WindowProcUserControl = 0
+                                        LabelEditHandle = Me.hWndLabelEdit
+                                        If LabelEditHandle <> 0 Then
+                                            If PropRightToLeft = True And PropRightToLeftLayout = False Then Call ComCtlsSetRightToLeft(LabelEditHandle, WS_EX_RTLREADING)
+                                            Call ComCtlsSetSubclass(LabelEditHandle, Me, 2)
+                                        End If
+                                        TreeViewLabelInEdit = True
+                                    End If
+                                Else
+                                    WindowProcUserControl = 1
                                 End If
                             End If
                         Case TVN_ENDLABELEDIT
@@ -3540,25 +3563,23 @@ Select Case wMsg
                     SendMessage TreeViewHandle, TVM_HITTEST, 0, ByVal VarPtr(TVHTI)
                     If .hItem <> 0 Then
                         If PropMultiSelect <> TvwMultiSelectNone Then
-                            TreeViewMultiSelectSuppressLabelEdit = False
-                            Shift = GetShiftStateFromMsg()
+                            TreeViewClickSelectedCount = TreeViewSelectedCount
+                            TreeViewClickShift = GetShiftStateFromMsg()
                             ' TVN_SELCHANGED will not be fired when a click is on the current focused item.
                             ' Ensure the click is on the label or icon and would normally cause a TVN_SELCHANGED.
                             If (.Flags And (TVHT_ONITEMICON Or TVHT_ONITEMLABEL)) <> 0 Then
                                 If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CARET, ByVal 0&) = .hItem Then
-                                    If (Shift And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                                    If (TreeViewClickShift And (vbShiftMask Or vbCtrlMask)) = 0 Then
                                         ' Clear all highlighted items in case it is a simple click.
-                                        If TreeViewSelectedCount <> 1 Then TreeViewMultiSelectSuppressLabelEdit = True
                                         TreeViewAnchorItem = ClearSelectedItems()
                                         Me.FNodeSelected(.hItem) = True
                                     Else
-                                        TreeViewMultiSelectSuppressLabelEdit = True
-                                        If (Shift And vbShiftMask) = 0 And (Shift And vbCtrlMask) <> 0 Then
+                                        If (TreeViewClickShift And vbShiftMask) = 0 And (TreeViewClickShift And vbCtrlMask) <> 0 Then
                                             ' Toggle highlighted state in case it is just a control click.
                                             Me.FNodeSelected(.hItem) = Not IsItemSelected(.hItem)
-                                        ElseIf (Shift And vbShiftMask) <> 0 Then
+                                        ElseIf (TreeViewClickShift And vbShiftMask) <> 0 Then
                                             If TreeViewAnchorItem <> .hItem Then
-                                                If (Shift And vbCtrlMask) = 0 Then ClearSelectedItems 0&
+                                                If (TreeViewClickShift And vbCtrlMask) = 0 Then ClearSelectedItems 0&
                                                 For Each hEnum In GetSelectRange(TreeViewAnchorItem, .hItem)
                                                     Me.FNodeSelected(hEnum) = True
                                                 Next hEnum
@@ -3569,7 +3590,7 @@ Select Case wMsg
                                     End If
                                 End If
                             ElseIf (.Flags And TVHT_ONITEMRIGHT) <> 0 Then
-                                If (Shift And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                                If (TreeViewClickShift And (vbShiftMask Or vbCtrlMask)) = 0 Then
                                     ' Clear all highlighted items in case it is a simple click.
                                     TreeViewAnchorItem = ClearSelectedItems()
                                 End If
@@ -3606,8 +3627,10 @@ Select Case wMsg
                         End If
                     Else
                         If PropMultiSelect <> TvwMultiSelectNone Then
+                            TreeViewClickSelectedCount = TreeViewSelectedCount
+                            TreeViewClickShift = GetShiftStateFromMsg()
                             ' TVN_SELCHANGED will not be fired when a click is nowhere.
-                            If (GetShiftStateFromMsg() And (vbShiftMask Or vbCtrlMask)) = 0 Then
+                            If (TreeViewClickShift And (vbShiftMask Or vbCtrlMask)) = 0 Then
                                 ' Clear all highlighted items in case it is a simple click.
                                 TreeViewAnchorItem = ClearSelectedItems()
                             End If
@@ -3689,6 +3712,7 @@ Select Case wMsg
                         If PropMultiSelect <> TvwMultiSelectNone Then
                             Select Case .Action
                                 Case TVC_BYMOUSE, TVC_BYKEYBOARD
+                                    Dim Shift As Integer
                                     Shift = GetShiftStateFromMsg()
                                     If TreeViewAnchorItem = 0 Or (Shift And vbShiftMask) = 0 Then TreeViewAnchorItem = .ItemNew.hItem
                                     If (Shift And (vbShiftMask Or vbCtrlMask)) = 0 Then
