@@ -1,5 +1,14 @@
 List of revisions:
 
+09-Jul-2020
+- Included MultiSelect property in the TreeView control.
+  It can be set to 'None' (Default), 'All', 'VisibleOnly', 'RestrictSiblings'.
+  The new 'SelectedNodes' property returns a collection to the new 'TvwSelectedNodes' class.
+  With this class the count and the selected nodes can be retrieved or enumerated.
+  The most recent select node has index 1 and the oldest select node has the last index. (sorted by history)
+  Included the 'AnchorItem' property which returns the node from which a multiple selection starts.
+  Included the 'SelectedIndex' function in the TvwNode class. It returns the index of the associated selected nodes collection.
+
 05-Jul-2020
 - Internal improvement in the TreeView control.
 

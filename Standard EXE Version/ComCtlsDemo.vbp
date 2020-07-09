@@ -102,6 +102,7 @@ PropertyPage=Builds\ToolBar\PPToolBarButtons.pag
 UserControl=Builds\TreeView\TreeView.ctl
 Class=TvwNode; Builds\TreeView\TvwNode.cls
 Class=TvwNodes; Builds\TreeView\TvwNodes.cls
+Class=TvwSelectedNodes; Builds\TreeView\TvwSelectedNodes.cls
 PropertyPage=Builds\TreeView\PPTreeViewGeneral.pag
 UserControl=Builds\UpDown\UpDown.ctl
 PropertyPage=Builds\UpDown\PPUpDownGeneral.pag

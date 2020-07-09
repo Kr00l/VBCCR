@@ -183,6 +183,7 @@ Begin VB.Form MainForm
       ImageList       =   "ImageList1"
       LineStyle       =   1
       Checkboxes      =   -1  'True
+      MultiSelect     =   2
    End
    Begin VB.CommandButton Command3 
       Caption         =   "Command3"
@@ -361,6 +362,7 @@ Begin VB.Form MainForm
       Icons           =   "ImageList3"
       View            =   4
       Arrange         =   3
+      MultiSelect     =   -1  'True
       GridLines       =   -1  'True
       LabelEdit       =   2
       TileViewLines   =   2
@@ -809,23 +811,47 @@ ElseIf DataString = ImageCombo1.Name Then
         End If
     End If
 ElseIf DataString = TreeView1.Name Then
-    Dim Node As TvwNode
-    Set Node = TreeView1.OLEDraggedItem
-    If Not Node Is Nothing Then
+    Dim DragNode As TvwNode
+    Set DragNode = TreeView1.OLEDraggedItem
+    If Not DragNode Is Nothing Then
+        Dim NewIndex As Long
         If ComCtlsSupportLevel() >= 2 Then
             If Not ListView2.InsertMark(After) Is Nothing Then
-                ListView2.ListItems.Add(IIf(After = True, ListView2.InsertMark.Index + 1, ListView2.InsertMark.Index), , Node.Text, , Node.Image).ForeColor = Node.ForeColor
+                With ListView2.ListItems.Add(IIf(After = True, ListView2.InsertMark.Index + 1, ListView2.InsertMark.Index), , DragNode.Text, , DragNode.Image)
+                .ForeColor = DragNode.ForeColor
+                NewIndex = .Index
+                End With
             Else
-                ListView2.ListItems.Add(, , Node.Text, , Node.Image).ForeColor = Node.ForeColor
+                With ListView2.ListItems.Add(, , DragNode.Text, , DragNode.Image)
+                .ForeColor = DragNode.ForeColor
+                NewIndex = .Index
+                End With
             End If
             Set ListView2.InsertMark = Nothing
         Else
             If Not ListView2.DropHighlight Is Nothing Then
-                ListView2.ListItems.Add(ListView2.DropHighlight.Index, , Node.Text, , Node.Image).ForeColor = Node.ForeColor
+                With ListView2.ListItems.Add(ListView2.DropHighlight.Index, , DragNode.Text, , DragNode.Image)
+                .ForeColor = DragNode.ForeColor
+                NewIndex = .Index
+                End With
             Else
-                ListView2.ListItems.Add(, , Node.Text, , Node.Image).ForeColor = Node.ForeColor
+                With ListView2.ListItems.Add(, , DragNode.Text, , DragNode.Image)
+                .ForeColor = DragNode.ForeColor
+                NewIndex = .Index
+                End With
             End If
             Set ListView2.DropHighlight = Nothing
+        End If
+        If TreeView1.MultiSelect <> TvwMultiSelectNone Then
+            Dim Node As TvwNode
+            For Each Node In TreeView1.SelectedNodes
+                If Not Node Is DragNode Then
+                    With ListView2.ListItems.Add(NewIndex + 1, , Node.Text, , Node.Image)
+                    .ForeColor = Node.ForeColor
+                    NewIndex = .Index
+                    End With
+                End If
+            Next Node
         End If
     End If
 ElseIf DataString = ListBoxW1.Name Then
