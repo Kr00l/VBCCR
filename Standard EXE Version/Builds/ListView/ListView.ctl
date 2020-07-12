@@ -4092,26 +4092,30 @@ End If
 End Property
 
 Friend Property Get FListItemWorkArea(ByVal Index As Long) As LvwWorkArea
-If PropView = LvwViewList Or PropView = LvwViewReport Then Exit Property
-If ListViewHandle <> 0 Then
-    Dim Count As Long
-    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
-    If Count > 0 Then
-        Dim P As POINTAPI
-        If SendMessage(ListViewHandle, LVM_GETITEMPOSITION, Index - 1, ByVal VarPtr(P)) <> 0 Then
-            Dim ArrRC() As RECT, iWorkArea As Long
-            ReDim ArrRC(1 To Count) As RECT
-            SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
-            For iWorkArea = 1 To Count
-                If PtInRect(ArrRC(iWorkArea), P.X, P.Y) <> 0 Then
-                    Set FListItemWorkArea = New LvwWorkArea
-                    FListItemWorkArea.FInit ObjPtr(Me), iWorkArea
-                    Exit For
+Select Case PropView
+    Case LvwViewIcon, LvwViewSmallIcon, LvwViewTile
+        If ListViewHandle <> 0 Then
+            Dim Count As Long
+            SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+            If Count > 0 Then
+                Dim P As POINTAPI
+                If SendMessage(ListViewHandle, LVM_GETITEMPOSITION, Index - 1, ByVal VarPtr(P)) <> 0 Then
+                    Dim ArrRC() As RECT, iWorkArea As Long
+                    ReDim ArrRC(1 To Count) As RECT
+                    SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+                    For iWorkArea = 1 To Count
+                        If PtInRect(ArrRC(iWorkArea), P.X, P.Y) <> 0 Then
+                            Set FListItemWorkArea = New LvwWorkArea
+                            FListItemWorkArea.FInit ObjPtr(Me), iWorkArea
+                            Exit For
+                        End If
+                    Next iWorkArea
                 End If
-            Next iWorkArea
+            End If
         End If
-    End If
-End If
+    Case Else
+        Err.Raise Number:=394, Description:="Get supported in 'icon', 'small icon' and 'tile' view only"
+End Select
 End Property
 
 Friend Property Get FListSubItemLeft(ByVal Index As Long, ByVal SubItemIndex As Long) As Single
@@ -5513,28 +5517,30 @@ FWorkAreaHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainer
 End Property
 
 Friend Property Get FWorkAreaListItemIndices(ByVal Index As Long) As Collection
-Set FWorkAreaListItemIndices = New Collection
-If PropView = LvwViewList Or PropView = LvwViewReport Then Exit Property
-If ListViewHandle <> 0 Then
-    Dim Count As Long
-    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
-    If Count > 0 And Index <= Count And Index > 0 And SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) > 0 Then
-        Dim ArrRC() As RECT
-        ReDim ArrRC(1 To Count) As RECT
-        SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
-        Dim iItem As Long, P As POINTAPI, iWorkArea As Long
-        iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL)
-        Do While iItem > -1
-            If SendMessage(ListViewHandle, LVM_GETITEMPOSITION, iItem, ByVal VarPtr(P)) <> 0 Then
-                For iWorkArea = 1 To Index
-                    If PtInRect(ArrRC(iWorkArea), P.X, P.Y) <> 0 Then Exit For
-                Next iWorkArea
-                If iWorkArea = Index Then FWorkAreaListItemIndices.Add (iItem + 1)
+Select Case PropView
+    Case LvwViewIcon, LvwViewSmallIcon, LvwViewTile
+        Set FWorkAreaListItemIndices = New Collection
+        If ListViewHandle <> 0 Then
+            Dim Count As Long
+            SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+            If Count > 0 And Index <= Count And Index > 0 Then
+                Dim ArrRC() As RECT
+                ReDim ArrRC(1 To Count) As RECT
+                SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+                Dim iItem As Long, P As POINTAPI, iWorkArea As Long
+                For iItem = 0 To (SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) - 1)
+                    If SendMessage(ListViewHandle, LVM_GETITEMPOSITION, iItem, ByVal VarPtr(P)) <> 0 Then
+                        For iWorkArea = 1 To Index
+                            If PtInRect(ArrRC(iWorkArea), P.X, P.Y) <> 0 Then Exit For
+                        Next iWorkArea
+                        If iWorkArea = Index Then FWorkAreaListItemIndices.Add (iItem + 1)
+                    End If
+                Next iItem
             End If
-            iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, iItem, ByVal LVNI_ALL)
-        Loop
-    End If
-End If
+        End If
+    Case Else
+        Err.Raise Number:=394, Description:="Get supported in 'icon', 'small icon' and 'tile' view only"
+End Select
 End Property
 
 Private Sub CreateListView()
@@ -6197,14 +6203,10 @@ Public Function CheckedIndices() As Collection
 Attribute CheckedIndices.VB_Description = "Returns a reference to a collection containing the indexes to the checked items."
 Set CheckedIndices = New Collection
 If ListViewHandle <> 0 Then
-    Dim Count As Long
-    Count = SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&)
-    If Count > 0 Then
-        Dim i As Long
-        For i = 0 To Count - 1
-            If StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, i, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED Then CheckedIndices.Add (i + 1)
-        Next i
-    End If
+    Dim iItem As Long
+    For iItem = 0 To (SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) - 1)
+        If StateImageMaskToIndex(SendMessage(ListViewHandle, LVM_GETITEMSTATE, iItem, ByVal LVIS_STATEIMAGEMASK) And LVIS_STATEIMAGEMASK) = IIL_CHECKED Then CheckedIndices.Add (iItem + 1)
+    Next iItem
 End If
 End Function
 
