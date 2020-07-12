@@ -1,5 +1,13 @@
 List of revisions:
 
+12-Jul-2020
+- Reworked the .WorkAreas property in the ListView control.
+  It is not anymore a property which just returns/sets an array of coordinates.
+  Instead it returns now a collection to the new 'LvwWorkAreas' class.
+  The collection is not 'private' and relies fully on LVM_GETWORKAREAS/LVM_SETWORKAREAS.
+  The .ListItemIndices of a 'LvwWorkArea' returns all list items that belongs to a work area.
+  Also the new .WorkArea property of a 'LvwListItem' returns the work area to which a list item belongs to.
+
 09-Jul-2020
 - Included MultiSelect property in the TreeView control.
   It can be set to 'None' (Default), 'All', 'VisibleOnly', 'RestrictSiblings'.
