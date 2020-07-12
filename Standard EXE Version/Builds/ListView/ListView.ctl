@@ -573,6 +573,7 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function PtInRect Lib "user32" (ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
 Private Const ICC_LISTVIEW_CLASSES As Long = &H1
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -813,7 +814,6 @@ Private Const LVN_LINKCLICK As Long = (LVN_FIRST - 84)
 Private Const LVN_GETEMPTYMARKUP As Long = (LVN_FIRST - 87)
 Private Const LVN_GROUPCHANGED As Long = (LVN_FIRST - 88) ' Undocumented
 Private Const LVA_DEFAULT As Long = &H0
-Private Const LVA_SNAPTOGRID As Long = &H5
 Private Const LVNI_ALL As Long = &H0
 Private Const LVNI_FOCUSED As Long = &H1
 Private Const LVNI_SELECTED As Long = &H2
@@ -1095,6 +1095,7 @@ Attribute PropFont.VB_VarHelpID = -1
 Private PropListItems As LvwListItems
 Private PropColumnHeaders As LvwColumnHeaders
 Private PropGroups As LvwGroups
+Private PropWorkAreas As LvwWorkAreas
 Private PropVisualStyles As Boolean
 Private PropVisualTheme As LvwVisualThemeConstants
 Private PropOLEDragMode As VBRUN.OLEDragConstants
@@ -4090,6 +4091,29 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 1 Then
 End If
 End Property
 
+Friend Property Get FListItemWorkArea(ByVal Index As Long) As LvwWorkArea
+If PropView = LvwViewList Or PropView = LvwViewReport Then Exit Property
+If ListViewHandle <> 0 Then
+    Dim Count As Long
+    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+    If Count > 0 Then
+        Dim P As POINTAPI
+        If SendMessage(ListViewHandle, LVM_GETITEMPOSITION, Index - 1, ByVal VarPtr(P)) <> 0 Then
+            Dim ArrRC() As RECT, iWorkArea As Long
+            ReDim ArrRC(1 To Count) As RECT
+            SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+            For iWorkArea = 1 To Count
+                If PtInRect(ArrRC(iWorkArea), P.X, P.Y) <> 0 Then
+                    Set FListItemWorkArea = New LvwWorkArea
+                    FListItemWorkArea.FInit ObjPtr(Me), iWorkArea
+                    Exit For
+                End If
+            Next iWorkArea
+        End If
+    End If
+End If
+End Property
+
 Friend Property Get FListSubItemLeft(ByVal Index As Long, ByVal SubItemIndex As Long) As Single
 If ListViewHandle <> 0 Then
     Dim RC As RECT
@@ -5392,6 +5416,127 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 1 Then
 End If
 End Property
 
+Public Property Get WorkAreas() As LvwWorkAreas
+Attribute WorkAreas.VB_Description = "Returns a reference to a collection of the work area objects."
+If PropWorkAreas Is Nothing Then
+    If PropVirtualMode = False Then
+        Set PropWorkAreas = New LvwWorkAreas
+        PropWorkAreas.FInit Me
+    Else
+        Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
+    End If
+End If
+Set WorkAreas = PropWorkAreas
+End Property
+
+Friend Function FWorkAreasAdd(ByVal Left As Single, ByVal Top As Single, ByVal Width As Single, ByVal Height As Single) As Long
+Dim RC As RECT
+RC.Left = UserControl.ScaleX(Left, vbContainerPosition, vbPixels)
+RC.Top = UserControl.ScaleY(Top, vbContainerPosition, vbPixels)
+RC.Right = RC.Left + UserControl.ScaleX(Width, vbContainerSize, vbPixels)
+RC.Bottom = RC.Top + UserControl.ScaleY(Height, vbContainerSize, vbPixels)
+If (RC.Right - RC.Left) > 0 And (RC.Bottom - RC.Top) > 0 Then
+    If ListViewHandle <> 0 Then
+        Dim Count As Long
+        SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+        If Count < LV_MAX_WORKAREAS Then
+            Dim ArrRC() As RECT
+            ReDim ArrRC(1 To (Count + 1)) As RECT
+            SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+            Count = Count + 1
+            LSet ArrRC(Count) = RC
+            SendMessage ListViewHandle, LVM_SETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+            FWorkAreasAdd = Count
+        Else
+            ' The maximum number of work areas was exceeded. (Index out of bounds)
+            FWorkAreasAdd = 0
+        End If
+    End If
+Else
+    ' Zero width or height is not accepted by LVM_SETWORKAREAS. (Invalid property value)
+    FWorkAreasAdd = -1
+End If
+End Function
+
+Friend Function FWorkAreasCount() As Long
+If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(FWorkAreasCount)
+End Function
+
+Friend Sub FWorkAreasClear()
+If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
+End Sub
+
+Friend Sub FWorkAreasRemove(ByVal Index As Long)
+If ListViewHandle <> 0 Then
+    Dim Count As Long
+    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+    If Count > 0 And Index <= Count And Index > 0 Then
+        Dim ArrRC() As RECT
+        ReDim ArrRC(1 To Count) As RECT
+        SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+        Dim i As Long
+        For i = Index To (Count - 1)
+            LSet ArrRC(i) = ArrRC(i + 1)
+        Next i
+        Count = Count - 1
+        If Count > 0 Then
+            SendMessage ListViewHandle, LVM_SETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+        Else
+            SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
+        End If
+    End If
+End If
+End Sub
+
+Friend Property Get FWorkAreaLeft(ByVal Index As Long) As Single
+Dim RC As RECT
+Call GetWorkAreaRect(Index, RC)
+FWorkAreaLeft = UserControl.ScaleX(RC.Left, vbPixels, vbContainerPosition)
+End Property
+
+Friend Property Get FWorkAreaTop(ByVal Index As Long) As Single
+Dim RC As RECT
+Call GetWorkAreaRect(Index, RC)
+FWorkAreaTop = UserControl.ScaleY(RC.Top, vbPixels, vbContainerPosition)
+End Property
+
+Friend Property Get FWorkAreaWidth(ByVal Index As Long) As Single
+Dim RC As RECT
+Call GetWorkAreaRect(Index, RC)
+FWorkAreaWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize)
+End Property
+
+Friend Property Get FWorkAreaHeight(ByVal Index As Long) As Single
+Dim RC As RECT
+Call GetWorkAreaRect(Index, RC)
+FWorkAreaHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+End Property
+
+Friend Property Get FWorkAreaListItemIndices(ByVal Index As Long) As Collection
+Set FWorkAreaListItemIndices = New Collection
+If PropView = LvwViewList Or PropView = LvwViewReport Then Exit Property
+If ListViewHandle <> 0 Then
+    Dim Count As Long
+    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+    If Count > 0 And Index <= Count And Index > 0 And SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) > 0 Then
+        Dim ArrRC() As RECT
+        ReDim ArrRC(1 To Count) As RECT
+        SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+        Dim iItem As Long, P As POINTAPI, iWorkArea As Long
+        iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, -1, ByVal LVNI_ALL)
+        Do While iItem > -1
+            If SendMessage(ListViewHandle, LVM_GETITEMPOSITION, iItem, ByVal VarPtr(P)) <> 0 Then
+                For iWorkArea = 1 To Index
+                    If PtInRect(ArrRC(iWorkArea), P.X, P.Y) <> 0 Then Exit For
+                Next iWorkArea
+                If iWorkArea = Index Then FWorkAreaListItemIndices.Add (iItem + 1)
+            End If
+            iItem = SendMessage(ListViewHandle, LVM_GETNEXTITEM, iItem, ByVal LVNI_ALL)
+        Loop
+    End If
+End If
+End Property
+
 Private Sub CreateListView()
 If ListViewHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
@@ -6413,80 +6558,6 @@ If ListViewDragIndex > 0 Then
 End If
 End Property
 
-Public Property Get WorkAreas() As Variant
-Attribute WorkAreas.VB_Description = "Returns/sets the working areas of the list view in 'icon' and 'small icon' view. All the client coordinates (left, top, right and bottom) are in pixels."
-Attribute WorkAreas.VB_MemberFlags = "400"
-If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
-If ListViewHandle <> 0 Then
-    Dim StructCount As Long
-    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(StructCount)
-    If StructCount > 0 Then
-        Dim RC() As RECT
-        ReDim RC(0 To (StructCount - 1)) As RECT
-        SendMessage ListViewHandle, LVM_GETWORKAREAS, StructCount, ByVal VarPtr(RC(0))
-        Dim ArgList() As Long
-        ReDim ArgList(0 To ((StructCount * 4) - 1)) As Long
-        CopyMemory ArgList(0), ByVal VarPtr(RC(0)), StructCount * 16
-        WorkAreas = ArgList()
-    Else
-        WorkAreas = Empty
-    End If
-End If
-End Property
-
-Public Property Let WorkAreas(ByVal ArgList As Variant)
-If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
-If ListViewHandle <> 0 Then
-    If IsArray(ArgList) Then
-        Dim Ptr As Long
-        CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), 4
-        If Ptr <> 0 Then
-            Dim DimensionCount As Integer
-            CopyMemory DimensionCount, ByVal Ptr, 2
-            If DimensionCount = 1 Then
-                Dim Arr() As Long, Count As Long, i As Long
-                For i = LBound(ArgList) To UBound(ArgList)
-                    Select Case VarType(ArgList(i))
-                        Case vbLong, vbInteger, vbByte
-                            If ArgList(i) >= 0 Then
-                                ReDim Preserve Arr(0 To Count) As Long
-                                Arr(Count) = ArgList(i)
-                                Count = Count + 1
-                            End If
-                        Case vbDouble, vbSingle
-                            If CLng(ArgList(i)) >= 0 Then
-                                ReDim Preserve Arr(0 To Count) As Long
-                                Arr(Count) = CLng(ArgList(i))
-                                Count = Count + 1
-                            End If
-                    End Select
-                Next i
-                If Count > 0 Then
-                    If Count Mod 4 = 0 Then
-                        Dim StructCount As Long
-                        StructCount = (Count / 4)
-                        If StructCount > LV_MAX_WORKAREAS Then StructCount = LV_MAX_WORKAREAS
-                        SendMessage ListViewHandle, LVM_SETWORKAREAS, StructCount, ByVal VarPtr(Arr(0))
-                    Else
-                        Err.Raise 5
-                    End If
-                Else
-                    SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
-                End If
-            Else
-                Err.Raise Number:=5, Description:="Array must be single dimensioned"
-            End If
-        Else
-            Err.Raise Number:=91, Description:="Array is not allocated"
-        End If
-    ElseIf IsEmpty(ArgList) Then
-        SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByVal 0&
-    Else
-        Err.Raise 380
-    End If
-End If
-End Property
-
 Public Property Get SelectedGroup() As LvwGroup
 Attribute SelectedGroup.VB_Description = "Returns/sets a reference to the currently selected group. Requires comctl32.dll version 6.1 or higher."
 If PropVirtualMode = True Then Err.Raise Number:=5, Description:="This functionality is disabled when virtual mode is on."
@@ -7023,6 +7094,19 @@ If IsGroupAvailable(ID) = True Then
     Next Group
 End If
 End Function
+
+Private Sub GetWorkAreaRect(ByVal Index As Long, ByRef RC As RECT)
+If ListViewHandle <> 0 Then
+    Dim Count As Long
+    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
+    If Count > 0 And Index <= Count And Index > 0 Then
+        Dim ArrRC() As RECT
+        ReDim ArrRC(1 To Count) As RECT
+        SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
+        LSet RC = ArrRC(Index)
+    End If
+End If
+End Sub
 
 Private Function GetFilterEditIndex(ByVal hWndFilterEdit As Long) As Long
 If ListViewHandle = 0 Or hWndFilterEdit = 0 Then Exit Function

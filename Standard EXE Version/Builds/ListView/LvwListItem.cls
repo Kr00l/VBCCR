@@ -329,6 +329,12 @@ If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is di
 If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Set ShadowListView.FListItemGroup(PropIndex) = Value
 End Property
 
+Public Property Get WorkArea() As LvwWorkArea
+Attribute WorkArea.VB_Description = "Returns the work area to which the item belongs to in 'icon', 'small icon' and 'tile' view."
+If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
+If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then Set WorkArea = ShadowListView.FListItemWorkArea(PropIndex)
+End Property
+
 Public Property Get ListSubItems() As LvwListSubItems
 Attribute ListSubItems.VB_Description = "Returns/sets a collection of list sub items belonging to the list item."
 If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."

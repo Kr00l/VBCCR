@@ -112,7 +112,7 @@ Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
 Public Property Get Width() As Single
-Attribute Width.VB_Description = "Returns the width of the tab."
+Attribute Width.VB_Description = "Returns the width of the link."
 Width = ShadowLinkLabel.FLinkWidth(PropIndex)
 End Property
 
@@ -121,7 +121,7 @@ Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
 Public Property Get Height() As Single
-Attribute Height.VB_Description = "Returns the height of the tab."
+Attribute Height.VB_Description = "Returns the height of the link."
 Height = ShadowLinkLabel.FLinkHeight(PropIndex)
 End Property
 
