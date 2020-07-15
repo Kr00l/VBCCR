@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Jul-2020
+- Added optional 'Index' param in the .WorkAreas.Add method (to insert before index) in the ListView control.
+
 12-Jul-2020
 - Reworked the .WorkAreas property in the ListView control.
   It is not anymore a property which just returns/sets an array of coordinates.
