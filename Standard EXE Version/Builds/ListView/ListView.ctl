@@ -5433,7 +5433,14 @@ End If
 Set WorkAreas = PropWorkAreas
 End Property
 
-Friend Function FWorkAreasAdd(ByVal Left As Single, ByVal Top As Single, ByVal Width As Single, ByVal Height As Single) As Long
+Friend Function FWorkAreasAdd(ByVal Left As Single, ByVal Top As Single, ByVal Width As Single, ByVal Height As Single, Optional ByVal Index As Long) As Long
+Dim Count As Long, WorkAreaIndex As Long
+Count = Me.FWorkAreasCount
+If Index = 0 Then
+    WorkAreaIndex = Count + 1
+Else
+    WorkAreaIndex = Index
+End If
 Dim RC As RECT
 RC.Left = UserControl.ScaleX(Left, vbContainerPosition, vbPixels)
 RC.Top = UserControl.ScaleY(Top, vbContainerPosition, vbPixels)
@@ -5441,16 +5448,19 @@ RC.Right = RC.Left + UserControl.ScaleX(Width, vbContainerSize, vbPixels)
 RC.Bottom = RC.Top + UserControl.ScaleY(Height, vbContainerSize, vbPixels)
 If (RC.Right - RC.Left) > 0 And (RC.Bottom - RC.Top) > 0 Then
     If ListViewHandle <> 0 Then
-        Dim Count As Long
-        SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
         If Count < LV_MAX_WORKAREAS Then
-            Dim ArrRC() As RECT
+            Dim ArrRC() As RECT, i As Long
             ReDim ArrRC(1 To (Count + 1)) As RECT
             SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
             Count = Count + 1
-            LSet ArrRC(Count) = RC
+            If WorkAreaIndex < Count Then
+                For i = Count To (WorkAreaIndex + 1) Step -1
+                    LSet ArrRC(i) = ArrRC(i - 1)
+                Next i
+            End If
+            LSet ArrRC(WorkAreaIndex) = RC
             SendMessage ListViewHandle, LVM_SETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))
-            FWorkAreasAdd = Count
+            FWorkAreasAdd = WorkAreaIndex
         Else
             ' The maximum number of work areas was exceeded. (Index out of bounds)
             FWorkAreasAdd = 0
@@ -5471,10 +5481,10 @@ If ListViewHandle <> 0 Then SendMessage ListViewHandle, LVM_SETWORKAREAS, 0, ByV
 End Sub
 
 Friend Sub FWorkAreasRemove(ByVal Index As Long)
-If ListViewHandle <> 0 Then
-    Dim Count As Long
-    SendMessage ListViewHandle, LVM_GETNUMBEROFWORKAREAS, 0, ByVal VarPtr(Count)
-    If Count > 0 And Index <= Count And Index > 0 Then
+Dim Count As Long
+Count = Me.FWorkAreasCount
+If Count > 0 And Index <= Count And Index > 0 Then
+    If ListViewHandle <> 0 Then
         Dim ArrRC() As RECT
         ReDim ArrRC(1 To Count) As RECT
         SendMessage ListViewHandle, LVM_GETWORKAREAS, Count, ByVal VarPtr(ArrRC(1))

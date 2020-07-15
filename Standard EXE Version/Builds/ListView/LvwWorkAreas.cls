@@ -28,15 +28,15 @@ Friend Sub FInit(ByVal Object As ListView)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
-Public Function Add(ByVal Left As Single, ByVal Top As Single, ByVal Width As Single, ByVal Height As Single) As LvwWorkArea
+Public Function Add(ByVal Left As Single, ByVal Top As Single, ByVal Width As Single, ByVal Height As Single, Optional ByVal Index As Long) As LvwWorkArea
 Attribute Add.VB_Description = "Adds a work area to the work areas collection."
-Dim Index As Long
-Index = ShadowListView.FWorkAreasAdd(Left, Top, Width, Height)
-If Index > 0 Then
-    Dim NewWorkArea As New LvwWorkArea
-    NewWorkArea.FInit ShadowObjectPointer, Index
-    Set Add = NewWorkArea
-ElseIf Index < 0 Then
+If Index > (Me.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
+Dim Result As Long
+Result = ShadowListView.FWorkAreasAdd(Left, Top, Width, Height, Index)
+If Result > 0 Then
+    Set Add = New LvwWorkArea
+    Add.FInit ShadowObjectPointer, Result
+ElseIf Result < 0 Then
     Err.Raise 380
 Else
     Err.Raise Number:=35600, Description:="Index out of bounds"
@@ -47,9 +47,8 @@ Public Property Get Item(ByVal Index As Long) As LvwWorkArea
 Attribute Item.VB_Description = "Returns a work area given its index."
 Attribute Item.VB_UserMemId = 0
 If Index > Me.Count Or Index <= 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
-Dim NewWorkArea As New LvwWorkArea
-NewWorkArea.FInit ShadowObjectPointer, Index
-Set Item = NewWorkArea
+Set Item = New LvwWorkArea
+Item.FInit ShadowObjectPointer, Index
 End Property
 
 Public Function Exists(ByVal Index As Long) As Boolean
