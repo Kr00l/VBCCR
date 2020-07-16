@@ -7877,13 +7877,16 @@ Select Case wMsg
                     If Not Text = vbNullString Then
                         Dim NMLVEMU As NMLVEMPTYMARKUP
                         CopyMemory NMLVEMU, ByVal lParam, LenB(NMLVEMU)
+                        If PropRightToLeft = True And PropRightToLeftLayout = False Then Text = ChrW(&H202B) & Text ' Right-to-left Embedding (RLE)
                         Text = Left$(Text & vbNullChar, L_MAX_URL_LENGTH)
                         CopyMemory NMLVEMU.szMarkup(0), ByVal StrPtr(Text), LenB(Text)
                         If Centered = True Then NMLVEMU.dwFlags = EMF_CENTERED
                         CopyMemory ByVal lParam, NMLVEMU, LenB(NMLVEMU)
                         WindowProcUserControl = 1
-                        Exit Function
+                    Else
+                        WindowProcUserControl = 0
                     End If
+                    Exit Function
                 Case LVN_MARQUEEBEGIN
                     RaiseEvent BeginMarqueeSelection(Cancel)
                     If Cancel = True Then
@@ -7907,13 +7910,13 @@ Select Case wMsg
                     Dim NMLVL As NMLVLINK
                     CopyMemory NMLVL, ByVal lParam, LenB(NMLVL)
                     With NMLVL
-                    If .iGroupId <> 0 Then RaiseEvent GroupLinkClick(GetGroupFromID(.iGroupId))
+                    If .iGroupId > 0 Then RaiseEvent GroupLinkClick(GetGroupFromID(.iGroupId))
                     End With
                 Case LVN_GROUPCHANGED
                     Dim NMLVG As NMLVGROUP
                     CopyMemory NMLVG, ByVal lParam, LenB(NMLVG)
                     With NMLVG
-                    If .iGroupId <> 0 Then
+                    If .iGroupId > 0 Then
                         If CBool((.uNewState And LVGS_COLLAPSED) = LVGS_COLLAPSED) Xor CBool((.uOldState And LVGS_COLLAPSED) = LVGS_COLLAPSED) Then
                             RaiseEvent GroupCollapsedChanged(GetGroupFromID(.iGroupId))
                         End If
