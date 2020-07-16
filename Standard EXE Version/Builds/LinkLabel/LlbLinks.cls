@@ -32,9 +32,8 @@ Public Property Get Item(ByVal Index As Long) As LlbLink
 Attribute Item.VB_Description = "Returns a link given its index."
 Attribute Item.VB_UserMemId = 0
 If Index > Me.Count Or Index <= 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
-Dim NewLink As New LlbLink
-NewLink.FInit ShadowObjectPointer, Index
-Set Item = NewLink
+Set Item = New LlbLink
+Item.FInit ShadowObjectPointer, Index
 End Property
 
 Public Function Exists(ByVal Index As Long) As Boolean

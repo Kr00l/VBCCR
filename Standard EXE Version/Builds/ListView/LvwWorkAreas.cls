@@ -31,12 +31,11 @@ End Sub
 Public Function Add(ByVal Left As Single, ByVal Top As Single, ByVal Width As Single, ByVal Height As Single, Optional ByVal Index As Long) As LvwWorkArea
 Attribute Add.VB_Description = "Adds a work area to the work areas collection."
 If Index > (Me.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
-Dim Result As Long
-Result = ShadowListView.FWorkAreasAdd(Left, Top, Width, Height, Index)
-If Result > 0 Then
+Index = ShadowListView.FWorkAreasAdd(Left, Top, Width, Height, Index)
+If Index > 0 Then
     Set Add = New LvwWorkArea
-    Add.FInit ShadowObjectPointer, Result
-ElseIf Result < 0 Then
+    Add.FInit ShadowObjectPointer, Index
+ElseIf Index < 0 Then
     Err.Raise 380
 Else
     Err.Raise Number:=35600, Description:="Index out of bounds"
