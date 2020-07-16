@@ -1,5 +1,8 @@
 List of revisions:
 
+16-Jul-2020
+- The GetEmptyMarkup event supports now right-to-left in the ListView control.
+
 15-Jul-2020
 - Added optional 'Index' param in the .WorkAreas.Add method (to insert before index) in the ListView control.
 
