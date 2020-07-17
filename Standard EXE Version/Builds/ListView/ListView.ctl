@@ -489,7 +489,7 @@ Public Event BeforeFilterEdit(ByVal ColumnHeader As LvwColumnHeader, ByVal hWndF
 Attribute BeforeFilterEdit.VB_Description = "Occurs when a user attempts to edit the filter of the corresponding column header."
 Public Event AfterFilterEdit(ByVal ColumnHeader As LvwColumnHeader)
 Attribute AfterFilterEdit.VB_Description = "Occurs after a user edits the filter of the corresponding column header."
-Public Event GetEmptyMarkup(ByRef Text As String, ByRef Centered As Boolean)
+Public Event GetEmptyMarkup(ByRef Text As String, ByRef Center As Boolean)
 Attribute GetEmptyMarkup.VB_Description = "Occurs when the list view has no list items. This is a request to provide a markup text. Requires comctl32.dll version 6.1 or higher."
 Public Event GroupCollapsedChanged(ByVal Group As LvwGroup)
 Attribute GroupCollapsedChanged.VB_Description = "Occurrs when the group's collapsed state changes. Requires comctl32.dll version 6.1 or higher."
@@ -8300,15 +8300,15 @@ Select Case wMsg
                     End If
                     End With
                 Case LVN_GETEMPTYMARKUP
-                    Dim Text As String, Centered As Boolean
-                    RaiseEvent GetEmptyMarkup(Text, Centered)
+                    Dim Text As String, Center As Boolean
+                    RaiseEvent GetEmptyMarkup(Text, Center)
                     If Not Text = vbNullString Then
                         Dim NMLVEMU As NMLVEMPTYMARKUP
                         CopyMemory NMLVEMU, ByVal lParam, LenB(NMLVEMU)
                         If PropRightToLeft = True And PropRightToLeftLayout = False Then Text = ChrW(&H202B) & Text ' Right-to-left Embedding (RLE)
                         Text = Left$(Text & vbNullChar, L_MAX_URL_LENGTH)
                         CopyMemory NMLVEMU.szMarkup(0), ByVal StrPtr(Text), LenB(Text)
-                        If Centered = True Then NMLVEMU.dwFlags = EMF_CENTERED
+                        If Center = True Then NMLVEMU.dwFlags = EMF_CENTERED Else NMLVEMU.dwFlags = 0
                         CopyMemory ByVal lParam, NMLVEMU, LenB(NMLVEMU)
                         WindowProcUserControl = 1
                     Else
