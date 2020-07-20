@@ -497,7 +497,6 @@ On Error GoTo 0
 If CurrIndex > 0 Then
     With PropShadowPanels(CurrIndex)
     .Text = TextText.Text
-    .Key = TextKey.Text
     .Tag = TextTag.Text
     .ToolTipText = TextToolTipText.Text
     .Style = ComboStyle.ItemData(ComboStyle.ListIndex)
@@ -514,7 +513,21 @@ If CurrIndex > 0 Then
     End With
     With PropertyPage.SelectedControls(0)
     .Panels.Remove CurrIndex
-    With .Panels.Add(CurrIndex, PropShadowPanels(CurrIndex).Key, PropShadowPanels(CurrIndex).Text, PropShadowPanels(CurrIndex).Style)
+    .Panels.Add CurrIndex, , PropShadowPanels(CurrIndex).Text, PropShadowPanels(CurrIndex).Style
+    If Not TextKey.Text = vbNullString Then
+        If .Panels.Exists(TextKey.Text) = True Then
+            MsgBox "This key is already associated with an element of this collection.", vbCritical + vbOKOnly
+            FreezeChanged = True
+            TextKey.Text = PropShadowPanels(CurrIndex).Key
+            FreezeChanged = False
+        Else
+            PropShadowPanels(CurrIndex).Key = TextKey.Text
+        End If
+    Else
+        PropShadowPanels(CurrIndex).Key = vbNullString
+    End If
+    With .Panels(CurrIndex)
+    If Not PropShadowPanels(CurrIndex).Key = vbNullString Then .Key = PropShadowPanels(CurrIndex).Key
     .Tag = PropShadowPanels(CurrIndex).Tag
     .ToolTipText = PropShadowPanels(CurrIndex).ToolTipText
     .Bevel = PropShadowPanels(CurrIndex).Bevel

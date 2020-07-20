@@ -196,6 +196,8 @@ Public Event NodeBeforeSelect(ByVal Node As TvwNode, ByRef Cancel As Boolean)
 Attribute NodeBeforeSelect.VB_Description = "Occurs before a node is about to be selected."
 Public Event NodeSelect(ByVal Node As TvwNode)
 Attribute NodeSelect.VB_Description = "Occurs when a node is selected."
+Public Event NodeRangeSelect(ByVal Node As TvwNode, ByRef Cancel As Boolean)
+Attribute NodeRangeSelect.VB_Description = "Occurs for each node when a range of nodes is about to be selected."
 Public Event BeforeCollapse(ByVal Node As TvwNode, ByRef Cancel As Boolean)
 Attribute BeforeCollapse.VB_Description = "Occurs before a node is about to collapse."
 Public Event Collapse(ByVal Node As TvwNode)
@@ -3581,7 +3583,14 @@ Select Case wMsg
                                             If TreeViewAnchorItem <> .hItem Then
                                                 If (TreeViewClickShift And vbCtrlMask) = 0 Then ClearSelectedItems 0&
                                                 For Each hEnum In GetSelectRange(TreeViewAnchorItem, .hItem)
-                                                    Me.FNodeSelected(hEnum) = True
+                                                    Select Case hEnum
+                                                        Case TreeViewAnchorItem, .hItem
+                                                            Me.FNodeSelected(hEnum) = True
+                                                        Case Else
+                                                            Cancel = False
+                                                            RaiseEvent NodeRangeSelect(PtrToObj(GetItemPtr(hEnum)), Cancel)
+                                                            If Cancel = False Then Me.FNodeSelected(hEnum) = True
+                                                    End Select
                                                 Next hEnum
                                             Else
                                                 ClearSelectedItems .hItem
@@ -3733,7 +3742,14 @@ Select Case wMsg
                                             If TreeViewAnchorItem <> .ItemNew.hItem Then
                                                 If (Shift And vbCtrlMask) = 0 Then ClearSelectedItems 0&
                                                 For Each hEnum In GetSelectRange(TreeViewAnchorItem, .ItemNew.hItem)
-                                                    Me.FNodeSelected(hEnum) = True
+                                                    Select Case hEnum
+                                                        Case TreeViewAnchorItem, .ItemNew.hItem
+                                                            Me.FNodeSelected(hEnum) = True
+                                                        Case Else
+                                                            Cancel = False
+                                                            RaiseEvent NodeRangeSelect(PtrToObj(GetItemPtr(hEnum)), Cancel)
+                                                            If Cancel = False Then Me.FNodeSelected(hEnum) = True
+                                                    End Select
                                                 Next hEnum
                                             Else
                                                 ClearSelectedItems .ItemNew.hItem
