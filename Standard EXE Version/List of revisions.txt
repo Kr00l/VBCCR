@@ -1,5 +1,10 @@
 List of revisions:
 
+20-Jul-2020
+- It is now possible for the SbrPanels collection to change the key on a particular SbrPanel in the StatusBar control.
+- Included the 'NodeRangeSelect' event in TreeView control with a Cancel parameter.
+  It fires for each node when a range of nodes is about to be selected. (like 'NodeBeforeSelect', but for shift-range selection)
+
 16-Jul-2020
 - The GetEmptyMarkup event supports now right-to-left in the ListView control.
 
