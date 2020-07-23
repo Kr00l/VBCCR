@@ -98,15 +98,14 @@ hdr As DEV_BROADCAST_HDR
 UnitMask As Long
 Flags As Integer
 End Type
-Private Const MAX_PATH As Long = 260
 Private Type DEV_BROADCAST_PORT
 hdr As DEV_BROADCAST_HDR
-pszName(0 To ((MAX_PATH * 2) - 1)) As Byte
+pszName As Integer
 End Type
 Private Type DEV_BROADCAST_DEVICEINTERFACE
 hdr As DEV_BROADCAST_HDR
 ClassGuid As OLEGuids.OLECLSID
-pszDeviceName(0 To ((MAX_PATH * 2) - 1)) As Byte
+pszDeviceName As Integer
 End Type
 Private Type SYSTEM_POWER_STATUS
 ACLineStatus As Byte
@@ -184,6 +183,7 @@ Private Const WM_SETTINGCHANGE As Long = &H1A
 Private Const WM_DEVMODECHANGE As Long = &H1B
 Private Const WM_TIMECHANGE As Long = &H1E
 Private Const WM_FONTCHANGE As Long = &H1D
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const WM_DISPLAYCHANGE As Long = &H7E
 Private Const WM_DEVICECHANGE As Long = &H219
 Private Const DBT_DEVNODES_CHANGED As Long = &H7
@@ -201,7 +201,6 @@ Private Const PBT_APMQUERYSUSPENDFAILED As Long = &H2
 Private Const PBT_APMSUSPEND As Long = &H4
 Private Const PBT_APMRESUMESUSPEND As Long = &H7
 Private Const PBT_APMPOWERSTATUSCHANGE As Long = &HA
-Private Const WM_THEMECHANGED As Long = &H31A
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Private SysInfoMainHandle As Long
@@ -213,7 +212,7 @@ Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUS
 pdwSupportedOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
 pdwEnabledOptions = INTERFACESAFE_FOR_UNTRUSTED_CALLER Or INTERFACESAFE_FOR_UNTRUSTED_DATA
 End Sub
-     
+
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
@@ -292,12 +291,12 @@ SysInfoMainHandle = GetAncestor(UserControl.hWnd, GA_ROOTOWNER)
 If SysInfoMainHandle <> 0 Then
     Call ComCtlsSetSubclass(SysInfoMainHandle, Me, 1, SysInfoName)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
-    Dim DBCC As DEV_BROADCAST_DEVICEINTERFACE
-    With DBCC.hdr
-    .cbSize = LenB(DBCC)
+    Dim DBCDI As DEV_BROADCAST_DEVICEINTERFACE
+    With DBCDI.hdr
+    .cbSize = LenB(DBCDI)
     .DeviceType = DBT_DEVTYP_DEVICEINTERFACE
     End With
-    SysInfoDevNotifyHandle = RegisterDeviceNotification(UserControl.hWnd, DBCC, DEVICE_NOTIFY_WINDOW_HANDLE Or DEVICE_NOTIFY_ALL_INTERFACE_CLASSES)
+    SysInfoDevNotifyHandle = RegisterDeviceNotification(UserControl.hWnd, DBCDI, DEVICE_NOTIFY_WINDOW_HANDLE Or DEVICE_NOTIFY_ALL_INTERFACE_CLASSES)
 End If
 End Sub
 
@@ -430,14 +429,13 @@ End Select
 End Function
 
 Private Function WindowProcMain(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Dim Cancel As Boolean
+Dim Length As Long, Cancel As Boolean
 Select Case wMsg
     Case WM_SYSCOLORCHANGE
         RaiseEvent SysColorsChanged
     Case WM_SETTINGCHANGE
         Dim Section As String
         If lParam <> 0 Then
-            Dim Length As Long
             Length = lstrlen(lParam)
             If Length > 0 Then
                 Section = String(Length, vbNullChar)
@@ -482,9 +480,13 @@ Select Case wMsg
                         Next i
                         DeviceData = DBCV.Flags
                     Case DBT_DEVTYP_PORT
-                        Dim DBCP As DEV_BROADCAST_PORT
-                        CopyMemory DBCP, ByVal lParam, LenB(DBCP)
-                        DeviceName = Left$(DBCP.pszName, InStr(DBCP.pszName, vbNullChar) - 1)
+                        Dim DBCP As DEV_BROADCAST_PORT, Offset As Long
+                        Offset = Len(DBCP) ' LenB() is not applicable due to padding bytes.
+                        Length = ((DBCHDR.cbSize - Offset) / 2) - 1
+                        If Length > 0 Then
+                            DeviceName = String(Length, vbNullChar)
+                            CopyMemory ByVal StrPtr(DeviceName), ByVal UnsignedAdd(lParam, Offset - 2), Length * 2
+                        End If
                     Case Else
                         WindowProcMain = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
                         Exit Function
@@ -549,9 +551,14 @@ Select Case wMsg
                 Dim DBCHDR As DEV_BROADCAST_HDR
                 CopyMemory DBCHDR, ByVal lParam, LenB(DBCHDR)
                 If DBCHDR.DeviceType = DBT_DEVTYP_DEVICEINTERFACE Then
-                    Dim DBCDI As DEV_BROADCAST_DEVICEINTERFACE, DeviceName As String
-                    CopyMemory DBCDI, ByVal lParam, LenB(DBCDI)
-                    DeviceName = Left$(DBCDI.pszDeviceName, InStr(DBCDI.pszDeviceName, vbNullChar) - 1)
+                    Dim DBCDI As DEV_BROADCAST_DEVICEINTERFACE
+                    Dim Offset As Long, Length As Long, DeviceName As String
+                    Offset = Len(DBCDI) ' LenB() is not applicable due to padding bytes.
+                    Length = ((DBCHDR.cbSize - Offset) / 2) - 1
+                    If Length > 0 Then
+                        DeviceName = String(Length, vbNullChar)
+                        CopyMemory ByVal StrPtr(DeviceName), ByVal UnsignedAdd(lParam, Offset - 2), Length * 2
+                    End If
                     Select Case wParam
                         Case DBT_DEVICEARRIVAL
                             RaiseEvent DeviceArrival(DBCHDR.DeviceType, 0, DeviceName, 0)
