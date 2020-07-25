@@ -157,12 +157,6 @@ fStyle As Long
 wID As Long
 lParam As Long
 End Type
-Private Type NMRBAUTOSIZE
-hdr As NMHDR
-fChanged As Long
-RCTarget As RECT
-RCActual As RECT
-End Type
 Private Type NMREBARCHILDSIZE
 hdr As NMHDR
 uBand As Long
@@ -351,7 +345,6 @@ Private Const WM_SIZE As Long = &H5
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
-Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
@@ -374,8 +367,6 @@ Private Const RB_GETBANDCOUNT As Long = (WM_USER + 12)
 Private Const RB_GETROWCOUNT As Long = (WM_USER + 13)
 Private Const RB_GETROWHEIGHT As Long = (WM_USER + 14)
 Private Const RB_IDTOINDEX As Long = (WM_USER + 16)
-Private Const RB_GETTOOLTIPS As Long = (WM_USER + 17)
-Private Const RB_SETTOOLTIPS As Long = (WM_USER + 18)
 Private Const RB_SETBKCOLOR As Long = (WM_USER + 19)
 Private Const RB_GETBKCOLOR As Long = (WM_USER + 20)
 Private Const RB_SETTEXTCOLOR As Long = (WM_USER + 21)
@@ -392,24 +383,16 @@ Private Const RB_MINIMIZEBAND As Long = (WM_USER + 30)
 Private Const RB_MAXIMIZEBAND As Long = (WM_USER + 31)
 Private Const RB_GETBANDBORDERS As Long = (WM_USER + 34)
 Private Const RB_SHOWBAND As Long = (WM_USER + 35)
-Private Const RB_SETPALETTE As Long = (WM_USER + 37)
-Private Const RB_GETPALETTE As Long = (WM_USER + 38)
 Private Const RB_MOVEBAND As Long = (WM_USER + 39)
 Private Const RB_GETBANDMARGINS As Long = (WM_USER + 40)
-Private Const RB_SETEXTENDEDSTYLE As Long = (WM_USER + 41)
-Private Const RB_GETEXTENDEDSTYLE As Long = (WM_USER + 42)
 Private Const RB_PUSHCHEVRON As Long = (WM_USER + 43)
 Private Const TTM_POP As Long = (WM_USER + 28)
-Private Const TTM_UPDATE As Long = (WM_USER + 29)
 Private Const TTM_ADDTOOLA As Long = (WM_USER + 4)
 Private Const TTM_ADDTOOLW As Long = (WM_USER + 50)
 Private Const TTM_ADDTOOL As Long = TTM_ADDTOOLW
 Private Const TTM_NEWTOOLRECTA As Long = (WM_USER + 6)
 Private Const TTM_NEWTOOLRECTW As Long = (WM_USER + 52)
 Private Const TTM_NEWTOOLRECT As Long = TTM_NEWTOOLRECTW
-Private Const TTM_SETTOOLINFOA As Long = (WM_USER + 9)
-Private Const TTM_SETTOOLINFOW As Long = (WM_USER + 54)
-Private Const TTM_SETTOOLINFO As Long = TTM_SETTOOLINFOW
 Private Const LPSTR_TEXTCALLBACK As Long = (-1)
 Private Const TTF_SUBCLASS As Long = &H10
 Private Const TTF_PARSELINKS As Long = &H1000
@@ -460,9 +443,7 @@ Private Const NM_FIRST As Long = 0
 Private Const NM_CUSTOMDRAW As Long = (NM_FIRST - 12)
 Private Const RBN_FIRST As Long = (-831)
 Private Const RBN_HEIGHTCHANGE As Long = (RBN_FIRST - 0)
-Private Const RBN_GETOBJECT As Long = (RBN_FIRST - 1)
 Private Const RBN_LAYOUTCHANGED As Long = (RBN_FIRST - 2)
-Private Const RBN_AUTOSIZE As Long = (RBN_FIRST - 3)
 Private Const RBN_BEGINDRAG As Long = (RBN_FIRST - 4)
 Private Const RBN_ENDDRAG As Long = (RBN_FIRST - 5)
 Private Const RBN_DELETINGBAND As Long = (RBN_FIRST - 6)
@@ -477,7 +458,6 @@ Private Const RBS_TOOLTIPS As Long = &H100 ' Unsupported
 Private Const RBS_VARHEIGHT As Long = &H200
 Private Const RBS_BANDBORDERS As Long = &H400
 Private Const RBS_FIXEDORDER As Long = &H800
-Private Const RBS_AUTOSIZE As Long = &H2000
 Private Const RBS_VERTICALGRIPPER As Long = &H4000
 Private Const RBS_DBLCLKTOGGLE As Long = &H8000&
 Implements ISubclass
@@ -2790,7 +2770,7 @@ End Sub
 
 Private Sub CheckToolTipIndex(ByVal X As Long, ByVal Y As Long)
 If CoolBarHandle <> 0 And CoolBarToolTipHandle <> 0 Then
-    Dim Text As String, RBHTI As RBHITTESTINFO
+    Dim RBHTI As RBHITTESTINFO
     With RBHTI
     .PT.X = X
     .PT.Y = Y

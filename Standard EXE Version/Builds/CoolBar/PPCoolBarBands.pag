@@ -547,7 +547,6 @@ On Error GoTo 0
 If CurrIndex > 0 Then
     With PropShadowBands(CurrIndex)
     .Caption = TextCaption.Text
-    .Key = TextKey.Text
     .Tag = TextTag.Text
     .ChildName = IIf(ComboChild.ListIndex > 0, ComboChild.List(ComboChild.ListIndex), vbNullString)
     Dim i As Long
@@ -581,15 +580,13 @@ If CurrIndex > 0 Then
     .FixedBackground = CBool(CheckFixedBackground.Value = vbChecked)
     End With
     With PropertyPage.SelectedControls(0)
-    If .Bands.Count > 0 Then
-        For i = 1 To .Bands.Count
-            Set .Bands(i).Child = Nothing
-        Next i
-    End If
+    For i = 1 To .Bands.Count
+        Set .Bands(i).Child = Nothing
+    Next i
     .Bands.Clear
     For i = 0 To UBound(PropShadowBands())
         If i > 0 Then
-            With .Bands.Add(i, PropShadowBands(i).Key, PropShadowBands(i).Caption, PropShadowBands(i).Image, PropShadowBands(i).NewRow, PropShadowBands(i).ChildName, PropShadowBands(i).Visible)
+            With .Bands.Add(i, IIf(i <> CurrIndex, PropShadowBands(i).Key, vbNullString), PropShadowBands(i).Caption, PropShadowBands(i).Image, PropShadowBands(i).NewRow, PropShadowBands(i).ChildName, PropShadowBands(i).Visible)
             .Tag = PropShadowBands(i).Tag
             .Style = PropShadowBands(i).Style
             If PropShadowBands(i).Style <> CbrBandStyleFixedSize Then .Width = PropShadowBands(i).Width
@@ -617,6 +614,20 @@ If CurrIndex > 0 Then
     TextIdealWidth.Text = CStr(.IdealWidth)
     CheckNewRow.Value = IIf(.NewRow = True, vbChecked, vbUnchecked)
     End With
+    If Not TextKey.Text = vbNullString Then
+        If .Bands.Exists(TextKey.Text) = True Then
+            .Bands(CurrIndex).Key = PropShadowBands(CurrIndex).Key
+            MsgBox "This key is already associated with an element of this collection.", vbCritical + vbOKOnly
+            FreezeChanged = True
+            TextKey.Text = PropShadowBands(CurrIndex).Key
+            FreezeChanged = False
+        Else
+            PropShadowBands(CurrIndex).Key = TextKey.Text
+            .Bands(CurrIndex).Key = PropShadowBands(CurrIndex).Key
+        End If
+    Else
+        PropShadowBands(CurrIndex).Key = vbNullString
+    End If
     End With
 End If
 Call PropertyPage_SelectionChanged
