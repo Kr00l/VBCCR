@@ -214,10 +214,6 @@ wParam As Long
 lParam As Long
 CharRange As RECHARRANGE
 End Type
-Private Type NMENREQRESIZE
-hdr As NMHDR
-RC As RECT
-End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -409,8 +405,6 @@ Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
-Private Const WM_GETTEXTLENGTH As Long = &HE
-Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
 Private Const WM_COPY As Long = &H301
 Private Const WM_CUT As Long = &H300
@@ -497,32 +491,26 @@ Private Const EM_SETEDITSTYLEEX As Long = (WM_USER + 275)
 Private Const EM_GETEDITSTYLEEX As Long = (WM_USER + 276)
 Private Const ENM_NONE As Long = &H0
 Private Const ENM_CHANGE As Long = &H1
-Private Const ENM_UPDATE As Long = &H2
 Private Const ENM_SCROLL As Long = &H4
 Private Const ENM_KEYEVENTS As Long = &H10000
 Private Const ENM_MOUSEEVENTS As Long = &H20000
-Private Const ENM_REQUESTRESIZE As Long = &H40000
 Private Const ENM_SELCHANGE As Long = &H80000
-Private Const ENM_DROPFILES As Long = &H100000
+Private Const ENM_DROPFILES As Long = &H100000 ' Not applicable if an IRichEditOleCallback is set.
 Private Const ENM_PROTECTED As Long = &H200000
 Private Const ENM_CORRECTTEXT As Long = &H400000
 Private Const ENM_SCROLLEVENTS As Long = &H8
 Private Const ENM_DRAGDROPDONE As Long = &H10
 Private Const ENM_IMECHANGE As Long = &H800000
 Private Const ENM_LANGCHANGE As Long = &H1000000
-Private Const ENM_OBJECTPOSITIONS As Long = &H2000000
 Private Const ENM_LINK As Long = &H4000000
-Private Const EN_UPDATE As Long = &H400
 Private Const EN_CHANGE As Long = &H300
 Private Const EN_MAXTEXT As Long = &H501
 Private Const EN_HSCROLL As Long = &H601
 Private Const EN_VSCROLL As Long = &H602
-Private Const EN_REQUESTRESIZE As Long = &H701
 Private Const EN_SELCHANGE As Long = &H702
 Private Const EN_DROPFILES As Long = &H703 ' Not applicable if an IRichEditOleCallback is set.
 Private Const EN_PROTECTED As Long = &H704
 Private Const EN_SAVECLIPBOARD As Long = &H708
-Private Const EN_OBJECTPOSITIONS As Long = &H70A
 Private Const EN_LINK As Long = &H70B
 Private Const EN_DRAGDROPDONE As Long = &H70C
 Private Const ES_AUTOHSCROLL As Long = &H80
@@ -629,8 +617,6 @@ Private Const TM_PLAINTEXT As Long = 1
 Private Const TM_RICHTEXT As Long = 2
 Private Const TM_SINGLELEVELUNDO As Long = 4
 Private Const TM_MULTILEVELUNDO As Long = 8
-Private Const TM_SINGLECODEPAGE As Long = 16
-Private Const TM_MULTICODEPAGE As Long = 32
 Private Const ECO_AUTOWORDSELECTION As Long = 1
 Private Const ECO_AUTOVSCROLL As Long = ES_AUTOVSCROLL
 Private Const ECO_AUTOHSCROLL As Long = ES_AUTOHSCROLL
@@ -2030,16 +2016,11 @@ Public Property Get SelText() As String
 Attribute SelText.VB_Description = "Returns/sets the string containing the currently selected text."
 Attribute SelText.VB_MemberFlags = "400"
 If RichTextBoxHandle <> 0 Then
-    Dim REGTLEX As REGETTEXTLENGTHEX, Length As Long
-    REGTLEX.Flags = GTL_USECRLF Or GTL_PRECISE Or GTL_NUMCHARS
-    REGTLEX.CodePage = CP_UNICODE
-    Length = SendMessage(RichTextBoxHandle, EM_GETTEXTLENGTHEX, VarPtr(REGTLEX), ByVal 0&)
-    If Length > 0 Then
-        Dim Buffer As String
-        Buffer = String(Length, vbNullChar)
-        Length = SendMessage(RichTextBoxHandle, EM_GETSELTEXT, 0, ByVal StrPtr(Buffer))
-        If Length > 0 Then SelText = Left$(Buffer, Length)
-    End If
+    Dim RECR As RECHARRANGE, Buffer As String, Length As Long
+    SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
+    Buffer = String(RECR.Max - RECR.Min + 1, vbNullChar)
+    Length = SendMessage(RichTextBoxHandle, EM_GETSELTEXT, 0, ByVal StrPtr(Buffer))
+    If Length > 0 Then SelText = Left$(Buffer, Length)
 End If
 End Property
 
