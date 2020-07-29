@@ -1,5 +1,10 @@
 List of revisions:
 
+29-Jul-2020
+- Included new RefreshMousePointer function in Common.bas.
+- All controls who receive CBN_DROPDOWN will call RefreshMousePointer function when current hCursor is NULL.
+  This is a unresolved misbehavior in user32.dll ever since.
+
 26-Jul-2020
 - Internal improvement in the SelText property in the RichTextBox control.
 
