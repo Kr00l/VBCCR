@@ -182,6 +182,10 @@ Private Declare Function GetSystemWindowsDirectory Lib "kernel32" Alias "GetSyst
 Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirectoryW" (ByVal lpBuffer As Long, ByVal nSize As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetMenu Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function GetCapture Lib "user32" () As Long
+Private Declare Function GetWindowThreadProcessId Lib "user32" (ByVal hWnd As Long, ByVal lpdwProcessId As Long) As Long
 Private Declare Function FlashWindowEx Lib "user32" (ByRef pFWI As FLASHWINFO) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
@@ -700,6 +704,20 @@ Select Case MousePointer
 End Select
 End Function
 
+Public Sub RefreshMousePointer(Optional ByVal hWndFallback As Long)
+Const WM_SETCURSOR As Long = &H20, WM_NCHITTEST As Long = &H84, WM_MOUSEMOVE As Long = &H200
+Dim P As POINTAPI, hWndCursor As Long
+GetCursorPos P
+hWndCursor = GetCapture()
+If hWndCursor = 0 Then hWndCursor = WindowFromPoint(P.X, P.Y)
+If hWndCursor <> 0 Then
+    If GetWindowThreadProcessId(hWndCursor, 0) <> App.ThreadID Then hWndCursor = hWndFallback
+Else
+    hWndCursor = hWndFallback
+End If
+If hWndCursor <> 0 Then SendMessage hWndCursor, WM_SETCURSOR, hWndCursor, ByVal MakeDWord(SendMessage(hWndCursor, WM_NCHITTEST, 0, ByVal Make_XY_lParam(P.X, P.Y)), WM_MOUSEMOVE)
+End Sub
+
 Public Function OLEFontIsEqual(ByVal Font As StdFont, ByVal FontOther As StdFont) As Boolean
 If Font Is Nothing Then
     If FontOther Is Nothing Then OLEFontIsEqual = True
@@ -970,6 +988,10 @@ End Function
 Public Function Get_Y_lParam(ByVal lParam As Long) As Long
 Get_Y_lParam = (lParam And &H7FFF0000) \ &H10000
 If lParam And &H80000000 Then Get_Y_lParam = Get_Y_lParam Or &HFFFF8000
+End Function
+
+Public Function Make_XY_lParam(ByVal X As Long, ByVal Y As Long) As Long
+Make_XY_lParam = LoWord(X) Or (&H10000 * LoWord(Y))
 End Function
 
 Public Function UTF32CodePoint_To_UTF16(ByVal CodePoint As Long) As String
