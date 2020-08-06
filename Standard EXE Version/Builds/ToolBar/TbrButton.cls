@@ -52,6 +52,10 @@ Attribute Key.VB_Description = "Returns the key used in the collection."
 Key = PropKey
 End Property
 
+Public Property Let Key(ByVal Value As String)
+ShadowToolBar.Buttons.FChangeKey PropIndex, PropKey, Value
+End Property
+
 Public Property Get Tag() As Variant
 Attribute Tag.VB_Description = "Stores any extra data needed for your program."
 If IsEmpty(PropTag) Then

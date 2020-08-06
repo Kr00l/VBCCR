@@ -37,6 +37,19 @@ Friend Sub FInit(ByVal Object As ToolBar)
 ShadowObjectPointer = ObjPtr(Object)
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropButton(Index)
+If NewKey = vbNullString Then
+    PropButton.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropButton.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropButton.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Caption As String, Optional ByVal Style As TbrButtonStyleConstants, Optional ByVal Image As Variant) As TbrButton
 Attribute Add.VB_Description = "Adds a button to the buttons collection."
 If Index > (PropButton.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"

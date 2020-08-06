@@ -617,7 +617,6 @@ On Error GoTo 0
 If CurrIndex > 0 Then
     With PropShadowButtons(CurrIndex)
     .Caption = TextCaption.Text
-    .Key = TextKey.Text
     .Tag = TextTag.Text
     .Style = ComboStyle.ItemData(ComboStyle.ListIndex)
     If IsNumeric(TextImage.Text) Then
@@ -652,7 +651,7 @@ If CurrIndex > 0 Then
     Dim i As Long
     With PropertyPage.SelectedControls(0)
     .Buttons.Remove CurrIndex
-    With .Buttons.Add(CurrIndex, PropShadowButtons(CurrIndex).Key, PropShadowButtons(CurrIndex).Caption, PropShadowButtons(CurrIndex).Style, PropShadowButtons(CurrIndex).Image)
+    With .Buttons.Add(CurrIndex, , PropShadowButtons(CurrIndex).Caption, PropShadowButtons(CurrIndex).Style, PropShadowButtons(CurrIndex).Image)
     .Tag = PropShadowButtons(CurrIndex).Tag
     .ToolTipText = PropShadowButtons(CurrIndex).ToolTipText
     .Description = PropShadowButtons(CurrIndex).Description
@@ -680,6 +679,20 @@ If CurrIndex > 0 Then
     TextCustomWidth.Text = CStr(.CustomWidth)
     End With
     .Refresh
+    If Not TextKey.Text = vbNullString Then
+        If .Buttons.Exists(TextKey.Text) = True Then
+            .Buttons(CurrIndex).Key = PropShadowButtons(CurrIndex).Key
+            MsgBox "This key is already associated with an element of this collection.", vbCritical + vbOKOnly
+            FreezeChanged = True
+            TextKey.Text = PropShadowButtons(CurrIndex).Key
+            FreezeChanged = False
+        Else
+            PropShadowButtons(CurrIndex).Key = TextKey.Text
+            .Buttons(CurrIndex).Key = PropShadowButtons(CurrIndex).Key
+        End If
+    Else
+        PropShadowButtons(CurrIndex).Key = vbNullString
+    End If
     End With
 End If
 Call PropertyPage_SelectionChanged
@@ -1235,7 +1248,6 @@ CurrButtonMenuIndex = CurrButtonMenuIndex + 1
 With PropertyPage.SelectedControls(0).Buttons(CurrIndex)
 .ButtonMenus.Add CurrButtonMenuIndex
 TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of " & .ButtonMenus.Count
-With .ButtonMenus(CurrButtonMenuIndex)
 TextButtonMenuText.Text = vbNullString
 TextButtonMenuKey.Text = vbNullString
 TextButtonMenuTag.Text = vbNullString
@@ -1243,7 +1255,6 @@ CheckButtonMenuEnabled.Value = vbChecked
 CheckButtonMenuVisible.Value = vbChecked
 CheckButtonMenuChecked.Value = vbUnchecked
 CheckButtonMenuSeparator.Value = vbUnchecked
-End With
 End With
 Call ApplyControlStates
 Call FillShadowButtons

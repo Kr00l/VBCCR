@@ -375,7 +375,6 @@ Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
-Private Const WM_STYLECHANGED As Long = &H7D
 Private Const WM_UPDATEUISTATE As Long = &H128, UIS_SET As Long = 1, UISF_HIDEACCEL As Long = &H2
 Private Const WM_USER As Long = &H400
 Private Const UM_SETBUTTONCX As Long = (WM_USER + 200)
@@ -415,14 +414,11 @@ Private Const TB_AUTOSIZE As Long = (WM_USER + 33)
 Private Const TB_GETTOOLTIPS As Long = (WM_USER + 35)
 Private Const TB_SETTOOLTIPS As Long = (WM_USER + 36)
 Private Const TB_GETROWS As Long = (WM_USER + 40)
-Private Const TB_CHANGEBITMAP As Long = (WM_USER + 43)
-Private Const TB_GETBITMAP As Long = (WM_USER + 44)
 Private Const TB_GETBUTTONTEXTA As Long = (WM_USER + 45)
 Private Const TB_GETBUTTONTEXTW As Long = (WM_USER + 75)
 Private Const TB_GETBUTTONTEXT As Long = TB_GETBUTTONTEXTW
 Private Const TB_SETIMAGELIST As Long = (WM_USER + 48)
 Private Const TB_GETIMAGELIST As Long = (WM_USER + 49)
-Private Const TB_LOADIMAGES As Long = (WM_USER + 50)
 Private Const TB_GETRECT As Long = (WM_USER + 51)
 Private Const TB_SETHOTIMAGELIST As Long = (WM_USER + 52)
 Private Const TB_GETHOTIMAGELIST As Long = (WM_USER + 53)
