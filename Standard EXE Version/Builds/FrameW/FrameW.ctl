@@ -84,6 +84,7 @@ Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal 
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal XSrc As Long, ByVal YSrc As Long, ByVal dwRop As Long) As Long
+Private Declare Function RevokeDragDrop Lib "ole32" (ByVal hWnd As Long) As Long
 
 #If ImplementThemedButton = True Then
 
@@ -595,9 +596,17 @@ OLEDropMode = UserControl.OLEDropMode
 End Property
 
 Public Property Let OLEDropMode(ByVal Value As OLEDropModeConstants)
+' Setting OLEDropMode to OLEDropModeManual will fail when windowless controls are contained in the user control.
+Const DRAGDROP_E_ALREADYREGISTERED As Long = &H80040101
 Select Case Value
     Case OLEDropModeNone, OLEDropModeManual
+        On Error Resume Next
         UserControl.OLEDropMode = Value
+        If Err.Number = DRAGDROP_E_ALREADYREGISTERED Then
+            RevokeDragDrop UserControl.hWnd
+            UserControl.OLEDropMode = Value
+        End If
+        On Error GoTo 0
     Case Else
         Err.Raise 380
 End Select

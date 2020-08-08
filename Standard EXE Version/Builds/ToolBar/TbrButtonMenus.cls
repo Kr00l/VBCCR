@@ -39,6 +39,19 @@ ShadowObjectPointer = ObjPtr(Object)
 PropID = ID
 End Sub
 
+Friend Sub FChangeKey(ByVal Index As Long, ByRef OldKey As String, ByVal NewKey As String)
+Dim Item As Variant
+Set Item = PropButtonMenu(Index)
+If NewKey = vbNullString Then
+    PropButtonMenu.Add Item, , Index
+    OldKey = vbNullString
+Else
+    PropButtonMenu.Add Item, NewKey, Index
+    OldKey = NewKey
+End If
+PropButtonMenu.Remove Index + 1
+End Sub
+
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String) As TbrButtonMenu
 Attribute Add.VB_Description = "Adds a button menu to the button menus collection."
 If Index > (PropButtonMenu.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
