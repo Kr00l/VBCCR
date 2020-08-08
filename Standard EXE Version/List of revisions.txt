@@ -1,5 +1,10 @@
 List of revisions:
 
+08-Aug-2020
+- Bugfix in the OLEDropMode property in the FrameW control.
+  It was not possible to set it to OLEDropModeManual when windowless control(s) were contained in it.
+- It is now possible for the TbrButtonMenus collection to change the key on a particular TbrButtonMenu in the ToolBar control.
+
 06-Aug-2020
 - It is now possible for the TbrButtons collection to change the key on a particular TbrButton in the ToolBar control.
 
