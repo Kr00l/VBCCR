@@ -2465,67 +2465,48 @@ Select Case wMsg
                 DeleteObject BackColorBrush
                 
                 #If ImplementThemedButton = True Then
-                    
-                    Dim Theme As Long
-                    If EnabledVisualStyles() = True And PropVisualStyles = True Then Theme = OpenThemeData(ListBoxHandle, StrPtr("Button"))
-                    If Theme <> 0 Then
-                        Dim ButtonPart As Long, CheckState As Long
-                        If PropStyle = LstStyleCheckbox Then
-                            ButtonPart = BP_CHECKBOX
-                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                CheckState = CBS_UNCHECKEDNORMAL
-                            Else
-                                CheckState = CBS_UNCHECKEDDISABLED
-                            End If
-                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                                If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then
-                                    If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                        CheckState = CBS_CHECKEDNORMAL
-                                    Else
-                                        CheckState = CBS_CHECKEDDISABLED
-                                    End If
-                                End If
-                            End If
-                        ElseIf PropStyle = LstStyleOption Then
-                            ButtonPart = BP_RADIOBUTTON
-                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                CheckState = RBS_UNCHECKEDNORMAL
-                            Else
-                                CheckState = RBS_UNCHECKEDDISABLED
-                            End If
-                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                                If ListBoxOptionIndex = DIS.ItemID Then
-                                    If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                        CheckState = CBS_CHECKEDNORMAL
-                                    Else
-                                        CheckState = CBS_CHECKEDDISABLED
-                                    End If
+                
+                Dim Theme As Long
+                If EnabledVisualStyles() = True And PropVisualStyles = True Then Theme = OpenThemeData(ListBoxHandle, StrPtr("Button"))
+                If Theme <> 0 Then
+                    Dim ButtonPart As Long, CheckState As Long
+                    If PropStyle = LstStyleCheckbox Then
+                        ButtonPart = BP_CHECKBOX
+                        If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                            CheckState = CBS_UNCHECKEDNORMAL
+                        Else
+                            CheckState = CBS_UNCHECKEDDISABLED
+                        End If
+                        If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                            If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then
+                                If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                    CheckState = CBS_CHECKEDNORMAL
+                                Else
+                                    CheckState = CBS_CHECKEDDISABLED
                                 End If
                             End If
                         End If
-                        If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, CheckState) <> 0 Then DrawThemeParentBackground DIS.hWndItem, DIS.hDC, RC
-                        DrawThemeBackground Theme, DIS.hDC, ButtonPart, CheckState, RC, RC
-                        CloseThemeData Theme
-                    Else
-                        Dim Flags As Long
-                        Flags = DFCS_FLAT
-                        If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
-                        If PropStyle = LstStyleCheckbox Then
-                            Flags = Flags Or DFCS_BUTTONCHECK
-                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                                If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then Flags = Flags Or DFCS_CHECKED
-                            End If
-                        ElseIf PropStyle = LstStyleOption Then
-                            Flags = Flags Or DFCS_BUTTONRADIO
-                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                                If ListBoxOptionIndex = DIS.ItemID Then Flags = Flags Or DFCS_CHECKED
+                    ElseIf PropStyle = LstStyleOption Then
+                        ButtonPart = BP_RADIOBUTTON
+                        If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                            CheckState = RBS_UNCHECKEDNORMAL
+                        Else
+                            CheckState = RBS_UNCHECKEDDISABLED
+                        End If
+                        If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                            If ListBoxOptionIndex = DIS.ItemID Then
+                                If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                    CheckState = CBS_CHECKEDNORMAL
+                                Else
+                                    CheckState = CBS_CHECKEDDISABLED
+                                End If
                             End If
                         End If
-                        DrawFrameControl DIS.hDC, RC, DFC_BUTTON, Flags
                     End If
-                    
-                #Else
-                    
+                    If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, CheckState) <> 0 Then DrawThemeParentBackground DIS.hWndItem, DIS.hDC, RC
+                    DrawThemeBackground Theme, DIS.hDC, ButtonPart, CheckState, RC, RC
+                    CloseThemeData Theme
+                Else
                     Dim Flags As Long
                     Flags = DFCS_FLAT
                     If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
@@ -2541,7 +2522,26 @@ Select Case wMsg
                         End If
                     End If
                     DrawFrameControl DIS.hDC, RC, DFC_BUTTON, Flags
-                    
+                End If
+                
+                #Else
+                
+                Dim Flags As Long
+                Flags = DFCS_FLAT
+                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
+                If PropStyle = LstStyleCheckbox Then
+                    Flags = Flags Or DFCS_BUTTONCHECK
+                    If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                        If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then Flags = Flags Or DFCS_CHECKED
+                    End If
+                ElseIf PropStyle = LstStyleOption Then
+                    Flags = Flags Or DFCS_BUTTONRADIO
+                    If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                        If ListBoxOptionIndex = DIS.ItemID Then Flags = Flags Or DFCS_CHECKED
+                    End If
+                End If
+                DrawFrameControl DIS.hDC, RC, DFC_BUTTON, Flags
+                
                 #End If
                 
                 Dim Length As Long
