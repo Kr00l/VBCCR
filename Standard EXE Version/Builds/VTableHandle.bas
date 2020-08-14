@@ -49,39 +49,45 @@ Private VTableControl(0 To 6) As Long, OriginalVTableControl As Long
 Private VTablePPB(0 To 6) As Long, OriginalVTablePPB As Long, StringsOutArray() As String, CookiesOutArray() As Long
 Private VTableEnumVARIANT(0 To 6) As Long
 
-Public Sub SetVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
+Public Function SetVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
+            VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
+            SetVTableHandling = True
+        End If
     Case VTableInterfaceControl
-        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then Call ReplaceIOleControl(This)
+        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then
+            Call ReplaceIOleControl(This)
+            SetVTableHandling = True
+        End If
     Case VTableInterfacePerPropertyBrowsing
-        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then Call ReplaceIPPB(This)
+        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
+            Call ReplaceIPPB(This)
+            SetVTableHandling = True
+        End If
 End Select
-End Sub
+End Function
 
-Public Sub RemoveVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants)
+Public Function RemoveVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
 Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
-        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
+            VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
+            RemoveVTableHandling = True
+        End If
     Case VTableInterfaceControl
-        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then Call RestoreIOleControl(This)
+        If VTableHandlingSupported(This, VTableInterfaceControl) = True Then
+            Call RestoreIOleControl(This)
+            RemoveVTableHandling = True
+        End If
     Case VTableInterfacePerPropertyBrowsing
-        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then Call RestoreIPPB(This)
+        If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
+            Call RestoreIPPB(This)
+            RemoveVTableHandling = True
+        End If
 End Select
-End Sub
-
-Public Sub StopVTableHandling(ByVal OLEInterface As VTableInterfaceConstants)
-Select Case OLEInterface
-    Case VTableInterfaceInPlaceActiveObject
-        VTableIPAOData.RefCount = 0
-        If Not VTableIPAOData.OriginalIOleIPAO Is Nothing Then Call ActivateIPAO(VTableIPAOData.OriginalIOleIPAO)
-    Case VTableInterfaceControl
-        OriginalVTableControl = 0
-    Case VTableInterfacePerPropertyBrowsing
-        OriginalVTablePPB = 0
-End Select
-End Sub
+End Function
 
 Private Function VTableHandlingSupported(ByRef This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
 On Error GoTo CATCH_EXCEPTION
