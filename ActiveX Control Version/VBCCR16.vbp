@@ -113,6 +113,7 @@ MinorVer=6
 RevisionVer=130
 AutoIncrementVer=0
 ServerSupportFiles=0
+CondComp="VBCCR_OCX = 1"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0

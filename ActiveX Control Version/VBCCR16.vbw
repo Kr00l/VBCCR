@@ -1,6 +1,6 @@
 Common = 97, 61, 831, 643, C
 VisualStyles = 21, 87, 854, 716, C
-ISubclass = 118, 55, 818, 742, C
+ISubclass = 224, 31, 952, 760, C
 ComCtlsBase = 32, 100, 839, 685, C
 VTableHandle = 44, 58, 840, 566, C
 CommonDialog = 71, 39, 922, 663, C
@@ -58,7 +58,7 @@ LvwVirtualListItem = 92, 124, 1050, 666, C
 LvwVirtualListItems = 69, 93, 1027, 635, C
 PPListViewGeneral = 37, 53, 883, 583, C, 45, 8, 847, 671, C
 PPListViewImageLists = 0, 0, 0, 0, C, 44, 58, 768, 754, C
-ListBoxW = 58, 226, 845, 790, C, 88, 116, 934, 646, C
+ListBoxW = 75, 63, 862, 627, C, 88, 116, 934, 646, C
 LabelW = 22, 29, 868, 559, C, 22, 29, 868, 559, C
 IPAddress = 53, 74, 899, 604, C, 22, 29, 868, 559, C
 PPImageListImages = 26, 26, 967, 558, C, 176, 232, 1022, 762, C
