@@ -248,11 +248,6 @@ Private Sub UserControl_Terminate()
 Call ClearSysInfo
 End Sub
 
-Public Sub IDEStop()
-Attribute IDEStop.VB_MemberFlags = "40"
-Call ClearSysInfo
-End Sub
-
 Public Property Get Name() As String
 Attribute Name.VB_Description = "Returns the name used in code to identify an object."
 Name = Ambient.DisplayName

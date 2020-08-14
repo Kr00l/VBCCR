@@ -515,11 +515,6 @@ Call DestroyMCIWnd
 Call ComCtlsReleaseShellMod
 End Sub
 
-Public Sub IDEStop()
-Attribute IDEStop.VB_MemberFlags = "40"
-Call DestroyMCIWnd
-End Sub
-
 Public Property Get Name() As String
 Attribute Name.VB_Description = "Returns the name used in code to identify an object."
 Name = Ambient.DisplayName
