@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Aug-2020
+- Some minor internal improvements.
+
 08-Aug-2020
 - Bugfix in the OLEDropMode property in the FrameW control.
   It was not possible to set it to OLEDropModeManual when windowless control(s) were contained in it.
