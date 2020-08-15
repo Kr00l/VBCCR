@@ -2028,6 +2028,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -2055,6 +2056,7 @@ Else
         End If
     End If
 End If
+If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
@@ -2079,6 +2081,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "HotMousePointer"
 End Property
 
@@ -2115,6 +2118,7 @@ If ListViewHandle <> 0 Then
         SendMessage ListViewHandle, LVM_SETHOTCURSOR, 0, ByVal 0&
     End If
 End If
+If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "HotMouseIcon"
 End Property
 
@@ -2130,6 +2134,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "HeaderMousePointer"
 End Property
 
@@ -2157,6 +2162,7 @@ Else
         End If
     End If
 End If
+If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "HeaderMouseIcon"
 End Property
 

@@ -661,6 +661,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If PagerDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -688,6 +689,7 @@ Else
         End If
     End If
 End If
+If PagerDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 

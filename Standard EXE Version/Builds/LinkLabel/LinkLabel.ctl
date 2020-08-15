@@ -797,6 +797,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If LinkLabelDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -824,6 +825,7 @@ Else
         End If
     End If
 End If
+If LinkLabelDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
