@@ -1402,6 +1402,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If ToolBarDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -1429,6 +1430,7 @@ Else
         End If
     End If
 End If
+If ToolBarDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
