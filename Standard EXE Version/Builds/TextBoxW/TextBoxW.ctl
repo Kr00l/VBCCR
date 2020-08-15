@@ -287,7 +287,6 @@ Private Const NET_STRING_ANY_SERVICE_NO_SCOPE As Long = (NET_STRING_NAMED_SERVIC
 Private Const EM_SETREADONLY As Long = &HCF, ES_READONLY As Long = &H800
 Private Const EM_GETSEL As Long = &HB0
 Private Const EM_SETSEL As Long = &HB1
-Private Const EM_SCROLL As Long = &HB5
 Private Const EM_LINESCROLL As Long = &HB6
 Private Const EM_SCROLLCARET As Long = &HB7
 Private Const EM_REPLACESEL As Long = &HC2
@@ -299,7 +298,6 @@ Private Const EM_SETLIMITTEXT As Long = EM_LIMITTEXT
 Private Const EM_GETMODIFY As Long = &HB8
 Private Const EM_SETMODIFY As Long = &HB9
 Private Const EM_LINEINDEX As Long = &HBB
-Private Const EM_GETTHUMB As Long = &HBE
 Private Const EM_LINELENGTH As Long = &HC1
 Private Const EM_GETLINE As Long = &HC4
 Private Const EM_UNDO As Long = &HC7
@@ -317,8 +315,8 @@ Private Const EM_SETCUEBANNER As Long = (ECM_FIRST + 1)
 Private Const EM_GETCUEBANNER As Long = (ECM_FIRST + 2)
 Private Const EM_SHOWBALLOONTIP As Long = (ECM_FIRST + 3)
 Private Const EM_HIDEBALLOONTIP As Long = (ECM_FIRST + 4)
-Private Const EN_UPDATE As Long = &H400
 Private Const EN_CHANGE As Long = &H300
+Private Const EN_UPDATE As Long = &H400
 Private Const EN_MAXTEXT As Long = &H501
 Private Const EN_HSCROLL As Long = &H601
 Private Const EN_VSCROLL As Long = &H602
@@ -333,7 +331,6 @@ Private Const ES_MULTILINE As Long = &H4
 Private Const ES_UPPERCASE As Long = &H8
 Private Const ES_LOWERCASE As Long = &H10
 Private Const ES_PASSWORD As Long = &H20
-Private Const ES_WANTRETURN As Long = &H1000
 Private Const EC_LEFTMARGIN As Long = &H1
 Private Const EC_RIGHTMARGIN As Long = &H2
 Private Const EC_USEFONTINFO As Long = &HFFFF&
@@ -1024,6 +1021,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If TextBoxDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -1051,6 +1049,7 @@ Else
         End If
     End If
 End If
+If TextBoxDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 

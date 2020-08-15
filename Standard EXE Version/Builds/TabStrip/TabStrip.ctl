@@ -274,7 +274,6 @@ Private Const TCS_OWNERDRAWFIXED As Long = &H2000
 Private Const TCS_TOOLTIPS As Long = &H4000
 Private Const TCS_FOCUSNEVER As Long = &H8000&
 Private Const TCS_EX_FLATSEPARATORS As Long = &H1
-Private Const TCS_EX_REGISTERDROP As Long = &H2
 Private Const TCIF_TEXT As Long = &H1
 Private Const TCIF_IMAGE As Long = &H2
 Private Const TCIF_RTLREADING As Long = &H4
@@ -301,11 +300,8 @@ Private Const TCM_GETITEMRECT As Long = (TCM_FIRST + 10)
 Private Const TCM_GETCURSEL As Long = (TCM_FIRST + 11)
 Private Const TCM_SETCURSEL As Long = (TCM_FIRST + 12)
 Private Const TCM_HITTEST As Long = (TCM_FIRST + 13)
-Private Const TCM_SETITEMEXTRA As Long = (TCM_FIRST + 14)
 Private Const TCM_ADJUSTRECT As Long = (TCM_FIRST + 40)
 Private Const TCM_SETITEMSIZE As Long = (TCM_FIRST + 41)
-Private Const TCM_REMOVEIMAGE As Long = (TCM_FIRST + 42)
-Private Const TCM_SETPADDING As Long = (TCM_FIRST + 43)
 Private Const TCM_GETROWCOUNT As Long = (TCM_FIRST + 44)
 Private Const TCM_GETTOOLTIPS As Long = (TCM_FIRST + 45)
 Private Const TCM_SETTOOLTIPS As Long = (TCM_FIRST + 46)
@@ -324,7 +320,6 @@ Private Const MAX_PATH As Long = 260
 Private Const TCN_FIRST As Long = (-550)
 Private Const TCN_SELCHANGE As Long = (TCN_FIRST - 1)
 Private Const TCN_SELCHANGING As Long = (TCN_FIRST - 2)
-Private Const TCN_GETOBJECT As Long = (TCN_FIRST - 3)
 Private Const TCN_FOCUSCHANGE As Long = (TCN_FIRST - 4)
 Private Const TTF_RTLREADING As Long = &H4
 Private Const TTN_FIRST As Long = (-520)
@@ -987,6 +982,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If TabStripDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -1014,6 +1010,7 @@ Else
         End If
     End If
 End If
+If TabStripDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
@@ -1631,17 +1628,11 @@ End Property
 
 Friend Property Let FTabHighLighted(ByVal Index As Long, ByVal Value As Boolean)
 If TabStripHandle <> 0 Then
-    Dim TCI As TCITEM
-    With TCI
-    .Mask = TCIF_STATE
-    .dwStateMask = TCIS_HIGHLIGHTED
     If Value = True Then
-        .dwState = TCIS_HIGHLIGHTED
+        SendMessage TabStripHandle, TCM_HIGHLIGHTITEM, Index - 1, ByVal 1&
     Else
-        .dwState = 0
+        SendMessage TabStripHandle, TCM_HIGHLIGHTITEM, Index - 1, ByVal 0&
     End If
-    SendMessage TabStripHandle, TCM_SETITEM, Index - 1, ByVal VarPtr(TCI)
-    End With
 End If
 End Property
 

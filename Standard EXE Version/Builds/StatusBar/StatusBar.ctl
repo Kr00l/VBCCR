@@ -252,12 +252,6 @@ Private Const SB_GETTEXT As Long = SB_GETTEXTW
 Private Const SB_GETTEXTLENGTHA As Long = (WM_USER + 3)
 Private Const SB_GETTEXTLENGTHW As Long = (WM_USER + 12)
 Private Const SB_GETTEXTLENGTH As Long = SB_GETTEXTLENGTHW
-Private Const SB_SETTIPTEXTA As Long = (WM_USER + 16)
-Private Const SB_SETTIPTEXTW As Long = (WM_USER + 17)
-Private Const SB_SETTIPTEXT As Long = SB_SETTIPTEXTW
-Private Const SB_GETTIPTEXTA As Long = (WM_USER + 18)
-Private Const SB_GETTIPTEXTW As Long = (WM_USER + 19)
-Private Const SB_GETTIPTEXT As Long = SB_GETTIPTEXTW
 Private Const SB_SETPARTS As Long = (WM_USER + 4)
 Private Const SB_GETPARTS As Long = (WM_USER + 6)
 Private Const SB_GETBORDERS As Long = (WM_USER + 7)
@@ -265,8 +259,6 @@ Private Const SB_SETMINHEIGHT As Long = (WM_USER + 8)
 Private Const SB_SIMPLE As Long = (WM_USER + 9)
 Private Const SB_GETRECT As Long = (WM_USER + 10)
 Private Const SB_ISSIMPLE As Long = (WM_USER + 14)
-Private Const SB_SETICON As Long = (WM_USER + 15)
-Private Const SB_GETICON As Long = (WM_USER + 20)
 Private Const TTM_UPDATE As Long = (WM_USER + 29)
 Private Const TTM_ADDTOOLA As Long = (WM_USER + 4)
 Private Const TTM_ADDTOOLW As Long = (WM_USER + 50)
@@ -984,6 +976,7 @@ Select Case Value
     Case Else
         Err.Raise 380
 End Select
+If StatusBarDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MousePointer"
 End Property
 
@@ -1011,6 +1004,7 @@ Else
         End If
     End If
 End If
+If StatusBarDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
