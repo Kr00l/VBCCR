@@ -7,6 +7,7 @@ Begin VB.UserControl FrameW
    ClientTop       =   0
    ClientWidth     =   2400
    ControlContainer=   -1  'True
+   ForwardFocus    =   -1  'True
    PropertyPages   =   "FrameW.ctx":0000
    ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
@@ -137,9 +138,10 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const DT_LEFT As Long = &H0
 Private Const DT_CENTER As Long = &H1
 Private Const DT_RIGHT As Long = &H2
-Private Const DT_RTLREADING As Long = &H20000
-Private Const DT_NOCLIP As Long = &H100
 Private Const DT_SINGLELINE As Long = &H20
+Private Const DT_NOCLIP As Long = &H100
+Private Const DT_NOPREFIX As Long = &H800
+Private Const DT_RTLREADING As Long = &H20000
 Private Const BDR_SUNKENOUTER As Long = &H2
 Private Const BDR_RAISEDINNER As Long = &H4
 Private Const EDGE_ETCHED As Long = (BDR_SUNKENOUTER Or BDR_RAISEDINNER)
@@ -166,6 +168,7 @@ Private PropRightToLeft As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
 Private PropBorderStyle As Integer
 Private PropCaption As String
+Private PropUseMnemonic As Boolean
 Private PropAlignment As VBRUN.AlignmentConstants
 Private PropTransparent As Boolean
 Private PropPicture As IPictureDisp
@@ -236,6 +239,7 @@ PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
 PropBorderStyle = vbFixedSingle
 PropCaption = Ambient.DisplayName
+PropUseMnemonic = True
 If PropRightToLeft = False Then PropAlignment = vbLeftJustify Else PropAlignment = vbRightJustify
 PropTransparent = False
 Set PropPicture = Nothing
@@ -266,11 +270,17 @@ PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
 PropBorderStyle = .ReadProperty("BorderStyle", vbFixedSingle)
 PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
+PropUseMnemonic = .ReadProperty("UseMnemonic", True)
 PropAlignment = .ReadProperty("Alignment", vbLeftJustify)
 PropTransparent = .ReadProperty("Transparent", False)
 Set PropPicture = .ReadProperty("Picture", Nothing)
 PropPictureAlignment = .ReadProperty("PictureAlignment", CCLeftRightAlignmentLeft)
 End With
+If PropUseMnemonic = True Then
+    UserControl.AccessKeys = ChrW(AccelCharCode(PropCaption))
+Else
+    UserControl.AccessKeys = vbNullString
+End If
 If FrameDesignMode = False Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
 End Sub
 
@@ -290,6 +300,7 @@ With PropBag
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
 .WriteProperty "BorderStyle", PropBorderStyle, vbFixedSingle
 .WriteProperty "Caption", PropCaption, vbNullString ' Unicode not necessary
+.WriteProperty "UseMnemonic", PropUseMnemonic, True
 .WriteProperty "Alignment", PropAlignment, vbLeftJustify
 .WriteProperty "Transparent", PropTransparent, False
 .WriteProperty "Picture", PropPicture, Nothing
@@ -355,10 +366,8 @@ Private Sub UserControl_Resize()
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
-With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call DrawFrame
-End With
 InProc = False
 End Sub
 
@@ -740,9 +749,27 @@ Caption = PropCaption
 End Property
 
 Public Property Let Caption(ByVal Value As String)
+If PropCaption = Value Then Exit Property
 PropCaption = Value
+If PropUseMnemonic = True Then UserControl.AccessKeys = ChrW(AccelCharCode(PropCaption))
 Call DrawFrame
 UserControl.PropertyChanged "Caption"
+End Property
+
+Public Property Get UseMnemonic() As Boolean
+Attribute UseMnemonic.VB_Description = "Returns/sets a value that specifies whether an & in the caption property defines an access key."
+UseMnemonic = PropUseMnemonic
+End Property
+
+Public Property Let UseMnemonic(ByVal Value As Boolean)
+PropUseMnemonic = Value
+If PropUseMnemonic = True Then
+    UserControl.AccessKeys = ChrW(AccelCharCode(PropCaption))
+Else
+    UserControl.AccessKeys = vbNullString
+End If
+Call DrawFrame
+UserControl.PropertyChanged "UseMnemonic"
 End Property
 
 Public Property Get Alignment() As VBRUN.AlignmentConstants
@@ -845,6 +872,7 @@ If PropBorderStyle <> vbBSNone Then
     BoundingRect.Right = BoundingRect.Right - BoundingRect.Left
     Format = DT_NOCLIP Or DT_SINGLELINE
     If PropRightToLeft = True Then Format = Format Or DT_RTLREADING
+    If PropUseMnemonic = False Then Format = Format Or DT_NOPREFIX
     Select Case PropAlignment
         Case vbLeftJustify
             Format = Format Or DT_LEFT
