@@ -1,5 +1,11 @@
 List of revisions:
 
+18-Aug-2020
+- Enhancement for the FrameW control.
+  - Access key now supported.
+  - TabIndex now supported. (important to be set meaningful so the access key works properly)
+  - Included UseMnemonic property. (not available in a VB.Frame, thus being an advantage)
+
 15-Aug-2020
 - Some minor internal improvements.
 

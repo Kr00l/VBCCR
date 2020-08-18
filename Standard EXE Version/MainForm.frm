@@ -412,6 +412,7 @@ Begin VB.Form MainForm
       Begin ComCtlsDemo.FrameW FrameW1 
          Height          =   1755
          Left            =   0
+         TabIndex        =   28
          Top             =   0
          Width           =   2415
          _ExtentX        =   4260
