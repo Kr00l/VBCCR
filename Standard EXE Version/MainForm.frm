@@ -34,7 +34,7 @@ Begin VB.Form MainForm
          Bindings        =   "MainForm.frx":0A3C
          Height          =   330
          Left            =   195
-         TabIndex        =   19
+         TabIndex        =   20
          Top             =   60
          Width           =   3630
          _ExtentX        =   6403
@@ -48,7 +48,7 @@ Begin VB.Form MainForm
          Caption         =   "Pager Demo"
          Height          =   360
          Left            =   2415
-         TabIndex        =   21
+         TabIndex        =   22
          Top             =   480
          Width           =   1410
       End
@@ -56,7 +56,7 @@ Begin VB.Form MainForm
          Bindings        =   "MainForm.frx":0A7D
          Height          =   360
          Left            =   495
-         TabIndex        =   20
+         TabIndex        =   21
          Top             =   480
          Width           =   1665
          _ExtentX        =   2937
@@ -77,7 +77,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.ComboBoxW ComboBoxW1 
       Height          =   315
       Left            =   5880
-      TabIndex        =   22
+      TabIndex        =   23
       Top             =   5040
       Width           =   3855
       _ExtentX        =   6800
@@ -88,7 +88,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.TextBoxW TextBoxW1 
       Height          =   315
       Left            =   4200
-      TabIndex        =   16
+      TabIndex        =   17
       Top             =   7920
       Width           =   1455
       _ExtentX        =   2566
@@ -101,7 +101,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.CommandButtonW CommandButtonW1 
       Height          =   375
       Left            =   3720
-      TabIndex        =   12
+      TabIndex        =   13
       Top             =   5040
       Width           =   1935
       _ExtentX        =   3413
@@ -111,7 +111,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.OptionButtonW OptionButtonW2 
       Height          =   315
       Left            =   7920
-      TabIndex        =   25
+      TabIndex        =   26
       Top             =   8040
       Width           =   1815
       _ExtentX        =   3201
@@ -121,7 +121,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.OptionButtonW OptionButtonW1 
       Height          =   315
       Left            =   5880
-      TabIndex        =   24
+      TabIndex        =   25
       Top             =   8040
       Width           =   1815
       _ExtentX        =   3201
@@ -173,7 +173,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.TreeView TreeView1 
       Height          =   2415
       Left            =   5880
-      TabIndex        =   23
+      TabIndex        =   24
       Top             =   5520
       Width           =   3855
       _ExtentX        =   6800
@@ -189,14 +189,14 @@ Begin VB.Form MainForm
       Caption         =   "Command3"
       Height          =   375
       Left            =   2880
-      TabIndex        =   15
+      TabIndex        =   16
       Top             =   7920
       Width           =   1095
    End
    Begin ComCtlsDemo.IPAddress IPAddress1 
       Height          =   315
       Left            =   120
-      TabIndex        =   14
+      TabIndex        =   15
       Top             =   7920
       Width           =   2655
       _ExtentX        =   4683
@@ -219,7 +219,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.ListView ListView1 
       Height          =   2055
       Left            =   120
-      TabIndex        =   13
+      TabIndex        =   14
       Top             =   5760
       Width           =   5535
       _ExtentX        =   9763
@@ -286,7 +286,7 @@ Begin VB.Form MainForm
       Left            =   2160
       ScaleHeight     =   435
       ScaleWidth      =   555
-      TabIndex        =   11
+      TabIndex        =   12
       TabStop         =   0   'False
       Top             =   5040
       Width           =   615
@@ -297,7 +297,7 @@ Begin VB.Form MainForm
       Picture         =   "MainForm.frx":1E63
       ScaleHeight     =   435
       ScaleWidth      =   555
-      TabIndex        =   10
+      TabIndex        =   11
       TabStop         =   0   'False
       Top             =   5040
       Width           =   615
@@ -306,7 +306,7 @@ Begin VB.Form MainForm
       Caption         =   "Command2"
       Height          =   375
       Left            =   120
-      TabIndex        =   9
+      TabIndex        =   10
       Top             =   5040
       Width           =   1095
    End
@@ -353,7 +353,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.ListView ListView3 
       Height          =   2895
       Left            =   5880
-      TabIndex        =   17
+      TabIndex        =   18
       Top             =   600
       Width           =   3855
       _ExtentX        =   6800
@@ -371,7 +371,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.ListBoxW ListBoxW1 
       Height          =   2595
       Left            =   5880
-      TabIndex        =   18
+      TabIndex        =   19
       Top             =   600
       Visible         =   0   'False
       Width           =   3855
@@ -404,7 +404,7 @@ Begin VB.Form MainForm
       Left            =   3120
       ScaleHeight     =   1770
       ScaleWidth      =   2415
-      TabIndex        =   26
+      TabIndex        =   27
       TabStop         =   0   'False
       Top             =   2880
       Visible         =   0   'False
@@ -412,17 +412,17 @@ Begin VB.Form MainForm
       Begin ComCtlsDemo.FrameW FrameW1 
          Height          =   1755
          Left            =   0
-         TabIndex        =   28
+         TabIndex        =   7
          Top             =   0
          Width           =   2415
          _ExtentX        =   4260
          _ExtentY        =   3096
-         Caption         =   "FrameW1"
+         Caption         =   "Fra&meW1"
          Transparent     =   -1  'True
          Begin ComCtlsDemo.HotKey HotKey1 
             Height          =   315
             Left            =   120
-            TabIndex        =   8
+            TabIndex        =   9
             Top             =   720
             Width           =   2175
             _ExtentX        =   3836
@@ -431,7 +431,7 @@ Begin VB.Form MainForm
          Begin ComCtlsDemo.CheckBoxW CheckBoxW2 
             Height          =   255
             Left            =   120
-            TabIndex        =   7
+            TabIndex        =   8
             Top             =   360
             Width           =   2175
             _ExtentX        =   3836
@@ -444,7 +444,7 @@ Begin VB.Form MainForm
    Begin ComCtlsDemo.Animation Animation1 
       Height          =   660
       Left            =   3720
-      TabIndex        =   27
+      TabIndex        =   28
       Top             =   1560
       Width           =   1860
       _ExtentX        =   3281
