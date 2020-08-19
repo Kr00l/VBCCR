@@ -220,8 +220,9 @@ Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As L
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const HWND_DESKTOP As Long = &H0
-Private Const FALT As Long = &H10
 Private Const FVIRTKEY As Long = &H1
+Private Const FSHIFT As Long = &H4
+Private Const FALT As Long = &H10
 Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
@@ -384,7 +385,6 @@ End If
 End Sub
 
 Private Sub IOleControlVB_GetControlInfo(ByRef Handled As Boolean, ByRef AccelCount As Integer, ByRef AccelTable As Long, ByRef Flags As Long)
-Static CmdID As Integer
 If CheckBoxAcceleratorHandle <> 0 Then
     DestroyAcceleratorTable CheckBoxAcceleratorHandle
     CheckBoxAcceleratorHandle = 0
@@ -393,13 +393,18 @@ If CheckBoxHandle <> 0 Then
     Dim Accel As Integer, AccelArray() As TACCEL, AccelRefCount As Long
     Accel = AccelCharCode(Me.Caption)
     If Accel <> 0 Then
-        ReDim Preserve AccelArray(0 To AccelRefCount)
+        ReDim Preserve AccelArray(0 To AccelRefCount) As TACCEL
         With AccelArray(AccelRefCount)
-        .FVirt = FALT Or FVIRTKEY
-        If CmdID = 0 Then CmdID = 1000 Else CmdID = CmdID + 100
-        If CmdID >= &H7FFFFFD0 Then CmdID = 0
-        .Cmd = CmdID
+        .FVirt = FVIRTKEY Or FALT
+        .Cmd = 1
         .Key = (VkKeyScan(Accel) And &HFF&)
+        End With
+        AccelRefCount = AccelRefCount + 1
+        ReDim Preserve AccelArray(0 To AccelRefCount) As TACCEL
+        With AccelArray(AccelRefCount)
+        .FVirt = FVIRTKEY Or FALT Or FSHIFT
+        .Cmd = AccelArray(AccelRefCount - 1).Cmd
+        .Key = AccelArray(AccelRefCount - 1).Key
         End With
         AccelRefCount = AccelRefCount + 1
     End If

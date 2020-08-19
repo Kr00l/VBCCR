@@ -3320,7 +3320,7 @@ End Sub
 
 Public Function ContainerKeyDown(ByRef KeyCode As Integer, ByRef Shift As Integer) As TbrButton
 Attribute ContainerKeyDown.VB_Description = "Provides accelerator key access by forwarding the key down events of the container. The key preview property need to be set to true by a form container."
-If ToolBarHandle = 0 Or Shift <> vbAltMask Then Exit Function
+If ToolBarHandle = 0 Or (Shift <> vbAltMask And Shift <> (vbAltMask Or vbShiftMask)) Then Exit Function
 If IsWindowEnabled(ToolBarHandle) = 0 Then Exit Function
 Dim ID As Long, Accel As Integer, Count As Long, TBBI As TBBUTTONINFO
 Count = SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&)

@@ -215,8 +215,9 @@ Private Const HWND_DESKTOP As Long = &H0
 Private Const COLOR_BTNFACE As Long = 15
 Private Const RGN_OR As Long = 2
 Private Const RGN_DIFF As Long = 4
-Private Const FALT As Long = &H10
 Private Const FVIRTKEY As Long = &H1
+Private Const FSHIFT As Long = &H4
+Private Const FALT As Long = &H10
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_CLIPSIBLINGS As Long = &H4000000
@@ -411,7 +412,6 @@ End If
 End Sub
 
 Private Sub IOleControlVB_GetControlInfo(ByRef Handled As Boolean, ByRef AccelCount As Integer, ByRef AccelTable As Long, ByRef Flags As Long)
-Static CmdID As Integer
 If TabStripAcceleratorHandle <> 0 Then
     DestroyAcceleratorTable TabStripAcceleratorHandle
     TabStripAcceleratorHandle = 0
@@ -424,13 +424,18 @@ If TabStripHandle <> 0 Then
         For i = 1 To Count
             Accel = AccelCharCode(Me.FTabCaption(i))
             If Accel <> 0 Then
-                ReDim Preserve AccelArray(0 To AccelRefCount)
+                ReDim Preserve AccelArray(0 To AccelRefCount) As TACCEL
                 With AccelArray(AccelRefCount)
-                .FVirt = FALT Or FVIRTKEY
-                If CmdID = 0 Then CmdID = 1000 Else CmdID = CmdID + 100
-                If CmdID >= &H7FFFFFD0 Then CmdID = 0
-                .Cmd = CmdID
+                .FVirt = FVIRTKEY Or FALT
+                .Cmd = i
                 .Key = (VkKeyScan(Accel) And &HFF&)
+                End With
+                AccelRefCount = AccelRefCount + 1
+                ReDim Preserve AccelArray(0 To AccelRefCount) As TACCEL
+                With AccelArray(AccelRefCount)
+                .FVirt = FVIRTKEY Or FALT Or FSHIFT
+                .Cmd = AccelArray(AccelRefCount - 1).Cmd
+                .Key = AccelArray(AccelRefCount - 1).Key
                 End With
                 AccelRefCount = AccelRefCount + 1
             End If
@@ -452,11 +457,9 @@ If TabStripHandle <> 0 And wMsg = WM_SYSKEYDOWN Then
     Count = SendMessage(TabStripHandle, TCM_GETITEMCOUNT, 0, ByVal 0&)
     If Count > 0 Then
         For i = 1 To Count
-            Accel = AccelCharCode(Me.Tabs(i).Caption)
+            Accel = AccelCharCode(Me.FTabCaption(i))
             If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
-                If i <> SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) - 1 Then
-                    Me.Tabs(i).Selected = True
-                End If
+                If i <> SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) - 1 Then Me.FTabSelected(i) = True
                 Exit For
             End If
         Next i
