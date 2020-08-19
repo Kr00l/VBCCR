@@ -487,8 +487,16 @@ nSizeMin As Long
 nSizeMax As Long
 End Type
 Private Const LF_FACESIZE As Long = 32
+Private Const FW_DONTCARE As Long = 0
+Private Const FW_THIN As Long = 100
+Private Const FW_EXTRALIGHT As Long = 200
+Private Const FW_LIGHT As Long = 300
 Private Const FW_NORMAL As Long = 400
+Private Const FW_MEDIUM As Long = 500
+Private Const FW_SEMIBOLD As Long = 600
 Private Const FW_BOLD As Long = 700
+Private Const FW_EXTRABOLD As Long = 800
+Private Const FW_HEAVY As Long = 900
 Private Const DEFAULT_QUALITY As Long = 0
 Private Type LOGFONT
 LFHeight As Long
@@ -1043,7 +1051,7 @@ End Property
 
 Public Property Get FontBold() As Boolean
 Attribute FontBold.VB_Description = "Returns/sets bold font styles."
-FontBold = CBool(PropFontWeight >= 600)
+FontBold = CBool(PropFontWeight >= FW_SEMIBOLD)
 End Property
 
 Public Property Let FontBold(ByVal Value As Boolean)
@@ -1084,6 +1092,20 @@ End Property
 
 Public Property Let FontCharset(ByVal Value As Integer)
 PropFontCharset = Value
+End Property
+
+Public Property Get FontWeight() As Integer
+Attribute FontWeight.VB_Description = "Returns/sets the weight (boldness) of the font."
+FontWeight = PropFontWeight
+End Property
+
+Public Property Let FontWeight(ByVal Value As Integer)
+Select Case Value
+    Case FW_DONTCARE, FW_THIN, FW_EXTRALIGHT, FW_LIGHT, FW_NORMAL, FW_MEDIUM, FW_SEMIBOLD, FW_BOLD, FW_EXTRABOLD, FW_HEAVY
+        PropFontWeight = Value
+    Case Else
+        Err.Raise 380
+End Select
 End Property
 
 Public Property Get Min() As Long
@@ -2633,8 +2655,7 @@ Select Case dwRefData
             If wMsg = WM_NOTIFY Then
                 Dim NM As NMHDR, NMOFN As NMOFNOTIFY
                 CopyMemory NM, ByVal lParam, LenB(NM)
-                Const H_MAX As Long = (&HFFFF + 1)
-                Const CDN_FIRST As Long = (H_MAX - 601)
+                Const CDN_FIRST As Long = (-601)
                 Const CDN_INITDONE As Long = (CDN_FIRST - 0)
                 Const CDN_SHAREVIOLATION As Long = (CDN_FIRST - 3)
                 Const CDN_FILEOK As Long = (CDN_FIRST - 5)
