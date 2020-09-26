@@ -1291,7 +1291,10 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If SpinBoxEditHandle <> 0 Then SendMessage SpinBoxEditHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+If SpinBoxEditHandle <> 0 Then
+    If StrPtr(Value) = 0 Then Value = ""
+    SendMessage SpinBoxEditHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
+End If
 End Property
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long

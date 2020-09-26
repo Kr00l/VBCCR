@@ -1705,7 +1705,10 @@ End If
 End Property
 
 Public Property Let SelText(ByVal Value As String)
-If TextBoxHandle <> 0 Then SendMessage TextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Value)
+If TextBoxHandle <> 0 Then
+    If StrPtr(Value) = 0 Then Value = ""
+    SendMessage TextBoxHandle, EM_REPLACESEL, 1, ByVal StrPtr(Value)
+End If
 End Property
 
 Public Function GetLine(ByVal LineNumber As Long) As String

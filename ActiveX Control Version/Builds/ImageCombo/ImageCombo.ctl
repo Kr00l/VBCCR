@@ -1741,6 +1741,7 @@ End Property
 Public Property Let SelText(ByVal Value As String)
 If ImageComboHandle <> 0 Then
     If ImageComboEditHandle <> 0 Then
+        If StrPtr(Value) = 0 Then Value = ""
         SendMessage ImageComboEditHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
     Else
         Err.Raise 380
