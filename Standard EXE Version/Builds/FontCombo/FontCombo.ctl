@@ -1783,6 +1783,7 @@ End Property
 Public Property Let SelText(ByVal Value As String)
 If FontComboHandle <> 0 Then
     If FontComboEditHandle <> 0 Then
+        If StrPtr(Value) = 0 Then Value = ""
         SendMessage FontComboEditHandle, EM_REPLACESEL, 0, ByVal StrPtr(Value)
     Else
         Err.Raise 380
