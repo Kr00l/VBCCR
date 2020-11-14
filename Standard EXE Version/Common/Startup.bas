@@ -15,7 +15,6 @@ If App.PrevInstance = True And InIDE() = False Then
         AppActivate "ComCtls Demo"
     End If
 Else
-    Call ComCtlsInitIDEStopProtection
     Call InitVisualStylesFixes
     MainForm.Show vbModeless
 End If
