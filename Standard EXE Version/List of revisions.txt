@@ -1,5 +1,8 @@
 List of revisions:
 
+19-Jan-2021
+- TabMinWidth property can be set to -1 in the TabStrip control.
+
 23-Sep-2020
 - No crash anymore when passing a vbNullString to the .SelText property in various controls. (e.g. TextBoxW)
   Though, the fix concerns only Windows XP or below. Because as of Vista+ a NULL StrPtr() on EM_REPLACESEL does not cause harm.
