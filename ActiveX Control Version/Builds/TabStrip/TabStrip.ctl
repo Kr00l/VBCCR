@@ -1337,11 +1337,15 @@ End Property
 
 Public Property Get TabMinWidth() As Single
 Attribute TabMinWidth.VB_Description = "Returns/sets a minimum width of a tab."
-TabMinWidth = UserControl.ScaleX(PropTabMinWidth, vbPixels, vbContainerSize)
+If PropTabMinWidth <> -1 Then
+    TabMinWidth = UserControl.ScaleX(PropTabMinWidth, vbPixels, vbContainerSize)
+Else
+    TabMinWidth = -1
+End If
 End Property
 
 Public Property Let TabMinWidth(ByVal Value As Single)
-If Value < 0 Then
+If Value < 0 And Not Value = -1 Then
     If TabStripDesignMode = True Then
         MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
@@ -1351,10 +1355,10 @@ If Value < 0 Then
 End If
 Dim IntValue As Integer, ErrValue As Long
 On Error Resume Next
-IntValue = CInt(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+If Value <> -1 Then IntValue = CInt(UserControl.ScaleX(Value, vbContainerSize, vbPixels)) Else IntValue = -1
 ErrValue = Err.Number
 On Error GoTo 0
-If IntValue >= 0 And ErrValue = 0 Then
+If (IntValue >= 0 Or IntValue = -1) And ErrValue = 0 Then
     PropTabMinWidth = IntValue
     If TabStripHandle <> 0 Then SendMessage TabStripHandle, TCM_SETMINTABWIDTH, 0, ByVal CLng(PropTabMinWidth)
 Else

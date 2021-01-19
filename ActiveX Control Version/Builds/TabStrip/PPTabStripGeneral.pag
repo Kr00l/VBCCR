@@ -602,7 +602,7 @@ Else
     SngValue = CSng(TextTabMinWidth.Text)
     Cancel = CBool(Err.Number <> 0)
     On Error GoTo 0
-    If SngValue < 0 Then Cancel = True
+    If SngValue < 0 And Not SngValue = -1 Then Cancel = True
     If Cancel = False Then
         TextTabMinWidth.Text = SngValue
     Else
