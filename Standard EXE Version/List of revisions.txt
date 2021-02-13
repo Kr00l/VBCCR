@@ -1,5 +1,8 @@
 List of revisions:
 
+13-Feb-2021
+- Bugfix in the FrameW control that mouse events were in pixels instead of twips.
+
 19-Jan-2021
 - TabMinWidth property can be set to -1 in the TabStrip control.
 
