@@ -9,9 +9,8 @@ Begin VB.UserControl FrameW
    ControlContainer=   -1  'True
    ForwardFocus    =   -1  'True
    PropertyPages   =   "FrameW.ctx":0000
-   ScaleHeight     =   120
-   ScaleMode       =   3  'Pixel
-   ScaleWidth      =   160
+   ScaleHeight     =   1800
+   ScaleWidth      =   2400
    ToolboxBitmap   =   "FrameW.ctx":0035
 End
 Attribute VB_Name = "FrameW"
