@@ -1,5 +1,8 @@
 List of revisions:
 
+14-Feb-2021
+- Bugfix in the FrameW control related to 13-Feb-2021 update.
+
 13-Feb-2021
 - Bugfix in the FrameW control that mouse events were in pixels instead of twips.
 
