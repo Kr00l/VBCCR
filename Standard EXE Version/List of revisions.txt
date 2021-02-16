@@ -1,5 +1,8 @@
 List of revisions:
 
+16-Feb-2021
+- Internal improvement in the TextBoxW control.
+
 14-Feb-2021
 - Bugfix in the FrameW control related to 13-Feb-2021 update.
 
