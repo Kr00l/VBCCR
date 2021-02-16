@@ -1075,7 +1075,14 @@ UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
 Dim dwMask As Long
 If PropRightToLeft = True Then dwMask = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
-If TextBoxHandle <> 0 Then Call ComCtlsSetRightToLeft(TextBoxHandle, dwMask)
+If TextBoxHandle <> 0 Then
+    Call ComCtlsSetRightToLeft(TextBoxHandle, dwMask)
+    If PropRightToLeft = False Then
+        If PropAlignment = vbRightJustify Then Me.Alignment = vbLeftJustify
+    Else
+        If PropAlignment = vbLeftJustify Then Me.Alignment = vbRightJustify
+    End If
+End If
 UserControl.PropertyChanged "RightToLeft"
 End Property
 
@@ -1501,8 +1508,15 @@ Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
 If PropRightToLeft = True Then dwExStyle = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
 Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
+Select Case PropAlignment
+    Case vbLeftJustify
+        dwStyle = dwStyle Or ES_LEFT
+    Case vbCenter
+        dwStyle = dwStyle Or ES_CENTER
+    Case vbRightJustify
+        dwStyle = dwStyle Or ES_RIGHT
+End Select
 If PropAllowOnlyNumbers = True Then dwStyle = dwStyle Or ES_NUMBER
-If PropRightToLeft = False Then dwStyle = dwStyle Or ES_LEFT Else dwStyle = dwStyle Or ES_RIGHT
 If PropLocked = True Then dwStyle = dwStyle Or ES_READONLY
 If PropHideSelection = False Then dwStyle = dwStyle Or ES_NOHIDESEL
 If PropUseSystemPasswordChar = True Then dwStyle = dwStyle Or ES_PASSWORD
@@ -1539,7 +1553,6 @@ End If
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
-Me.Alignment = PropAlignment
 If Not PropCueBanner = vbNullString Then Me.CueBanner = PropCueBanner
 If PropNetAddressValidator = True Then Me.NetAddressType = PropNetAddressType
 If TextBoxDesignMode = False Then
