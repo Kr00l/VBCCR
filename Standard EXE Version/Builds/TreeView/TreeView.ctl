@@ -2013,7 +2013,12 @@ End If
 End Function
 
 Friend Sub FNodesClear()
-If TreeViewHandle <> 0 Then SendMessage TreeViewHandle, TVM_DELETEITEM, 0, ByVal TVI_ROOT
+If TreeViewHandle <> 0 Then
+    ' The tree view control will delete all items one by one.
+    ' Ensure no caret item is set to have no unnecessary TVN_SELCHANGING/TVN_SELCHANGED notifications.
+    SendMessage TreeViewHandle, TVM_SELECTITEM, TVGN_CARET, ByVal 0&
+    SendMessage TreeViewHandle, TVM_DELETEITEM, 0, ByVal TVI_ROOT
+End If
 End Sub
 
 Friend Property Get FNodeText(ByVal Handle As Long) As String
@@ -3610,19 +3615,14 @@ Select Case wMsg
                         End If
                         Ptr = GetItemPtr(.hItem)
                         If Ptr <> 0 Then Set Node = PtrToObj(Ptr)
-                        If (.Flags And TVHT_ONITEMBUTTON) = 0 Then
+                        If (.Flags And (TVHT_ONITEMICON Or TVHT_ONITEMLABEL)) <> 0 Then
                             If NM.Code = NM_CLICK Then
                                 RaiseEvent NodeClick(Node, vbLeftButton)
                             ElseIf NM.Code = NM_RCLICK Then
                                 RaiseEvent NodeClick(Node, vbRightButton)
                             End If
-                            If TreeViewButtonDown <> 0 Then
-                                RaiseEvent MouseUp(TreeViewButtonDown, GetShiftStateFromMsg(), UserControl.ScaleX(.PT.X, vbPixels, vbTwips), UserControl.ScaleY(.PT.Y, vbPixels, vbTwips))
-                                TreeViewButtonDown = 0
-                                TreeViewIsClick = False
-                                RaiseEvent Click
-                            End If
-                        ElseIf TreeViewButtonDown <> vbLeftButton And TreeViewButtonDown <> 0 Then
+                        End If
+                        If ((.Flags And TVHT_ONITEMBUTTON) = 0 Or TreeViewButtonDown <> vbLeftButton) And TreeViewButtonDown <> 0 Then
                             RaiseEvent MouseUp(TreeViewButtonDown, GetShiftStateFromMsg(), UserControl.ScaleX(.PT.X, vbPixels, vbTwips), UserControl.ScaleY(.PT.Y, vbPixels, vbTwips))
                             TreeViewButtonDown = 0
                             TreeViewIsClick = False
@@ -3663,10 +3663,12 @@ Select Case wMsg
                     If .hItem <> 0 Then
                         Ptr = GetItemPtr(.hItem)
                         If Ptr <> 0 Then Set Node = PtrToObj(Ptr)
-                        If NM.Code = NM_DBLCLK Then
-                            RaiseEvent NodeDblClick(Node, vbLeftButton)
-                        ElseIf NM.Code = NM_RDBLCLK Then
-                            RaiseEvent NodeDblClick(Node, vbRightButton)
+                        If (.Flags And (TVHT_ONITEMICON Or TVHT_ONITEMLABEL)) <> 0 Then
+                            If NM.Code = NM_DBLCLK Then
+                                RaiseEvent NodeDblClick(Node, vbLeftButton)
+                            ElseIf NM.Code = NM_RDBLCLK Then
+                                RaiseEvent NodeDblClick(Node, vbRightButton)
+                            End If
                         End If
                     End If
                     End With
