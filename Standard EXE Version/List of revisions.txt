@@ -1,5 +1,12 @@
 List of revisions:
 
+19-Feb-2021
+- Bugfix in the NodeClick/NodeDblClick event in the TreeView control.
+  Prior to this update it fired whenever hItem is <> 0.
+  Now it fires only when when in addition the hit-test flags are TVHT_ONITEMICON or TVHT_ONITEMLABEL. (like the MS TreeView does)
+- Improved the Nodes.Clear method in the TreeView control.
+  The selected item is now removed before clearing to have no unnecessary TVN_SELCHANGING/TVN_SELCHANGED notifications.
+
 18-Feb-2021
 - Bugfix in the Left/Width property (Get) of a Panel in the StatusBar control.
 

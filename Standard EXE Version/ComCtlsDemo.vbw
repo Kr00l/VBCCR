@@ -1,4 +1,4 @@
-MainForm = 238, 48, 1287, 867, C, 246, 94, 1022, 822, C
+MainForm = 417, 151, 1466, 970, C, 246, 94, 1022, 822, C
 PagerForm = 25, 25, 932, 818, C, 25, 25, 646, 642, C
 RichTextBoxForm = 369, 195, 1330, 897, C, 50, 50, 1247, 732, C
 VirtualControlsForm = 183, 127, 1395, 800, C, 22, 29, 1175, 801, C
@@ -98,7 +98,7 @@ TbrButtonProperties = 0, 0, 0, 0, C
 TbrButtons = 150, 150, 1313, 823, C
 PPToolBarGeneral = 0, 0, 0, 0, C, 306, 25, 1471, 698, C
 PPToolBarButtons = 50, 50, 1371, 833, C, 25, 25, 1188, 698, C
-TreeView = 146, 81, 1348, 785, C, 75, 75, 1240, 748, C
+TreeView = 48, 58, 1418, 872, C, 75, 75, 1240, 748, C
 TvwNode = 266, 211, 1431, 884, C
 TvwNodes = 0, 0, 0, 0, C
 TvwSelectedNodes = 215, 161, 1380, 834, C
