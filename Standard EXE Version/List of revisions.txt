@@ -1,5 +1,8 @@
 List of revisions:
 
+24-Feb-2021
+- Some minor internal improvements.
+
 19-Feb-2021
 - Bugfix in the NodeClick/NodeDblClick event in the TreeView control.
   Prior to this update it fired whenever hItem is <> 0.
