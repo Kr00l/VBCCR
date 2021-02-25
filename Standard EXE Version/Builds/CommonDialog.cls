@@ -715,7 +715,7 @@ Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd A
 Private Declare Function SHBrowseForFolder Lib "shell32" Alias "SHBrowseForFolderW" (ByRef lpBrowseInfo As BROWSEINFO) As Long
 Private Declare Function SHGetFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, ByVal hToken As Long, ByVal dwReserved As Long, ByRef lpIDList As Long) As Long
 Private Declare Function ILCreateFromPath Lib "shell32" (ByVal lpszPath As Long) As Long
-Private Declare Function ILCreateFromPath_W2K Lib "shell32" Alias "#157" (ByVal lpszPath As Long) As Long
+Private Declare Function ILCreateFromPathW2K Lib "shell32" Alias "#157" (ByVal lpszPath As Long) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListW" (ByVal lpIDList As Long, ByVal lpBuffer As Long) As Long
 Private Declare Function RegisterWindowMessage Lib "user32" Alias "RegisterWindowMessageW" (ByVal lpString As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -2455,7 +2455,7 @@ Select Case VarType(PropRootFolder)
         If CommonDialogILCreateFromPathW2K > -1 Then
             .pIDLRoot = ILCreateFromPath(StrPtr(Left$(PropRootFolder, MAX_PATH)))
         Else
-            .pIDLRoot = ILCreateFromPath_W2K(StrPtr(Left$(PropRootFolder, MAX_PATH)))
+            .pIDLRoot = ILCreateFromPathW2K(StrPtr(Left$(PropRootFolder, MAX_PATH)))
         End If
     Case vbDouble, vbSingle
         SHGetFolderLocation 0, CLng(PropRootFolder), 0, 0, .pIDLRoot
