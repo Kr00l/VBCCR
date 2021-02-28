@@ -1742,7 +1742,7 @@ Select Case wMsg
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(-1, -1)
             Else
-                ScreenToClient SliderHandle, P2
+                ScreenToClient UserControl.hWnd, P2
                 RaiseEvent ContextMenu(UserControl.ScaleX(P2.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P2.Y, vbPixels, vbContainerPosition))
             End If
         End If
