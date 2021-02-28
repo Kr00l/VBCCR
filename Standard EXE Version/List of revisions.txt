@@ -1,7 +1,8 @@
 List of revisions:
 
-24-Feb-2021
-- Some minor internal improvements.
+28-Feb-2021
+- Harmonization in the ContextMenu events. The X and Y parameters are now always originated to the UserControl.hWnd.
+  Problem was in some controls which have child windows, resulted in confusing X and Y parameters.
 
 19-Feb-2021
 - Bugfix in the NodeClick/NodeDblClick event in the TreeView control.

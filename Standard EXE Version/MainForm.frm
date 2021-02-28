@@ -2,8 +2,8 @@ VERSION 5.00
 Begin VB.Form MainForm 
    Caption         =   "ComCtls Demo"
    ClientHeight    =   8805
-   ClientLeft      =   165
-   ClientTop       =   555
+   ClientLeft      =   225
+   ClientTop       =   870
    ClientWidth     =   9915
    KeyPreview      =   -1  'True
    ScaleHeight     =   8805
@@ -451,6 +451,12 @@ Begin VB.Form MainForm
       _ExtentY        =   1164
       Enabled         =   0   'False
       AutoPlay        =   -1  'True
+   End
+   Begin VB.Menu test 
+      Caption         =   "test"
+      Begin VB.Menu test2 
+         Caption         =   "test2"
+      End
    End
 End
 Attribute VB_Name = "MainForm"
