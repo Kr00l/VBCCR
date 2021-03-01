@@ -1,7 +1,7 @@
 List of revisions:
 
-28-Feb-2021
-- Harmonization in the ContextMenu events. The X and Y parameters are now always originated to the UserControl.hWnd.
+01-Mar-2021
+- Harmonization in the ContextMenu events. The X and Y parameters are now always originated to the control's hWnd.
   Problem was in some controls which have child windows, resulted in confusing X and Y parameters.
 
 19-Feb-2021
