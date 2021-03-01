@@ -1984,7 +1984,7 @@ Select Case wMsg
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient UserControl.hWnd, P
+                ScreenToClient DTPickerHandle, P
                 RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
@@ -2104,7 +2104,7 @@ Select Case wMsg
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent CalendarContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient UserControl.hWnd, P
+                ScreenToClient hWnd, P
                 RaiseEvent CalendarContextMenu(Handled, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
@@ -2177,7 +2177,7 @@ Select Case wMsg
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient UserControl.hWnd, P1
+                ScreenToClient DTPickerHandle, P1
                 RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function

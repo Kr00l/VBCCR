@@ -1326,9 +1326,7 @@ Select Case wMsg
         Dim P As POINTAPI
         P.X = Get_X_lParam(lParam)
         P.Y = Get_Y_lParam(lParam)
-        If PropAlignment = CCLeftRightAlignmentRight Then
-            If SpinBoxEditHandle <> 0 Then MapWindowPoints hWnd, SpinBoxEditHandle, P, 1
-        End If
+        MapWindowPoints hWnd, UserControl.hWnd, P, 1
         Dim X As Single
         Dim Y As Single
         X = UserControl.ScaleX(P.X, vbPixels, vbTwips)
@@ -1462,9 +1460,7 @@ Select Case wMsg
         Dim P2 As POINTAPI
         P2.X = Get_X_lParam(lParam)
         P2.Y = Get_Y_lParam(lParam)
-        If PropAlignment = CCLeftRightAlignmentLeft Then
-            If SpinBoxUpDownHandle <> 0 Then MapWindowPoints hWnd, SpinBoxUpDownHandle, P2, 1
-        End If
+        MapWindowPoints hWnd, UserControl.hWnd, P2, 1
         Dim X As Single
         Dim Y As Single
         X = UserControl.ScaleX(P2.X, vbPixels, vbTwips)
