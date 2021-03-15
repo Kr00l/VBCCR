@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Mar-2021
+- HotTracking property improved in the ListView control.
+
 01-Mar-2021
 - Harmonization in the ContextMenu events. The X and Y parameters are now always originated to the control's hWnd.
   Problem was in some controls which have child windows, resulted in confusing X and Y parameters.
