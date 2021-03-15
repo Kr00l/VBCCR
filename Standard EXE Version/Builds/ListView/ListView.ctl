@@ -1073,6 +1073,7 @@ Private ListViewStartLabelEdit As Boolean
 Private ListViewButtonDown As Integer
 Private ListViewListItemsControl As Long
 Private ListViewHotLightColor As Long
+Private ListViewHotTrackItem As Long, ListViewHotTrackSubItem As Long
 Private ListViewDragIndexBuffer As Long, ListViewDragIndex As Long
 Private ListViewDragOffsetX As Long, ListViewDragOffsetY As Long
 Private ListViewMemoryColumnWidth As Long
@@ -1263,6 +1264,8 @@ Call ComCtlsInitCC(ICC_LISTVIEW_CLASSES)
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ListViewHotLightColor = CLR_DEFAULT
+ListViewHotTrackItem = -1
+ListViewHotTrackSubItem = 0
 ListViewHeaderToolTipItem = -1
 ReDim IconsArray(0) As String
 ReDim SmallIconsArray(0) As String
@@ -7927,7 +7930,7 @@ Select Case wMsg
                             If PropVirtualMode = True Then
                                 If NMLVCD.NMCD.dwItemSpec > -1 And NMLVCD.NMCD.dwItemSpec <= PropVirtualItemCount Then
                                     If NMLVCD.iSubItem = 0 Then
-                                        If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                        If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Or PropHotTracking = False Then
                                             If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
                                                 RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
                                             End If
@@ -7972,7 +7975,7 @@ Select Case wMsg
                             ElseIf NMLVCD.NMCD.lItemlParam <> 0 Then
                                 Set ListItem = PtrToObj(NMLVCD.NMCD.lItemlParam)
                                 With ListItem
-                                If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Or PropHotTracking = False Then
                                     If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                     NMLVCD.ClrText = WinColor(.ForeColor)
                                 Else
@@ -8009,7 +8012,7 @@ Select Case wMsg
                                     Dim SubItemCount As Long
                                     SubItemCount = Me.ColumnHeaders.Count - 1 ' Deduct 1 for SubItem 0
                                     If NMLVCD.iSubItem >= 0 And NMLVCD.iSubItem <= SubItemCount Then
-                                        If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                        If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Or PropHotTracking = False Then
                                             If (PropVirtualDisabledInfos And LvwVirtualPropertyBold) = 0 Then
                                                 RaiseEvent GetVirtualItem(NMLVCD.NMCD.dwItemSpec + 1, NMLVCD.iSubItem, LvwVirtualPropertyBold, Bold)
                                             End If
@@ -8059,7 +8062,7 @@ Select Case wMsg
                                 If NMLVCD.iSubItem > 0 Then
                                     If .FListSubItemsCount > 0 Then
                                         If NMLVCD.iSubItem <= .FListSubItemsCount Then
-                                            If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                            If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Or PropHotTracking = False Then
                                                 If .FListSubItemProp(NMLVCD.iSubItem, 6) = True Then FontHandle = ListViewBoldFontHandle
                                                 If .FListSubItemProp(NMLVCD.iSubItem, 7) = -1 Then
                                                     NMLVCD.ClrText = WinColor(PropForeColor)
@@ -8093,7 +8096,7 @@ Select Case wMsg
                                         End If
                                     End If
                                 Else
-                                    If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                    If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Or PropHotTracking = False Then
                                         If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                         NMLVCD.ClrText = WinColor(.ForeColor)
                                     Else
@@ -8305,6 +8308,20 @@ Select Case wMsg
                         Next iItem
                     End If
                     End With
+                Case LVN_HOTTRACK
+                    If PropHotTracking = True And PropView = LvwViewReport Then
+                        ' Solve redrawing issue when the cursor moves horizontally. (e.g. from one subitem to another)
+                        CopyMemory NMLV, ByVal lParam, LenB(NMLV)
+                        With NMLV
+                        If .iItem > -1 Then
+                            If .iItem = ListViewHotTrackItem And .iSubItem <> ListViewHotTrackSubItem Then SendMessage ListViewHandle, LVM_UPDATE, .iItem, ByVal 0&
+                        End If
+                        ListViewHotTrackItem = .iItem
+                        ListViewHotTrackSubItem = .iSubItem
+                        End With
+                    End If
+                    WindowProcUserControl = 0
+                    Exit Function
                 Case LVN_GETEMPTYMARKUP
                     Dim Text As String, Center As Boolean
                     RaiseEvent GetEmptyMarkup(Text, Center)
