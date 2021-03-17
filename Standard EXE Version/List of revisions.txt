@@ -1,5 +1,8 @@
 List of revisions:
 
+17-Mar-2021
+- Improved CreateGDIFontFromOLEFont function.
+
 15-Mar-2021
 - HotTracking property improved in the ListView control.
 
