@@ -7,6 +7,7 @@ Begin VB.UserControl ToolBar
    ClientTop       =   0
    ClientWidth     =   2400
    ControlContainer=   -1  'True
+   DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "ToolBar.ctx":0000
    ScaleHeight     =   120

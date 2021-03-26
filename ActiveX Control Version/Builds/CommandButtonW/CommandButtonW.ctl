@@ -5,6 +5,7 @@ Begin VB.UserControl CommandButtonW
    ClientTop       =   0
    ClientWidth     =   2400
    DefaultCancel   =   -1  'True
+   DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "CommandButtonW.ctx":0000
    ScaleHeight     =   120

@@ -6,6 +6,7 @@ Begin VB.UserControl TextBoxW
    ClientTop       =   0
    ClientWidth     =   2400
    DataBindingBehavior=   1  'vbSimpleBound
+   DrawStyle       =   5  'Transparent
    ForeColor       =   &H80000008&
    HasDC           =   0   'False
    PropertyPages   =   "TextBoxW.ctx":0000
