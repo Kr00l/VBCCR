@@ -4,6 +4,7 @@ Begin VB.UserControl OptionButtonW
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
+   DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "OptionButtonW.ctx":0000
    ScaleHeight     =   120
