@@ -8,6 +8,7 @@ Begin VB.UserControl LabelW
    ClipBehavior    =   0  'None
    ClipControls    =   0   'False
    DataBindingBehavior=   1  'vbSimpleBound
+   DrawStyle       =   5  'Transparent
    ForwardFocus    =   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "LabelW.ctx":0000

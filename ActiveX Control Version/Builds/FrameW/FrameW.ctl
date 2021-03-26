@@ -7,6 +7,7 @@ Begin VB.UserControl FrameW
    ClientTop       =   0
    ClientWidth     =   2400
    ControlContainer=   -1  'True
+   DrawStyle       =   5  'Transparent
    ForwardFocus    =   -1  'True
    PropertyPages   =   "FrameW.ctx":0000
    ScaleHeight     =   1800

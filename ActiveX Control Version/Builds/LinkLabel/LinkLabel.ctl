@@ -5,6 +5,7 @@ Begin VB.UserControl LinkLabel
    ClientTop       =   0
    ClientWidth     =   2400
    DataBindingBehavior=   1  'vbSimpleBound
+   DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "LinkLabel.ctx":0000
    ScaleHeight     =   120
