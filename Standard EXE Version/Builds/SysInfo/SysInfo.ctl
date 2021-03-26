@@ -17,8 +17,9 @@ Begin VB.UserControl SysInfo
    EndProperty
    HasDC           =   0   'False
    InvisibleAtRuntime=   -1  'True
-   ScaleHeight     =   1800
-   ScaleWidth      =   2400
+   ScaleHeight     =   120
+   ScaleMode       =   3  'Pixel
+   ScaleWidth      =   160
    ToolboxBitmap   =   "SysInfo.ctx":0000
    Begin VB.Image ImageSysInfo 
       Height          =   480
@@ -157,7 +158,6 @@ Private Declare Function SystemParametersInfo Lib "user32" Alias "SystemParamete
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
-Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Const GA_ROOTOWNER As Long = 3
 Private Const BF_LEFT As Long = 1
@@ -224,9 +224,12 @@ End If
 End Sub
 
 Private Sub UserControl_Paint()
-UserControl.Cls
 Dim RC As RECT
-GetClientRect UserControl.hWnd, RC
+RC.Left = 0
+RC.Top = 0
+RC.Right = UserControl.ScaleWidth
+RC.Bottom = UserControl.ScaleHeight
+UserControl.Cls
 DrawEdge UserControl.hDC, RC, BDR_RAISEDOUTER Or BDR_RAISEDINNER, BF_RECT
 End Sub
 
@@ -235,9 +238,9 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 With UserControl
 InProc = True
-ImageSysInfo.Left = 45
-ImageSysInfo.Top = 45
-.Size 570, 570
+ImageSysInfo.Left = 3
+ImageSysInfo.Top = 3
+.Size .ScaleX(38, vbPixels, vbTwips), .ScaleY(38, vbPixels, vbTwips)
 InProc = False
 End With
 End Sub

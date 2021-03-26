@@ -18,8 +18,9 @@ Begin VB.UserControl ImageList
    HasDC           =   0   'False
    InvisibleAtRuntime=   -1  'True
    PropertyPages   =   "ImageList.ctx":0000
-   ScaleHeight     =   1800
-   ScaleWidth      =   2400
+   ScaleHeight     =   120
+   ScaleMode       =   3  'Pixel
+   ScaleWidth      =   160
    ToolboxBitmap   =   "ImageList.ctx":003D
    Begin VB.Image ImagePictures 
       Height          =   480
@@ -76,7 +77,6 @@ Private Declare Function ImageList_SetBkColor Lib "comctl32" (ByVal hImageList A
 Private Declare Function ImageList_SetOverlayImage Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal iOverlay As Long) As Boolean
 Private Declare Function CreateDCAsNull Lib "gdi32" Alias "CreateDCW" (ByVal lpDriverName As Long, ByRef lpDeviceName As Any, ByRef lpOutput As Any, ByRef lpInitData As Any) As Long
 Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
-Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function GetDeviceCaps Lib "gdi32" (ByVal hDC As Long, ByVal nIndex As Long) As Long
 Private Declare Function DestroyIcon Lib "user32" (ByVal hIcon As Long) As Long
@@ -202,9 +202,12 @@ End With
 End Sub
 
 Private Sub UserControl_Paint()
-UserControl.Cls
 Dim RC As RECT
-GetClientRect UserControl.hWnd, RC
+RC.Left = 0
+RC.Top = 0
+RC.Right = UserControl.ScaleWidth
+RC.Bottom = UserControl.ScaleHeight
+UserControl.Cls
 DrawEdge UserControl.hDC, RC, BDR_RAISEDOUTER Or BDR_RAISEDINNER, BF_RECT
 End Sub
 
@@ -213,9 +216,9 @@ Static InProc As Boolean
 If InProc = True Then Exit Sub
 With UserControl
 InProc = True
-ImagePictures.Left = 45
-ImagePictures.Top = 45
-.Size 570, 570
+ImagePictures.Left = 3
+ImagePictures.Top = 3
+.Size .ScaleX(38, vbPixels, vbTwips), .ScaleY(38, vbPixels, vbTwips)
 InProc = False
 End With
 End Sub
