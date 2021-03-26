@@ -4,6 +4,7 @@ Begin VB.UserControl Animation
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
+   DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "Animation.ctx":0000
    ScaleHeight     =   120
@@ -292,12 +293,12 @@ End Sub
 
 Private Sub UserControl_Paint()
 If AnimationDesignMode = True Then
+    UserControl.Cls
     Dim RC As RECT
     RC.Left = 0
     RC.Top = 0
     RC.Right = UserControl.ScaleWidth
     RC.Bottom = UserControl.ScaleHeight
-    UserControl.Cls
     DrawEdge UserControl.hDC, RC, BDR_SUNKEN, BF_TOP Or BF_LEFT
     DrawEdge UserControl.hDC, RC, BDR_SUNKENOUTER Or BDR_RAISEDINNER, BF_BOTTOM Or BF_RIGHT
 End If
