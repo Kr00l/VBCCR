@@ -1,5 +1,8 @@
 List of revisions:
 
+26-Mar-2021
+- UserControl.DrawStyle set to 5 = Transparent to avoid a wasted/unused GDI pen handle.
+
 17-Mar-2021
 - Improved CreateGDIFontFromOLEFont function.
 
