@@ -1,4 +1,4 @@
-MainForm = 230, 277, 1279, 1096, C, 280, 142, 1056, 870, C
+MainForm = 220, 201, 1269, 1020, C, 280, 142, 1056, 870, C
 PagerForm = 25, 25, 932, 818, C, 25, 25, 646, 642, C
 RichTextBoxForm = 369, 195, 1330, 897, C, 50, 50, 1247, 732, C
 VirtualControlsForm = 183, 127, 1395, 800, C, 22, 29, 1175, 801, C
@@ -76,7 +76,7 @@ PPSliderGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 PPSliderAppearance = 286, 286, 1455, 946, C, 0, 0, 0, 0, C
 SpinBox = 92, 163, 1255, 836, C, 0, 0, 1163, 673, C
 PPSpinBoxGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-StatusBar = 300, 230, 1465, 903, C, 300, 300, 1463, 973, C
+StatusBar = 141, 180, 1306, 853, C, 300, 300, 1463, 973, C
 SbrPanel = 0, 0, 0, 0, C
 SbrPanelProperties = 0, 0, 0, 0, C
 SbrPanels = 236, 130, 1401, 803, C

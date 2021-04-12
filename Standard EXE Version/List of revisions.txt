@@ -1,5 +1,8 @@
 List of revisions:
 
+12-Apr-2021
+- Internal improvement in the StatusBar control.
+
 26-Mar-2021
 - UserControl.DrawStyle set to 5 = Transparent to avoid a wasted/unused GDI pen handle.
 
