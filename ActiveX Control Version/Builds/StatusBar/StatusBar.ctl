@@ -1277,8 +1277,9 @@ End Property
 
 Friend Property Let FPanelText(ByVal Index As Long, ByVal Value As String)
 If StatusBarHandle <> 0 Then
-    PropShadowPanels(Index).Text = Replace(Value, vbTab, vbNullString)
+    PropShadowPanels(Index).Text = Replace$(Value, vbTab, vbNullString)
     Call SetPanelText(Index)
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then Call SetParts
 End If
 End Property
 
@@ -1289,7 +1290,7 @@ End Property
 Friend Property Let FPanelToolTipText(ByVal Index As Long, ByVal Value As String)
 If StatusBarHandle <> 0 Then
     PropShadowPanels(Index).ToolTipText = Value
-    Call SetPanels
+    If PropShowTips = True Then Call SetPanelToolTipText(Index)
 End If
 End Property
 
@@ -1305,8 +1306,11 @@ If StatusBarHandle <> 0 Then
         Case Else
             Err.Raise 380
     End Select
-    Call SetParts
-    Call SetPanels
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then Call SetParts
 End If
 End Property
 
@@ -1379,6 +1383,12 @@ If StatusBarHandle <> 0 Then
     Call GetPanelRect(Index, RC)
     InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
     UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Select Case PropShadowPanels(Index).Style
+            Case SbrPanelStyleTime, SbrPanelStyleDate
+                Call SetParts
+        End Select
+    End If
 End If
 End Property
 
@@ -1947,9 +1957,7 @@ End Sub
 
 Private Sub CheckTimer()
 If StatusBarHandle <> 0 And PropShadowPanelsCount > 0 Then
-    On Error Resume Next
-    TimerUpdatePanels.Enabled = Ambient.UserMode
-    If Err.Number <> 0 Then TimerUpdatePanels.Enabled = False
+    TimerUpdatePanels.Enabled = Not StatusBarDesignMode
 Else
     TimerUpdatePanels.Enabled = False
 End If
