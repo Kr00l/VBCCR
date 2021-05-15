@@ -1,5 +1,10 @@
 List of revisions:
 
+15-May-2021
+- Bugfix in the UseChevron property of a Band in the CoolBar control.
+  The .CXHeader member (RBBIM_HEADERSIZE) will now be reset (= -1) whenever the property is set.
+- RP_CHEVRON/RP_CHEVRONVERT now included in the 'ImplementThemedReBarFix'.
+
 12-Apr-2021
 - Internal improvement in the StatusBar control.
 
