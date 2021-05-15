@@ -105,6 +105,11 @@ CXIdeal As Long
 lParam As Long
 CXHeader As Long
 End Type
+Private Type REBARBANDINFO_V61
+RBBI As REBARBANDINFO
+RCChevronLocation As RECT
+uChevronState As Long
+End Type
 Private Type RBHITTESTINFO
 PT As POINTAPI
 Flag As Long
@@ -274,6 +279,11 @@ RP_GRIPPERVERT = 2
 RP_BAND = 3
 RP_CHEVRON = 4
 RP_CHEVRONVERT = 5
+End Enum
+Private Enum UxThemeChevronStates
+CHEVS_NORMAL = 1
+CHEVS_HOT = 2
+CHEVS_PRESSED = 3
 End Enum
 Private Const DTT_TEXTCOLOR As Long = 1
 Private Type DTTOPTS
@@ -2416,13 +2426,14 @@ If CoolBarHandle <> 0 Then
         Dim RBBI As REBARBANDINFO
         With RBBI
         .cbSize = LenB(RBBI)
-        .fMask = RBBIM_STYLE
+        .fMask = RBBIM_STYLE Or RBBIM_HEADERSIZE
         SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
         If Value = True Then
             If Not (.fStyle And RBBS_USECHEVRON) = RBBS_USECHEVRON Then .fStyle = .fStyle Or RBBS_USECHEVRON
         Else
             If (.fStyle And RBBS_USECHEVRON) = RBBS_USECHEVRON Then .fStyle = .fStyle And Not RBBS_USECHEVRON
         End If
+        .CXHeader = -1
         SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
         End With
     End If
@@ -3037,7 +3048,9 @@ Select Case wMsg
                                 CloseThemeData CoolBarTheme
                                 CoolBarTheme = 0
                             End If
-                            If EnabledVisualStyles() = True And PropVisualStyles = True Then CoolBarTheme = OpenThemeData(CoolBarHandle, StrPtr("ReBar"))
+                            If EnabledVisualStyles() = True And PropVisualStyles = True Then
+                                If ComCtlsSupportLevel() >= 2 Then CoolBarTheme = OpenThemeData(CoolBarHandle, StrPtr("ReBar"))
+                            End If
                             If CoolBarTheme <> 0 Then
                                 WindowProcUserControl = CDRF_NOTIFYITEMDRAW Or CDRF_NOTIFYPOSTPAINT
                             Else
@@ -3146,6 +3159,32 @@ Select Case wMsg
                                         End If
                                         SetBkMode .hDC, OldBkMode
                                         If hFontOld <> 0 Then SelectObject .hDC, hFontOld
+                                    End If
+                                End If
+                                If (RBBI.fStyle And RBBS_USECHEVRON) = RBBS_USECHEVRON Then
+                                    If ComCtlsSupportLevel() >= 2 Then
+                                        Dim RBBI_V61 As REBARBANDINFO_V61
+                                        RBBI_V61.RBBI.cbSize = LenB(RBBI_V61)
+                                        RBBI_V61.RBBI.fMask = RBBIM_CHEVRONLOCATION Or RBBIM_CHEVRONSTATE
+                                        SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI_V61)
+                                        If (RBBI_V61.RCChevronLocation.Right - RBBI_V61.RCChevronLocation.Left) > 0 And (RBBI_V61.RCChevronLocation.Bottom - RBBI_V61.RCChevronLocation.Top) > 0 Then
+                                            Const STATE_SYSTEM_PRESSED As Long = &H8, STATE_SYSTEM_HOTTRACKED As Long = &H80
+                                            Dim ChevronPart As Long, ChevronState As Long
+                                            If (dwStyle And CCS_VERT) = CCS_VERT Then
+                                                ChevronPart = RP_CHEVRONVERT
+                                            Else
+                                                ChevronPart = RP_CHEVRON
+                                            End If
+                                            If (RBBI_V61.uChevronState And STATE_SYSTEM_PRESSED) = STATE_SYSTEM_PRESSED Then
+                                                ChevronState = CHEVS_PRESSED
+                                            ElseIf (RBBI_V61.uChevronState And STATE_SYSTEM_HOTTRACKED) = STATE_SYSTEM_HOTTRACKED Then
+                                                ChevronState = CHEVS_HOT
+                                            Else
+                                                ChevronState = CHEVS_NORMAL
+                                            End If
+                                            If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, ChevronPart, ChevronState) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, RBBI_V61.RCChevronLocation
+                                            DrawThemeBackground CoolBarTheme, .hDC, ChevronPart, ChevronState, RBBI_V61.RCChevronLocation, RBBI_V61.RCChevronLocation
+                                        End If
                                     End If
                                 End If
                                 End With
