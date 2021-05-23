@@ -1,5 +1,9 @@
 List of revisions:
 
+23-May-2021
+- Improvement in the WM_SETCURSOR in the CoolBar control.
+  This ensures the cursor handling for the child controls can walk up the chain properly.
+
 15-May-2021
 - Bugfix in the UseChevron property of a Band in the CoolBar control.
   The .CXHeader member (RBBIM_HEADERSIZE) will now be reset (= -1) whenever the property is set.
