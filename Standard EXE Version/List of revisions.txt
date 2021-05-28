@@ -1,5 +1,8 @@
 List of revisions:
 
+28-May-2021
+- PPImageListImages can be switched now between ImageLists at design-time without issues.
+
 23-May-2021
 - Improvement in the WM_SETCURSOR in the CoolBar control.
   This ensures the cursor handling for the child controls can walk up the chain properly.
