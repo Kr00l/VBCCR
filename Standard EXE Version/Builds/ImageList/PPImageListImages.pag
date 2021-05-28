@@ -178,6 +178,7 @@ Private Const BF_BOTTOM As Long = 8
 Private Const BF_RECT As Long = BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM
 Private Const BDR_RAISEDOUTER As Long = 1
 Private Const BDR_RAISEDINNER As Long = 4
+Private SelectedControl As Object
 Private CurrIndex As Long
 Private ImageFrameWidth As Long, ImageFrameHeight As Long
 Private PropShadowListImages() As ShadowListImageStruct
@@ -230,6 +231,7 @@ Call PropertyPage_SelectionChanged
 End Sub
 
 Private Sub PropertyPage_SelectionChanged()
+If Not SelectedControl Is PropertyPage.SelectedControls(0) Then Set SelectedControl = PropertyPage.SelectedControls(0): CurrIndex = 0
 With PropertyPage.SelectedControls(0)
 If .ListImages.Count > 0 And CurrIndex = 0 Then
     Call FillShadowListImages
