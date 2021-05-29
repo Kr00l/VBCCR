@@ -1,6 +1,7 @@
 List of revisions:
 
-28-May-2021
+29-May-2021
+- PPTabStripTabs can be switched now between TabStrips at design-time without issues.
 - PPImageListImages can be switched now between ImageLists at design-time without issues.
 
 23-May-2021
