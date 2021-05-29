@@ -112,7 +112,7 @@ Begin VB.PropertyPage PPTabStripTabs
       _ExtentX        =   0
       _ExtentY        =   0
       BackColor       =   -2147483633
-      Text            =   "PPTabStripTabs.pgx":0000
+      Enabled         =   0   'False
       Locked          =   -1  'True
    End
    Begin VB.CommandButton CommandRemove 
@@ -195,6 +195,7 @@ Tag As String
 ToolTipText As String
 Image As Variant
 End Type
+Private SelectedControl As Object
 Private CurrIndex As Long
 Private PropShadowTabs() As ShadowTabStruct
 Private FreezeChanged As Boolean
@@ -247,6 +248,7 @@ Call PropertyPage_SelectionChanged
 End Sub
 
 Private Sub PropertyPage_SelectionChanged()
+If Not SelectedControl Is PropertyPage.SelectedControls(0) Then Set SelectedControl = PropertyPage.SelectedControls(0): CurrIndex = 0
 With PropertyPage.SelectedControls(0)
 If .Tabs.Count > 0 And CurrIndex = 0 Then
     Call FillShadowTabs
@@ -261,6 +263,8 @@ If .Tabs.Count > 0 And CurrIndex = 0 Then
     TextImage.Text = CStr(.Image)
     FreezeChanged = False
     End With
+ElseIf CurrIndex = 0 Then
+    TextIndex.Text = "0 of 0"
 End If
 Call ApplyControlStates
 End With
@@ -420,6 +424,7 @@ Private Sub ApplyControlStates()
 With PropertyPage.SelectedControls(0)
 FreezeChanged = True
 If .Tabs.Count > 0 Then
+    TextIndex.Enabled = True
     If CurrIndex > 1 Then
         CommandBack.Enabled = True
     Else
@@ -442,6 +447,7 @@ If .Tabs.Count > 0 Then
     TextImage.BackColor = vbWindowBackground
     TextImage.Enabled = True
 Else
+    TextIndex.Enabled = False
     CommandBack.Enabled = False
     CommandNext.Enabled = False
     CommandRemove.Enabled = False

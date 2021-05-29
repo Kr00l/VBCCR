@@ -93,7 +93,6 @@ Begin VB.PropertyPage PPImageListImages
          _ExtentY        =   0
          BackColor       =   -2147483633
          Enabled         =   0   'False
-         Text            =   "PPImageListImages.pgx":0000
          Locked          =   -1  'True
       End
       Begin VBCCR17.TextBoxW TextKey 
