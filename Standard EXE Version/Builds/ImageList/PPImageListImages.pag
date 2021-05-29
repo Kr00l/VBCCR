@@ -88,7 +88,6 @@ Begin VB.PropertyPage PPImageListImages
          Left            =   720
          Locked          =   -1  'True
          TabIndex        =   2
-         Text            =   "0 of 0"
          Top             =   240
          Width           =   1230
       End
