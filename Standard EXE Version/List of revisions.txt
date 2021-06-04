@@ -1,5 +1,10 @@
 List of revisions:
 
+04-Jun-2021
+- PPCoolBarBands can be switched now between CoolBars at design-time without issues.
+- PPStatusBarPanels can be switched now between StatusBars at design-time without issues.
+- PPToolBarButtons can be switched now between ToolBars at design-time without issues.
+
 29-May-2021
 - PPTabStripTabs can be switched now between TabStrips at design-time without issues.
 - PPImageListImages can be switched now between ImageLists at design-time without issues.
