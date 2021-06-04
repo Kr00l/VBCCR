@@ -264,11 +264,11 @@ Begin VB.PropertyPage PPStatusBarPanels
    End
    Begin VB.TextBox TextIndex 
       BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   1200
       Locked          =   -1  'True
       TabIndex        =   1
-      Text            =   "0 of 0"
       Top             =   120
       Width           =   870
    End
@@ -421,6 +421,7 @@ End Type
 Private Declare Function OleCreatePropertyFrame Lib "olepro32" (ByVal hWndOwner As Long, ByVal X As Long, ByVal Y As Long, ByVal lpszCaption As Long, ByVal cObjects As Long, ByRef pUnk As IUnknown, ByVal cPages As Long, ByRef pPageCLSID As Any, ByVal LCID As Long, ByVal dwReserved As Long, ByVal pvReserved As Long) As Long
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 Private Const CLSID_StandardColorPage As String = "{7EBDAAE1-8120-11CF-899F-00AA00688B10}"
+Private SelectedControl As Object
 Private CurrIndex As Long
 Private PropShadowPanels() As ShadowPanelStruct
 Private FreezeChanged As Boolean
@@ -549,6 +550,7 @@ Call PropertyPage_SelectionChanged
 End Sub
 
 Private Sub PropertyPage_SelectionChanged()
+If Not SelectedControl Is PropertyPage.SelectedControls(0) Then Set SelectedControl = PropertyPage.SelectedControls(0): CurrIndex = 0
 With PropertyPage.SelectedControls(0)
 If .Panels.Count > 0 And CurrIndex = 0 Then
     Call FillShadowPanels
@@ -613,6 +615,8 @@ If .Panels.Count > 0 And CurrIndex = 0 Then
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
     FreezeChanged = False
     End With
+ElseIf CurrIndex = 0 Then
+    TextIndex.Text = "0 of 0"
 End If
 Call ApplyControlStates
 End With
@@ -1072,6 +1076,7 @@ Private Sub ApplyControlStates()
 With PropertyPage.SelectedControls(0)
 FreezeChanged = True
 If .Panels.Count > 0 Then
+    TextIndex.Enabled = True
     If CurrIndex > 1 Then
         CommandBack.Enabled = True
     Else
@@ -1124,6 +1129,7 @@ If .Panels.Count > 0 Then
     CheckVisible.Enabled = True
     CheckBold.Enabled = True
 Else
+    TextIndex.Enabled = False
     CommandBack.Enabled = False
     CommandNext.Enabled = False
     CommandRemove.Enabled = False
