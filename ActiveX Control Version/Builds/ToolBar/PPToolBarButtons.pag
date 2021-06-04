@@ -239,7 +239,7 @@ Begin VB.PropertyPage PPToolBarButtons
          _ExtentX        =   0
          _ExtentY        =   0
          BackColor       =   -2147483633
-         Text            =   "PPToolBarButtons.pgx":0000
+         Enabled         =   0   'False
          Locked          =   -1  'True
       End
       Begin VB.Label LabelButtonMenuTag 
@@ -455,7 +455,7 @@ Begin VB.PropertyPage PPToolBarButtons
       _ExtentX        =   0
       _ExtentY        =   0
       BackColor       =   -2147483633
-      Text            =   "PPToolBarButtons.pgx":002C
+      Enabled         =   0   'False
       Locked          =   -1  'True
    End
    Begin VB.CommandButton CommandRemove 
@@ -603,6 +603,7 @@ End Type
 Private Declare Function OleCreatePropertyFrame Lib "olepro32" (ByVal hWndOwner As Long, ByVal X As Long, ByVal Y As Long, ByVal lpszCaption As Long, ByVal cObjects As Long, ByRef pUnk As IUnknown, ByVal cPages As Long, ByRef pPageCLSID As Any, ByVal LCID As Long, ByVal dwReserved As Long, ByVal pvReserved As Long) As Long
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 Private Const CLSID_StandardColorPage As String = "{7EBDAAE1-8120-11CF-899F-00AA00688B10}"
+Private SelectedControl As Object
 Private CurrIndex As Long, CurrButtonMenuIndex As Long
 Private PropShadowButtons() As ShadowButtonStruct
 Private FreezeChanged As Boolean
@@ -743,6 +744,7 @@ Call PropertyPage_SelectionChanged
 End Sub
 
 Private Sub PropertyPage_SelectionChanged()
+If Not SelectedControl Is PropertyPage.SelectedControls(0) Then Set SelectedControl = PropertyPage.SelectedControls(0): CurrIndex = 0: CurrButtonMenuIndex = 0
 With PropertyPage.SelectedControls(0)
 If .Buttons.Count > 0 And CurrIndex = 0 Then
     Call FillShadowButtons
@@ -790,9 +792,14 @@ If .Buttons.Count > 0 And CurrIndex = 0 Then
         CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
         CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
         End With
+    Else
+        TextButtonMenuIndex.Text = "0 of 0"
     End If
     FreezeChanged = False
     End With
+ElseIf CurrIndex = 0 Then
+    TextIndex.Text = "0 of 0"
+    TextButtonMenuIndex.Text = "0 of 0"
 End If
 Call ApplyControlStates
 End With
@@ -1371,6 +1378,7 @@ Private Sub ApplyControlStates()
 With PropertyPage.SelectedControls(0)
 FreezeChanged = True
 If .Buttons.Count > 0 Then
+    TextIndex.Enabled = True
     If CurrIndex > 1 Then
         CommandBack.Enabled = True
     Else
@@ -1419,6 +1427,7 @@ If .Buttons.Count > 0 Then
     Dim Success As Boolean
     If CurrIndex > 0 Then
         If .Buttons(CurrIndex).ButtonMenus.Count > 0 Then
+            TextButtonMenuIndex.Enabled = True
             If CurrButtonMenuIndex > 1 Then
                 PictureCommandButtonMenuBack.Enabled = True
                 CommandButtonMenuBack.Enabled = True
@@ -1449,6 +1458,7 @@ If .Buttons.Count > 0 Then
         End If
     End If
     If Success = False Then
+        TextButtonMenuIndex.Enabled = False
         PictureCommandButtonMenuBack.Enabled = False
         CommandButtonMenuBack.Enabled = False
         PictureCommandButtonMenuNext.Enabled = False
@@ -1474,6 +1484,7 @@ If .Buttons.Count > 0 Then
         CheckButtonMenuSeparator.Enabled = False
     End If
 Else
+    TextIndex.Enabled = False
     CommandBack.Enabled = False
     CommandNext.Enabled = False
     CommandRemove.Enabled = False
@@ -1519,6 +1530,7 @@ Else
     TextCustomWidth.Text = vbNullString
     TextCustomWidth.BackColor = vbButtonFace
     TextCustomWidth.Enabled = False
+    TextButtonMenuIndex.Enabled = False
     PictureCommandButtonMenuBack.Enabled = False
     CommandButtonMenuBack.Enabled = False
     PictureCommandButtonMenuNext.Enabled = False
