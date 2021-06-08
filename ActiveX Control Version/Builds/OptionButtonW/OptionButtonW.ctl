@@ -318,6 +318,7 @@ Private OptionButtonDesignMode As Boolean
 Private OptionButtonImageListHandle As Long
 Private OptionButtonImageListObjectPointer As Long
 Private OptionButtonEnabledVisualStyles As Boolean
+Private OptionButtonPictureRenderFlag As Integer
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -1275,6 +1276,7 @@ Else
     End If
 End If
 If dwStyle = 0 Then dwStyle = GetWindowLong(OptionButtonHandle, GWL_STYLE)
+OptionButtonPictureRenderFlag = 0
 If (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then Me.Refresh
 UserControl.PropertyChanged "Picture"
 End Property
@@ -1388,6 +1390,7 @@ Else
     Set PropDisabledPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
 End If
+OptionButtonPictureRenderFlag = 0
 Me.Refresh
 UserControl.PropertyChanged "DisabledPicture"
 End Property
@@ -1409,6 +1412,7 @@ Else
     Set PropDownPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
 End If
+OptionButtonPictureRenderFlag = 0
 Me.Refresh
 UserControl.PropertyChanged "DownPicture"
 End Property
@@ -2112,9 +2116,7 @@ Select Case wMsg
                                 DeleteDC hDC1
                             End If
                         Else
-                            With ButtonPicture
-                            .Render DIS.hDC Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                            End With
+                            Call RenderPicture(ButtonPicture, DIS.hDC, X, Y, CX, CY, OptionButtonPictureRenderFlag)
                         End If
                     Else
                         If ButtonPicture.Type = vbPicTypeIcon Then
