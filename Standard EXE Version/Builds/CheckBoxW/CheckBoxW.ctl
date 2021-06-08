@@ -327,6 +327,7 @@ Private CheckBoxDesignMode As Boolean
 Private CheckBoxImageListHandle As Long
 Private CheckBoxImageListObjectPointer As Long
 Private CheckBoxEnabledVisualStyles As Boolean
+Private CheckBoxPictureRenderFlag As Integer
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -1379,6 +1380,7 @@ Else
     End If
 End If
 If dwStyle = 0 Then dwStyle = GetWindowLong(CheckBoxHandle, GWL_STYLE)
+CheckBoxPictureRenderFlag = 0
 If (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then Me.Refresh
 UserControl.PropertyChanged "Picture"
 End Property
@@ -1492,6 +1494,7 @@ Else
     Set PropDisabledPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
 End If
+CheckBoxPictureRenderFlag = 0
 Me.Refresh
 UserControl.PropertyChanged "DisabledPicture"
 End Property
@@ -1513,6 +1516,7 @@ Else
     Set PropDownPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
 End If
+CheckBoxPictureRenderFlag = 0
 Me.Refresh
 UserControl.PropertyChanged "DownPicture"
 End Property
@@ -2218,9 +2222,7 @@ Select Case wMsg
                                 DeleteDC hDC1
                             End If
                         Else
-                            With ButtonPicture
-                            .Render DIS.hDC Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
-                            End With
+                            Call RenderPicture(ButtonPicture, DIS.hDC, X, Y, CX, CY, CheckBoxPictureRenderFlag)
                         End If
                     Else
                         If ButtonPicture.Type = vbPicTypeIcon Then
