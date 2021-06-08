@@ -1,5 +1,8 @@
 List of revisions:
 
+08-Jun-2021
+- CommandButtonW/CheckBoxW/OptionButtonW (vbButtonGraphical) can now render 32bpp alpha bitmaps and icons.
+
 04-Jun-2021
 - PPCoolBarBands can be switched now between CoolBars at design-time without issues.
 - PPStatusBarPanels can be switched now between StatusBars at design-time without issues.
