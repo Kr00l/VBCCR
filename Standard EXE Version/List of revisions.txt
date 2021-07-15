@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Jul-2021
+- Bugfix in the Text property of a Panel in the StatusBar control. (no immediate update of internal DisplayText)
+
 08-Jun-2021
 - CommandButtonW/CheckBoxW/OptionButtonW (vbButtonGraphical) can now render 32bpp alpha bitmaps and icons.
 
