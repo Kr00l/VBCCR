@@ -1279,6 +1279,7 @@ Friend Property Let FPanelText(ByVal Index As Long, ByVal Value As String)
 If StatusBarHandle <> 0 Then
     PropShadowPanels(Index).Text = Replace$(Value, vbTab, vbNullString)
     Call SetPanelText(Index)
+    Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText)
     If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then Call SetParts
 End If
 End Property
