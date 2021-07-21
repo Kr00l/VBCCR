@@ -1,5 +1,8 @@
 List of revisions:
 
+21-Jul-2021
+- Bugfix in the LabelW control that the Single BorderStyle was not drawn anymore as of 26-Mar-2021 update.
+
 15-Jul-2021
 - Bugfix in the Text property of a Panel in the StatusBar control. (no immediate update of internal DisplayText)
 
