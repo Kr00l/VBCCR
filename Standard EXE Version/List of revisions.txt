@@ -1,5 +1,8 @@
 List of revisions:
 
+24-Jul-2021
+- DrawStyle vbSolid now only when Single BorderStyle is set, otherwise it is vbInvisible. (refer to 21-Jul-2021 and 26-Mar-2021 update)
+
 21-Jul-2021
 - Bugfix in the LabelW control that the Single BorderStyle was not drawn anymore as of 26-Mar-2021 update.
 
