@@ -8,6 +8,7 @@ Begin VB.UserControl LabelW
    ClipBehavior    =   0  'None
    ClipControls    =   0   'False
    DataBindingBehavior=   1  'vbSimpleBound
+   DrawStyle       =   5  'Transparent
    ForwardFocus    =   -1  'True
    HasDC           =   0   'False
    PropertyPages   =   "LabelW.ctx":0000
@@ -239,6 +240,7 @@ PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
 PropAlignment = .ReadProperty("Alignment", vbLeftJustify)
 PropBorderStyle = .ReadProperty("BorderStyle", CCBorderStyleNone)
+If PropBorderStyle = CCBorderStyleSingle Then UserControl.DrawStyle = vbSolid Else UserControl.DrawStyle = vbInvisible
 Me.BackStyle = .ReadProperty("BackStyle", CCBackStyleOpaque)
 PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropUseMnemonic = .ReadProperty("UseMnemonic", True)
@@ -806,6 +808,7 @@ Public Property Let BorderStyle(ByVal Value As CCBorderStyleConstants)
 Select Case Value
     Case CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
         PropBorderStyle = Value
+        If PropBorderStyle = CCBorderStyleSingle Then UserControl.DrawStyle = vbSolid Else UserControl.DrawStyle = vbInvisible
     Case Else
         Err.Raise 380
 End Select
