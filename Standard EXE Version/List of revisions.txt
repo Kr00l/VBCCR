@@ -1,5 +1,9 @@
 List of revisions:
 
+05-Aug-2021
+- Small bugfix in the PPCoolBarBands that child controls can be in the list that have no window handle. (e.g. Label)
+  This bug occured only when there were other child controls that have a window handle.
+
 24-Jul-2021
 - DrawStyle vbSolid now only when Single BorderStyle is set, otherwise it is vbInvisible. (refer to 21-Jul-2021 and 26-Mar-2021 update)
 
