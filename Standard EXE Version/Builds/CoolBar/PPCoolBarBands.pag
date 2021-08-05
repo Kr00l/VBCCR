@@ -660,6 +660,7 @@ If .Bands.Count > 0 And CurrIndex = 0 Then
                 If Err.Number <> 0 Then Handle = ControlEnum.hWnd
                 On Error GoTo 0
                 If ControlIsValid(ControlEnum) = True And Handle <> 0 Then ComboChild.AddItem ProperControlName(ControlEnum)
+                Handle = 0
             Next ControlEnum
         End If
         ChildEnumerated = True
