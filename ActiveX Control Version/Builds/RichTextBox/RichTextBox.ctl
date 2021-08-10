@@ -3255,9 +3255,7 @@ If RichTextBoxHandle <> 0 Then
     Else
         Call RtfStreamStringIn(Value)
     End If
-    If (Flags And SF_RTF) <> 0 Then SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal 0&
     StreamStringIn = SendMessage(RichTextBoxHandle, EM_STREAMIN, Flags, ByVal VarPtr(REEDSTR))
-    If (Flags And SF_RTF) <> 0 Then SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal PropMaxLength
     Call RtfStreamStringInCleanUp
 End If
 End Function
@@ -3306,9 +3304,7 @@ If RichTextBoxHandle <> 0 Then
                 SetFilePointer hFile, 0, ByVal 0, FILE_BEGIN
             End If
         End If
-        If (Flags And SF_RTF) <> 0 Then SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal 0&
         StreamFileIn = SendMessage(RichTextBoxHandle, EM_STREAMIN, Flags, ByVal VarPtr(REEDSTR))
-        If (Flags And SF_RTF) <> 0 Then SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal 0&
         CloseHandle hFile
     End If
 End If
