@@ -1,5 +1,9 @@
 List of revisions:
 
+10-Aug-2021
+- Removal of EM_EXLIMITTEXT (Flags = SF_RTF) in internal StreamStringIn/StreamFileIn in the RichTextBox control.
+  It was probably put there by error or by misunderstanding of the MSDN documentation.
+
 05-Aug-2021
 - Small bugfix in the PPCoolBarBands that child controls can be in the list that have no window handle. (e.g. Label)
   This bug occured only when there were other child controls that have a window handle.
