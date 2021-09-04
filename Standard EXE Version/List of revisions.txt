@@ -1,5 +1,8 @@
 List of revisions:
 
+04-Sep-2021
+- Bugfix in the internal CreatePrintJob method in the RichTextBox concerning the printing margins.
+
 10-Aug-2021
 - Removal of EM_EXLIMITTEXT (Flags = SF_RTF) in internal StreamStringIn/StreamFileIn in the RichTextBox control.
   It was probably put there by error or by misunderstanding of the MSDN documentation.
