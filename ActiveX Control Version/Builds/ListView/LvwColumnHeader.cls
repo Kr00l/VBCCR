@@ -108,7 +108,7 @@ End Property
 Public Property Get IconIndex() As Long
 Attribute IconIndex.VB_Description = "Returns the index of an icon in an associated image list control."
 IconIndex = PropIconIndex
-End Function
+End Property
 
 Public Property Get Width() As Single
 Attribute Width.VB_Description = "Returns/sets the width of the column header."

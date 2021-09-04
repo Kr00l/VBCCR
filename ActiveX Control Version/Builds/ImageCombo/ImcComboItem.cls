@@ -101,7 +101,7 @@ End Property
 Public Property Get ImageIndex() As Long
 Attribute ImageIndex.VB_Description = "Returns the index of an image in an associated image list control."
 ImageIndex = PropImageIndex
-End Function
+End Property
 
 Public Property Get SelImage() As Long
 Attribute SelImage.VB_Description = "Returns/sets the index or key of an image in an associated image list control."
@@ -121,7 +121,7 @@ End Property
 Public Property Get SelImageIndex() As Long
 Attribute SelImageIndex.VB_Description = "Returns the index of an image in an associated image list control."
 SelImageIndex = PropSelImageIndex
-End Function
+End Property
 
 Public Property Get Indentation() As Long
 Attribute Indentation.VB_Description = "Returns/sets the indentation of the combo item in icon widths."

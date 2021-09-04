@@ -212,7 +212,7 @@ End Property
 Public Property Get IconIndex() As Long
 Attribute IconIndex.VB_Description = "Returns the index of an icon in an associated image list control."
 IconIndex = PropIconIndex
-End Function
+End Property
 
 Public Property Get Position() As Long
 Attribute Position.VB_Description = "Returns the current position of the group. Requires comctl32.dll version 6.1 or higher."
