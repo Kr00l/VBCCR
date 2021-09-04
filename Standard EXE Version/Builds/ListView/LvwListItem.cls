@@ -138,7 +138,7 @@ Public Property Get IconIndex() As Long
 Attribute IconIndex.VB_Description = "Returns the index of an icon in an associated image list control."
 If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 IconIndex = PropIconIndex
-End Function
+End Property
 
 Public Property Get SmallIcon() As Variant
 Attribute SmallIcon.VB_Description = "Returns/sets the index or key of an small icon in an associated image list control."
@@ -161,7 +161,7 @@ Public Property Get SmallIconIndex() As Long
 Attribute SmallIconIndex.VB_Description = "Returns the index of an small icon in an associated image list control."
 If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 SmallIconIndex = PropSmallIconIndex
-End Function
+End Property
 
 Public Property Get Indentation() As Long
 Attribute Indentation.VB_Description = "Returns/sets the indentation of the list item in 'report' view in icon widths."

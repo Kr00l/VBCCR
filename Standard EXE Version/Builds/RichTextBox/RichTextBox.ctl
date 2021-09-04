@@ -3341,10 +3341,10 @@ If RichTextBoxHandle <> 0 And hDC <> 0 Then
     .Bottom = PhysCY
     End With
     With .RC
-    .Left = PhysOffsetCX + LeftMargin
-    .Top = PhysOffsetCY + TopMargin
-    .Right = PhysOffsetCX + PhysCX - RightMargin
-    .Bottom = PhysOffsetCY + PhysCY - BottomMargin
+    .Left = LeftMargin - PhysOffsetCX
+    .Top = TopMargin - PhysOffsetCY
+    .Right = (PhysCX - RightMargin) + PhysOffsetCX
+    .Bottom = (PhysCY - BottomMargin) + PhysOffsetCY
     End With
     If IsPrinterDC = True Then
         If CallStartEndDoc = True Then

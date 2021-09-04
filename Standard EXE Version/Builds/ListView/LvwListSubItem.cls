@@ -97,7 +97,7 @@ End Property
 Public Property Get ReportIconIndex() As Long
 Attribute ReportIconIndex.VB_Description = "Returns the index of an report icon in an associated image list control."
 ReportIconIndex = ShadowListItem.FListSubItemProp(PropSubItemIndex, 5)
-End Function
+End Property
 
 Public Property Get Bold() As Boolean
 Attribute Bold.VB_Description = "Returns/sets a value that determines whether the text is displayed with a bold font or not."

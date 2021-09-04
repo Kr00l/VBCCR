@@ -126,7 +126,7 @@ End Property
 Public Property Get ImageIndex() As Long
 Attribute ImageIndex.VB_Description = "Returns the index of an image in an associated image list control."
 ImageIndex = PropImageIndex
-End Function
+End Property
 
 Public Property Get ToolTipText() As String
 Attribute ToolTipText.VB_Description = "Returns/sets the tool tip text of the button. Requires that the show tips property is set to true."

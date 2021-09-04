@@ -159,7 +159,7 @@ End Property
 Public Property Get ImageIndex() As Long
 Attribute ImageIndex.VB_Description = "Returns the index of an image in an associated image list control."
 ImageIndex = PropImageIndex
-End Function
+End Property
 
 Public Property Get SelectedImage() As Variant
 Attribute SelectedImage.VB_Description = "Returns/sets the index or key of an image in an associated image list control."
@@ -179,7 +179,7 @@ End Property
 Public Property Get SelectedImageIndex() As Long
 Attribute SelectedImageIndex.VB_Description = "Returns the index of an image in an associated image list control."
 SelectedImageIndex = PropSelectedImageIndex
-End Function
+End Property
 
 Public Property Get ExpandedImage() As Variant
 Attribute ExpandedImage.VB_Description = "Returns/sets the index or key of an image in an associated image list control."
@@ -199,7 +199,7 @@ End Property
 Public Property Get ExpandedImageIndex() As Long
 Attribute ExpandedImageIndex.VB_Description = "Returns the index of an image in an associated image list control."
 ExpandedImageIndex = PropExpandedImageIndex
-End Function
+End Property
 
 Public Property Get NoImages() As Boolean
 Attribute NoImages.VB_Description = "Returns/sets a value indicating that no images will be drawn."
