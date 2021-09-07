@@ -1140,6 +1140,10 @@ ShowWindow ProgressBarHandle, SW_HIDE
 SetParent ProgressBarHandle, 0
 DestroyWindow ProgressBarHandle
 ProgressBarHandle = 0
+If ProgressBarFontHandle <> 0 Then
+    DeleteObject ProgressBarFontHandle
+    ProgressBarFontHandle = 0
+End If
 End Sub
 
 Public Sub Refresh()

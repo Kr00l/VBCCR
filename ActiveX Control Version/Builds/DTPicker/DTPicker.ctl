@@ -1687,6 +1687,10 @@ If DTPickerFontHandle <> 0 Then
     DeleteObject DTPickerFontHandle
     DTPickerFontHandle = 0
 End If
+If DTPickerCalendarFontHandle <> 0 Then
+    DeleteObject DTPickerCalendarFontHandle
+    DTPickerCalendarFontHandle = 0
+End If
 End Sub
 
 Public Sub Refresh()
