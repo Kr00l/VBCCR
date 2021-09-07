@@ -1,5 +1,8 @@
 List of revisions:
 
+07-Sep-2021
+- Fixed GDI leaks for DTPickerCalendarFontHandle, LinkLabelUnderlineFontHandle and ProgressBarFontHandle.
+
 04-Sep-2021
 - Bugfix in the internal CreatePrintJob method in the RichTextBox concerning the printing margins.
 
