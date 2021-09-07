@@ -1382,6 +1382,10 @@ If LinkLabelFontHandle <> 0 Then
     DeleteObject LinkLabelFontHandle
     LinkLabelFontHandle = 0
 End If
+If LinkLabelUnderlineFontHandle <> 0 Then
+    DeleteObject LinkLabelUnderlineFontHandle
+    LinkLabelUnderlineFontHandle = 0
+End If
 If LinkLabelTransparentBrush <> 0 Then
     DeleteObject LinkLabelTransparentBrush
     LinkLabelTransparentBrush = 0
