@@ -165,6 +165,10 @@ CodePage As Long
 lpDefaultChar As Long
 lpUsedDefChar As Long
 End Type
+Private Type RESETTEXTEX
+Flags As Long
+CodePage As Long
+End Type
 Private Type RECHARRANGE
 Min As Long
 Max As Long
@@ -2044,21 +2048,11 @@ Public Property Get SelText() As String
 Attribute SelText.VB_Description = "Returns/sets the string containing the currently selected text."
 Attribute SelText.VB_MemberFlags = "400"
 If RichTextBoxHandle <> 0 Then
-    Dim RECR As RECHARRANGE
+    Dim RECR As RECHARRANGE, Buffer As String, Length As Long
     SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
-    If RECR.Max > RECR.Min Then
-        Dim Buffer As String, Length As Long
-        ' Buffer = String$(RECR.Max - RECR.Min + 1, vbNullChar)
-        ' Length = SendMessage(RichTextBoxHandle, EM_GETSELTEXT, 0, ByVal StrPtr(Buffer))
-        ' If Length > 0 Then SelText = Left$(Buffer, Length)
-        Dim REGTEX As REGETTEXTEX
-        REGTEX.cbSize = (RECR.Max - RECR.Min + 1) * 2
-        REGTEX.Flags = GT_DEFAULT Or GT_SELECTION
-        REGTEX.CodePage = CP_UNICODE
-        Buffer = String$(RECR.Max - RECR.Min, vbNullChar)
-        Length = SendMessage(RichTextBoxHandle, EM_GETTEXTEX, VarPtr(REGTEX), ByVal StrPtr(Buffer))
-        If Length > 0 Then SelText = Left$(Buffer, Length)
-    End If
+    Buffer = String$(RECR.Max - RECR.Min + 1, vbNullChar)
+    Length = SendMessage(RichTextBoxHandle, EM_GETSELTEXT, 0, ByVal StrPtr(Buffer))
+    If Length > 0 Then SelText = Left$(Buffer, Length)
 End If
 End Property
 
