@@ -1,14 +1,22 @@
 VERSION 5.00
 Begin VB.PropertyPage PPRichTextBoxGeneral 
    Caption         =   "General"
-   ClientHeight    =   4875
+   ClientHeight    =   5625
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   6450
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4875
+   ScaleHeight     =   5625
    ScaleWidth      =   6450
+   Begin VB.CheckBox CheckUseCrLf 
+      Caption         =   "UseCrLf"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   33
+      Top             =   4800
+      Width           =   2160
+   End
    Begin VB.CheckBox CheckMouseTrack 
       Caption         =   "MouseTrack"
       Height          =   285
@@ -347,6 +355,7 @@ If .TextMode <> ComboTextMode.ItemData(ComboTextMode.ListIndex) Then .TextMode =
 .SelectionBar = CBool(CheckSelectionBar.Value = vbChecked)
 .AllowOverType = CBool(CheckAllowOverType.Value = vbChecked)
 .OverTypeMode = CBool(CheckOverTypeMode.Value = vbChecked)
+.UseCrLf = CBool(CheckUseCrLf.Value = vbChecked)
 If Not .FileName = TextFileName.Text Or Not TextFileName.Text = vbNullString Then .FileName = TextFileName.Text
 End With
 Call PropertyPage_SelectionChanged
@@ -398,6 +407,7 @@ CheckAutoURLDetect.Value = IIf(.AutoURLDetect = True, vbChecked, vbUnchecked)
 CheckSelectionBar.Value = IIf(.SelectionBar = True, vbChecked, vbUnchecked)
 CheckAllowOverType.Value = IIf(.AllowOverType = True, vbChecked, vbUnchecked)
 CheckOverTypeMode.Value = IIf(.OverTypeMode = True, vbChecked, vbUnchecked)
+CheckUseCrLf.Value = IIf(.UseCrLf = True, vbChecked, vbUnchecked)
 TextFileName.Text = .FileName
 End With
 FreezeChanged = False
@@ -676,6 +686,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckOverTypeMode_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckUseCrLf_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

@@ -83,7 +83,7 @@ End If
 RtfStreamCallbackStringOut = 0
 End Function
 
-Public Sub RtfStreamStringIn(ByVal Value As String)
+Public Sub RtfStreamStringIn(ByRef Value As String)
 StreamStringInLength = LenB(Value)
 Erase StreamStringIn()
 If StreamStringInLength > 0 Then

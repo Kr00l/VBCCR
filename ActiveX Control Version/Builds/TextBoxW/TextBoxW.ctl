@@ -1126,7 +1126,7 @@ Attribute Text.VB_ProcData.VB_Invoke_Property = "PPTextBoxWText"
 Attribute Text.VB_UserMemId = -517
 Attribute Text.VB_MemberFlags = "123c"
 If TextBoxHandle <> 0 Then
-    Text = String(SendMessage(TextBoxHandle, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
+    Text = String$(SendMessage(TextBoxHandle, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
     SendMessage TextBoxHandle, WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
 Else
     Text = PropText
@@ -1580,7 +1580,7 @@ If TextBoxDesignMode = False Then
             End If
         End If
         Dim Buffer As String
-        Buffer = String(SendMessage(TextBoxHandle, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
+        Buffer = String$(SendMessage(TextBoxHandle, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
         SendMessage TextBoxHandle, WM_GETTEXT, Len(Buffer) + 1, ByVal StrPtr(Buffer)
         PropText = Buffer
     End If
@@ -1668,6 +1668,16 @@ Public Property Let Modified(ByVal Value As Boolean)
 If TextBoxHandle <> 0 Then SendMessage TextBoxHandle, EM_SETMODIFY, IIf(Value = True, 1, 0), ByVal 0&
 End Property
 
+Public Property Get TextLength() As Long
+Attribute TextLength.VB_Description = "Returns the length of the text."
+Attribute TextLength.VB_MemberFlags = "400"
+If TextBoxHandle <> 0 Then
+    TextLength = SendMessage(TextBoxHandle, WM_GETTEXTLENGTH, 0, ByVal 0&)
+Else
+    TextLength = Len(PropText)
+End If
+End Property
+
 Public Property Get SelStart() As Long
 Attribute SelStart.VB_Description = "Returns/sets the starting point of text selected; indicates the position of the insertion point if no text is selected."
 Attribute SelStart.VB_MemberFlags = "400"
@@ -1735,7 +1745,7 @@ If TextBoxHandle <> 0 Then
         Length = SendMessage(TextBoxHandle, EM_LINELENGTH, FirstCharPos, ByVal 0&)
         If Length > 0 Then
             Dim Buffer As String
-            Buffer = ChrW(Length) & String(Length - 1, vbNullChar)
+            Buffer = ChrW(Length) & String$(Length - 1, vbNullChar)
             If LineNumber > 0 Then
                 If SendMessage(TextBoxHandle, EM_GETLINE, LineNumber - 1, ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
             Else
@@ -2108,10 +2118,10 @@ Select Case wMsg
             ' According to MSDN:
             ' The EN_CHANGE notification code is not sent when the ES_MULTILINE style is used and the text is sent through WM_SETTEXT.
             Dim Buffer(0 To 1) As String
-            Buffer(0) = String(SendMessage(hWnd, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
+            Buffer(0) = String$(SendMessage(hWnd, WM_GETTEXTLENGTH, 0, ByVal 0&), vbNullChar)
             SendMessage hWnd, WM_GETTEXT, Len(Buffer(0)) + 1, ByVal StrPtr(Buffer(0))
             If lParam <> 0 Then
-                Buffer(1) = String(lstrlen(lParam), vbNullChar)
+                Buffer(1) = String$(lstrlen(lParam), vbNullChar)
                 CopyMemory ByVal StrPtr(Buffer(1)), ByVal lParam, LenB(Buffer(1))
             End If
             If Buffer(0) <> Buffer(1) Then
