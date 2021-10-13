@@ -9,6 +9,14 @@ Begin VB.Form RichTextBoxForm
    ScaleHeight     =   6345
    ScaleWidth      =   12780
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command1 
+      Caption         =   "Command1"
+      Height          =   615
+      Left            =   9000
+      TabIndex        =   3
+      Top             =   3480
+      Width           =   1455
+   End
    Begin ComCtlsDemo.CoolBar CoolBar1 
       Align           =   1  'Align Top
       Height          =   420

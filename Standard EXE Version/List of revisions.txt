@@ -1,5 +1,12 @@
 List of revisions:
 
+13-Oct-2021
+- Included the run-time (read-only) TextLength property for the TextBoxW and RichTextBox control.
+- The RichTextBox control now uses EM_GETTEXTEX/EM_SETTEXTEX instead of EM_STREAMOUT/EM_STREAMIN for the Text property.
+- Included the UseCrLf property in the RichTextBox control.
+  It defaults to False (compatibility break in VBCCR) but fixes the Text to match to internal positions.
+  This affects the Text and TextLength property. (GT_USECRLF/GTL_USECRLF)
+
 07-Sep-2021
 - Fixed GDI leaks for DTPickerCalendarFontHandle, LinkLabelUnderlineFontHandle and ProgressBarFontHandle.
 

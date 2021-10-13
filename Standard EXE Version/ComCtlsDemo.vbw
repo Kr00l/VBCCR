@@ -1,4 +1,4 @@
-MainForm = 220, 201, 1269, 1020, C, 280, 142, 1056, 870, C
+MainForm = 392, 163, 1441, 982, C, 280, 142, 1056, 870, C
 PagerForm = 25, 25, 932, 818, C, 25, 25, 646, 642, C
 RichTextBoxForm = 369, 195, 1330, 897, C, 50, 50, 1247, 732, C
 VirtualControlsForm = 183, 127, 1395, 800, C, 22, 29, 1175, 801, C
@@ -70,7 +70,7 @@ ProgressBar = 200, 200, 1363, 873, C, 75, 75, 1238, 748, C
 PPProgressBarGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 RichTextBoxBase = 225, 225, 1390, 898, C
 RichTextBox = 126, 84, 1291, 757, C, 50, 50, 1213, 723, C
-PPRichTextBoxGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+PPRichTextBoxGeneral = 52, 52, 1221, 712, C, 26, 26, 1195, 686, C
 Slider = 250, 250, 1413, 923, C, 25, 25, 1188, 698, C
 PPSliderGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 PPSliderAppearance = 286, 286, 1455, 946, C, 0, 0, 0, 0, C
