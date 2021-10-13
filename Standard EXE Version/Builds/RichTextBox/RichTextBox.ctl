@@ -738,6 +738,7 @@ Private PropUndoLimit As Long
 Private PropIMEMode As CCIMEModeConstants
 Private PropAllowOverType As Boolean
 Private PropOverTypeMode As Boolean
+Private PropUseCrLf As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -905,6 +906,7 @@ PropUndoLimit = .ReadProperty("UndoLimit", 100)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropAllowOverType = .ReadProperty("AllowOverType", True)
 PropOverTypeMode = .ReadProperty("OverTypeMode", False)
+PropUseCrLf = .ReadProperty("UseCrLf", False)
 End With
 Call CreateRichTextBox
 If PropTextMode = RtfTextModeRichText Then
@@ -945,8 +947,13 @@ With PropBag
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "AllowOverType", PropAllowOverType, True
 .WriteProperty "OverTypeMode", PropOverTypeMode, False
-.WriteProperty "Text", StrToVar(Me.Text), vbNullString
-.WriteProperty "TextRTF", StrToVar(Me.TextRTF), vbNullString
+.WriteProperty "UseCrLf", PropUseCrLf, False
+Dim Buffer As String
+StreamStringOut Buffer, SF_TEXT Or SF_UNICODE
+.WriteProperty "Text", StrToVar(Buffer), vbNullString
+Buffer = vbNullString
+StreamStringOut Buffer, SF_RTF
+.WriteProperty "TextRTF", StrToVar(Buffer), vbNullString
 End With
 End Sub
 
@@ -1770,6 +1777,16 @@ End If
 UserControl.PropertyChanged "OverTypeMode"
 End Property
 
+Public Property Get UseCrLf() As Boolean
+Attribute UseCrLf.VB_Description = "Returns/sets a value that determines whether or not the control translates each Cr into a CrLf for the text property."
+UseCrLf = PropUseCrLf
+End Property
+
+Public Property Let UseCrLf(ByVal Value As Boolean)
+PropUseCrLf = Value
+UserControl.PropertyChanged "UseCrLf"
+End Property
+
 Private Sub CreateRichTextBox()
 If RichTextBoxHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
@@ -2014,13 +2031,45 @@ Attribute Text.VB_Description = "Returns/sets the text contained in an object."
 Attribute Text.VB_ProcData.VB_Invoke_Property = "PPRichTextBoxText"
 Attribute Text.VB_UserMemId = -517
 Attribute Text.VB_MemberFlags = "121c"
-StreamStringOut Text, SF_TEXT Or SF_UNICODE
+If RichTextBoxHandle <> 0 Then
+    Dim REGTLEX As REGETTEXTLENGTHEX, Length As Long
+    REGTLEX.Flags = GTL_PRECISE Or GTL_NUMCHARS
+    If PropUseCrLf = True Then REGTLEX.Flags = REGTLEX.Flags Or GTL_USECRLF
+    REGTLEX.CodePage = CP_UNICODE
+    Length = SendMessage(RichTextBoxHandle, EM_GETTEXTLENGTHEX, VarPtr(REGTLEX), ByVal 0&)
+    If Length > 0 Then
+        Dim REGTEX As REGETTEXTEX, Buffer As String
+        REGTEX.cbSize = (Length + 1) * 2
+        If PropUseCrLf = False Then REGTEX.Flags = GT_DEFAULT Else REGTEX.Flags = GT_USECRLF
+        REGTEX.CodePage = CP_UNICODE
+        Buffer = String$(Length, vbNullChar)
+        Length = SendMessage(RichTextBoxHandle, EM_GETTEXTEX, VarPtr(REGTEX), ByVal StrPtr(Buffer))
+        If Length > 0 Then Text = Left$(Buffer, Length)
+    End If
+End If
 End Property
 
 Public Property Let Text(ByVal Value As String)
 If RichTextBoxDesignMode = True Then PropFileName = vbNullString
-StreamStringIn Value, SF_TEXT Or SF_UNICODE
+If RichTextBoxHandle <> 0 Then
+    Dim RESTEX As RESETTEXTEX
+    RESTEX.Flags = ST_UNICODE
+    RESTEX.CodePage = CP_UNICODE
+    SendMessage RichTextBoxHandle, EM_SETTEXTEX, VarPtr(RESTEX), ByVal StrPtr(Value)
+End If
 UserControl.PropertyChanged "Text"
+End Property
+
+Public Property Get TextLength() As Long
+Attribute TextLength.VB_Description = "Returns the length of the text."
+Attribute TextLength.VB_MemberFlags = "400"
+If RichTextBoxHandle <> 0 Then
+    Dim REGTLEX As REGETTEXTLENGTHEX
+    REGTLEX.Flags = GTL_PRECISE Or GTL_NUMCHARS
+    If PropUseCrLf = True Then REGTLEX.Flags = REGTLEX.Flags Or GTL_USECRLF
+    REGTLEX.CodePage = CP_UNICODE
+    TextLength = SendMessage(RichTextBoxHandle, EM_GETTEXTLENGTHEX, VarPtr(REGTLEX), ByVal 0&)
+End If
 End Property
 
 Public Property Get TextRTF() As String
@@ -3249,7 +3298,7 @@ If RichTextBoxHandle <> 0 Then
 End If
 End Function
 
-Private Function StreamStringIn(ByVal Value As String, ByVal Flags As Long) As Long
+Private Function StreamStringIn(ByRef Value As String, ByVal Flags As Long) As Long
 If RichTextBoxHandle <> 0 Then
     Dim REEDSTR As REEDITSTREAM
     With REEDSTR
