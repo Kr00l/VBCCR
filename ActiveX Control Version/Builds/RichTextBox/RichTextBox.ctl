@@ -173,6 +173,10 @@ Private Type RECHARRANGE
 Min As Long
 Max As Long
 End Type
+Private Type RETEXTRANGE
+CharRange As RECHARRANGE
+lpstrText As Long
+End Type
 Private Type REFINDTEXTEX
 CharRange As RECHARRANGE
 lpstrText As Long
@@ -475,6 +479,7 @@ Private Const EM_SETPARAFORMAT As Long = (WM_USER + 71)
 Private Const EM_SETTARGETDEVICE As Long = (WM_USER + 72)
 Private Const EM_STREAMIN As Long = (WM_USER + 73)
 Private Const EM_STREAMOUT As Long = (WM_USER + 74)
+Private Const EM_GETTEXTRANGE As Long = (WM_USER + 75)
 Private Const EM_SETOPTIONS As Long = (WM_USER + 77)
 Private Const EM_GETOPTIONS As Long = (WM_USER + 78)
 Private Const EM_SETUNDOLIMIT As Long = (WM_USER + 82)

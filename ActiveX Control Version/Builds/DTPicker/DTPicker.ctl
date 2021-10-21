@@ -197,6 +197,8 @@ Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, B
 Private Const ICC_DATE_CLASSES As Long = &H100
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const SWP_NOMOVE As Long = &H2
+Private Const SWP_NOOWNERZORDER As Long = &H200
+Private Const SWP_NOZORDER As Long = &H4
 Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
@@ -294,6 +296,7 @@ Private Const MCM_SETDAYSTATE As Long = (MCM_FIRST + 8)
 Private Const MCM_GETMINREQRECT As Long = (MCM_FIRST + 9)
 Private Const MCM_SETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 15)
 Private Const MCM_GETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 16)
+Private Const MCM_GETMAXTODAYWIDTH As Long = (MCM_FIRST + 21)
 Private Const MCN_FIRST As Long = (-750)
 Private Const MCN_GETDAYSTATE As Long = (MCN_FIRST + 3)
 Private Const EN_SETFOCUS As Long = &H100
@@ -2291,9 +2294,14 @@ Select Case wMsg
                                     End If
                                     If dwStyle <> dwStyleOld Then
                                         SetWindowLong CalendarHandle, GWL_STYLE, dwStyle
-                                        Dim WndRect As RECT
-                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(WndRect)
-                                        SetWindowPos CalendarHandle, 0, 0, 0, (WndRect.Right - WndRect.Left), (WndRect.Bottom - WndRect.Top), SWP_NOMOVE
+                                        Dim ReqRect As RECT
+                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqRect)
+                                        If Not (dwStyle And MCS_NOTODAY) = MCS_NOTODAY Then
+                                            Dim TodayWidth As Long
+                                            TodayWidth = SendMessage(CalendarHandle, MCM_GETMAXTODAYWIDTH, 0, ByVal 0&)
+                                            If TodayWidth > (ReqRect.Right - ReqRect.Left) Then ReqRect.Right = ReqRect.Left + TodayWidth
+                                        End If
+                                        SetWindowPos CalendarHandle, 0, 0, 0, (ReqRect.Right - ReqRect.Left), (ReqRect.Bottom - ReqRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
                                     End If
                                 Else
                                     If PropCalendarDayState = True Then
