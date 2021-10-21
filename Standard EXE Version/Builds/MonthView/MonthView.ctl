@@ -1131,7 +1131,7 @@ If MonthViewHandle <> 0 Then
         .wMonth = VBA.Month(PropValue)
         .wDay = VBA.Day(PropValue)
         .wDayOfWeek = VBA.Weekday(PropValue)
-        .wHour = VBA.Hour(PropValue)
+        .wHour = 0
         .wMinute = 0
         .wSecond = 0
         .wMilliseconds = 0
