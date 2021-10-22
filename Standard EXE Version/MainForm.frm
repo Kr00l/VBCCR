@@ -262,7 +262,7 @@ Begin VB.Form MainForm
       _ExtentX        =   4551
       _ExtentY        =   4128
       BorderStyle     =   3
-      Value           =   42270
+      Value           =   44462
       DayState        =   -1  'True
    End
    Begin ComCtlsDemo.DTPicker DTPicker1 
@@ -274,9 +274,7 @@ Begin VB.Form MainForm
       _ExtentX        =   3413
       _ExtentY        =   556
       CalendarDayState=   -1  'True
-      MinDate         =   36526
-      MaxDate         =   73050
-      Value           =   41455
+      Value           =   44012
       Format          =   3
       CustomFormat    =   "MainForm.frx":1E29
    End

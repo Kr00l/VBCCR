@@ -1,5 +1,10 @@
 List of revisions:
 
+22-Oct-2021
+- RichTextBox improvement when changing the RightToLeft property at run-time and when TextMode is RTF.
+  It will not stream RTF out before re-create and not stream RTF in afterwards. This way the \rtlpar is properly in place.
+- Default value for MaxDate property in the DTPicker/MonthView control changed to 31-Dec-9999. (instead of 01-Jan-3000)
+
 13-Oct-2021
 - Included the run-time (read-only) TextLength property for the TextBoxW and RichTextBox control.
 - The RichTextBox control now uses EM_GETTEXTEX/EM_SETTEXTEX instead of EM_STREAMOUT/EM_STREAMIN for the Text property.
