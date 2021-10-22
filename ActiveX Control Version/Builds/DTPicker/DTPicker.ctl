@@ -465,8 +465,8 @@ PropCalendarAlignment = CCLeftRightAlignmentLeft
 PropCalendarDayState = False
 PropCalendarUseShortestDayNames = False
 PropMinDate = DateSerial(1900, 1, 1)
-PropMaxDate = DateSerial(3000, 1, 1)
-PropValue = Int(Now())
+PropMaxDate = DateSerial(9999, 12, 31)
+PropValue = VBA.Date()
 PropFormat = DtpFormatShortDate
 PropCustomFormat = vbNullString
 PropUpDown = False
@@ -508,7 +508,7 @@ PropCalendarAlignment = .ReadProperty("CalendarAlignment", CCLeftRightAlignmentL
 PropCalendarDayState = .ReadProperty("CalendarDayState", False)
 PropCalendarUseShortestDayNames = .ReadProperty("CalendarUseShortestDayNames", False)
 PropMinDate = .ReadProperty("MinDate", DateSerial(1900, 1, 1))
-PropMaxDate = .ReadProperty("MaxDate", DateSerial(3000, 1, 1))
+PropMaxDate = .ReadProperty("MaxDate", DateSerial(9999, 12, 31))
 PropValue = .ReadProperty("Value", 0)
 PropFormat = .ReadProperty("Format", DtpFormatShortDate)
 PropCustomFormat = VarToStr(.ReadProperty("CustomFormat", vbNullString))
@@ -546,7 +546,7 @@ With PropBag
 .WriteProperty "CalendarDayState", PropCalendarDayState, False
 .WriteProperty "CalendarUseShortestDayNames", PropCalendarUseShortestDayNames, False
 .WriteProperty "MinDate", PropMinDate, DateSerial(1900, 1, 1)
-.WriteProperty "MaxDate", PropMaxDate, DateSerial(3000, 1, 1)
+.WriteProperty "MaxDate", PropMaxDate, DateSerial(9999, 12, 31)
 .WriteProperty "Value", PropValue, 0
 .WriteProperty "Format", PropFormat, DtpFormatShortDate
 .WriteProperty "CustomFormat", StrToVar(PropCustomFormat), vbNullString

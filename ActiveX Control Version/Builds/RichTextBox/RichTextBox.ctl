@@ -1326,10 +1326,7 @@ Public Property Let RightToLeft(ByVal Value As Boolean)
 PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
-If RichTextBoxHandle <> 0 Then
-    If Me.TextMode = RtfTextModeRichText Then SendMessage RichTextBoxHandle, WM_SETTEXT, 0, ByVal 0&
-    Call ReCreateRichTextBox
-End If
+Call ReCreateRichTextBox(NoStreamStringOutIn:=CBool(Me.TextMode = RtfTextModeRichText))
 UserControl.PropertyChanged "RightToLeft"
 End Property
 
@@ -1859,7 +1856,7 @@ If RichTextBoxDesignMode = False Then
 End If
 End Sub
 
-Private Sub ReCreateRichTextBox()
+Private Sub ReCreateRichTextBox(Optional ByVal NoStreamStringOutIn As Boolean)
 Dim Buffer As String, Flags As Long
 If Me.TextMode = RtfTextModeRichText Then Flags = SF_RTF Else Flags = SF_TEXT Or SF_UNICODE
 If RichTextBoxDesignMode = False Then
@@ -1871,25 +1868,25 @@ If RichTextBoxDesignMode = False Then
         SendMessage RichTextBoxHandle, EM_GETSCROLLPOS, 0, ByVal VarPtr(P)
         If PropScrollBars = vbVertical Or PropScrollBars = vbSBNone Then P.X = 0
         If PropScrollBars = vbHorizontal Or PropScrollBars = vbSBNone Then P.Y = 0
-        StreamStringOut Buffer, Flags
+        If NoStreamStringOutIn = False Then StreamStringOut Buffer, Flags
     End If
     Call DestroyRichTextBox
     Call CreateRichTextBox
     Call UserControl_Resize
     If RichTextBoxHandle <> 0 Then
-        StreamStringIn Buffer, Flags
+        If NoStreamStringOutIn = False Then StreamStringIn Buffer, Flags
         SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
         If P.X > 0 Or P.Y > 0 Then SendMessage RichTextBoxHandle, EM_SETSCROLLPOS, 0, ByVal VarPtr(P)
     End If
     If Locked = True Then LockWindowUpdate 0
     Me.Refresh
 Else
-    StreamStringOut Buffer, Flags
+    If NoStreamStringOutIn = False Then StreamStringOut Buffer, Flags
     Call DestroyRichTextBox
     Call CreateRichTextBox
     Call UserControl_Resize
     If PropFileName = vbNullString Then
-        StreamStringIn Buffer, Flags
+        If NoStreamStringOutIn = False Then StreamStringIn Buffer, Flags
     Else
         Me.FileName = PropFileName
     End If
