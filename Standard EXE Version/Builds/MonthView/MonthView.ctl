@@ -421,8 +421,8 @@ PropTitleForeColor = vbActiveTitleBarText
 PropTrailingForeColor = vbGrayText
 PropBorderStyle = CCBorderStyleSingle
 PropMinDate = DateSerial(1900, 1, 1)
-PropMaxDate = DateSerial(3000, 1, 1)
-PropValue = Int(Now())
+PropMaxDate = DateSerial(9999, 12, 31)
+PropValue = VBA.Date()
 PropShowToday = True
 PropShowTodayCircle = True
 PropShowWeekNumbers = False
@@ -464,7 +464,7 @@ PropTitleForeColor = .ReadProperty("TitleForeColor", vbActiveTitleBarText)
 PropTrailingForeColor = .ReadProperty("TrailingForeColor", vbGrayText)
 PropBorderStyle = .ReadProperty("BorderStyle", CCBorderStyleSingle)
 PropMinDate = .ReadProperty("MinDate", DateSerial(1900, 1, 1))
-PropMaxDate = .ReadProperty("MaxDate", DateSerial(3000, 1, 1))
+PropMaxDate = .ReadProperty("MaxDate", DateSerial(9999, 12, 31))
 PropValue = .ReadProperty("Value", 0)
 PropShowToday = .ReadProperty("ShowToday", True)
 PropShowTodayCircle = .ReadProperty("ShowTodayCircle", True)
@@ -502,7 +502,7 @@ With PropBag
 .WriteProperty "TrailingForeColor", PropTrailingForeColor, vbGrayText
 .WriteProperty "BorderStyle", PropBorderStyle, CCBorderStyleSingle
 .WriteProperty "MinDate", PropMinDate, DateSerial(1900, 1, 1)
-.WriteProperty "MaxDate", PropMaxDate, DateSerial(3000, 1, 1)
+.WriteProperty "MaxDate", PropMaxDate, DateSerial(9999, 12, 31)
 .WriteProperty "Value", PropValue, 0
 .WriteProperty "ShowToday", PropShowToday, True
 .WriteProperty "ShowTodayCircle", PropShowTodayCircle, True
