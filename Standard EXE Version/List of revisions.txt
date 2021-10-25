@@ -1,5 +1,9 @@
 List of revisions:
 
+25-Oct-2021
+- Internal improvements in the UpDown control.
+- Included ES_AUTOHSCROLL for the edit window in the SpinBox control.
+
 22-Oct-2021
 - RichTextBox improvement when changing the RightToLeft property at run-time and when TextMode is RTF.
   It will not stream RTF out before re-create and not stream RTF in afterwards. This way the \rtlpar is properly in place.
