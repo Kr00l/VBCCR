@@ -130,8 +130,8 @@ Private Const UDM_SETRANGE32 As Long = (WM_USER + 111)
 Private Const UDM_GETRANGE32 As Long = (WM_USER + 112)
 Private Const UDM_SETPOS As Long = (WM_USER + 103) ' 16 bit
 Private Const UDM_GETPOS As Long = (WM_USER + 104) ' 16 bit
-Private Const UDM_GETPOS32 As Long = (WM_USER + 114)
 Private Const UDM_SETPOS32 As Long = (WM_USER + 113)
+Private Const UDM_GETPOS32 As Long = (WM_USER + 114)
 Private Const UDM_SETACCEL As Long = (WM_USER + 107)
 Private Const UDM_GETACCEL As Long = (WM_USER + 108)
 Private Const CCM_FIRST As Long = &H2000
@@ -828,10 +828,8 @@ Changed = CBool(Me.Value <> NewValue)
 PropValue = NewValue
 If UpDownHandle <> 0 Then SendMessage UpDownHandle, UDM_SETPOS32, 0, ByVal PropValue
 UserControl.PropertyChanged "Value"
-If Changed = True Then
-    Call SyncProperty(False)
-    RaiseEvent Change
-End If
+Call SyncProperty(False)
+If Changed = True Then RaiseEvent Change
 End Property
 
 Public Property Get Increment() As Long
@@ -989,7 +987,8 @@ Call SyncProperty(True)
 End Sub
 
 Private Sub SyncProperty(Optional ByVal FromBuddy As Boolean)
-If UpDownHandle = 0 Or PropBuddyProperty = vbNullString Then Exit Sub
+Static InProc As Boolean
+If UpDownHandle = 0 Or PropBuddyProperty = vbNullString Or InProc = True Then Exit Sub
 If UpDownDesignMode = False Then
     Dim VarValue As Variant, LngValue As Long
     If Not PropBuddyControl Is Nothing Then
@@ -1004,17 +1003,17 @@ If UpDownDesignMode = False Then
                 Case vbString
                     If PropThousandsSeparator = True And PropNumberStyle = UdnNumberStyleDecimal Then
                         Dim GroupDigit As String
-                        GroupDigit = Mid(FormatNumber(1000, 0, , , vbTrue), 2, 1)
+                        GroupDigit = Mid$(VBA.FormatNumber(1000, 0, , , vbTrue), 2, 1)
                         If Not (GroupDigit = vbNullString Or GroupDigit = "0") Then
-                            LngValue = CLng(Val(Replace(VarValue, Mid(FormatNumber(1000, 0, , , vbTrue), 2, 1), vbNullString)))
+                            LngValue = CLng(Replace(VarValue, GroupDigit, vbNullString))
                         Else
-                            LngValue = CLng(Val(VarValue))
+                            LngValue = CLng(VarValue)
                         End If
                     Else
                         If Left(VarValue, 2) = "0x" And PropNumberStyle = UdnNumberStyleHexadecimal Then
                             LngValue = CLng("&H" & Mid(VarValue, 3))
                         Else
-                            LngValue = CLng(Val(VarValue))
+                            LngValue = CLng(VarValue)
                         End If
                     End If
                 Case vbLong, vbInteger, vbByte
@@ -1022,17 +1021,23 @@ If UpDownDesignMode = False Then
                 Case vbDouble, vbSingle
                     LngValue = CLng(VarValue)
             End Select
-            If LngValue <> Me.Value Then Me.Value = LngValue
+            If Err.Number = 0 Then
+                If LngValue <> Me.Value Then
+                    InProc = True
+                    Me.Value = LngValue
+                    InProc = False
+                End If
+            End If
         Else
             Select Case VarType(VarValue)
                 Case vbString
                     Dim StrValue As String
                     If PropThousandsSeparator = True And PropNumberStyle = UdnNumberStyleDecimal Then
-                        StrValue = Format(Me.Value, "#,###,###,##0")
+                        StrValue = Format$(Me.Value, "#,###,###,##0")
                     Else
                         If PropNumberStyle = UdnNumberStyleHexadecimal Then
                             LngValue = Me.Value
-                            StrValue = "0x" & String(IIf(Len(Hex$(LngValue)) < 5, 4, 8) - Len(Hex$(LngValue)), "0") & Hex$(LngValue)
+                            StrValue = "0x" & String$(IIf(Len(Hex$(LngValue)) < 5, 4, 8) - Len(Hex$(LngValue)), "0") & Hex$(LngValue)
                         Else
                             StrValue = CStr(Me.Value)
                         End If
@@ -1159,11 +1164,11 @@ Select Case wMsg
         End If
     Case WM_VSCROLL, WM_HSCROLL
         If lParam = UpDownHandle Then
+            Call SyncProperty(False)
             Dim NewValue As Long
             NewValue = SendMessage(UpDownHandle, UDM_GETPOS32, 0, ByVal 0&)
             If PropValue <> NewValue Then
                 PropValue = NewValue
-                Call SyncProperty(False)
                 RaiseEvent Change
             End If
         End If

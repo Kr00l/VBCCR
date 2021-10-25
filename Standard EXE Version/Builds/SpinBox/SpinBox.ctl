@@ -166,6 +166,7 @@ Private Const EM_SETREADONLY As Long = &HCF, ES_READONLY As Long = &H800
 Private Const EM_GETSEL As Long = &HB0
 Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
+Private Const ES_AUTOHSCROLL As Long = &H80
 Private Const ES_NUMBER As Long = &H2000
 Private Const ES_NOHIDESEL As Long = &H100
 Private Const ES_LEFT As Long = &H0
@@ -188,8 +189,8 @@ Private Const UDM_SETRANGE32 As Long = (WM_USER + 111)
 Private Const UDM_GETRANGE32 As Long = (WM_USER + 112)
 Private Const UDM_SETPOS As Long = (WM_USER + 103) ' 16 bit
 Private Const UDM_GETPOS As Long = (WM_USER + 104) ' 16 bit
-Private Const UDM_GETPOS32 As Long = (WM_USER + 114)
 Private Const UDM_SETPOS32 As Long = (WM_USER + 113)
+Private Const UDM_GETPOS32 As Long = (WM_USER + 114)
 Private Const UDM_SETBUDDY As Long = (WM_USER + 105)
 Private Const UDM_GETBUDDY As Long = (WM_USER + 106)
 Private Const UDM_SETACCEL As Long = (WM_USER + 107)
@@ -1070,7 +1071,7 @@ Private Sub CreateSpinBox()
 If SpinBoxUpDownHandle <> 0 Or SpinBoxEditHandle <> 0 Then Exit Sub
 Dim dwStyle As Long, dwStyleEdit As Long, dwExStyleEdit As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or UDS_SETBUDDYINT
-dwStyleEdit = WS_CHILD Or WS_VISIBLE
+dwStyleEdit = WS_CHILD Or WS_VISIBLE Or ES_AUTOHSCROLL
 dwExStyleEdit = WS_EX_CLIENTEDGE
 If PropRightToLeft = True Then dwExStyleEdit = dwExStyleEdit Or WS_EX_RTLREADING
 If PropWrap = True Then dwStyle = dwStyle Or UDS_WRAP
