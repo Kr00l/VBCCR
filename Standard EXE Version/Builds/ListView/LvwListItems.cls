@@ -126,16 +126,21 @@ Public Sub Remove(ByVal Index As Variant)
 Attribute Remove.VB_Description = "Removes a list item from the collection."
 Select Case VarType(Index)
     Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-        Dim Ptr As Long, Item As Variant, i As Long
+        Dim Ptr As Long
         Ptr = ShadowListView.FListItemPtr(Index)
-        ShadowListView.FListItemsRemove Index
-        For Each Item In PropListItem
-            i = i + 1
-            If ObjPtr(Item) = Ptr Then
-                PropListItem.Remove i
-                Exit For
-            End If
-        Next Item
+        If Ptr <> 0 Then
+            Dim Item As Variant, i As Long
+            ShadowListView.FListItemsRemove Index
+            For Each Item In PropListItem
+                i = i + 1
+                If ObjPtr(Item) = Ptr Then
+                    PropListItem.Remove i
+                    Exit For
+                End If
+            Next Item
+        Else
+            Err.Raise Number:=35600, Description:="Index out of bounds"
+        End If
     Case vbString
         ShadowListView.FListItemsRemove ShadowListView.FListItemIndex(ObjPtr(PropListItem(Index)))
         PropListItem.Remove Index
