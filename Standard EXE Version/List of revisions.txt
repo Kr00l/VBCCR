@@ -1,5 +1,9 @@
 List of revisions:
 
+26-Oct-2021
+- Bugfix on LvwListItems.Remove that no error was thrown for an non-existent numeric index.
+  For a string index/key an error was already thrown.
+
 25-Oct-2021
 - Internal improvements in the UpDown control.
 - Included ES_AUTOHSCROLL for the edit window in the SpinBox control.
