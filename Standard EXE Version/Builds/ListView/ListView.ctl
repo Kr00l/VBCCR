@@ -7632,6 +7632,21 @@ Select Case wMsg
         Call ActivateIPAO(Me)
     Case WM_KILLFOCUS
         Call DeActivateIPAO
+    Case WM_LBUTTONDOWN
+        Dim HDHTI1 As HDHITTESTINFO
+        With HDHTI1
+        .PT.X = Get_X_lParam(lParam)
+        .PT.Y = Get_Y_lParam(lParam)
+        If SendMessage(hWnd, HDM_HITTEST, 0, ByVal VarPtr(HDHTI1)) > -1 Then
+            If (.Flags And HHT_ONFILTER) <> 0 Then
+                Select Case GetFocus()
+                    Case hWnd, ListViewHandle
+                    Case Else
+                        UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+                End Select
+            End If
+        End If
+        End With
     Case WM_SETCURSOR
         If LoWord(lParam) = HTCLIENT Then
             Dim hCursor As Long
@@ -7640,13 +7655,13 @@ Select Case wMsg
             ElseIf PropHeaderMousePointer = 99 Then
                 If Not PropHeaderMouseIcon Is Nothing Then hCursor = PropHeaderMouseIcon.Handle
             End If
-            Dim HDHTI As HDHITTESTINFO, Pos As Long
-            With HDHTI
+            Dim HDHTI2 As HDHITTESTINFO, Pos As Long
+            With HDHTI2
             Pos = GetMessagePos()
             .PT.X = Get_X_lParam(Pos)
             .PT.Y = Get_Y_lParam(Pos)
             ScreenToClient hWnd, .PT
-            If SendMessage(hWnd, HDM_HITTEST, 0, ByVal VarPtr(HDHTI)) > -1 Then
+            If SendMessage(hWnd, HDM_HITTEST, 0, ByVal VarPtr(HDHTI2)) > -1 Then
                 If (.Flags And HHT_ONDIVIDER) <> 0 Or (.Flags And HHT_ONDIVOPEN) <> 0 Then
                     If PropResizableColumnHeaders = False Then
                         If hCursor = 0 Then hCursor = LoadCursor(0, MousePointerID(vbArrow))
