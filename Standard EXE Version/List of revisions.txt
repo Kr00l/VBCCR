@@ -1,5 +1,9 @@
 List of revisions:
 
+04-Nov-2021
+- FilterBar now receives focus in the ListView control on an MDI child form when the previous control was an intrinsic VB.CommandButton.
+  Reason is a unknown message &H105A pending on the MDI host form which brings focus back to the ActiveControl.
+
 26-Oct-2021
 - Bugfix on LvwListItems.Remove that no error was thrown for an non-existent numeric index.
   For a string index/key an error was already thrown.
