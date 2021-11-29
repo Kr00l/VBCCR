@@ -83,6 +83,14 @@ dwReserved1 As Long
 lpszFileName(0 To ((MAX_PATH * 2) - 1)) As Byte
 lpszAlternateFileName(0 To ((14 * 2) - 1)) As Byte
 End Type
+Private Type WIN32_FILE_ATTRIBUTE_DATA
+dwFileAttributes As Long
+FTCreationTime As FILETIME
+FTLastAccessTime As FILETIME
+FTLastWriteTime As FILETIME
+nFileSizeHigh As Long
+nFileSizeLow As Long
+End Type
 Private Type VS_FIXEDFILEINFO
 dwSignature As Long
 dwStrucVersionLo As Integer
@@ -143,9 +151,7 @@ Private Declare Function GetActiveWindow Lib "user32" () As Long
 Private Declare Function GetForegroundWindow Lib "user32" () As Long
 Private Declare Function GetFileAttributes Lib "kernel32" Alias "GetFileAttributesW" (ByVal lpFileName As Long) As Long
 Private Declare Function SetFileAttributes Lib "kernel32" Alias "SetFileAttributesW" (ByVal lpFileName As Long, ByVal dwFileAttributes As Long) As Long
-Private Declare Function CreateFile Lib "kernel32" Alias "CreateFileW" (ByVal lpFileName As Long, ByVal dwDesiredAccess As Long, ByVal dwShareMode As Long, ByVal lpSecurityAttributes As Long, ByVal dwCreationDisposition As Long, ByVal dwFlagsAndAttributes As Long, ByVal hTemplateFile As Long) As Long
-Private Declare Function GetFileSize Lib "kernel32" (ByVal hFile As Long, ByRef lpFileSizeHigh As Long) As Long
-Private Declare Function GetFileTime Lib "kernel32" (ByVal hFile As Long, ByVal lpCreationTime As Long, ByVal lpLastAccessTime As Long, ByVal lpLastWriteTime As Long) As Long
+Private Declare Function GetFileAttributesEx Lib "kernel32" Alias "GetFileAttributesExW" (ByVal lpFileName As Long, ByVal fInfoLevelId As Long, ByVal lpFileInformation As Long) As Long
 Private Declare Function FileTimeToLocalFileTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpLocalFileTime As Long) As Long
 Private Declare Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpSystemTime As Long) As Long
 Private Declare Function FindFirstFile Lib "kernel32" Alias "FindFirstFileW" (ByVal lpFileName As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
@@ -380,21 +386,11 @@ End Sub
 
 ' (VB-Overwrite)
 Public Function FileLen(ByVal PathName As String) As Variant
-Const INVALID_HANDLE_VALUE As Long = (-1), INVALID_FILE_SIZE As Long = (-1)
-Const GENERIC_READ As Long = &H80000000, FILE_SHARE_READ As Long = &H1, OPEN_EXISTING As Long = 3, FILE_FLAG_SEQUENTIAL_SCAN As Long = &H8000000
-Dim hFile As Long
+Dim FAD As WIN32_FILE_ATTRIBUTE_DATA
 If Left$(PathName, 2) = "\\" Then PathName = "UNC\" & Mid$(PathName, 3)
-hFile = CreateFile(StrPtr("\\?\" & PathName), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0)
-If hFile <> INVALID_HANDLE_VALUE Then
-    Dim LoDWord As Long, HiDWord As Long
-    LoDWord = GetFileSize(hFile, HiDWord)
-    CloseHandle hFile
-    If LoDWord <> INVALID_FILE_SIZE Then
-        FileLen = CDec(0)
-        VarDecFromI8 LoDWord, HiDWord, FileLen
-    Else
-        FileLen = Null
-    End If
+If GetFileAttributesEx(StrPtr("\\?\" & PathName), 0, VarPtr(FAD)) <> 0 Then
+    FileLen = CDec(0)
+    VarDecFromI8 FAD.nFileSizeLow, FAD.nFileSizeHigh, FileLen
 Else
     Err.Raise Number:=53, Description:="File not found: '" & PathName & "'"
 End If
@@ -402,18 +398,13 @@ End Function
 
 ' (VB-Overwrite)
 Public Function FileDateTime(ByVal PathName As String) As Date
-Const INVALID_HANDLE_VALUE As Long = (-1)
-Const GENERIC_READ As Long = &H80000000, FILE_SHARE_READ As Long = &H1, OPEN_EXISTING As Long = 3, FILE_FLAG_SEQUENTIAL_SCAN As Long = &H8000000
-Dim hFile As Long
+Dim FAD As WIN32_FILE_ATTRIBUTE_DATA
 If Left$(PathName, 2) = "\\" Then PathName = "UNC\" & Mid$(PathName, 3)
-hFile = CreateFile(StrPtr("\\?\" & PathName), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0)
-If hFile <> INVALID_HANDLE_VALUE Then
-    Dim FT(0 To 1) As FILETIME, ST As SYSTEMTIME
-    GetFileTime hFile, 0, 0, VarPtr(FT(0))
-    FileTimeToLocalFileTime VarPtr(FT(0)), VarPtr(FT(1))
-    FileTimeToSystemTime VarPtr(FT(1)), VarPtr(ST)
+If GetFileAttributesEx(StrPtr("\\?\" & PathName), 0, VarPtr(FAD)) <> 0 Then
+    Dim FT As FILETIME, ST As SYSTEMTIME
+    FileTimeToLocalFileTime VarPtr(FAD.FTLastWriteTime), VarPtr(FT)
+    FileTimeToSystemTime VarPtr(FT), VarPtr(ST)
     FileDateTime = DateSerial(ST.wYear, ST.wMonth, ST.wDay) + TimeSerial(ST.wHour, ST.wMinute, ST.wSecond)
-    CloseHandle hFile
 Else
     Err.Raise Number:=53, Description:="File not found: '" & PathName & "'"
 End If
