@@ -64,10 +64,7 @@ Private Declare Function DllGetVersion Lib "comctl32" (ByRef pdvi As DLLVERSIONI
 Private Declare Function IsWindowVisible Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function IsWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
-Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 Private Declare Function ExtSelectClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long, ByVal fnMode As Long) As Long
-Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
 Private Declare Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As Long, ByVal hBrush As Long, ByVal lpDrawStateProc As Long, ByVal lData As Long, ByVal wData As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare Function GetProp Lib "user32" Alias "GetPropW" (ByVal hWnd As Long, ByVal lpString As Long) As Long
 Private Declare Function SetProp Lib "user32" Alias "SetPropW" (ByVal hWnd As Long, ByVal lpString As Long, ByVal hData As Long) As Long
@@ -113,7 +110,6 @@ Private Const UISF_HIDEACCEL As Long = &H2
 Private Const WM_UPDATEUISTATE As Long = &H128
 Private Const WM_QUERYUISTATE As Long = &H129
 Private Const WM_SETFOCUS As Long = &H7
-Private Const WM_KILLFOCUS As Long = &H8
 Private Const WM_ENABLE As Long = &HA
 Private Const WM_SETREDRAW As Long = &HB
 Private Const WM_PAINT As Long = &HF
