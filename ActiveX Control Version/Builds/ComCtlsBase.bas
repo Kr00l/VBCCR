@@ -864,19 +864,17 @@ End Function
 
 Private Function IPDCB_HandleMessage(ByVal Ptr As Long, ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByRef Result As Long) As Long
 If wMsg <> WM_INITDIALOG Then
-    IPDCB_HandleMessage = 0
+    IPDCB_HandleMessage = S_FALSE
 Else
     Dim lCustData As Long
     CopyMemory lCustData, ByVal UnsignedAdd(Ptr, 8), 4
     If lCustData <> 0 Then
         Dim This As ISubclass
         Set This = PtrToObj(lCustData)
-        IPDCB_HandleMessage = This.Message(hDlg, wMsg, wParam, lParam, -5)
-    Else
-        IPDCB_HandleMessage = 0
+        Result = This.Message(hDlg, wMsg, wParam, lParam, -5)
     End If
+    IPDCB_HandleMessage = S_FALSE
 End If
-IPDCB_HandleMessage = S_FALSE
 End Function
 
 Public Function ComCtlsCdlPSDCallbackProc(ByVal hDlg As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
