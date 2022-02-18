@@ -1236,6 +1236,16 @@ End Select
 UserControl.PropertyChanged "Text"
 End Property
 
+Public Property Get Default() As String
+Attribute Default.VB_UserMemId = 0
+Attribute Default.VB_MemberFlags = "40"
+Default = Me.Text
+End Property
+
+Public Property Let Default(ByVal Value As String)
+Me.Text = Value
+End Property
+
 Public Property Get Indentation() As Long
 Attribute Indentation.VB_Description = "Returns/sets default indentation in icon width for newly added combo items."
 Indentation = PropIndentation

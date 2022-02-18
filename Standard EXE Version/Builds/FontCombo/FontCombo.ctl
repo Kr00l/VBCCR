@@ -1359,6 +1359,16 @@ If Changed = True Then
 End If
 End Property
 
+Public Property Get Default() As String
+Attribute Default.VB_UserMemId = 0
+Attribute Default.VB_MemberFlags = "40"
+Default = Me.Text
+End Property
+
+Public Property Let Default(ByVal Value As String)
+Me.Text = Value
+End Property
+
 Public Property Get ExtendedUI() As Boolean
 Attribute ExtendedUI.VB_Description = "Returns/sets a value that determines whether the default UI or the extended UI is used."
 If FontComboHandle <> 0 And PropStyle <> FtcStyleSimpleCombo Then

@@ -1999,6 +1999,19 @@ Public Property Let Modified(ByVal Value As Boolean)
 If RichTextBoxHandle <> 0 Then SendMessage RichTextBoxHandle, EM_SETMODIFY, IIf(Value = True, 1, 0), ByVal 0&
 End Property
 
+Public Function GetTextRange(ByVal Min As Long, ByVal Max As Long) As String
+If Min > Max Then Err.Raise 380
+If RichTextBoxHandle <> 0 Then
+    Dim RETR As RETEXTRANGE, Buffer As String, Length As Long
+    RETR.CharRange.Min = Min
+    RETR.CharRange.Max = Max
+    Buffer = String$(RETR.CharRange.Max - RETR.CharRange.Min + 1, vbNullChar)
+    RETR.lpstrText = StrPtr(Buffer)
+    Length = SendMessage(RichTextBoxHandle, EM_GETTEXTRANGE, 0, ByVal VarPtr(RETR))
+    If Length > 0 Then GetTextRange = Left$(Buffer, Length)
+End If
+End Function
+
 Public Function Find(ByVal Text As String, Optional ByVal Min As Long, Optional ByVal Max As Long = -1, Optional ByVal Options As RtfFindOptionConstants) As Long
 Attribute Find.VB_Description = "Finds text within a rich text box control."
 If RichTextBoxHandle <> 0 Then
