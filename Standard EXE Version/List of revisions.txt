@@ -1,5 +1,9 @@
 List of revisions:
 
+18-Feb-2022
+- Included [_Default] property in ComboBoxW/FontCombo/VirtualCombo/ImageCombo.
+- Included the GetTextRange property in the RichTextBox control.
+
 04-Nov-2021
 - FilterBar now receives focus in the ListView control on an MDI child form when the previous control was an intrinsic VB.CommandButton.
   Reason is a unknown message &H105A pending on the MDI host form which brings focus back to the ActiveControl.
