@@ -227,7 +227,6 @@ Private PropRightToLeftMode As CCRightToLeftModeConstants
 Private PropRange As PBRANGE
 Private PropValue As Long
 Private PropStep As Integer, PropStepAutoReset As Boolean
-Private PropMarquee As Boolean
 Private PropMarqueeAnimation As Boolean, PropMarqueeSpeed As Long
 Private PropOrientation As PrbOrientationConstants
 Private PropScrolling As PrbScrollingConstants
@@ -305,7 +304,6 @@ PropRange.Max = 100
 PropValue = 0
 PropStep = 10
 PropStepAutoReset = True
-PropMarquee = False
 PropMarqueeAnimation = False
 PropMarqueeSpeed = 80
 PropOrientation = PrbOrientationHorizontal
@@ -343,7 +341,6 @@ PropRange.Max = .ReadProperty("Max", 100)
 PropValue = .ReadProperty("Value", 0)
 PropStep = .ReadProperty("Step", 1)
 PropStepAutoReset = .ReadProperty("StepAutoReset", True)
-PropMarquee = .ReadProperty("Marquee", False)
 PropMarqueeAnimation = .ReadProperty("MarqueeAnimation", False)
 PropMarqueeSpeed = .ReadProperty("MarqueeSpeed", 80)
 PropOrientation = .ReadProperty("Orientation", PrbOrientationHorizontal)
@@ -376,7 +373,6 @@ With PropBag
 .WriteProperty "Value", PropValue, 0
 .WriteProperty "Step", PropStep, 1
 .WriteProperty "StepAutoReset", PropStepAutoReset, True
-.WriteProperty "Marquee", PropMarquee, False
 .WriteProperty "MarqueeAnimation", PropMarqueeAnimation, False
 .WriteProperty "MarqueeSpeed", PropMarqueeSpeed, 80
 .WriteProperty "Orientation", PropOrientation, PrbOrientationHorizontal
