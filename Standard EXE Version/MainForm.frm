@@ -316,7 +316,6 @@ Begin VB.Form MainForm
       _ExtentX        =   9763
       _ExtentY        =   450
       Step            =   5
-      Marquee         =   -1  'True
       MarqueeAnimation=   -1  'True
       MarqueeSpeed    =   40
       Scrolling       =   2

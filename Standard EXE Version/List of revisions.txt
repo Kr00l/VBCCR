@@ -1,5 +1,9 @@
 List of revisions:
 
+30-May-2022
+- Support for adding an .Image object from a PictureBox to an ImageList.
+  Prior to this update the .Image object needed to be peristed into the .Picture property of the PictureBox.
+
 18-Feb-2022
 - Included [_Default] property in ComboBoxW/FontCombo/VirtualCombo/ImageCombo.
 - Included the GetTextRange property in the RichTextBox control.
