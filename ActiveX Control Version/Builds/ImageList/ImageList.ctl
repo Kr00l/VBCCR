@@ -438,6 +438,9 @@ If Picture Is Nothing Then
 ElseIf Picture.Handle = 0 Then
     Err.Raise Number:=35607, Description:="Required argument is missing"
 Else
+    Set UserControl.Picture = Picture
+    Set Picture = UserControl.Picture
+    Set UserControl.Picture = Nothing
     If PropImageWidth = 0 Then PropImageWidth = CHimetricToPixel_X(Picture.Width)
     If PropImageHeight = 0 Then PropImageHeight = CHimetricToPixel_Y(Picture.Height)
     If ImageListHandle = 0 Then Call CreateImageList
