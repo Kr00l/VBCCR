@@ -1,5 +1,8 @@
 List of revisions:
 
+22-Jun-2022
+- Bugfix in the WM_NCPAINT handler for a themed RichTextBox that scrollbars are not drawn.
+
 30-May-2022
 - Support for adding an .Image object from a PictureBox to an ImageList.
   Prior to this update the .Image object needed to be peristed into the .Picture property of the PictureBox.
