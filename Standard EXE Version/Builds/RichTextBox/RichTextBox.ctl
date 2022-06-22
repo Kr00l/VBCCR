@@ -427,6 +427,7 @@ Private Const WM_CUT As Long = &H300
 Private Const WM_PASTE As Long = &H302
 Private Const WM_CLEAR As Long = &H303
 Private Const WM_NCPAINT As Long = &H85
+Private Const WM_PRINT As Long = &H317, PRF_NONCLIENT As Long = &H2
 Private Const EM_SETREADONLY As Long = &HCF, ES_READONLY As Long = &H800
 Private Const EM_SCROLL As Long = &HB5
 Private Const EM_LINESCROLL As Long = &HB6
@@ -3612,6 +3613,8 @@ Select Case wMsg
                     hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
                 End If
                 If hDC <> 0 Then
+                    ' Printing the default non-client area ensures that the scrollbars are drawn, if any.
+                    SendMessage hWnd, WM_PRINT, hDC, ByVal PRF_NONCLIENT
                     Dim BorderX As Long, BorderY As Long
                     Dim RC1 As RECT, RC2 As RECT
                     Const SM_CXEDGE As Long = 45
