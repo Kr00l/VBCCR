@@ -1565,8 +1565,6 @@ If ListViewHandle <> 0 Then
                     Case Else
                         Effect = vbDropEffectNone
                 End Select
-            Case Else
-                Effect = vbDropEffectNone
         End Select
     End If
     If State = vbOver And Not Effect = vbDropEffectNone Then
