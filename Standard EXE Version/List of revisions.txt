@@ -1,5 +1,8 @@
 List of revisions:
 
+27-Jun-2022
+- Bugfix in the internal OLEDragOver in the ListView control for report view.
+
 22-Jun-2022
 - Bugfix in the WM_NCPAINT handler for a themed RichTextBox that scrollbars are not drawn.
 
