@@ -1276,6 +1276,7 @@ If StatusBarHandle <> 0 Then FPanelText = PropShadowPanels(Index).Text
 End Property
 
 Friend Property Let FPanelText(ByVal Index As Long, ByVal Value As String)
+If PropShadowPanels(Index).Text = Value Then Exit Property
 If StatusBarHandle <> 0 Then
     PropShadowPanels(Index).Text = Replace$(Value, vbTab, vbNullString)
     Call SetPanelText(Index)
