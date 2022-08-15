@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Aug-2022
+- Exit Property for same value in the Text property of a Panel in the StatusBar control.
+
 27-Jun-2022
 - Bugfix in the internal OLEDragOver in the ListView control for report view.
 
