@@ -1210,7 +1210,7 @@ If PanelIndex < PropShadowPanelsCount Then
 End If
 LSet PropShadowPanels(PanelIndex) = PropShadowDefaultPanel
 With PropShadowPanels(PanelIndex)
-.Text = Replace(Text, vbTab, vbNullString)
+.Text = Text
 .ToolTipText = vbNullString
 .ToolTipID = NextToolTipID()
 .MinWidth = (96 * PixelsPerDIP_X())
@@ -1278,7 +1278,7 @@ End Property
 Friend Property Let FPanelText(ByVal Index As Long, ByVal Value As String)
 If PropShadowPanels(Index).Text = Value Then Exit Property
 If StatusBarHandle <> 0 Then
-    PropShadowPanels(Index).Text = Replace$(Value, vbTab, vbNullString)
+    PropShadowPanels(Index).Text = Value
     Call SetPanelText(Index)
     Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText)
     If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then Call SetParts
