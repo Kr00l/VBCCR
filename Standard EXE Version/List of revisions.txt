@@ -1,5 +1,8 @@
 List of revisions:
 
+22-Aug-2022
+- Minor internal improvement in the StatusBar control.
+
 15-Aug-2022
 - Exit Property for same value in the Text property of a Panel in the StatusBar control.
 
