@@ -356,6 +356,7 @@ Private Const WS_EX_TRANSPARENT As Long = &H20
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
+Private Const WM_CANCELMODE As Long = &H1F
 Private Const WM_LBUTTONDOWN As Long = &H201
 Private Const WM_LBUTTONUP As Long = &H202
 Private Const WM_MBUTTONDOWN As Long = &H207
@@ -604,6 +605,7 @@ Private ToolBarImageListObjectPointer As Long
 Private ToolBarDisabledImageListObjectPointer As Long
 Private ToolBarHotImageListObjectPointer As Long
 Private ToolBarPressedImageListObjectPointer As Long
+Private ToolBarPopupMenuHandle As Long
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
 Private DispIDDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
@@ -3367,18 +3369,23 @@ If ID > 0 Then
             End If
         Else
             KeyCode = 0
-            SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
             If (.fsStyle And BTNS_WHOLEDROPDOWN) = 0 Then
+                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
                 UpdateWindow ToolBarHandle
                 Sleep 50
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 RaiseEvent ButtonClick(Button)
             Else
-                RaiseEvent ButtonDropDown(Button)
-                Dim MenuItem As Long
-                MenuItem = ShowButtonMenuItems(Button, False)
-                If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
-                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
+                If ToolBarPopupMenuHandle = 0 Then
+                    SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
+                    RaiseEvent ButtonDropDown(Button)
+                    Dim MenuItem As Long
+                    MenuItem = ShowButtonMenuItems(Button, False)
+                    If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                    SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
+                Else
+                    SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
+                End If
             End If
         End If
         Set ContainerKeyDown = Button
@@ -3728,58 +3735,65 @@ End If
 End Function
 
 Private Function ShowButtonMenuItems(ByVal Button As TbrButton, ByVal SelectFirst As Boolean) As Long
-If Button.ButtonMenus.Count > 0 Then
-    Dim hPopupMenu As Long, Text As String, Count As Long, MenuItem As Long
-    hPopupMenu = CreatePopupMenu()
-    Dim TPMP As TPMPARAMS, P As POINTAPI, MII As MENUITEMINFO
-    TPMP.cbSize = LenB(TPMP)
-    SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
-    MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
-    P.X = TPMP.RCExclude.Left
-    P.Y = TPMP.RCExclude.Bottom
-    MII.cbSize = LenB(MII)
-    MII.fMask = MIIM_TYPE Or MIIM_ID Or MIIM_STATE
-    For MenuItem = 1 To Button.ButtonMenus.Count
-        With Button.ButtonMenus(MenuItem)
-        If .Visible = True Then
-            If .Separator = False Then
-                MII.fType = MFT_STRING
-                Text = .Text
-                MII.dwTypeData = StrPtr(Text)
-                MII.cch = Len(Text)
-                If .Enabled = True Then
-                    MII.fState = MFS_ENABLED
-                Else
-                    MII.fState = MFS_DISABLED
-                End If
-                If .Checked = True Then
-                    MII.fState = MII.fState Or MFS_CHECKED
-                Else
-                    MII.fState = MII.fState Or MFS_UNCHECKED
-                End If
-            Else
-                MII.fType = MFT_SEPARATOR
-                MII.dwTypeData = 0
-                MII.cch = 0
-            End If
-            MII.wID = MenuItem
-            InsertMenuItem hPopupMenu, 0, 0, MII
-            Count = Count + 1
-        End If
-        End With
-    Next MenuItem
-    If Count > 0 Then
-        Dim Flags As Long
-        If PropRightToLeft = False Then
-            Flags = TPM_LEFTALIGN
-        Else
-            If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
-        End If
-        Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
-        If SelectFirst = True Then Flags = Flags Or TPM_NONOTIFY
-        ShowButtonMenuItems = TrackPopupMenuEx(hPopupMenu, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+If ToolBarHandle <> 0 Then
+    If ToolBarPopupMenuHandle <> 0 Then
+        SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
+        Exit Function
     End If
-    DestroyMenu hPopupMenu
+    If Button.ButtonMenus.Count > 0 Then
+        Dim Text As String, Count As Long, MenuItem As Long
+        ToolBarPopupMenuHandle = CreatePopupMenu()
+        Dim TPMP As TPMPARAMS, P As POINTAPI, MII As MENUITEMINFO
+        TPMP.cbSize = LenB(TPMP)
+        SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
+        MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
+        P.X = TPMP.RCExclude.Left
+        P.Y = TPMP.RCExclude.Bottom
+        MII.cbSize = LenB(MII)
+        MII.fMask = MIIM_TYPE Or MIIM_ID Or MIIM_STATE
+        For MenuItem = 1 To Button.ButtonMenus.Count
+            With Button.ButtonMenus(MenuItem)
+            If .Visible = True Then
+                If .Separator = False Then
+                    MII.fType = MFT_STRING
+                    Text = .Text
+                    MII.dwTypeData = StrPtr(Text)
+                    MII.cch = Len(Text)
+                    If .Enabled = True Then
+                        MII.fState = MFS_ENABLED
+                    Else
+                        MII.fState = MFS_DISABLED
+                    End If
+                    If .Checked = True Then
+                        MII.fState = MII.fState Or MFS_CHECKED
+                    Else
+                        MII.fState = MII.fState Or MFS_UNCHECKED
+                    End If
+                Else
+                    MII.fType = MFT_SEPARATOR
+                    MII.dwTypeData = 0
+                    MII.cch = 0
+                End If
+                MII.wID = MenuItem
+                InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
+                Count = Count + 1
+            End If
+            End With
+        Next MenuItem
+        If Count > 0 Then
+            Dim Flags As Long
+            If PropRightToLeft = False Then
+                Flags = TPM_LEFTALIGN
+            Else
+                If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
+            End If
+            Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
+            If SelectFirst = True Then Flags = Flags Or TPM_NONOTIFY
+            ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+        End If
+        DestroyMenu ToolBarPopupMenuHandle
+        ToolBarPopupMenuHandle = 0
+    End If
 End If
 End Function
 
