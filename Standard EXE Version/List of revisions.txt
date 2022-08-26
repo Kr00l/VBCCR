@@ -1,5 +1,9 @@
 List of revisions:
 
+26-Aug-2022
+- Improved the popup menu in the ToolBar to send WM_CANCELMODE upon recursive invocation.
+  This is useful in the .ContainerKeyDown function to close the popup menu when it's already dropped down.
+
 22-Aug-2022
 - Minor internal improvement in the StatusBar control.
 
