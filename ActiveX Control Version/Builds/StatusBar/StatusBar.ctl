@@ -1700,6 +1700,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> 0 Then
     With PropShadowPanels(Index)
     Call GetDisplayText(Index, Text, .Enabled)
     .DisplayText = Text
+    If StrPtr(Text) = 0 Then Text = ""
     OldBkMode = SetBkMode(hDC, 1)
     OldTextColor = SetTextColor(hDC, WinColor(.ForeColor))
     If .Bold = True And StatusBarBoldFontHandle <> 0 Then hFontOld = SelectObject(hDC, StatusBarBoldFontHandle)
