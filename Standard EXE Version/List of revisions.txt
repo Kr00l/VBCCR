@@ -1,5 +1,8 @@
 List of revisions:
 
+10-Sep-2022
+- Bugfix in the RightToLeft property in the RichTextBox control.
+
 30-Aug-2022
 - Critical bugfix in the StatusBar that the DrawState API is not allowed anymore to have lData as 0.
 
