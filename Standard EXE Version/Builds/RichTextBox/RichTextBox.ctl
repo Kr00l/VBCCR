@@ -1327,7 +1327,7 @@ Public Property Let RightToLeft(ByVal Value As Boolean)
 PropRightToLeft = Value
 UserControl.RightToLeft = PropRightToLeft
 Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
-Call ReCreateRichTextBox(NoStreamStringOutIn:=CBool(Me.TextMode = RtfTextModeRichText))
+If RichTextBoxHandle <> 0 Then Call ReCreateRichTextBox(NoStreamStringOutIn:=CBool(Me.TextMode = RtfTextModeRichText))
 UserControl.PropertyChanged "RightToLeft"
 End Property
 
