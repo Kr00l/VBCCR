@@ -208,7 +208,7 @@ Private SpinBoxUpDownHandle As Long, SpinBoxEditHandle As Long
 Private SpinBoxFontHandle As Long
 Private SpinBoxCharCodeCache As Long
 Private SpinBoxMouseOver(0 To 2) As Boolean
-Private SpinBoxDesignMode As Boolean, SpinBoxTopDesignMode As Boolean
+Private SpinBoxDesignMode As Boolean
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
@@ -294,7 +294,6 @@ Private Sub UserControl_InitProperties()
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 SpinBoxDesignMode = Not Ambient.UserMode
-SpinBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -324,7 +323,6 @@ Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
 If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
 On Error Resume Next
 SpinBoxDesignMode = Not Ambient.UserMode
-SpinBoxTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)

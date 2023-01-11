@@ -1067,7 +1067,7 @@ Private ListViewIMCHandle As Long
 Private ListViewCharCodeCache As Long
 Private ListViewIsClick As Boolean
 Private ListViewMouseOver As Boolean
-Private ListViewDesignMode As Boolean, ListViewTopDesignMode As Boolean
+Private ListViewDesignMode As Boolean
 Private ListViewFocusIndex As Long
 Private ListViewLabelInEdit As Boolean
 Private ListViewStartLabelEdit As Boolean
@@ -1284,7 +1284,6 @@ If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "Col
 If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
 On Error Resume Next
 ListViewDesignMode = Not Ambient.UserMode
-ListViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -1378,7 +1377,6 @@ If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "Col
 If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
 On Error Resume Next
 ListViewDesignMode = Not Ambient.UserMode
-ListViewTopDesignMode = Not GetTopUserControl(Me).Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
