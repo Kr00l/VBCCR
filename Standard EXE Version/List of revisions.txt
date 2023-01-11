@@ -1,5 +1,8 @@
 List of revisions:
 
+11-Jan-2023
+- Unnecessary usage/variable of GetTopUserControl() removed in the ListView and SpinBox control.
+
 10-Sep-2022
 - Bugfix in the RightToLeft property in the RichTextBox control.
 
