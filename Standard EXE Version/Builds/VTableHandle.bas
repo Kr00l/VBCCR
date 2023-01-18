@@ -588,16 +588,17 @@ If Handled = False Or UBound(StringsOutArray()) = 0 Then
     IPPB_GetPredefinedStrings = Original_IPPB_GetPredefinedStrings(This, DispID, pCaStringsOut, pCaCookiesOut)
 Else
     Dim cElems As Long, pElems As Long, nElemCount As Long
-    Dim lpString As Long
+    Dim Buffer As String, lpString As Long
     cElems = UBound(StringsOutArray())
     If Not UBound(CookiesOutArray()) = cElems Then ReDim Preserve CookiesOutArray(cElems) As Long
     pElems = CoTaskMemAlloc(cElems * 4)
     pCaStringsOut.cElems = cElems
     pCaStringsOut.pElems = pElems
     For nElemCount = 0 To cElems - 1
-        lpString = CoTaskMemAlloc(Len(StringsOutArray(nElemCount)) + 1)
-        CopyMemory ByVal lpString, StrPtr(StringsOutArray(nElemCount)), 4
-        CopyMemory ByVal UnsignedAdd(pElems, nElemCount * 4), ByVal lpString, 4
+        Buffer = StringsOutArray(nElemCount) & vbNullChar
+        lpString = CoTaskMemAlloc(LenB(Buffer))
+        CopyMemory ByVal lpString, ByVal StrPtr(Buffer), LenB(Buffer)
+        CopyMemory ByVal UnsignedAdd(pElems, nElemCount * 4), ByVal VarPtr(lpString), 4
     Next nElemCount
     pElems = CoTaskMemAlloc(cElems * 4)
     pCaCookiesOut.cElems = cElems
