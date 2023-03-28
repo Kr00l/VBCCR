@@ -1628,6 +1628,7 @@ If CoolBarHandle <> 0 Then
         End With
     End If
 End If
+UserControl.PropertyChanged "Picture"
 End Property
 
 Public Property Get DblClickToggle() As Boolean
