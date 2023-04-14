@@ -1,5 +1,8 @@
 List of revisions:
 
+14-Apr-2023
+- Bugfix that the caret is not scrolled into view on SelStart/SelLength in the TextBoxW/RichTextBox control.
+
 11-Jan-2023
 - Unnecessary usage/variable of GetTopUserControl() removed in the ListView and SpinBox control.
 
