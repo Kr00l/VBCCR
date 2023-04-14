@@ -1688,6 +1688,7 @@ Public Property Let SelStart(ByVal Value As Long)
 If TextBoxHandle <> 0 Then
     If Value >= 0 Then
         SendMessage TextBoxHandle, EM_SETSEL, Value, ByVal Value
+        SendMessage TextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
     Else
         Err.Raise 380
     End If
@@ -1710,6 +1711,7 @@ If TextBoxHandle <> 0 Then
         Dim SelStart As Long
         SendMessage TextBoxHandle, EM_GETSEL, VarPtr(SelStart), ByVal 0&
         SendMessage TextBoxHandle, EM_SETSEL, SelStart, ByVal SelStart + Value
+        SendMessage TextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
     Else
         Err.Raise 380
     End If

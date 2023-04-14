@@ -2155,6 +2155,7 @@ If RichTextBoxHandle <> 0 Then
         RECR.Min = Value
         RECR.Max = Value
         SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
+        Me.ScrollToCaret
     Else
         Err.Raise 380
     End If
@@ -2178,6 +2179,7 @@ If RichTextBoxHandle <> 0 Then
         SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
         RECR.Max = RECR.Min + Value
         SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
+        Me.ScrollToCaret
     Else
         Err.Raise 380
     End If
@@ -3065,7 +3067,17 @@ End Sub
 
 Public Sub ScrollToCaret()
 Attribute ScrollToCaret.VB_Description = "Scrolls the caret into view."
-If RichTextBoxHandle <> 0 Then SendMessage RichTextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
+If RichTextBoxHandle <> 0 Then
+    ' RichEdit bug that EM_SCROLLCARET works only when the control has the focus.
+    ' There is a workaround though to temporarily show the selection and hide again.
+    If PropHideSelection = True Then
+        SendMessage RichTextBoxHandle, EM_HIDESELECTION, 0, ByVal 0&
+        SendMessage RichTextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
+        SendMessage RichTextBoxHandle, EM_HIDESELECTION, 1, ByVal 0&
+    Else
+        SendMessage RichTextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
+    End If
+End If
 End Sub
 
 Public Function CharFromPos(ByVal X As Single, ByVal Y As Single) As Long
