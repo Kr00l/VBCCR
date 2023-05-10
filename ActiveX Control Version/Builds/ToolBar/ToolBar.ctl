@@ -342,6 +342,7 @@ Private Const MFS_ENABLED As Long = &H0
 Private Const MFS_UNCHECKED As Long = &H0
 Private Const MFS_DISABLED As Long = &H3
 Private Const MFS_CHECKED As Long = &H8
+Private Const HBMMENU_CALLBACK As Long = (-1)
 Private Const TPM_TOPALIGN As Long = &H0
 Private Const TPM_LEFTALIGN As Long = &H0
 Private Const TPM_LEFTBUTTON As Long = &H0
@@ -3766,9 +3767,17 @@ If ToolBarHandle <> 0 Then
                     MII.cch = Len(Text)
                     If .Picture Is Nothing Then
                         MII.hBmpItem = 0
+                    ElseIf .Picture.Handle = 0 Then
+                        MII.hBmpItem = 0
                     Else
+                        ' The menu theme is removed when some menu item has hBmpItem set to HBMMENU_CALLBACK.
+                        ' Use 32-bit pre-multiplied alpha RGB bitmaps for best results.
                         MII.fMask = MII.fMask Or MIIM_BITMAP
-                        MII.hBmpItem = .Picture.Handle
+                        If .Picture.Type = vbPicTypeBitmap Then
+                            MII.hBmpItem = .Picture.Handle
+                        Else
+                            MII.hBmpItem = HBMMENU_CALLBACK
+                        End If
                     End If
                     If .Enabled = True Then
                         MII.fState = MFS_ENABLED
