@@ -1,5 +1,10 @@
 List of revisions:
 
+10-May-2023
+- Included the Picture property in the TbrButtonMenu of the ToolBar control.
+  It supports 32bpp alpha bitmaps, but no icons. (MIIM_BITMAP)
+  Usage of MIIM_STRING instead of MIIM_TYPE/MFT_STRING for TbrButtonMenu.
+
 14-Apr-2023
 - Bugfix that the caret is not scrolled into view on SelStart/SelLength in the TextBoxW/RichTextBox control.
 
