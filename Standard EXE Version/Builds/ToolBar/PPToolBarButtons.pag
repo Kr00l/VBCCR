@@ -1082,6 +1082,7 @@ If CurrIndex > 0 Then
         End With
     Else
         CurrButtonMenuIndex = 0
+        Set CurrButtonMenuPicture = Nothing
         TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of 0"
     End If
     TextIndex.Text = CurrIndex & " of " & .Buttons.Count
@@ -1720,6 +1721,7 @@ For i = 0 To .Buttons.Count
                 PropShadowButtons(i).ButtonMenus(ii).Visible = .Visible
                 PropShadowButtons(i).ButtonMenus(ii).Checked = .Checked
                 PropShadowButtons(i).ButtonMenus(ii).Separator = .Separator
+                Set PropShadowButtons(i).ButtonMenus(ii).Picture = .Picture
                 End With
             End If
         Next ii
