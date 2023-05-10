@@ -334,8 +334,9 @@ Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_E
 Private Const HWND_DESKTOP As Long = &H0
 Private Const MIIM_STATE As Long = &H1
 Private Const MIIM_ID As Long = &H2
-Private Const MIIM_TYPE As Long = &H10
-Private Const MFT_STRING As Long = &H0
+Private Const MIIM_STRING As Long = &H40
+Private Const MIIM_BITMAP As Long = &H80
+Private Const MIIM_FTYPE As Long = &H100
 Private Const MFT_SEPARATOR As Long = &H800
 Private Const MFS_ENABLED As Long = &H0
 Private Const MFS_UNCHECKED As Long = &H0
@@ -560,6 +561,7 @@ Enabled As Boolean
 Visible As Boolean
 Checked As Boolean
 Separator As Boolean
+Picture As IPictureDisp
 End Type
 Private Type InitButtonStruct
 Key As String
@@ -861,6 +863,7 @@ If InitButtonsCount > 0 Then
                 InitButtons(i).ButtonMenus(ii).Visible = PropBagButtonMenus.ReadProperty("InitButtonsButtonMenusVisible" & CStr(ii), True)
                 InitButtons(i).ButtonMenus(ii).Checked = PropBagButtonMenus.ReadProperty("InitButtonsButtonMenusChecked" & CStr(ii), False)
                 InitButtons(i).ButtonMenus(ii).Separator = PropBagButtonMenus.ReadProperty("InitButtonsButtonMenusSeparator" & CStr(ii), False)
+                Set InitButtons(i).ButtonMenus(ii).Picture = PropBagButtonMenus.ReadProperty("InitButtonsButtonMenusPicture" & CStr(ii), Nothing)
             Next ii
         End If
     Next i
@@ -895,6 +898,7 @@ If InitButtonsCount > 0 And ToolBarHandle <> 0 Then
                 If InitButtons(i).ButtonMenus(ii).Visible = False Then .Visible = False
                 If InitButtons(i).ButtonMenus(ii).Checked = True Then .Checked = True
                 If InitButtons(i).ButtonMenus(ii).Separator = True Then .Separator = True
+                If Not InitButtons(i).ButtonMenus(ii).Picture Is Nothing Then Set .Picture = InitButtons(i).ButtonMenus(ii).Picture
                 End With
             Next ii
         End If
@@ -984,6 +988,7 @@ If Count(0) > 0 Then
                 PropBagButtonMenus.WriteProperty "InitButtonsButtonMenusVisible" & CStr(ii), Me.Buttons(i).ButtonMenus(ii).Visible, True
                 PropBagButtonMenus.WriteProperty "InitButtonsButtonMenusChecked" & CStr(ii), Me.Buttons(i).ButtonMenus(ii).Checked, False
                 PropBagButtonMenus.WriteProperty "InitButtonsButtonMenusSeparator" & CStr(ii), Me.Buttons(i).ButtonMenus(ii).Separator, False
+                PropBagButtonMenus.WriteProperty "InitButtonsButtonMenusPicture" & CStr(ii), Me.Buttons(i).ButtonMenus(ii).Picture, Nothing
             Next ii
         End If
         .WriteProperty "InitButtonsButtonMenus" & CStr(i), PropBagButtonMenus.Contents, 0
@@ -3750,15 +3755,21 @@ If ToolBarHandle <> 0 Then
         P.X = TPMP.RCExclude.Left
         P.Y = TPMP.RCExclude.Bottom
         MII.cbSize = LenB(MII)
-        MII.fMask = MIIM_TYPE Or MIIM_ID Or MIIM_STATE
         For MenuItem = 1 To Button.ButtonMenus.Count
             With Button.ButtonMenus(MenuItem)
             If .Visible = True Then
                 If .Separator = False Then
-                    MII.fType = MFT_STRING
+                    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
+                    MII.fType = 0
                     Text = .Text
                     MII.dwTypeData = StrPtr(Text)
                     MII.cch = Len(Text)
+                    If .Picture Is Nothing Then
+                        MII.hBmpItem = 0
+                    Else
+                        MII.fMask = MII.fMask Or MIIM_BITMAP
+                        MII.hBmpItem = .Picture.Handle
+                    End If
                     If .Enabled = True Then
                         MII.fState = MFS_ENABLED
                     Else
@@ -3770,9 +3781,11 @@ If ToolBarHandle <> 0 Then
                         MII.fState = MII.fState Or MFS_UNCHECKED
                     End If
                 Else
+                    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
                     MII.fType = MFT_SEPARATOR
                     MII.dwTypeData = 0
                     MII.cch = 0
+                    MII.hBmpItem = 0
                 End If
                 MII.wID = MenuItem
                 InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
