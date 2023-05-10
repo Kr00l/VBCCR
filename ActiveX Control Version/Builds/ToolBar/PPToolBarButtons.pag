@@ -49,11 +49,53 @@ Begin VB.PropertyPage PPToolBarButtons
    End
    Begin VB.Frame FrameButtonMenus 
       Caption         =   "ButtonMenus"
-      Height          =   1455
+      Height          =   2175
       Left            =   120
       TabIndex        =   33
       Top             =   3120
       Width           =   6015
+      Begin VB.PictureBox PictureCommandButtonMenuPictureNo 
+         BorderStyle     =   0  'None
+         Enabled         =   0   'False
+         Height          =   315
+         Left            =   1560
+         ScaleHeight     =   315
+         ScaleWidth      =   1035
+         TabIndex        =   58
+         TabStop         =   0   'False
+         Top             =   1680
+         Width           =   1035
+         Begin VB.CommandButton CommandButtonMenuPictureNo 
+            Caption         =   "No &Picture"
+            Enabled         =   0   'False
+            Height          =   315
+            Left            =   0
+            TabIndex        =   59
+            Top             =   0
+            Width           =   1035
+         End
+      End
+      Begin VB.PictureBox PictureCommandButtonMenuPictureBrowse 
+         BorderStyle     =   0  'None
+         Enabled         =   0   'False
+         Height          =   315
+         Left            =   1560
+         ScaleHeight     =   315
+         ScaleWidth      =   1035
+         TabIndex        =   56
+         TabStop         =   0   'False
+         Top             =   1320
+         Width           =   1035
+         Begin VB.CommandButton CommandButtonMenuPictureBrowse 
+            Caption         =   "Br&owse..."
+            Enabled         =   0   'False
+            Height          =   315
+            Left            =   0
+            TabIndex        =   57
+            Top             =   0
+            Width           =   1035
+         End
+      End
       Begin VB.PictureBox PictureCommandButtonMenuRemove 
          BorderStyle     =   0  'None
          Enabled         =   0   'False
@@ -241,6 +283,23 @@ Begin VB.PropertyPage PPToolBarButtons
          BackColor       =   -2147483633
          Enabled         =   0   'False
          Locked          =   -1  'True
+      End
+      Begin VB.Label LabelButtonMenuPicture 
+         Caption         =   "Picture:"
+         Height          =   195
+         Left            =   120
+         TabIndex        =   54
+         Top             =   1320
+         Width           =   975
+      End
+      Begin VB.Label LabelButtonMenuPictureType 
+         BorderStyle     =   1  'Fixed Single
+         Caption         =   "(None)"
+         Height          =   315
+         Left            =   120
+         TabIndex        =   55
+         Top             =   1560
+         Width           =   1335
       End
       Begin VB.Label LabelButtonMenuTag 
          Caption         =   "Tag:"
@@ -579,6 +638,7 @@ Enabled As Boolean
 Visible As Boolean
 Checked As Boolean
 Separator As Boolean
+Picture As IPictureDisp
 End Type
 Private Type ShadowButtonStruct
 Caption As String
@@ -604,7 +664,7 @@ Private Declare Function OleCreatePropertyFrame Lib "olepro32" (ByVal hWndOwner 
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 Private Const CLSID_StandardColorPage As String = "{7EBDAAE1-8120-11CF-899F-00AA00688B10}"
 Private SelectedControl As Object
-Private CurrIndex As Long, CurrButtonMenuIndex As Long
+Private CurrIndex As Long, CurrButtonMenuIndex As Long, CurrButtonMenuPicture As IPictureDisp
 Private PropShadowButtons() As ShadowButtonStruct
 Private FreezeChanged As Boolean
 
@@ -669,6 +729,7 @@ If CurrIndex > 0 Then
         .Visible = CBool(CheckButtonMenuVisible.Value = vbChecked)
         .Checked = CBool(CheckButtonMenuChecked.Value = vbChecked)
         .Separator = CBool(CheckButtonMenuSeparator.Value = vbChecked)
+        Set .Picture = CurrButtonMenuPicture
         End With
     End If
     End With
@@ -702,6 +763,7 @@ If CurrIndex > 0 Then
             .Visible = PropShadowButtons(CurrIndex).ButtonMenus(i).Visible
             .Checked = PropShadowButtons(CurrIndex).ButtonMenus(i).Checked
             .Separator = PropShadowButtons(CurrIndex).ButtonMenus(i).Separator
+            Set .Picture = PropShadowButtons(CurrIndex).ButtonMenus(i).Picture
             End With
         End If
     Next i
@@ -791,6 +853,7 @@ If .Buttons.Count > 0 And CurrIndex = 0 Then
         CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
         CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+        Set CurrButtonMenuPicture = .Picture
         End With
     Else
         TextButtonMenuIndex.Text = "0 of 0"
@@ -851,9 +914,11 @@ If CurrIndex > 1 Then
         CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
         CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+        Set CurrButtonMenuPicture = .Picture
         End With
     Else
         CurrButtonMenuIndex = 0
+        Set CurrButtonMenuPicture = Nothing
     End If
     TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of " & .ButtonMenus.Count
     FreezeChanged = False
@@ -909,9 +974,11 @@ If CurrIndex < .Buttons.Count Then
         CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
         CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+        Set CurrButtonMenuPicture = .Picture
         End With
     Else
         CurrButtonMenuIndex = 0
+        Set CurrButtonMenuPicture = Nothing
     End If
     TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of " & .ButtonMenus.Count
     FreezeChanged = False
@@ -967,9 +1034,11 @@ If .ButtonMenus.Count > 0 Then
     CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
     CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+    Set CurrButtonMenuPicture = .Picture
     End With
 Else
     CurrButtonMenuIndex = 0
+    Set CurrButtonMenuPicture = Nothing
 End If
 TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of " & .ButtonMenus.Count
 FreezeChanged = False
@@ -1026,9 +1095,11 @@ If CurrIndex > 0 Then
             CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
             CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
             CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+            Set CurrButtonMenuPicture = .Picture
             End With
         Else
             CurrButtonMenuIndex = 0
+            Set CurrButtonMenuPicture = Nothing
         End If
         TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of " & .ButtonMenus.Count
         FreezeChanged = False
@@ -1251,6 +1322,7 @@ If CurrIndex > 0 And CurrButtonMenuIndex > 1 Then
     CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
     CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+    Set CurrButtonMenuPicture = .Picture
     FreezeChanged = False
     End With
     End With
@@ -1280,6 +1352,7 @@ If CurrIndex > 0 Then
         CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
         CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+        Set CurrButtonMenuPicture = .Picture
         FreezeChanged = False
         End With
     End If
@@ -1306,6 +1379,7 @@ CheckButtonMenuEnabled.Value = vbChecked
 CheckButtonMenuVisible.Value = vbChecked
 CheckButtonMenuChecked.Value = vbUnchecked
 CheckButtonMenuSeparator.Value = vbUnchecked
+Set CurrButtonMenuPicture = Nothing
 End With
 Call ApplyControlStates
 Call FillShadowButtons
@@ -1330,6 +1404,7 @@ If CurrButtonMenuIndex > 0 Then
         CheckButtonMenuVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckButtonMenuChecked.Value = IIf(.Checked = True, vbChecked, vbUnchecked)
         CheckButtonMenuSeparator.Value = IIf(.Separator = True, vbChecked, vbUnchecked)
+        Set CurrButtonMenuPicture = .Picture
         End With
     End If
     TextButtonMenuIndex.Text = CurrButtonMenuIndex & " of " & .ButtonMenus.Count
@@ -1372,6 +1447,52 @@ End Sub
 Private Sub CheckButtonMenuSeparator_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
+End Sub
+
+Private Sub PictureCommandButtonMenuPictureBrowse_GotFocus()
+CommandButtonMenuPictureBrowse.SetFocus
+End Sub
+
+Private Sub CommandButtonMenuPictureBrowse_Click()
+If CurrIndex > 0 Then
+    With New CommonDialog
+    .Flags = CdlOFNExplorer Or CdlOFNPathMustExist Or CdlOFNFileMustExist
+    .Filter = "Bitmap Files (*.BMP;*.DIB)|*.BMP;*.DIB|GIF Files (*.GIF)|*.GIF|JPEG Files (*.JPG)|*.JPG|All Files (*.*)|*.*"
+    .DialogTitle = "Select Picture"
+    If .ShowOpen = True Then
+        Set CurrButtonMenuPicture = PictureFromPath(.FileName)
+        If Not CurrButtonMenuPicture Is Nothing Then
+            If CurrButtonMenuPicture.Handle <> 0 Then
+                If CurrButtonMenuPicture.Type = vbPicTypeBitmap Then
+                    PictureCommandButtonMenuPictureNo.Enabled = True
+                    CommandButtonMenuPictureNo.Enabled = True
+                    LabelButtonMenuPictureType.Caption = "(Bitmap)"
+                Else
+                    Set CurrButtonMenuPicture = Nothing
+                    MsgBox "Invalid picture", vbCritical + vbOKOnly
+                    Exit Sub
+                End If
+            End If
+        End If
+        PropertyPage.Changed = True
+    End If
+    End With
+End If
+End Sub
+
+Private Sub PictureCommandButtonMenuPictureNo_GotFocus()
+CommandButtonMenuPictureNo.SetFocus
+End Sub
+
+Private Sub CommandButtonMenuPictureNo_Click()
+If CurrIndex > 0 Then
+    Set CurrButtonMenuPicture = Nothing
+    CommandButtonMenuPictureBrowse.SetFocus
+    PictureCommandButtonMenuPictureNo.Enabled = False
+    CommandButtonMenuPictureNo.Enabled = False
+    LabelButtonMenuPictureType.Caption = "(None)"
+    PropertyPage.Changed = True
+End If
 End Sub
 
 Private Sub ApplyControlStates()
@@ -1454,6 +1575,23 @@ If .Buttons.Count > 0 Then
             CheckButtonMenuVisible.Enabled = True
             CheckButtonMenuChecked.Enabled = True
             CheckButtonMenuSeparator.Enabled = True
+            PictureCommandButtonMenuPictureBrowse.Enabled = True
+            CommandButtonMenuPictureBrowse.Enabled = True
+            If Not CurrButtonMenuPicture Is Nothing Then
+                If CurrButtonMenuPicture.Handle <> 0 Then
+                    PictureCommandButtonMenuPictureNo.Enabled = True
+                    CommandButtonMenuPictureNo.Enabled = True
+                    LabelButtonMenuPictureType.Caption = "(Bitmap)"
+                Else
+                    PictureCommandButtonMenuPictureNo.Enabled = False
+                    CommandButtonMenuPictureNo.Enabled = False
+                    LabelButtonMenuPictureType.Caption = "(None)"
+                End If
+            Else
+                PictureCommandButtonMenuPictureNo.Enabled = False
+                CommandButtonMenuPictureNo.Enabled = False
+                LabelButtonMenuPictureType.Caption = "(None)"
+            End If
             Success = True
         End If
     End If
@@ -1482,6 +1620,11 @@ If .Buttons.Count > 0 Then
         CheckButtonMenuChecked.Enabled = False
         CheckButtonMenuSeparator.Value = vbUnchecked
         CheckButtonMenuSeparator.Enabled = False
+        LabelButtonMenuPictureType.Caption = "(None)"
+        PictureCommandButtonMenuPictureBrowse.Enabled = False
+        CommandButtonMenuPictureBrowse.Enabled = False
+        PictureCommandButtonMenuPictureNo.Enabled = False
+        CommandButtonMenuPictureNo.Enabled = False
     End If
 Else
     TextIndex.Enabled = False
@@ -1556,6 +1699,11 @@ Else
     CheckButtonMenuChecked.Enabled = False
     CheckButtonMenuSeparator.Value = vbUnchecked
     CheckButtonMenuSeparator.Enabled = False
+    LabelButtonMenuPictureType.Caption = "(None)"
+    PictureCommandButtonMenuPictureBrowse.Enabled = False
+    CommandButtonMenuPictureBrowse.Enabled = False
+    PictureCommandButtonMenuPictureNo.Enabled = False
+    CommandButtonMenuPictureNo.Enabled = False
 End If
 FreezeChanged = False
 End With

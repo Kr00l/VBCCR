@@ -20,6 +20,7 @@ Private PropEnabled As Boolean
 Private PropVisible As Boolean
 Private PropChecked As Boolean
 Private PropSeparator As Boolean
+Private PropPicture As IPictureDisp
 
 Private Function ShadowToolBar() As ToolBar
 ComCtlsPtrToShadowObj ShadowToolBar, ShadowObjectPointer
@@ -119,6 +120,27 @@ End Property
 
 Public Property Let Separator(ByVal Value As Boolean)
 PropSeparator = Value
+End Property
+
+Public Property Get Picture() As IPictureDisp
+Attribute Picture.VB_Description = "Returns/sets the picture of the button menu."
+Set Picture = PropPicture
+End Property
+
+Public Property Let Picture(ByVal Value As IPictureDisp)
+Set Me.Picture = Value
+End Property
+
+Public Property Set Picture(ByVal Value As IPictureDisp)
+If Value Is Nothing Then
+    Set PropPicture = Nothing
+Else
+    If Value.Type = vbPicTypeBitmap Or Value.Handle = 0 Then
+        Set PropPicture = Value
+    Else
+        Err.Raise 481
+    End If
+End If
 End Property
 
 Public Property Get Parent() As TbrButton
