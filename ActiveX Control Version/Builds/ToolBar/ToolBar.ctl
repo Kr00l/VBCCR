@@ -348,7 +348,6 @@ Private Const TPM_LEFTALIGN As Long = &H0
 Private Const TPM_LEFTBUTTON As Long = &H0
 Private Const TPM_RIGHTALIGN As Long = &H8
 Private Const TPM_VERTICAL As Long = &H40
-Private Const TPM_NONOTIFY As Long = &H80
 Private Const TPM_RETURNCMD As Long = &H100
 Private Const TPM_LAYOUTRTL As Long = &H8000&
 Private Const WS_VISIBLE As Long = &H10000000
@@ -608,7 +607,7 @@ Private ToolBarImageListObjectPointer As Long
 Private ToolBarDisabledImageListObjectPointer As Long
 Private ToolBarHotImageListObjectPointer As Long
 Private ToolBarPressedImageListObjectPointer As Long
-Private ToolBarPopupMenuHandle As Long
+Private ToolBarPopupMenuHandle As Long, ToolBarPopupMenuKeyboard As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
 Private DispIDDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
@@ -3386,7 +3385,7 @@ If ID > 0 Then
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
                     RaiseEvent ButtonDropDown(Button)
                     Dim MenuItem As Long
-                    MenuItem = ShowButtonMenuItems(Button, False)
+                    MenuItem = ShowButtonMenuItems(Button, True)
                     If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 Else
@@ -3740,7 +3739,7 @@ If ToolBarHandle <> 0 Then
 End If
 End Function
 
-Private Function ShowButtonMenuItems(ByVal Button As TbrButton, ByVal SelectFirst As Boolean) As Long
+Private Function ShowButtonMenuItems(ByVal Button As TbrButton, ByVal Keyboard As Boolean) As Long
 If ToolBarHandle <> 0 Then
     If ToolBarPopupMenuHandle <> 0 Then
         SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
@@ -3810,11 +3809,12 @@ If ToolBarHandle <> 0 Then
                 If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
             End If
             Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
-            If SelectFirst = True Then Flags = Flags Or TPM_NONOTIFY
+            ToolBarPopupMenuKeyboard = Keyboard
             ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
         End If
         DestroyMenu ToolBarPopupMenuHandle
         ToolBarPopupMenuHandle = 0
+        ToolBarPopupMenuKeyboard = False
     End If
 End If
 End Function
@@ -3980,7 +3980,7 @@ Select Case wMsg
             Exit Function
         End If
     Case WM_ENTERMENULOOP
-        If wParam = 1 Then
+        If ToolBarPopupMenuHandle <> 0 And wParam = 1 And ToolBarPopupMenuKeyboard = True Then
             Const INPUT_KEYBOARD As Long = 1, KEYEVENTF_KEYUP As Long = &H2
             Dim KEYBDI As KEYBDINPUT
             With KEYBDI
@@ -4211,7 +4211,7 @@ Select Case wMsg
                         Set Button = PtrToObj(GetButtonPtr(NMTB.iItem))
                         RaiseEvent ButtonDropDown(Button)
                         Dim MenuItem As Long
-                        MenuItem = ShowButtonMenuItems(Button, True)
+                        MenuItem = ShowButtonMenuItems(Button, False)
                         If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                         WindowProcUserControl = TBDDRET_DEFAULT
                     Else
