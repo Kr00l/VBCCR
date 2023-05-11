@@ -1,5 +1,9 @@
 List of revisions:
 
+11-May-2023
+- Removed TPM_NONOTIFY for TbrButtonMenus in the ToolBar control.
+  This allows to subclass for WM_INITMENUPOPUP where wParam is the menu handle.
+
 10-May-2023
 - Included the Picture property in the TbrButtonMenu of the ToolBar control.
   It supports 32bpp alpha bitmaps, but no icons. (MIIM_BITMAP)
