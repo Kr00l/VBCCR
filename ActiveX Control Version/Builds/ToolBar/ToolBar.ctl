@@ -82,6 +82,25 @@ Private Type SIZEAPI
 CX As Long
 CY As Long
 End Type
+Private Type MEASUREITEMSTRUCT
+CtlType As Long
+CtlID As Long
+ItemID As Long
+ItemWidth As Long
+ItemHeight As Long
+ItemData As Long
+End Type
+Private Type DRAWITEMSTRUCT
+CtlType As Long
+CtlID As Long
+ItemID As Long
+ItemAction As Long
+ItemState As Long
+hWndItem As Long
+hDC As Long
+RCItem As RECT
+ItemData As Long
+End Type
 Private Type TBBUTTON
 iBitmap As Long
 IDCommand As Long
@@ -318,6 +337,7 @@ Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObj
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal XSrc As Long, ByVal YSrc As Long, ByVal dwRop As Long) As Long
+Private Declare Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As Long, ByVal hBrush As Long, ByVal lpDrawStateProc As Long, ByVal lData As Long, ByVal wData As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
@@ -332,6 +352,9 @@ Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pI
 Private Const ICC_BAR_CLASSES As Long = &H20
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const HWND_DESKTOP As Long = &H0
+Private Const DST_ICON As Long = &H3
+Private Const DST_BITMAP As Long = &H4
+Private Const DSS_DISABLED As Long = &H20
 Private Const MIIM_STATE As Long = &H1
 Private Const MIIM_ID As Long = &H2
 Private Const MIIM_STRING As Long = &H40
@@ -376,6 +399,8 @@ Private Const WM_COMMAND As Long = &H111
 Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
+Private Const WM_MEASUREITEM As Long = &H2C
+Private Const WM_DRAWITEM As Long = &H2B, ODT_MENU As Long = &H1, ODS_DISABLED As Long = &H4
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_UPDATEUISTATE As Long = &H128, UIS_SET As Long = 1, UISF_HIDEACCEL As Long = &H2
@@ -607,7 +632,7 @@ Private ToolBarImageListObjectPointer As Long
 Private ToolBarDisabledImageListObjectPointer As Long
 Private ToolBarHotImageListObjectPointer As Long
 Private ToolBarPressedImageListObjectPointer As Long
-Private ToolBarPopupMenuHandle As Long, ToolBarPopupMenuKeyboard As Boolean
+Private ToolBarPopupMenuHandle As Long, ToolBarPopupMenuButton As TbrButton, ToolBarPopupMenuKeyboard As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
 Private DispIDDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
@@ -3386,7 +3411,7 @@ If ID > 0 Then
                     RaiseEvent ButtonDropDown(Button)
                     Dim MenuItem As Long
                     MenuItem = ShowButtonMenuItems(Button, True)
-                    If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                    If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 Else
                     SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
@@ -3809,11 +3834,13 @@ If ToolBarHandle <> 0 Then
                 If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
             End If
             Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
+            Set ToolBarPopupMenuButton = Button
             ToolBarPopupMenuKeyboard = Keyboard
             ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
         End If
         DestroyMenu ToolBarPopupMenuHandle
         ToolBarPopupMenuHandle = 0
+        Set ToolBarPopupMenuButton = Nothing
         ToolBarPopupMenuKeyboard = False
     End If
 End If
@@ -3990,6 +4017,53 @@ Select Case wMsg
             .dwFlags = KEYEVENTF_KEYUP
             SendInput 1, KEYBDI, LenB(KEYBDI)
             End With
+        End If
+    Case WM_MEASUREITEM, WM_DRAWITEM
+        If ToolBarPopupMenuHandle <> 0 And Not ToolBarPopupMenuButton Is Nothing Then
+            Dim MenuPicture As IPictureDisp, CX As Long, CY As Long
+            Select Case wMsg
+                Case WM_MEASUREITEM
+                    Dim MIS As MEASUREITEMSTRUCT
+                    CopyMemory MIS, ByVal lParam, LenB(MIS)
+                    If MIS.CtlType = ODT_MENU And MIS.ItemID >= 1 And MIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
+                        Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(MIS.ItemID).Picture
+                        If Not MenuPicture Is Nothing Then
+                            CX = CHimetricToPixel_X(MenuPicture.Width)
+                            CY = CHimetricToPixel_Y(MenuPicture.Height)
+                            MIS.ItemWidth = MIS.ItemWidth + CX
+                            If MIS.ItemHeight < CY Then MIS.ItemHeight = CY
+                            CopyMemory ByVal lParam, MIS, LenB(MIS)
+                            WindowProcControl = 1
+                            Exit Function
+                        End If
+                    End If
+                Case WM_DRAWITEM
+                    Dim DIS As DRAWITEMSTRUCT
+                    CopyMemory DIS, ByVal lParam, LenB(DIS)
+                    If DIS.CtlType = ODT_MENU And DIS.hWndItem = ToolBarPopupMenuHandle And DIS.ItemID >= 1 And DIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
+                        Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(DIS.ItemID).Picture
+                        If Not MenuPicture Is Nothing Then
+                            CX = CHimetricToPixel_X(MenuPicture.Width)
+                            CY = CHimetricToPixel_Y(MenuPicture.Height)
+                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, 1)
+                            Else
+                                If MenuPicture.Type = vbPicTypeIcon Then
+                                    DrawState DIS.hDC, 0, 0, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_ICON Or DSS_DISABLED
+                                Else
+                                    Dim hImage As Long
+                                    hImage = BitmapHandleFromPicture(MenuPicture, vbWhite)
+                                    ' The DrawState API with DSS_DISABLED will draw white as transparent.
+                                    ' This will ensure GIF bitmaps or metafiles are better drawn.
+                                    DrawState DIS.hDC, 0, 0, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_BITMAP Or DSS_DISABLED
+                                    DeleteObject hImage
+                                End If
+                            End If
+                            WindowProcControl = 1
+                            Exit Function
+                        End If
+                    End If
+            End Select
         End If
     Case UM_SETBUTTONCX
         If wParam > 0 And lParam > 0 Then
@@ -4212,7 +4286,7 @@ Select Case wMsg
                         RaiseEvent ButtonDropDown(Button)
                         Dim MenuItem As Long
                         MenuItem = ShowButtonMenuItems(Button, False)
-                        If MenuItem > 0 Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                        If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                         WindowProcUserControl = TBDDRET_DEFAULT
                     Else
                         WindowProcUserControl = TBDDRET_NODEFAULT
