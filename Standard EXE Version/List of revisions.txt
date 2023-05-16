@@ -1,5 +1,10 @@
 List of revisions:
 
+16-May-2023
+- Usage of MIM_MENUDATA for TbrButtonMenus in the ToolBar control.
+  dwMenuData contains the ObjPtr() of the TbrButtonMenu.Parent. (TbrButton object)
+  This can be helpful in a WM_INITMENUPOPUP subclass to get a TbrButton of that menu handle.
+
 11-May-2023
 - Removed TPM_NONOTIFY for TbrButtonMenus in the ToolBar control.
   This allows to subclass for WM_INITMENUPOPUP where wParam is the menu handle.
