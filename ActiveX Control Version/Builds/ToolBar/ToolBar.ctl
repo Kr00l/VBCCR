@@ -136,6 +136,15 @@ Private Type TBINSERTMARK
 iButton As Long
 dwFlags As Long
 End Type
+Private Type MENUINFO
+cbSize As Long
+fMask As Long
+dwStyle As Long
+CYMax As Long
+hBrBack As Long
+dwContextHelpID As Long
+dwMenuData As Long
+End Type
 Private Type MENUITEMINFO
 cbSize As Long
 fMask As Long
@@ -328,6 +337,7 @@ Private Declare Function IsWindowEnabled Lib "user32" (ByVal hWnd As Long) As Lo
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
+Private Declare Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
@@ -346,15 +356,19 @@ Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList 
 Private Declare Function CreatePopupMenu Lib "user32" () As Long
 Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpmii As MENUITEMINFO) As Long
+Private Declare Function SetMenuInfo Lib "user32" (ByVal hMenu As Long, ByRef MI As MENUINFO) As Long
 Private Declare Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As Long, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As Long, ByRef lpTPMParams As TPMPARAMS) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
 Private Const ICC_BAR_CLASSES As Long = &H20
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const HWND_DESKTOP As Long = &H0
+Private Const COLOR_MENU As Long = 4
 Private Const DST_ICON As Long = &H3
 Private Const DST_BITMAP As Long = &H4
 Private Const DSS_DISABLED As Long = &H20
+Private Const MIM_BACKGROUND As Long = &H2
+Private Const MIM_MENUDATA As Long = &H8
 Private Const MIIM_STATE As Long = &H1
 Private Const MIIM_ID As Long = &H2
 Private Const MIIM_STRING As Long = &H40
@@ -3771,7 +3785,7 @@ If ToolBarHandle <> 0 Then
         Exit Function
     End If
     If Button.ButtonMenus.Count > 0 Then
-        Dim Text As String, Count As Long, MenuItem As Long
+        Dim Text As String, Count As Long, MenuItem As Long, HasMenuPictureCallback As Boolean
         ToolBarPopupMenuHandle = CreatePopupMenu()
         Dim TPMP As TPMPARAMS, P As POINTAPI, MII As MENUITEMINFO
         TPMP.cbSize = LenB(TPMP)
@@ -3801,6 +3815,7 @@ If ToolBarHandle <> 0 Then
                             MII.hBmpItem = .Picture.Handle
                         Else
                             MII.hBmpItem = HBMMENU_CALLBACK
+                            HasMenuPictureCallback = True
                         End If
                     End If
                     If .Enabled = True Then
@@ -3827,6 +3842,17 @@ If ToolBarHandle <> 0 Then
             End With
         Next MenuItem
         If Count > 0 Then
+            Dim MI As MENUINFO
+            MI.cbSize = LenB(MI)
+            MI.fMask = MIM_MENUDATA
+            MI.dwMenuData = ObjPtr(Button)
+            If HasMenuPictureCallback = True Then
+                ' The menu theme is lost due to HBMMENU_CALLBACK.
+                ' Setting a menu background color fixes a one-pixel overlap between the picture and text.
+                MI.fMask = MI.fMask Or MIM_BACKGROUND
+                MI.hBrBack = GetSysColorBrush(COLOR_MENU)
+            End If
+            SetMenuInfo ToolBarPopupMenuHandle, MI
             Dim Flags As Long
             If PropRightToLeft = False Then
                 Flags = TPM_LEFTALIGN
