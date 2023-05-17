@@ -132,15 +132,7 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
-If Value Is Nothing Then
-    Set PropPicture = Nothing
-Else
-    If Value.Type = vbPicTypeBitmap Or Value.Handle = 0 Then
-        Set PropPicture = Value
-    Else
-        Err.Raise 481
-    End If
-End If
+Set PropPicture = Value
 End Property
 
 Public Property Get Parent() As TbrButton

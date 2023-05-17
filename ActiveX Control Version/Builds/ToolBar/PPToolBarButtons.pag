@@ -1458,21 +1458,24 @@ Private Sub CommandButtonMenuPictureBrowse_Click()
 If CurrIndex > 0 Then
     With New CommonDialog
     .Flags = CdlOFNExplorer Or CdlOFNPathMustExist Or CdlOFNFileMustExist
-    .Filter = "Bitmap Files (*.BMP;*.DIB)|*.BMP;*.DIB|GIF Files (*.GIF)|*.GIF|JPEG Files (*.JPG)|*.JPG|All Files (*.*)|*.*"
+    .Filter = "Picture Files (*.ICO;*.CUR;*.BMP;*.DIB;*.GIF;*.JPG)|*.ICO;*.CUR;*.BMP;*.GIF;*.JPG|Icon & Cursor Files (*.ICO;*.CUR)|*.ICO;*.CUR|Bitmap Files (*.BMP;*.DIB)|*.BMP;*.DIB|GIF Files (*.GIF)|*.GIF|JPEG Files (*.JPG)|*.JPG|All Files (*.*)|*.*"
     .DialogTitle = "Select Picture"
     If .ShowOpen = True Then
         Set CurrButtonMenuPicture = PictureFromPath(.FileName)
         If Not CurrButtonMenuPicture Is Nothing Then
             If CurrButtonMenuPicture.Handle <> 0 Then
-                If CurrButtonMenuPicture.Type = vbPicTypeBitmap Then
-                    PictureCommandButtonMenuPictureNo.Enabled = True
-                    CommandButtonMenuPictureNo.Enabled = True
-                    LabelButtonMenuPictureType.Caption = "(Bitmap)"
-                Else
-                    Set CurrButtonMenuPicture = Nothing
-                    MsgBox "Invalid picture", vbCritical + vbOKOnly
-                    Exit Sub
-                End If
+                PictureCommandButtonMenuPictureNo.Enabled = True
+                CommandButtonMenuPictureNo.Enabled = True
+                Select Case CurrButtonMenuPicture.Type
+                    Case vbPicTypeBitmap
+                        LabelButtonMenuPictureType.Caption = "(Bitmap)"
+                    Case vbPicTypeIcon
+                        LabelButtonMenuPictureType.Caption = "(Icon)"
+                        MsgBox "The menu theme is removed when having an icon picture." & vbLf & "Use 32-bit pre-multiplied alpha RGB bitmaps for best results.", vbExclamation + vbOKOnly
+                    Case vbPicTypeMetafile, vbPicTypeEMetafile
+                        LabelButtonMenuPictureType.Caption = "(Metafile)"
+                        MsgBox "The menu theme is removed when having a metafile picture." & vbLf & "Use 32-bit pre-multiplied alpha RGB bitmaps for best results.", vbExclamation + vbOKOnly
+                End Select
             End If
         End If
         PropertyPage.Changed = True
@@ -1582,7 +1585,14 @@ If .Buttons.Count > 0 Then
                 If CurrButtonMenuPicture.Handle <> 0 Then
                     PictureCommandButtonMenuPictureNo.Enabled = True
                     CommandButtonMenuPictureNo.Enabled = True
-                    LabelButtonMenuPictureType.Caption = "(Bitmap)"
+                    Select Case CurrButtonMenuPicture.Type
+                        Case vbPicTypeBitmap
+                            LabelButtonMenuPictureType.Caption = "(Bitmap)"
+                        Case vbPicTypeIcon
+                            LabelButtonMenuPictureType.Caption = "(Icon)"
+                        Case vbPicTypeMetafile, vbPicTypeEMetafile
+                            LabelButtonMenuPictureType.Caption = "(Metafile)"
+                    End Select
                 Else
                     PictureCommandButtonMenuPictureNo.Enabled = False
                     CommandButtonMenuPictureNo.Enabled = False
