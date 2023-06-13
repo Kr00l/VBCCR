@@ -301,7 +301,7 @@ Public Property Get TileViewIndices() As Variant
 Attribute TileViewIndices.VB_Description = "Returns/sets an array of column header indices specifying the list sub items that are displayed for this list item in 'tile' view. Requires comctl32.dll version 6.0 or higher."
 If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 If ShadowListView.FListItemVerify(PropPtr, PropIndex) = True Then TileViewIndices = ShadowListView.FListItemTileViewIndices(PropIndex)
-End Sub
+End Property
 
 Public Property Let TileViewIndices(ByVal ArgList As Variant)
 If PropPtr = 0 Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."

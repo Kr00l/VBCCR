@@ -1719,7 +1719,7 @@ If DTPickerHandle <> 0 Then
             SendMessage DTPickerHandle, DTM_CLOSEMONTHCAL, 0, ByVal 0&
         Else
             Const WM_SYSCOMMAND As Long = &H112
-            Const SC_CLOSE As Long = &HF060
+            Const SC_CLOSE As Long = &HF060&
             Dim CalendarHandle As Long
             CalendarHandle = Me.hWndCalendar
             If CalendarHandle <> 0 Then PostMessage CalendarHandle, WM_SYSCOMMAND, SC_CLOSE, ByVal 0&
