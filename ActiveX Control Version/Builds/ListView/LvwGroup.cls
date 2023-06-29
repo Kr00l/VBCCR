@@ -18,7 +18,7 @@ Private PropTag As Variant
 Private PropIcon As Variant, PropIconIndex As Long
 
 Private Function ShadowListView() As ListView
-ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowListView, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Key As String)
