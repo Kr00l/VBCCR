@@ -24,7 +24,7 @@ Private PropToolTipTextFilterBtn As String
 Private PropToolTipTextDropDown As String
 
 Private Function ShadowListView() As ListView
-ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowListView, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

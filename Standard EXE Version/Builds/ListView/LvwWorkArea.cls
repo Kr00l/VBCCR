@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropIndex As Long
 
 Private Function ShadowListView() As ListView
-ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowListView, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Index As Long)

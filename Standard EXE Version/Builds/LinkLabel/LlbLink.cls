@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropIndex As Long
 
 Private Function ShadowLinkLabel() As LinkLabel
-ComCtlsPtrToShadowObj ShadowLinkLabel, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowLinkLabel, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Index As Long)

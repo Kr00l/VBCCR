@@ -15,7 +15,7 @@ Option Explicit
 Private ShadowObjectPointer As Long
 
 Private Function ShadowListView() As ListView
-ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowListView, ShadowObjectPointer
 End Function
 
 Public Function NewEnum() As IEnumVARIANT

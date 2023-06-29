@@ -15,7 +15,7 @@ Option Explicit
 Private ShadowObjectPointer As Long
 
 Private Function ShadowLinkLabel() As LinkLabel
-ComCtlsPtrToShadowObj ShadowLinkLabel, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowLinkLabel, ShadowObjectPointer
 End Function
 
 Public Function NewEnum() As IEnumVARIANT

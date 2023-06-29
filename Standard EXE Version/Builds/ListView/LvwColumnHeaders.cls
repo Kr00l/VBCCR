@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropColumnHeader As Collection
 
 Private Function ShadowListView() As ListView
-ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowListView, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

@@ -22,7 +22,7 @@ Private PropComboItem As Collection
 Private PropIndexPtrArr() As TINDEXPTR
 
 Private Function ShadowImageCombo() As ImageCombo
-ComCtlsPtrToShadowObj ShadowImageCombo, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowImageCombo, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

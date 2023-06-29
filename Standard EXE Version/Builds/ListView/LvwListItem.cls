@@ -36,7 +36,7 @@ Private PropShadowListSubItemsCount As Long
 Private PropShadowListSubItems() As ShadowListSubItemStruct
 
 Private Function ShadowListView() As ListView
-ComCtlsPtrToShadowObj ShadowListView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowListView, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

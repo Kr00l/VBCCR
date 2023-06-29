@@ -18,7 +18,7 @@ Private PropTag As Variant
 Private PropPicture As IPictureDisp
 
 Private Function ShadowImageList() As ImageList
-ComCtlsPtrToShadowObj ShadowImageList, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowImageList, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal ObjectPointer As Long, ByVal Key As String, ByVal Picture As IPictureDisp)
