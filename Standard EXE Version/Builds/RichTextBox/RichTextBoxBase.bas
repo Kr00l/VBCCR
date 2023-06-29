@@ -187,7 +187,7 @@ End Function
 Private Function IRichEditOleCallback_GetNewStorage(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef ppStorage As OLEGuids.IStorage) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
-ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
 ShadowRichTextBox.FIRichEditOleCallback_GetNewStorage IRichEditOleCallback_GetNewStorage, ppStorage
 Exit Function
 CATCH_EXCEPTION:
@@ -209,7 +209,7 @@ End Function
 Private Function IRichEditOleCallback_DeleteObject(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal LpOleObject As Long) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
-ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
 ShadowRichTextBox.FIRichEditOleCallback_DeleteObject LpOleObject
 IRichEditOleCallback_DeleteObject = S_OK
 Exit Function
@@ -232,7 +232,7 @@ End Function
 Private Function IRichEditOleCallback_GetDragDropEffect(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal fDrag As Long, ByVal KeyState As Long, ByRef dwEffect As Long) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
-ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
 ShadowRichTextBox.FIRichEditOleCallback_GetDragDropEffect CBool(fDrag <> 0), KeyState, dwEffect
 IRichEditOleCallback_GetDragDropEffect = S_OK
 Exit Function
@@ -243,7 +243,7 @@ End Function
 Private Function IRichEditOleCallback_GetContextMenu(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal lpCharRange As Long, ByRef hMenu As Long) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
-ComCtlsPtrToShadowObj ShadowRichTextBox, This.ShadowObjPtr
+ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
 ShadowRichTextBox.FIRichEditOleCallback_GetContextMenu SelType, LpOleObject, lpCharRange, hMenu
 If hMenu = 0 Then
     IRichEditOleCallback_GetContextMenu = E_INVALIDARG

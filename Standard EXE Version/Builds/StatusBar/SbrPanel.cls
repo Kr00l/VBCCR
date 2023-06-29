@@ -17,7 +17,7 @@ Private PropIndex As Long, PropKey As String
 Private PropTag As Variant
 
 Private Function ShadowStatusBar() As StatusBar
-ComCtlsPtrToShadowObj ShadowStatusBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowStatusBar, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal Object As StatusBar, ByVal Key As String)

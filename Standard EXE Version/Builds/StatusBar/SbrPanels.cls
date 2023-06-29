@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropPanel As Collection
 
 Private Function ShadowStatusBar() As StatusBar
-ComCtlsPtrToShadowObj ShadowStatusBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowStatusBar, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()
