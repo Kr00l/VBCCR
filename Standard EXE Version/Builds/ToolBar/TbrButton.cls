@@ -23,7 +23,7 @@ Private PropForeColor As OLE_COLOR
 Private PropButtonMenus As TbrButtonMenus
 
 Private Function ShadowToolBar() As ToolBar
-ComCtlsPtrToShadowObj ShadowToolBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowToolBar, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

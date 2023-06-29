@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropTab As Collection
 
 Private Function ShadowTabStrip() As TabStrip
-ComCtlsPtrToShadowObj ShadowTabStrip, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowTabStrip, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

@@ -23,7 +23,7 @@ Private PropSeparator As Boolean
 Private PropPicture As IPictureDisp
 
 Private Function ShadowToolBar() As ToolBar
-ComCtlsPtrToShadowObj ShadowToolBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowToolBar, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal Object As ToolBar, ByVal Key As String, ByVal ID As Long, ByVal Text As String)

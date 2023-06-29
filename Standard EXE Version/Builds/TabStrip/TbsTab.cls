@@ -19,7 +19,7 @@ Private PropToolTipText As String
 Private PropImage As Variant, PropImageIndex As Long
 
 Private Function ShadowTabStrip() As TabStrip
-ComCtlsPtrToShadowObj ShadowTabStrip, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowTabStrip, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal Object As TabStrip, ByVal Key As String, ByVal Image As Variant, ByVal ImageIndex As Long)

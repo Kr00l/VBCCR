@@ -17,7 +17,7 @@ Private PropID As Long
 Private PropButtonMenu As Collection
 
 Private Function ShadowToolBar() As ToolBar
-ComCtlsPtrToShadowObj ShadowToolBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowToolBar, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()
