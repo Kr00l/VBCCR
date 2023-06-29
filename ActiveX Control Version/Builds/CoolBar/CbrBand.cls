@@ -25,7 +25,7 @@ Private PropBackColor As OLE_COLOR
 Private PropForeColor As OLE_COLOR
 
 Private Function ShadowCoolBar() As CoolBar
-ComCtlsPtrToShadowObj ShadowCoolBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowCoolBar, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

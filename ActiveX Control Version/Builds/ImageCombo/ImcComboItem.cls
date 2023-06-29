@@ -19,7 +19,7 @@ Private PropImage As Variant, PropImageIndex As Long
 Private PropSelImage As Variant, PropSelImageIndex As Long
 
 Private Function ShadowImageCombo() As ImageCombo
-ComCtlsPtrToShadowObj ShadowImageCombo, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowImageCombo, ShadowObjectPointer
 End Function
 
 Friend Sub FInit(ByVal ObjectPointer As Long, ByRef IndexPtr As Long, ByVal Key As String, ByVal Image As Variant, ByVal ImageIndex As Long, ByVal SelImage As Variant, ByVal SelImageIndex As Long)

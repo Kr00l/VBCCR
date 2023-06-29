@@ -2113,7 +2113,7 @@ If FontComboHandle <> 0 Then
         End If
     Else
         Dim ShadowFontCombo As FontCombo, FontName As String
-        ComCtlsPtrToShadowObj ShadowFontCombo, FontComboBuddyShadowObjectPointer
+        ComCtlsObjSetAddRef ShadowFontCombo, FontComboBuddyShadowObjectPointer
         FontName = Left$(ShadowFontCombo.Text, LF_FACESIZE)
         If Not FontName = vbNullString Then
             hDC = GetDC(0)

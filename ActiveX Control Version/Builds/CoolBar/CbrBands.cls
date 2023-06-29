@@ -17,7 +17,7 @@ Private PropUserMode As Boolean
 Private PropBand As Collection
 
 Private Function ShadowCoolBar() As CoolBar
-ComCtlsPtrToShadowObj ShadowCoolBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowCoolBar, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

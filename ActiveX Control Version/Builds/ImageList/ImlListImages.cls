@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropListImage As Collection
 
 Private Function ShadowImageList() As ImageList
-ComCtlsPtrToShadowObj ShadowImageList, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowImageList, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()
