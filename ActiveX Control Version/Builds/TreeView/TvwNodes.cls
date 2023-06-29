@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropNode As Collection
 
 Private Function ShadowTreeView() As TreeView
-ComCtlsPtrToShadowObj ShadowTreeView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowTreeView, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

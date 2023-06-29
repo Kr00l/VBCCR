@@ -16,7 +16,7 @@ Private ShadowObjectPointer As Long
 Private PropButton As Collection
 
 Private Function ShadowToolBar() As ToolBar
-ComCtlsPtrToShadowObj ShadowToolBar, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowToolBar, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()

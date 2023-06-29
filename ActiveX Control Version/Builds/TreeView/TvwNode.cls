@@ -27,7 +27,7 @@ Private PropSortOrder As TvwSortOrderConstants
 Private PropSortType As TvwSortTypeConstants
 
 Private Function ShadowTreeView() As TreeView
-ComCtlsPtrToShadowObj ShadowTreeView, ShadowObjectPointer
+ComCtlsObjSetAddRef ShadowTreeView, ShadowObjectPointer
 End Function
 
 Private Sub Class_Initialize()
