@@ -189,7 +189,7 @@ Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirec
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetMenu Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
 Private Declare Function GetCapture Lib "user32" () As Long
 Private Declare Function GetWindowThreadProcessId Lib "user32" (ByVal hWnd As Long, ByVal lpdwProcessId As Long) As Long
 Private Declare Function FlashWindowEx Lib "user32" (ByRef pFWI As FLASHWINFO) As Long
@@ -700,7 +700,11 @@ Const WM_SETCURSOR As Long = &H20, WM_NCHITTEST As Long = &H84, WM_MOUSEMOVE As 
 Dim P As POINTAPI, hWndCursor As Long
 GetCursorPos P
 hWndCursor = GetCapture()
-If hWndCursor = 0 Then hWndCursor = WindowFromPoint(P.X, P.Y)
+If hWndCursor = 0 Then
+    Dim XY As Currency
+    CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+    hWndCursor = WindowFromPoint(XY)
+End If
 If hWndCursor <> 0 Then
     If GetWindowThreadProcessId(hWndCursor, 0) <> App.ThreadID Then hWndCursor = hWndFallback
 Else
