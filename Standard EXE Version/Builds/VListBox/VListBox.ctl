@@ -142,7 +142,7 @@ Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
-Private Declare Function LBItemFromPt Lib "comctl32" (ByVal hLB As Long, ByVal PX As Long, ByVal PY As Long, ByVal bAutoScroll As Long) As Long
+Private Declare Function LBItemFromPt Lib "comctl32" (ByVal hLB As Long, ByVal XY As Currency, ByVal bAutoScroll As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
@@ -538,9 +538,10 @@ If VListBoxDragIndex > 0 Then
         AllowedEffects = vbDropEffectCopy
     End If
 ElseIf VListBoxHandle <> 0 Then
-    Dim P As POINTAPI
+    Dim P As POINTAPI, XY As Currency
     GetCursorPos P
-    VListBoxDragIndex = LBItemFromPt(VListBoxHandle, P.X, P.Y, 0) + 1
+    CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+    VListBoxDragIndex = LBItemFromPt(VListBoxHandle, XY, 0) + 1
 End If
 RaiseEvent OLEStartDrag(Data, AllowedEffects)
 If AllowedEffects = vbDropEffectNone Then VListBoxDragIndex = 0
@@ -1552,22 +1553,24 @@ End Function
 Public Function HitTest(ByVal X As Single, ByVal Y As Single) As Long
 Attribute HitTest.VB_Description = "Returns the index of the item located at the coordinates of X and Y."
 If VListBoxHandle <> 0 Then
-    Dim P As POINTAPI
+    Dim P As POINTAPI, XY As Currency
     P.X = UserControl.ScaleX(X, vbContainerPosition, vbPixels)
     P.Y = UserControl.ScaleY(Y, vbContainerPosition, vbPixels)
     ClientToScreen VListBoxHandle, P
-    HitTest = LBItemFromPt(VListBoxHandle, P.X, P.Y, 0)
+    CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+    HitTest = LBItemFromPt(VListBoxHandle, XY, 0)
 End If
 End Function
 
 Public Function HitTestInsertMark(ByVal X As Single, ByVal Y As Single, Optional ByRef After As Boolean) As Long
 Attribute HitTestInsertMark.VB_Description = "Returns the index of the item located at the coordinates of X and Y and retrieves a value that determines where the insertion point should appear."
 If VListBoxHandle <> 0 Then
-    Dim P As POINTAPI, Index As Long
+    Dim P As POINTAPI, XY As Currency, Index As Long
     P.X = UserControl.ScaleX(X, vbContainerPosition, vbPixels)
     P.Y = UserControl.ScaleY(Y, vbContainerPosition, vbPixels)
     ClientToScreen VListBoxHandle, P
-    Index = LBItemFromPt(VListBoxHandle, P.X, P.Y, 0)
+    CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+    Index = LBItemFromPt(VListBoxHandle, XY, 0)
     If Index > -1 Then
         Dim RC As RECT
         SendMessage VListBoxHandle, LB_GETITEMRECT, Index, ByVal VarPtr(RC)
@@ -1786,13 +1789,14 @@ Select Case wMsg
         Exit Function
     Case WM_LBUTTONDOWN
         If PropOLEDragMode = vbOLEDragAutomatic Then
-            Dim P1 As POINTAPI, P2 As POINTAPI, Index As Long
+            Dim P1 As POINTAPI, P2 As POINTAPI, XY As Currency, Index As Long
             P1.X = Get_X_lParam(lParam)
             P1.Y = Get_Y_lParam(lParam)
             P2.X = P1.X
             P2.Y = P1.Y
             ClientToScreen VListBoxHandle, P2
-            Index = LBItemFromPt(VListBoxHandle, P2.X, P2.Y, 0)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P2), 8
+            Index = LBItemFromPt(VListBoxHandle, XY, 0)
             If Index > -1 Then
                 If PropOLEDragMode = vbOLEDragAutomatic Then
                     If SendMessage(VListBoxHandle, LB_GETSEL, Index, ByVal 0&) > 0 Then

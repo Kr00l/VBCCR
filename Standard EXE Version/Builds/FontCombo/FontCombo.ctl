@@ -203,7 +203,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Desti
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function GetComboBoxInfo Lib "user32" (ByVal hWndCombo As Long, ByRef CBI As COMBOBOXINFO) As Long
-Private Declare Function LBItemFromPt Lib "comctl32" (ByVal hLB As Long, ByVal PX As Long, ByVal PY As Long, ByVal bAutoScroll As Long) As Long
+Private Declare Function LBItemFromPt Lib "comctl32" (ByVal hLB As Long, ByVal XY As Currency, ByVal bAutoScroll As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
@@ -244,7 +244,7 @@ Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObj
 Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
 Private Declare Function GetCursor Lib "user32" () As Long
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -2349,15 +2349,15 @@ Select Case wMsg
         End If
     Case WM_CONTEXTMENU
         If wParam = FontComboHandle Then
-            Dim P As POINTAPI, Handled As Boolean
-            P.X = Get_X_lParam(lParam)
-            P.Y = Get_Y_lParam(lParam)
-            If P.X = -1 And P.Y = -1 Then
+            Dim P1 As POINTAPI, Handled As Boolean
+            P1.X = Get_X_lParam(lParam)
+            P1.Y = Get_Y_lParam(lParam)
+            If P1.X = -1 And P1.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient FontComboHandle, P
-                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+                ScreenToClient FontComboHandle, P1
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
         End If
@@ -2455,9 +2455,12 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         FontComboMouseOver(0) = False
         If FontComboMouseOver(2) = True Then
-            Dim Pos As Long
+            Dim Pos As Long, P2 As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> FontComboEditHandle Or FontComboEditHandle = 0 Then
+            P2.X = Get_X_lParam(Pos)
+            P2.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P2), 8
+            If WindowFromPoint(XY) <> FontComboEditHandle Or FontComboEditHandle = 0 Then
                 FontComboMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If
@@ -2646,9 +2649,12 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         FontComboMouseOver(1) = False
         If FontComboMouseOver(2) = True Then
-            Dim Pos As Long
+            Dim Pos As Long, P As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> FontComboHandle Or FontComboHandle = 0 Then
+            P.X = Get_X_lParam(Pos)
+            P.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+            If WindowFromPoint(XY) <> FontComboHandle Or FontComboHandle = 0 Then
                 FontComboMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If
@@ -2669,11 +2675,12 @@ Select Case wMsg
         End If
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP, WM_LBUTTONDBLCLK, WM_MBUTTONDBLCLK, WM_RBUTTONDBLCLK
         If PropLocked = True Then
-            Dim P As POINTAPI
+            Dim P As POINTAPI, XY As Currency
             P.X = Get_X_lParam(lParam)
             P.Y = Get_Y_lParam(lParam)
             ClientToScreen hWnd, P
-            If Not LBItemFromPt(hWnd, P.X, P.Y, 0) = LB_ERR Then Exit Function
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+            If Not LBItemFromPt(hWnd, XY, 0) = LB_ERR Then Exit Function
         End If
     Case WM_VSCROLL
         Select Case LoWord(wParam)

@@ -574,7 +574,6 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
-Private Declare Function PtInRect Lib "user32" (ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
 Private Const ICC_LISTVIEW_CLASSES As Long = &H1
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -7173,6 +7172,13 @@ End Function
 
 Private Function PropGroupIconsControl() As Object
 If ListViewGroupIconsObjectPointer <> 0 Then Set PropGroupIconsControl = PtrToObj(ListViewGroupIconsObjectPointer)
+End Function
+
+Private Function PtInRect(ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
+' Avoid API declare since x64 calling convention aligns 8 bytes per argument.
+' So the handling of a ByVal PT being split into two 4-byte arguments will crash.
+PtInRect = 0
+If X >= lpRect.Left And X < lpRect.Right And Y >= lpRect.Top And Y < lpRect.Bottom Then PtInRect = 1
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
