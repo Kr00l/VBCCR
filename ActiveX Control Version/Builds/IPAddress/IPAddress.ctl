@@ -125,7 +125,7 @@ Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hIns
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function TrackMouseEvent Lib "user32" (ByRef lpEventTrack As TRACKMOUSEEVENTSTRUCT) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
@@ -1349,13 +1349,13 @@ Select Case wMsg
     Case WM_PRINTCLIENT
         SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
         Call DrawDots(wParam)
-        Dim WndRect1 As RECT, P As POINTAPI, i As Long
+        Dim WndRect1 As RECT, P1 As POINTAPI, i As Long
         For i = 1 To 4
             GetWindowRect IPAddressEditHandle(i), WndRect1
             MapWindowPoints HWND_DESKTOP, UserControl.hWnd, WndRect1, 2
-            SetViewportOrgEx wParam, WndRect1.Left, WndRect1.Top, P
+            SetViewportOrgEx wParam, WndRect1.Left, WndRect1.Top, P1
             SendMessage IPAddressEditHandle(i), WM_PAINT, wParam, ByVal 0&
-            SetViewportOrgEx wParam, P.X, P.Y, P
+            SetViewportOrgEx wParam, P1.X, P1.Y, P1
         Next i
         WindowProcUserControl = 0
         Exit Function
@@ -1522,9 +1522,12 @@ Select Case wMsg
     Case WM_NCMOUSELEAVE
         IPAddressMouseOver(0) = False
         If IPAddressMouseOver(1) = True Then
-            Dim Pos As Long, hWndFromPoint As Long
+            Dim Pos As Long, P2 As POINTAPI, XY As Currency, hWndFromPoint As Long
             Pos = GetMessagePos()
-            hWndFromPoint = WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos))
+            P2.X = Get_X_lParam(Pos)
+            P2.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P2), 8
+            hWndFromPoint = WindowFromPoint(XY)
             If (hWndFromPoint <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (hWndFromPoint <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (hWndFromPoint <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (hWndFromPoint <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
                 IPAddressMouseOver(1) = False
                 RaiseEvent MouseLeave
@@ -1853,9 +1856,12 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         IPAddressEditMouseOver(dwRefData) = False
         If IPAddressMouseOver(1) = True Then
-            Dim Pos As Long, hWndFromPoint As Long
+            Dim Pos As Long, P As POINTAPI, XY As Currency, hWndFromPoint As Long
             Pos = GetMessagePos()
-            hWndFromPoint = WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos))
+            P.X = Get_X_lParam(Pos)
+            P.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+            hWndFromPoint = WindowFromPoint(XY)
             If hWndFromPoint <> UserControl.hWnd And (hWndFromPoint <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = 0) And (hWndFromPoint <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = 0) And (hWndFromPoint <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = 0) And (hWndFromPoint <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = 0) Then
                 IPAddressMouseOver(1) = False
                 RaiseEvent MouseLeave

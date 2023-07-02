@@ -90,6 +90,7 @@ Public Event OLESetData(Data As DataObject, DataFormat As Integer)
 Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source control when the drop target requests data that was not provided to the DataObject during the OLEDragStart event."
 Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As Long, ByVal lpchText As Long, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
 Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare Function DispatchMessage Lib "user32" Alias "DispatchMessageW" (ByRef lpMsg As TMSG) As Long
@@ -97,7 +98,7 @@ Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
 Private Declare Function GetCapture Lib "user32" () As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
@@ -448,9 +449,12 @@ End Sub
 
 Private Sub TimerMouseTrack_Timer()
 If GetCapture() <> UserControl.ContainerHwnd Then
-    Dim Pos As Long
+    Dim Pos As Long, P As POINTAPI, XY As Currency
     Pos = GetMessagePos()
-    If LabelMouseOverPos <> Pos Or WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> UserControl.ContainerHwnd Then
+    P.X = Get_X_lParam(Pos)
+    P.Y = Get_Y_lParam(Pos)
+    CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+    If LabelMouseOverPos <> Pos Or WindowFromPoint(XY) <> UserControl.ContainerHwnd Then
         LabelMouseOver = False
         TimerMouseTrack.Enabled = False
         RaiseEvent MouseLeave

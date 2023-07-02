@@ -123,7 +123,7 @@ Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef 
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function TrackMouseEvent Lib "user32" (ByRef lpEventTrack As TRACKMOUSEEVENTSTRUCT) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const ICC_UPDOWN_CLASS As Long = &H10
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -1323,14 +1323,14 @@ End If
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
-        Dim P As POINTAPI
-        P.X = Get_X_lParam(lParam)
-        P.Y = Get_Y_lParam(lParam)
-        MapWindowPoints hWnd, UserControl.hWnd, P, 1
+        Dim P1 As POINTAPI
+        P1.X = Get_X_lParam(lParam)
+        P1.Y = Get_Y_lParam(lParam)
+        MapWindowPoints hWnd, UserControl.hWnd, P1, 1
         Dim X As Single
         Dim Y As Single
-        X = UserControl.ScaleX(P.X, vbPixels, vbTwips)
-        Y = UserControl.ScaleY(P.Y, vbPixels, vbTwips)
+        X = UserControl.ScaleX(P1.X, vbPixels, vbTwips)
+        Y = UserControl.ScaleY(P1.Y, vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
                 RaiseEvent MouseDown(vbLeftButton, GetShiftStateFromParam(wParam), X, Y)
@@ -1358,9 +1358,12 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         SpinBoxMouseOver(0) = False
         If SpinBoxMouseOver(2) = True Then
-            Dim Pos As Long
+            Dim Pos As Long, P2 As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> SpinBoxEditHandle Or SpinBoxEditHandle = 0 Then
+            P2.X = Get_X_lParam(Pos)
+            P2.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P2), 8
+            If WindowFromPoint(XY) <> SpinBoxEditHandle Or SpinBoxEditHandle = 0 Then
                 SpinBoxMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If
@@ -1500,9 +1503,12 @@ Select Case wMsg
     Case WM_NCMOUSELEAVE
         SpinBoxMouseOver(1) = False
         If SpinBoxMouseOver(2) = True Then
-            Dim Pos As Long
+            Dim Pos As Long, P As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> SpinBoxUpDownHandle Or SpinBoxUpDownHandle = 0 Then
+            P.X = Get_X_lParam(Pos)
+            P.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+            If WindowFromPoint(XY) <> SpinBoxUpDownHandle Or SpinBoxUpDownHandle = 0 Then
                 SpinBoxMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If

@@ -176,7 +176,7 @@ Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal 
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
 Private Declare Function GetTextAlign Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
 Private Declare Function GetTextColor Lib "gdi32" (ByVal hDC As Long) As Long
@@ -1671,15 +1671,15 @@ Select Case wMsg
         End If
     Case WM_CONTEXTMENU
         If wParam = LinkLabelHandle Then
-            Dim P As POINTAPI
-            P.X = Get_X_lParam(lParam)
-            P.Y = Get_Y_lParam(lParam)
-            If P.X = -1 And P.Y = -1 Then
+            Dim P1 As POINTAPI
+            P1.X = Get_X_lParam(lParam)
+            P1.Y = Get_Y_lParam(lParam)
+            If P1.X = -1 And P1.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(-1, -1)
             Else
-                ScreenToClient LinkLabelHandle, P
-                RaiseEvent ContextMenu(UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+                ScreenToClient LinkLabelHandle, P1
+                RaiseEvent ContextMenu(UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition))
             End If
         End If
     Case WM_NOTIFY
@@ -1794,9 +1794,12 @@ Select Case wMsg
             If LinkLabelMouseOverIndex > 0 Then RaiseEvent LinkMouseLeave(Me.Links(LinkLabelMouseOverIndex))
         End If
         If LinkLabelMouseOver(3) = True Then
-            Dim Pos As Long
+            Dim Pos As Long, P2 As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> UserControl.hWnd Then
+            P2.X = Get_X_lParam(Pos)
+            P2.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P2), 8
+            If WindowFromPoint(XY) <> UserControl.hWnd Then
                 LinkLabelMouseOver(3) = False
                 RaiseEvent MouseLeave
             End If
@@ -1903,14 +1906,14 @@ Select Case wMsg
                     hBmp = CreateCompatibleBitmap(wParam, .ScaleWidth, .ScaleHeight)
                     If hBmp <> 0 Then
                         hBmpOld = SelectObject(hDCBmp, hBmp)
-                        Dim WndRect As RECT, P As POINTAPI
+                        Dim WndRect As RECT, P1 As POINTAPI
                         GetWindowRect .hWnd, WndRect
                         MapWindowPoints HWND_DESKTOP, .ContainerHwnd, WndRect, 2
-                        P.X = WndRect.Left
-                        P.Y = WndRect.Top
-                        SetViewportOrgEx hDCBmp, -P.X, -P.Y, P
+                        P1.X = WndRect.Left
+                        P1.Y = WndRect.Top
+                        SetViewportOrgEx hDCBmp, -P1.X, -P1.Y, P1
                         SendMessage .ContainerHwnd, WM_PAINT, hDCBmp, ByVal 0&
-                        SetViewportOrgEx hDCBmp, P.X, P.Y, P
+                        SetViewportOrgEx hDCBmp, P1.X, P1.Y, P1
                         LinkLabelTransparentBrush = CreatePatternBrush(hBmp)
                         SelectObject hDCBmp, hBmpOld
                         DeleteObject hBmp
@@ -1969,9 +1972,12 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         LinkLabelMouseOver(2) = False
         If LinkLabelMouseOver(3) = True Then
-            Dim Pos As Long
+            Dim Pos As Long, P2 As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            If WindowFromPoint(Get_X_lParam(Pos), Get_Y_lParam(Pos)) <> LinkLabelHandle Or LinkLabelHandle = 0 Then
+            P2.X = Get_X_lParam(Pos)
+            P2.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P2), 8
+            If WindowFromPoint(XY) <> LinkLabelHandle Or LinkLabelHandle = 0 Then
                 LinkLabelMouseOver(3) = False
                 RaiseEvent MouseLeave
             End If

@@ -117,7 +117,6 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private Declare Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
-Private Declare Function PtInRect Lib "user32" (ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
 Private Declare Function GetClassLong Lib "user32" Alias "GetClassLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
 Private Declare Function GetKeyNameText Lib "user32" Alias "GetKeyNameTextW" (ByVal lParam As Long, ByVal lpBuffer As Long, ByVal nSize As Long) As Long
@@ -857,6 +856,13 @@ If HotKeyHandle <> 0 Then
     If hWnd = 0 Then hWnd = GetAncestor(HotKeyHandle, GA_ROOT)
     SetApplicationHotKey = SendMessage(hWnd, WM_SETHOTKEY, SendMessage(HotKeyHandle, HKM_GETHOTKEY, 0, ByVal 0&), ByVal 0&)
 End If
+End Function
+
+Private Function PtInRect(ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
+' Avoid API declare since x64 calling convention aligns 8 bytes per argument.
+' So the handling of a ByVal PT being split into two 4-byte arguments will crash.
+PtInRect = 0
+If X >= lpRect.Left And X < lpRect.Right And Y >= lpRect.Top And Y < lpRect.Bottom Then PtInRect = 1
 End Function
 
 Private Function ISubclass_Message(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal dwRefData As Long) As Long
