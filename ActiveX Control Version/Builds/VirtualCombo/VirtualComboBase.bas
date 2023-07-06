@@ -49,7 +49,7 @@ Private VcbComboLBoxOrigProcPtr As Long, VcbComboLBoxHandle As Long
 Private VcbClassAtom As Integer, VcbRefCount As Long
 
 Public Sub VcbWndRegisterClass()
-If (VcbClassAtom Or VcbRefCount) = 0 Then
+If VcbClassAtom = 0 And VcbRefCount = 0 Then
     Dim WCEX As WNDCLASSEX, ClassName As String
     GetClassInfoEx App.hInstance, StrPtr("ComboBox"), WCEX
     ClassName = "VComboBoxWndClass"
@@ -67,7 +67,7 @@ End Sub
 
 Public Sub VcbWndReleaseClass()
 VcbRefCount = VcbRefCount - 1
-If VcbRefCount = 0 And VcbClassAtom <> 0 Then
+If VcbClassAtom <> 0 And VcbRefCount = 0 Then
     UnregisterClass MakeDWord(VcbClassAtom, 0), App.hInstance
     VcbClassAtom = 0
 End If
