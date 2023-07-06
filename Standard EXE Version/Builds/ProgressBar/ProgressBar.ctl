@@ -618,7 +618,10 @@ Dim OldFontHandle As Long
 Set PropFont = NewFont
 OldFontHandle = ProgressBarFontHandle
 ProgressBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
-If ProgressBarHandle <> 0 Then SendMessage ProgressBarHandle, WM_SETFONT, ProgressBarFontHandle, ByVal 1&
+If ProgressBarHandle <> 0 Then
+    SendMessage ProgressBarHandle, WM_SETFONT, ProgressBarFontHandle, ByVal 1&
+    If Not PropText = vbNullString Then InvalidateRect ProgressBarHandle, ByVal 0&, 1
+End If
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Property
@@ -627,7 +630,10 @@ Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As Long
 OldFontHandle = ProgressBarFontHandle
 ProgressBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
-If ProgressBarHandle <> 0 Then SendMessage ProgressBarHandle, WM_SETFONT, ProgressBarFontHandle, ByVal 1&
+If ProgressBarHandle <> 0 Then
+    SendMessage ProgressBarHandle, WM_SETFONT, ProgressBarFontHandle, ByVal 1&
+    If Not PropText = vbNullString Then InvalidateRect ProgressBarHandle, ByVal 0&, 1
+End If
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
