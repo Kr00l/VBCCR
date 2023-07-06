@@ -1,5 +1,8 @@
 List of revisions:
 
+06-Jul-2023
+- Changing font for ProgressBar will cause an invalidation when a Text property is set.
+
 02-Jul-2023
 - PtInRect/LBItemFromPt/WindowFromPoint API and code adaptions so it can be migrated to x64 more easily.
 
