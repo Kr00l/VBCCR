@@ -796,7 +796,11 @@ Select Case MousePointer
 End Select
 End Function
 
+#If VBA7 Then
+Public Sub RefreshMousePointer(Optional ByVal hWndFallback As LongPtr)
+#Else
 Public Sub RefreshMousePointer(Optional ByVal hWndFallback As Long)
+#End If
 Const WM_SETCURSOR As Long = &H20, WM_NCHITTEST As Long = &H84, WM_MOUSEMOVE As Long = &H200
 Dim P As POINTAPI, hWndCursor As LongPtr
 GetCursorPos P
@@ -828,15 +832,10 @@ End If
 End Function
 
 #If VBA7 Then
-
 Public Function CreateGDIFontFromOLEFont(ByVal Font As IFont) As LongPtr
-
 #Else
-
 Public Function CreateGDIFontFromOLEFont(ByVal Font As IFont) As Long
-
 #End If
-
 If Font Is Nothing Then Exit Function
 Dim LF As LOGFONT
 ' hFont will be cleared when the IFont reference goes out of scope or is set to nothing.
@@ -867,14 +866,22 @@ For i = 0 To Forms.Count - 1
 Next i
 End Function
 
+#If VBA7 Then
+Public Function GetWindowTitle(ByVal hWnd As LongPtr) As String
+#Else
 Public Function GetWindowTitle(ByVal hWnd As Long) As String
+#End If
 Dim Buffer As String
 Buffer = String(GetWindowTextLength(hWnd) + 1, vbNullChar)
 GetWindowText hWnd, StrPtr(Buffer), Len(Buffer)
 GetWindowTitle = Left$(Buffer, Len(Buffer) - 1)
 End Function
 
+#If VBA7 Then
+Public Function GetWindowClassName(ByVal hWnd As LongPtr) As String
+#Else
 Public Function GetWindowClassName(ByVal hWnd As Long) As String
+#End If
 Dim Buffer As String, RetVal As Long
 Buffer = String(256, vbNullChar)
 RetVal = GetClassName(hWnd, StrPtr(Buffer), Len(Buffer))
@@ -941,7 +948,11 @@ End Select
 If CY > 0 Then GetFormNonScaleHeight = Form.ScaleY(CY, vbPixels, Form.ScaleMode)
 End Function
 
+#If VBA7 Then
+Public Sub SetWindowRedraw(ByVal hWnd As LongPtr, ByVal Enabled As Boolean)
+#Else
 Public Sub SetWindowRedraw(ByVal hWnd As Long, ByVal Enabled As Boolean)
+#End If
 Const WM_SETREDRAW As Long = &HB
 SendMessage hWnd, WM_SETREDRAW, IIf(Enabled = True, 1, 0), ByVal 0&
 If Enabled = True Then
@@ -1030,7 +1041,11 @@ Public Function InIDE(Optional ByRef B As Boolean = True) As Boolean
 If B = True Then Debug.Assert Not InIDE(InIDE) Else B = True
 End Function
 
+#If VBA7 Then
+Public Function PtrToObj(ByVal ObjectPointer As LongPtr) As Object
+#Else
 Public Function PtrToObj(ByVal ObjectPointer As Long) As Object
+#End If
 Dim TempObj As Object
 CopyMemory TempObj, ObjectPointer, PTR_SIZE
 Set PtrToObj = TempObj
@@ -1038,19 +1053,12 @@ CopyMemory TempObj, NULL_PTR, PTR_SIZE
 End Function
 
 #If VBA7 Then
-
 Public Function ProcPtr(ByVal Address As LongPtr) As LongPtr
-ProcPtr = Address
-End Function
-
 #Else
-
 Public Function ProcPtr(ByVal Address As Long) As Long
+#End If
 ProcPtr = Address
 End Function
-    
-#End If
-
 
 Public Function LoByte(ByVal Word As Integer) As Byte
 LoByte = Word And &HFF
@@ -1161,52 +1169,28 @@ End If
 End Function
 
 #If VBA7 Then
-
 Public Function UnsignedAdd(ByVal Start As LongPtr, ByVal Incr As LongPtr) As LongPtr
-
-#If Win64 Then
-
-UnsignedAdd = ((Start Xor &H8000000000000000^) + Incr) Xor &H8000000000000000^
-
 #Else
-
-UnsignedAdd = ((Start Xor &H80000000) + Incr) Xor &H80000000
-
-#End If
-
-End Function
-
-#Else
-
 Public Function UnsignedAdd(ByVal Start As Long, ByVal Incr As Long) As Long
-UnsignedAdd = ((Start Xor &H80000000) + Incr) Xor &H80000000
-End Function
-
 #End If
+#If Win64 Then
+UnsignedAdd = ((Start Xor &H8000000000000000^) + Incr) Xor &H8000000000000000^
+#Else
+UnsignedAdd = ((Start Xor &H80000000) + Incr) Xor &H80000000
+#End If
+End Function
 
 #If VBA7 Then
-
 Public Function UnsignedSub(ByVal Start As LongPtr, ByVal Decr As LongPtr) As LongPtr
-
-#If Win64 Then
-
-UnsignedSub = ((Start And &H7FFFFFFFFFFFFFFF^) - (Decr And &H7FFFFFFFFFFFFFFF^)) Xor ((Start Xor Decr) And &H8000000000000000^)
-
 #Else
-
-UnsignedSub = ((Start And &H7FFFFFFF) - (Decr And &H7FFFFFFF)) Xor ((Start Xor Decr) And &H80000000)
-
-#End If
-
-End Function
-
-#Else
-
 Public Function UnsignedSub(ByVal Start As Long, ByVal Decr As Long) As Long
-UnsignedSub = ((Start And &H7FFFFFFF) - (Decr And &H7FFFFFFF)) Xor ((Start Xor Decr) And &H80000000)
-End Function
-
 #End If
+#If Win64 Then
+UnsignedSub = ((Start And &H7FFFFFFFFFFFFFFF^) - (Decr And &H7FFFFFFFFFFFFFFF^)) Xor ((Start Xor Decr) And &H8000000000000000^)
+#Else
+UnsignedSub = ((Start And &H7FFFFFFF) - (Decr And &H7FFFFFFF)) Xor ((Start Xor Decr) And &H80000000)
+#End If
+End Function
 
 Public Function CUIntToInt(ByVal Value As Long) As Integer
 Const OFFSET_2 As Long = 65536
@@ -1307,15 +1291,10 @@ PixelsPerDIP_Y = Value
 End Function
 
 #If VBA7 Then
-
 Public Function WinColor(ByVal Color As Long, Optional ByVal hPal As LongPtr) As Long
-
 #Else
-
 Public Function WinColor(ByVal Color As Long, Optional ByVal hPal As Long) As Long
-
 #End If
-
 If OleTranslateColor(Color, hPal, WinColor) <> 0 Then WinColor = -1
 End Function
 
@@ -1369,15 +1348,10 @@ If OleLoadPicturePath(StrPtr(PathName), NULL_PTR, 0, 0, IID, NewPicture) = 0 The
 End Function
 
 #If VBA7 Then
-
 Public Function PictureFromHandle(ByVal Handle As LongPtr, ByVal PicType As VBRUN.PictureTypeConstants) As IPictureDisp
-
 #Else
-
 Public Function PictureFromHandle(ByVal Handle As Long, ByVal PicType As VBRUN.PictureTypeConstants) As IPictureDisp
-
 #End If
-
 If Handle = NULL_PTR Then Exit Function
 Dim PICD As PICTDESC, IID As CLSID, NewPicture As IPicture
 With PICD
@@ -1400,15 +1374,10 @@ If OleCreatePictureIndirect(PICD, IID, 1, NewPicture) = 0 Then Set PictureFromHa
 End Function
 
 #If VBA7 Then
-
 Public Function BitmapHandleFromPicture(ByVal Picture As IPictureDisp, Optional ByVal BackColor As Long) As LongPtr
-
 #Else
-
 Public Function BitmapHandleFromPicture(ByVal Picture As IPictureDisp, Optional ByVal BackColor As Long) As Long
-
 #End If
-
 If Picture Is Nothing Then Exit Function
 With Picture
 If .Handle <> NULL_PTR Then
@@ -1432,7 +1401,13 @@ If .Handle <> NULL_PTR Then
                     RC.Right = CX
                     RC.Bottom = CY
                     FillRect hDC, RC, Brush
-                    .Render CLng(hDC) Or 0&, 0&, 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+                    #If Win64 Then
+                    Dim hDC32 As Long
+                    CopyMemory ByVal VarPtr(hDC32), ByVal VarPtr(hDC), 4
+                    .Render hDC32 Or 0&, 0&, 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+                    #Else
+                    .Render hDC Or 0&, 0&, 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+                    #End If
                 End If
                 SelectObject hDC, hBmpOld
                 BitmapHandleFromPicture = hBmp
@@ -1447,15 +1422,10 @@ End With
 End Function
 
 #If VBA7 Then
-
 Public Sub RenderPicture(ByVal Picture As IPicture, ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, Optional ByVal CX As Long, Optional ByVal CY As Long, Optional ByRef RenderFlag As Integer)
-
 #Else
-
 Public Sub RenderPicture(ByVal Picture As IPicture, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, Optional ByVal CX As Long, Optional ByVal CY As Long, Optional ByRef RenderFlag As Integer)
-
 #End If
-
 ' RenderFlag is passed as a optional parameter ByRef.
 ' It is ignored for icons and metafiles.
 ' 0 = render method unknown, determine it and update parameter
@@ -1520,7 +1490,13 @@ If .Handle <> NULL_PTR Then
             End If
         End If
         If HasAlpha = False Then
-            .Render CLng(hDC) Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+            #If Win64 Then
+            Dim hDC32 As Long
+            CopyMemory ByVal VarPtr(hDC32), ByVal VarPtr(hDC), 4
+            .Render hDC32 Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+            #Else
+            .Render hDC Or 0&, X Or 0&, Y Or 0&, CX Or 0&, CY Or 0&, 0&, .Height, .Width, -.Height, ByVal 0&
+            #End If
         Else
             Dim hDCBmp As LongPtr, hBmpOld As LongPtr
             hDCBmp = CreateCompatibleDC(NULL_PTR)
