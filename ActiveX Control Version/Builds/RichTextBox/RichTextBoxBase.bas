@@ -28,7 +28,7 @@ Private StreamStringIn() As Byte, StreamStringInLength As Long, StreamStringInPo
 Private VTableIRichEditOleCallback(0 To 12) As Long
 
 Public Sub RtfLoadRichedMod()
-If (RichedModHandle Or RichedModCount) = 0 Then
+If RichedModHandle = 0 And RichedModCount = 0 Then
     RichedModHandle = LoadLibrary(StrPtr("Msftedit.dll"))
     If RichedModHandle <> 0 Then
         RichedClassName = "RichEdit50W"
@@ -42,7 +42,7 @@ End Sub
 
 Public Sub RtfReleaseRichedMod()
 RichedModCount = RichedModCount - 1
-If RichedModCount = 0 And RichedModHandle <> 0 Then
+If RichedModHandle <> 0 And RichedModCount = 0 Then
     FreeLibrary RichedModHandle
     RichedModHandle = 0
 End If
