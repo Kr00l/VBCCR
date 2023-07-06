@@ -120,13 +120,13 @@ Private CdlFRHookHandle As Long
 Private CdlFRDialogHandle() As Long, CdlFRDialogCount As Long
 
 Public Sub ComCtlsLoadShellMod()
-If (ShellModHandle Or ShellModCount) = 0 Then ShellModHandle = LoadLibrary(StrPtr("shell32.dll"))
+If ShellModHandle = 0 And ShellModCount = 0 Then ShellModHandle = LoadLibrary(StrPtr("shell32.dll"))
 ShellModCount = ShellModCount + 1
 End Sub
 
 Public Sub ComCtlsReleaseShellMod()
 ShellModCount = ShellModCount - 1
-If ShellModCount = 0 And ShellModHandle <> 0 Then
+If ShellModHandle <> 0 And ShellModCount = 0 Then
     FreeLibrary ShellModHandle
     ShellModHandle = 0
 End If
