@@ -1,5 +1,10 @@
 List of revisions:
 
+07-Jul-2023
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - replaced LPSTR and LPWSTR to LONG StrPtr() to get compatibility with x64 OLEGuids twinBASIC package.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
 06-Jul-2023
 - Changing font for ProgressBar will cause an invalidation when a Text property is set.
 
