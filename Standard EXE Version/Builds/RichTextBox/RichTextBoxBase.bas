@@ -1,15 +1,36 @@
 Attribute VB_Name = "RichTextBoxBase"
 Option Explicit
+#If (VBA7 = 0) Then
+Private Enum LongPtr
+[_]
+End Enum
+#End If
+#If Win64 Then
+Private Const NULL_PTR As LongPtr = 0
+Private Const PTR_SIZE As Long = 8
+#Else
+Private Const NULL_PTR As Long = 0
+Private Const PTR_SIZE As Long = 4
+#End If
 
 ' Required:
 
 ' OLEGuids.tlb (in IDE only)
 
 Private Type VTableIRichEditOleCallbackDataStruct
-VTable As Long
+VTable As LongPtr
 RefCount As Long
-ShadowObjPtr As Long
+ShadowObjPtr As LongPtr
 End Type
+#If VBA7 Then
+Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32" (ByVal hMem As LongPtr)
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As LongPtr
+Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
+Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
+Private Declare PtrSafe Function WriteFile Lib "kernel32" (ByVal hFile As LongPtr, ByVal lpBuffer As LongPtr, ByVal NumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As LongPtr) As Long
+Private Declare PtrSafe Function ReadFile Lib "kernel32" (ByVal hFile As LongPtr, ByVal lpBuffer As LongPtr, ByVal NumberOfBytesToRead As Long, ByRef NumberOfBytesRead As Long, ByVal lpOverlapped As LongPtr) As Long
+#Else
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
@@ -17,20 +38,21 @@ Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal 
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function WriteFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToWrite As Long, ByRef NumberOfBytesWritten As Long, ByVal lpOverlapped As Long) As Long
 Private Declare Function ReadFile Lib "kernel32" (ByVal hFile As Long, ByVal lpBuffer As Long, ByVal NumberOfBytesToRead As Long, ByRef NumberOfBytesRead As Long, ByVal lpOverlapped As Long) As Long
+#End If
 Private Const E_INVALIDARG As Long = &H80070057
 Private Const E_NOTIMPL As Long = &H80004001
 Private Const E_NOINTERFACE As Long = &H80004002
 Private Const E_POINTER As Long = &H80004003
 Private Const S_OK As Long = &H0
-Private RichedModHandle As Long, RichedModCount As Long, RichedClassName As String
+Private RichedModHandle As LongPtr, RichedModCount As Long, RichedClassName As String
 Private StreamStringOut() As Byte, StreamStringOutUBound As Long, StreamStringOutBufferSize As Long
 Private StreamStringIn() As Byte, StreamStringInLength As Long, StreamStringInPos As Long
-Private VTableIRichEditOleCallback(0 To 12) As Long
+Private VTableIRichEditOleCallback(0 To 12) As LongPtr
 
 Public Sub RtfLoadRichedMod()
-If RichedModHandle = 0 And RichedModCount = 0 Then
+If RichedModHandle = NULL_PTR And RichedModCount = 0 Then
     RichedModHandle = LoadLibrary(StrPtr("Msftedit.dll"))
-    If RichedModHandle <> 0 Then
+    If RichedModHandle <> NULL_PTR Then
         RichedClassName = "RichEdit50W"
     Else
         RichedModHandle = LoadLibrary(StrPtr("Riched20.dll"))
@@ -42,9 +64,9 @@ End Sub
 
 Public Sub RtfReleaseRichedMod()
 RichedModCount = RichedModCount - 1
-If RichedModHandle <> 0 And RichedModCount = 0 Then
+If RichedModHandle <> NULL_PTR And RichedModCount = 0 Then
     FreeLibrary RichedModHandle
-    RichedModHandle = 0
+    RichedModHandle = NULL_PTR
 End If
 End Sub
 
@@ -60,7 +82,11 @@ StreamStringOutUBound = 0
 StreamStringOutBufferSize = 0
 End Function
 
+#If VBA7 Then
+Public Function RtfStreamCallbackStringOut(ByVal dwCookie As LongPtr, ByVal ByteBufferPtr As LongPtr, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
+#Else
 Public Function RtfStreamCallbackStringOut(ByVal dwCookie As Long, ByVal ByteBufferPtr As Long, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
+#End If
 If BytesRequested > 0 Then
     If StreamStringOutBufferSize < (StreamStringOutUBound + BytesRequested - 1) Then
         Dim BufferBump As Long
@@ -99,7 +125,11 @@ StreamStringInLength = 0
 StreamStringInPos = 0
 End Sub
 
+#If VBA7 Then
+Public Function RtfStreamCallbackStringIn(ByVal dwCookie As LongPtr, ByVal ByteBufferPtr As LongPtr, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
+#Else
 Public Function RtfStreamCallbackStringIn(ByVal dwCookie As Long, ByVal ByteBufferPtr As Long, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
+#End If
 If BytesRequested > (StreamStringInLength - StreamStringInPos) Then BytesRequested = (StreamStringInLength - StreamStringInPos)
 If BytesRequested > 0 Then
     CopyMemory ByVal ByteBufferPtr, StreamStringIn(StreamStringInPos), BytesRequested
@@ -111,12 +141,20 @@ BytesProcessed = BytesRequested
 RtfStreamCallbackStringIn = 0
 End Function
 
+#If VBA7 Then
+Public Function RtfStreamCallbackFileOut(ByVal dwCookie As LongPtr, ByVal ByteBufferPtr As LongPtr, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
+#Else
 Public Function RtfStreamCallbackFileOut(ByVal dwCookie As Long, ByVal ByteBufferPtr As Long, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
-RtfStreamCallbackFileOut = IIf(WriteFile(dwCookie, ByteBufferPtr, BytesRequested, BytesProcessed, 0) <> 0, 0, 1)
+#End If
+RtfStreamCallbackFileOut = IIf(WriteFile(dwCookie, ByteBufferPtr, BytesRequested, BytesProcessed, NULL_PTR) <> 0, 0, 1)
 End Function
 
+#If VBA7 Then
+Public Function RtfStreamCallbackFileIn(ByVal dwCookie As LongPtr, ByVal ByteBufferPtr As LongPtr, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
+#Else
 Public Function RtfStreamCallbackFileIn(ByVal dwCookie As Long, ByVal ByteBufferPtr As Long, ByVal BytesRequested As Long, ByRef BytesProcessed As Long) As Long
-RtfStreamCallbackFileIn = IIf(ReadFile(dwCookie, ByteBufferPtr, BytesRequested, BytesProcessed, 0) <> 0, 0, 1)
+#End If
+RtfStreamCallbackFileIn = IIf(ReadFile(dwCookie, ByteBufferPtr, BytesRequested, BytesProcessed, NULL_PTR) <> 0, 0, 1)
 End Function
 
 Public Function RtfOleCallback(ByVal This As RichTextBox) As OLEGuids.IRichEditOleCallback
@@ -125,17 +163,17 @@ With VTableIRichEditOleCallbackData
 .VTable = GetVTableIRichEditOleCallback()
 .RefCount = 1
 .ShadowObjPtr = ObjPtr(This)
-Dim hMem As Long
+Dim hMem As LongPtr
 hMem = CoTaskMemAlloc(LenB(VTableIRichEditOleCallbackData))
-If hMem <> 0 Then
+If hMem <> NULL_PTR Then
     CopyMemory ByVal hMem, VTableIRichEditOleCallbackData, LenB(VTableIRichEditOleCallbackData)
-    CopyMemory ByVal VarPtr(RtfOleCallback), hMem, 4
+    CopyMemory ByVal VarPtr(RtfOleCallback), hMem, PTR_SIZE
 End If
 End With
 End Function
 
-Private Function GetVTableIRichEditOleCallback() As Long
-If VTableIRichEditOleCallback(0) = 0 Then
+Private Function GetVTableIRichEditOleCallback() As LongPtr
+If VTableIRichEditOleCallback(0) = NULL_PTR Then
     VTableIRichEditOleCallback(0) = ProcPtr(AddressOf IRichEditOleCallback_QueryInterface)
     VTableIRichEditOleCallback(1) = ProcPtr(AddressOf IRichEditOleCallback_AddRef)
     VTableIRichEditOleCallback(2) = ProcPtr(AddressOf IRichEditOleCallback_Release)
@@ -153,8 +191,8 @@ End If
 GetVTableIRichEditOleCallback = VarPtr(VTableIRichEditOleCallback(0))
 End Function
 
-Private Function IRichEditOleCallback_QueryInterface(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As Long) As Long
-If VarPtr(pvObj) = 0 Then
+Private Function IRichEditOleCallback_QueryInterface(ByRef This As VTableIRichEditOleCallbackDataStruct, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As LongPtr) As Long
+If VarPtr(pvObj) = NULL_PTR Then
     IRichEditOleCallback_QueryInterface = E_POINTER
     Exit Function
 End If
@@ -206,7 +244,7 @@ Private Function IRichEditOleCallback_QueryInsertObject(ByRef This As VTableIRic
 IRichEditOleCallback_QueryInsertObject = S_OK
 End Function
 
-Private Function IRichEditOleCallback_DeleteObject(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal LpOleObject As Long) As Long
+Private Function IRichEditOleCallback_DeleteObject(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal LpOleObject As LongPtr) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
 ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
@@ -225,7 +263,7 @@ Private Function IRichEditOleCallback_ContextSensitiveHelp(ByRef This As VTableI
 IRichEditOleCallback_ContextSensitiveHelp = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetClipboardData(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal lpCharRange As Long, ByVal RECO As Long, ByRef ppDataObject As OLEGuids.IDataObject) As Long
+Private Function IRichEditOleCallback_GetClipboardData(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal lpCharRange As LongPtr, ByVal RECO As Long, ByRef ppDataObject As OLEGuids.IDataObject) As Long
 IRichEditOleCallback_GetClipboardData = E_NOTIMPL
 End Function
 
@@ -240,12 +278,12 @@ CATCH_EXCEPTION:
 IRichEditOleCallback_GetDragDropEffect = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetContextMenu(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal lpCharRange As Long, ByRef hMenu As Long) As Long
+Private Function IRichEditOleCallback_GetContextMenu(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal lpCharRange As Long, ByRef hMenu As LongPtr) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
 ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
 ShadowRichTextBox.FIRichEditOleCallback_GetContextMenu SelType, LpOleObject, lpCharRange, hMenu
-If hMenu = 0 Then
+If hMenu = NULL_PTR Then
     IRichEditOleCallback_GetContextMenu = E_INVALIDARG
 Else
     IRichEditOleCallback_GetContextMenu = S_OK
