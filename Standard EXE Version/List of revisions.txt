@@ -1,5 +1,8 @@
 List of revisions:
 
+08-Jul-2023
+- Fixed const FR_HIDEMATCHCASE.
+
 07-Jul-2023
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
   - replaced LPSTR and LPWSTR to LONG StrPtr() to get compatibility with x64 OLEGuids twinBASIC package.
