@@ -76,8 +76,8 @@ Private Declare Function ImmGetContext Lib "imm32" (ByVal hWnd As Long) As Long
 Private Declare Function ImmReleaseContext Lib "imm32" (ByVal hWnd As Long, ByVal hIMC As Long) As Long
 Private Declare Function ImmSetOpenStatus Lib "imm32" (ByVal hIMC As Long, ByVal fOpen As Long) As Long
 Private Declare Function ImmAssociateContext Lib "imm32" (ByVal hWnd As Long, ByVal hIMC As Long) As Long
-Private Declare Function ImmGetConversionStatus Lib "imm32" (ByVal hIMC As Long, ByRef lpfdwConversion As Long, ByRef lpfdwSentence As Long) As Long
-Private Declare Function ImmSetConversionStatus Lib "imm32" (ByVal hIMC As Long, ByVal lpfdwConversion As Long, ByVal lpfdwSentence As Long) As Long
+Private Declare Function ImmGetConversionStatus Lib "imm32" (ByVal hIMC As Long, ByVal lpfdwConversion As Long, ByVal lpfdwSentence As Long) As Long
+Private Declare Function ImmSetConversionStatus Lib "imm32" (ByVal hIMC As Long, ByVal fdwConversion As Long, ByVal fdwSentence As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function TrackMouseEvent Lib "user32" (ByRef lpEventTrack As TRACKMOUSEEVENTSTRUCT) As Long
 Private Declare Function GetSystemDefaultLangID Lib "kernel32" () As Integer
@@ -227,7 +227,7 @@ Else
     End If
     If hIMC <> 0 And Value <> CCIMEModeNoControl Then
         Dim dwConversion As Long, dwSentence As Long
-        ImmGetConversionStatus hIMC, dwConversion, dwSentence
+        ImmGetConversionStatus hIMC, VarPtr(dwConversion), VarPtr(dwSentence)
         Select Case Value
             Case CCIMEModeOn
                 ImmSetOpenStatus hIMC, 1
