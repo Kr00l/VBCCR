@@ -406,7 +406,7 @@ Private Const FR_NOUPDOWN As Long = &H400
 Private Const FR_NOMATCHCASE As Long = &H800
 Private Const FR_NOWHOLEWORD As Long = &H1000
 Private Const FR_HIDEUPDOWN As Long = &H4000
-Private Const FR_HIDEMATCHCASE As Long = &H8000
+Private Const FR_HIDEMATCHCASE As Long = &H8000&
 Private Const FR_HIDEWHOLEWORD As Long = &H10000
 Public Enum CdlFRConstants
 CdlFRDown = FR_DOWN
