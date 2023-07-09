@@ -227,7 +227,7 @@ SetErrorMode SEM_NOGPFAULTERRORBOX
 End Function
 
 Public Sub SetupVisualStylesFixes(ByVal Form As VB.Form)
-If GetComCtlVersion() >= 6 Then SendMessage Form.hWnd, WM_UPDATEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal NULL_PTR
+If GetComCtlVersion() >= 6 Then SendMessage Form.hWnd, WM_UPDATEUISTATE, MakeDWord(UIS_CLEAR, UISF_HIDEFOCUS Or UISF_HIDEACCEL), ByVal 0&
 If EnabledVisualStyles() = False Then Exit Sub
 Dim CurrControl As VB.Control
 For Each CurrControl In Form.Controls
@@ -318,7 +318,7 @@ Select Case wMsg
     Case WM_SETFOCUS, WM_ENABLE
         If IsWindowVisible(hWnd) <> 0 Then
             SetRedraw = True
-            SendMessage hWnd, WM_SETREDRAW, 0, ByVal NULL_PTR
+            SendMessage hWnd, WM_SETREDRAW, 0, ByVal 0&
         End If
 End Select
 RedirectButton = DefSubclassProc(hWnd, wMsg, wParam, lParam)
@@ -353,7 +353,7 @@ ElseIf IsWindow(hWnd) <> 0 Then
             End If
         Case WM_SETFOCUS, WM_ENABLE
             If SetRedraw = True Then
-                SendMessage hWnd, WM_SETREDRAW, 1, ByVal NULL_PTR
+                SendMessage hWnd, WM_SETREDRAW, 1, ByVal 0&
                 If wMsg = WM_ENABLE Then
                     SetProp hWnd, StrPtr("Enabled"), 0
                     InvalidateRect hWnd, ByVal NULL_PTR, 0
@@ -407,8 +407,8 @@ Select Case ButtonPart
         Default = False
 End Select
 ButtonPart = BP_PUSHBUTTON
-ButtonState = CLng(SendMessage(hWnd, BM_GETSTATE, 0, ByVal NULL_PTR))
-UIState = CLng(SendMessage(hWnd, WM_QUERYUISTATE, 0, ByVal NULL_PTR))
+ButtonState = CLng(SendMessage(hWnd, BM_GETSTATE, 0, ByVal 0&))
+UIState = CLng(SendMessage(hWnd, WM_QUERYUISTATE, 0, ByVal 0&))
 Enabled = IIf(GetProp(hWnd, StrPtr("Enabled")) = 1, True, Button.Enabled)
 Hot = IIf(GetProp(hWnd, StrPtr("Hot")) = 0, False, True)
 If Checked = True Then Hot = False
