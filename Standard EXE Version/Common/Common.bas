@@ -989,14 +989,22 @@ End If
 GetSystemDir = Value
 End Function
 
+#If VBA7 Then
+Public Function GetShiftStateFromParam(ByVal wParam As LongPtr) As ShiftConstants
+#Else
 Public Function GetShiftStateFromParam(ByVal wParam As Long) As ShiftConstants
+#End If
 Const MK_SHIFT As Long = &H4, MK_CONTROL As Long = &H8
 If (wParam And MK_SHIFT) = MK_SHIFT Then GetShiftStateFromParam = vbShiftMask
 If (wParam And MK_CONTROL) = MK_CONTROL Then GetShiftStateFromParam = GetShiftStateFromParam Or vbCtrlMask
 If GetKeyState(vbKeyMenu) < 0 Then GetShiftStateFromParam = GetShiftStateFromParam Or vbAltMask
 End Function
 
+#If VBA7 Then
+Public Function GetMouseStateFromParam(ByVal wParam As LongPtr) As MouseButtonConstants
+#Else
 Public Function GetMouseStateFromParam(ByVal wParam As Long) As MouseButtonConstants
+#End If
 Const MK_LBUTTON As Long = &H1, MK_RBUTTON As Long = &H2, MK_MBUTTON As Long = &H10
 If (wParam And MK_LBUTTON) = MK_LBUTTON Then GetMouseStateFromParam = vbLeftButton
 If (wParam And MK_RBUTTON) = MK_RBUTTON Then GetMouseStateFromParam = GetMouseStateFromParam Or vbRightButton
@@ -1092,18 +1100,30 @@ Public Function MakeDWord(ByVal LoWord As Integer, ByVal HiWord As Integer) As L
 MakeDWord = (CLng(HiWord) * &H10000) Or (LoWord And &HFFFF&)
 End Function
 
+#If VBA7 Then
+Public Function Get_X_lParam(ByVal lParam As LongPtr) As Long
+#Else
 Public Function Get_X_lParam(ByVal lParam As Long) As Long
-Get_X_lParam = lParam And &H7FFF&
-If lParam And &H8000& Then Get_X_lParam = Get_X_lParam Or &HFFFF8000
+#End If
+Get_X_lParam = CLng(lParam) And &H7FFF&
+If CLng(lParam) And &H8000& Then Get_X_lParam = Get_X_lParam Or &HFFFF8000
 End Function
 
+#If VBA7 Then
+Public Function Get_Y_lParam(ByVal lParam As LongPtr) As Long
+#Else
 Public Function Get_Y_lParam(ByVal lParam As Long) As Long
-Get_Y_lParam = (lParam And &H7FFF0000) \ &H10000
-If lParam And &H80000000 Then Get_Y_lParam = Get_Y_lParam Or &HFFFF8000
+#End If
+Get_Y_lParam = (CLng(lParam) And &H7FFF0000) \ &H10000
+If CLng(lParam) And &H80000000 Then Get_Y_lParam = Get_Y_lParam Or &HFFFF8000
 End Function
 
+#If VBA7 Then
+Public Function Make_XY_lParam(ByVal X As Long, ByVal Y As Long) As LongPtr
+#Else
 Public Function Make_XY_lParam(ByVal X As Long, ByVal Y As Long) As Long
-Make_XY_lParam = LoWord(X) Or (&H10000 * LoWord(Y))
+#End If
+Make_XY_lParam = (CLng(LoWord(Y)) * &H10000) Or (LoWord(X) And &HFFFF&)
 End Function
 
 Public Function UTF32CodePoint_To_UTF16(ByVal CodePoint As Long) As String
