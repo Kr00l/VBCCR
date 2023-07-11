@@ -2260,7 +2260,7 @@ Select Case dwRefData
     Case 5
         ISubclass_Message = WindowProcUserControlDesignMode(hWnd, wMsg, wParam, lParam)
     Case 10
-        ISubclass_Message = EnumFontFunction(wMsg, wParam, lParam)
+        ISubclass_Message = EnumFontFunction(wParam, lParam, wMsg)
 End Select
 End Function
 
