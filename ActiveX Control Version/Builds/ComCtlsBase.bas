@@ -460,7 +460,7 @@ Else
     .cbSize = LenB(TI)
     Buffer = String(80, vbNullChar)
     .lpszText = StrPtr(Buffer)
-    For i = 1 To SendMessage(hWnd, TTM_GETTOOLCOUNT, 0, ByVal 0&)
+    For i = 1 To CLng(SendMessage(hWnd, TTM_GETTOOLCOUNT, 0, ByVal 0&))
         If SendMessage(hWnd, TTM_ENUMTOOLS, i - 1, ByVal VarPtr(TI)) <> 0 Then
             If (dwMask And WS_EX_LAYOUTRTL) = WS_EX_LAYOUTRTL Or (dwMask And WS_EX_RTLREADING) = 0 Then
                 If (.uFlags And TTF_RTLREADING) = TTF_RTLREADING Then .uFlags = .uFlags And Not TTF_RTLREADING
