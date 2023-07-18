@@ -3329,93 +3329,95 @@ End Sub
 
 Public Sub OLEObjectsAddFromPicture(ByVal Picture As IPictureDisp, Optional ByVal ClipFormat As Variant)
 Attribute OLEObjectsAddFromPicture.VB_Description = "Inserts an OLE object (from picture object) into a rich text box control."
-If Not Picture Is Nothing Then
-    If Picture.Handle <> NULL_PTR Then
-        Dim pFormatEtc As FORMATETC
-        Select Case Picture.Type
-            Case vbPicTypeBitmap
-                pFormatEtc.CFFormat = vbCFBitmap
-                pFormatEtc.tymed = TYMED_GDI
-            Case vbPicTypeMetafile
-                pFormatEtc.CFFormat = vbCFMetafile
-                pFormatEtc.tymed = TYMED_MFPICT
-            Case vbPicTypeEMetafile
-                pFormatEtc.CFFormat = vbCFEMetafile
-                pFormatEtc.tymed = TYMED_ENHMF
-            Case Else
-                Err.Raise 380
-        End Select
-        If Not IsMissing(ClipFormat) Then
-            Select Case VarType(ClipFormat)
-                Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                    If CLng(ClipFormat) <> pFormatEtc.CFFormat Then Err.Raise Number:=461, Description:="Specified format doesn't match format of data"
+If RichTextBoxHandle <> NULL_PTR Then
+    If Not Picture Is Nothing Then
+        If Picture.Handle <> NULL_PTR Then
+            Dim pFormatEtc As FORMATETC
+            Select Case Picture.Type
+                Case vbPicTypeBitmap
+                    pFormatEtc.CFFormat = vbCFBitmap
+                    pFormatEtc.tymed = TYMED_GDI
+                Case vbPicTypeMetafile
+                    pFormatEtc.CFFormat = vbCFMetafile
+                    pFormatEtc.tymed = TYMED_MFPICT
+                Case vbPicTypeEMetafile
+                    pFormatEtc.CFFormat = vbCFEMetafile
+                    pFormatEtc.tymed = TYMED_ENHMF
                 Case Else
-                    Err.Raise 13
+                    Err.Raise 380
             End Select
-        End If
-        Dim OLEInstance As OLEGuids.IRichEditOle
-        Set OLEInstance = Me.GetOLEInterface
-        If Not OLEInstance Is Nothing Then
-            Dim pMedium As STGMEDIUM, fRelease As Long
-            With pFormatEtc
-            .ptd = NULL_PTR
-            .dwAspect = DVASPECT_CONTENT
-            .lIndex = -1
-            End With
-            With pMedium
-            .Data = Picture.Handle
-            .lpUnkForRelease = NULL_PTR
-            .tymed = pFormatEtc.tymed
-            End With
-            fRelease = 0
-            Dim pDataObject As OLEGuids.IDataObject
-            Const IID_IDataObject As String = "{0000010E-0000-0000-C000-000000000046}"
-            Dim IID As OLEGuids.OLECLSID
-            CLSIDFromString StrPtr(IID_IDataObject), IID
-            If RichTextBoxSHCreateDataObject = 0 Then
-                Dim hLib As LongPtr
-                hLib = LoadLibrary(StrPtr("shell32.dll"))
-                If hLib <> NULL_PTR Then
-                    If GetProcAddress(hLib, "SHCreateDataObject") <> NULL_PTR Then
-                        RichTextBoxSHCreateDataObject = 1
-                    Else
-                        RichTextBoxSHCreateDataObject = -1
-                    End If
-                    FreeLibrary hLib
-                    hLib = NULL_PTR
-                End If
+            If Not IsMissing(ClipFormat) Then
+                Select Case VarType(ClipFormat)
+                    Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
+                        If CLng(ClipFormat) <> pFormatEtc.CFFormat Then Err.Raise Number:=461, Description:="Specified format doesn't match format of data"
+                    Case Else
+                        Err.Raise 13
+                End Select
             End If
-            If RichTextBoxSHCreateDataObject > -1 Then
-                ' Requires shell32.dll version 6.0 or higher.
-                SHCreateDataObject NULL_PTR, 0, NULL_PTR, ByVal NULL_PTR, IID, pDataObject
-            Else
-                SHCreateFileDataObject NULL_PTR, 0, NULL_PTR, ByVal NULL_PTR, pDataObject
-            End If
-            ' IDataObject::SetData
-            VTableCall vbLong, ObjPtr(pDataObject), 8, VarPtr(pFormatEtc), VarPtr(pMedium), VarPtr(fRelease)
-            Dim PropOleObject As OLEGuids.IOleObject, PropClientSite As OLEGuids.IOleClientSite, PropStorage As OLEGuids.IStorage
-            Set PropClientSite = OLEInstance.GetClientSite
-            StgCreateDocFile NULL_PTR, STGM_CREATE Or STGM_READWRITE Or STGM_SHARE_EXCLUSIVE Or STGM_DELETEONRELEASE, 0, PropStorage
-            Const IID_IOleObject As String = "{00000112-0000-0000-C000-000000000046}"
-            CLSIDFromString StrPtr(IID_IOleObject), IID
-            OleCreateStaticFromData pDataObject, IID, OLERENDER_DRAW, NULL_PTR, PropClientSite, PropStorage, PropOleObject
-            If Not PropOleObject Is Nothing Then
-                OleSetContainedObject PropOleObject, 1
-                Dim REOBJ As REOBJECT
-                With REOBJ
-                .cbStruct = LenB(REOBJ)
-                LSet .riid = IID
-                .dvAspect = DVASPECT_CONTENT
-                .CharPos = REO_CP_SELECTION
-                .dwFlags = REO_DYNAMICSIZE Or REO_RESIZABLE Or REO_BELOWBASELINE
-                .Size.CX = 0
-                .Size.CY = 0
-                .dwUser = 0
-                Set .pStorage = PropStorage
-                Set .pOleSite = PropClientSite
-                Set .pOleObject = PropOleObject
+            Dim OLEInstance As OLEGuids.IRichEditOle
+            Set OLEInstance = Me.GetOLEInterface
+            If Not OLEInstance Is Nothing Then
+                Dim pMedium As STGMEDIUM, fRelease As Long
+                With pFormatEtc
+                .ptd = NULL_PTR
+                .dwAspect = DVASPECT_CONTENT
+                .lIndex = -1
                 End With
-                OLEInstance.InsertObject REOBJ
+                With pMedium
+                .Data = Picture.Handle
+                .lpUnkForRelease = NULL_PTR
+                .tymed = pFormatEtc.tymed
+                End With
+                fRelease = 0
+                Dim pDataObject As OLEGuids.IDataObject
+                Const IID_IDataObject As String = "{0000010E-0000-0000-C000-000000000046}"
+                Dim IID As OLEGuids.OLECLSID
+                CLSIDFromString StrPtr(IID_IDataObject), IID
+                If RichTextBoxSHCreateDataObject = 0 Then
+                    Dim hLib As LongPtr
+                    hLib = LoadLibrary(StrPtr("shell32.dll"))
+                    If hLib <> NULL_PTR Then
+                        If GetProcAddress(hLib, "SHCreateDataObject") <> NULL_PTR Then
+                            RichTextBoxSHCreateDataObject = 1
+                        Else
+                            RichTextBoxSHCreateDataObject = -1
+                        End If
+                        FreeLibrary hLib
+                        hLib = NULL_PTR
+                    End If
+                End If
+                If RichTextBoxSHCreateDataObject > -1 Then
+                    ' Requires shell32.dll version 6.0 or higher.
+                    SHCreateDataObject NULL_PTR, 0, NULL_PTR, ByVal NULL_PTR, IID, pDataObject
+                Else
+                    SHCreateFileDataObject NULL_PTR, 0, NULL_PTR, ByVal NULL_PTR, pDataObject
+                End If
+                ' IDataObject::SetData
+                VTableCall vbLong, ObjPtr(pDataObject), 8, VarPtr(pFormatEtc), VarPtr(pMedium), VarPtr(fRelease)
+                Dim PropOleObject As OLEGuids.IOleObject, PropClientSite As OLEGuids.IOleClientSite, PropStorage As OLEGuids.IStorage
+                Set PropClientSite = OLEInstance.GetClientSite
+                StgCreateDocFile NULL_PTR, STGM_CREATE Or STGM_READWRITE Or STGM_SHARE_EXCLUSIVE Or STGM_DELETEONRELEASE, 0, PropStorage
+                Const IID_IOleObject As String = "{00000112-0000-0000-C000-000000000046}"
+                CLSIDFromString StrPtr(IID_IOleObject), IID
+                OleCreateStaticFromData pDataObject, IID, OLERENDER_DRAW, NULL_PTR, PropClientSite, PropStorage, PropOleObject
+                If Not PropOleObject Is Nothing Then
+                    OleSetContainedObject PropOleObject, 1
+                    Dim REOBJ As REOBJECT
+                    With REOBJ
+                    .cbStruct = LenB(REOBJ)
+                    LSet .riid = IID
+                    .dvAspect = DVASPECT_CONTENT
+                    .CharPos = REO_CP_SELECTION
+                    .dwFlags = REO_DYNAMICSIZE Or REO_RESIZABLE Or REO_BELOWBASELINE
+                    .Size.CX = 0
+                    .Size.CY = 0
+                    .dwUser = 0
+                    Set .pStorage = PropStorage
+                    Set .pOleSite = PropClientSite
+                    Set .pOleObject = PropOleObject
+                    End With
+                    OLEInstance.InsertObject REOBJ
+                End If
             End If
         End If
     End If
