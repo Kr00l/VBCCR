@@ -255,7 +255,7 @@ CATCH_EXCEPTION:
 IRichEditOleCallback_DeleteObject = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_QueryAcceptData(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal pDataObject As OLEGuids.IDataObject, ByRef CF As Integer, ByVal RECO As Long, ByVal fReally As Long, ByVal hMetaPict As Long) As Long
+Private Function IRichEditOleCallback_QueryAcceptData(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal pDataObject As OLEGuids.IDataObject, ByRef CF As Integer, ByVal RECO As Long, ByVal fReally As Long, ByVal hMetaPict As LongPtr) As Long
 IRichEditOleCallback_QueryAcceptData = E_NOTIMPL
 End Function
 
@@ -278,7 +278,7 @@ CATCH_EXCEPTION:
 IRichEditOleCallback_GetDragDropEffect = E_NOTIMPL
 End Function
 
-Private Function IRichEditOleCallback_GetContextMenu(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal lpCharRange As Long, ByRef hMenu As LongPtr) As Long
+Private Function IRichEditOleCallback_GetContextMenu(ByRef This As VTableIRichEditOleCallbackDataStruct, ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal lpCharRange As LongPtr, ByRef hMenu As LongPtr) As Long
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowRichTextBox As RichTextBox
 ComCtlsObjSetAddRef ShadowRichTextBox, This.ShadowObjPtr
