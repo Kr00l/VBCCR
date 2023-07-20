@@ -79,19 +79,31 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+#If (VBA7 = 0) Then
+Private Enum LongPtr
+[_]
+End Enum
+#End If
+#If Win64 Then
+Private Const NULL_PTR As LongPtr = 0
+Private Const PTR_SIZE As Long = 8
+#Else
+Private Const NULL_PTR As Long = 0
+Private Const PTR_SIZE As Long = 4
+#End If
 Private Type MENUITEMINFO
 cbSize As Long
 fMask As Long
 fType As Long
 fState As Long
 wID As Long
-hSubMenu As Long
-hBmpChecked As Long
-hBmpUnchecked As Long
-dwItemData As Long
-dwTypeData As Long
+hSubMenu As LongPtr
+hBmpChecked As LongPtr
+hBmpUnchecked As LongPtr
+dwItemData As LongPtr
+dwTypeData As LongPtr
 cch As Long
-hBmpItem As Long
+hBmpItem As LongPtr
 End Type
 Private Const MIIM_STATE As Long = &H1
 Private Const MIIM_ID As Long = &H2
@@ -100,12 +112,19 @@ Private Const MFT_STRING As Long = &H0
 Private Const MFS_ENABLED As Long = &H0
 Private Const MFS_DISABLED As Long = &H3
 Private Const CF_UNICODETEXT As Long = 13
+#If VBA7 Then
+Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
+Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
+Private Declare PtrSafe Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal LCID As Long, ByVal LCType As Long, ByVal lpLCData As LongPtr, ByVal cchData As Long) As Long
+Private Declare PtrSafe Function SetActiveWindow Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
+#Else
 Private Declare Function CreatePopupMenu Lib "user32" () As Long
-Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpmii As MENUITEMINFO) As Long
+Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal Locale As Long, ByVal LCType As Long, ByVal lpLCData As Long, ByVal cchData As Long) As Long
 Private Declare Function SetActiveWindow Lib "user32" (ByVal hWnd As Long) As Long
+#End If
 Private LocaleMeasure As Long
-Private FindDialogHandle As Long
+Private FindDialogHandle As LongPtr
 Private FontComboFreezeClick As Boolean
 Private RichTextBoxFreezeSelChange As Boolean
 Private CommonDialogPrinter As CommonDialog
@@ -350,9 +369,9 @@ End If
 End Sub
 
 Private Sub RichTextBox1_OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, hMenu As Long)
-Dim hPopupMenu As Long
+Dim hPopupMenu As LongPtr
 hPopupMenu = CreatePopupMenu()
-If hPopupMenu = 0 Then Exit Sub
+If hPopupMenu = NULL_PTR Then Exit Sub
 Dim i As Long
 Dim MII As MENUITEMINFO, Text As String
 For i = 1 To 4
