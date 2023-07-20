@@ -7458,7 +7458,7 @@ Select Case wMsg
                 Case HDN_ENDTRACK
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     If NMHDR.iItem > -1 Then
-                        If NMHDR.lPtrHDItem <> 0 Then
+                        If NMHDR.lPtrHDItem <> NULL_PTR Then
                             CopyMemory HDI.Mask, ByVal NMHDR.lPtrHDItem, 4
                             If (HDI.Mask And HDI_WIDTH) = HDI_WIDTH Then
                                 Dim NewWidth As Single, CX As Long
@@ -7476,7 +7476,7 @@ Select Case wMsg
                 Case HDN_ENDDRAG
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     If NMHDR.iItem > -1 Then
-                        If NMHDR.lPtrHDItem <> 0 Then
+                        If NMHDR.lPtrHDItem <> NULL_PTR Then
                             CopyMemory ByVal VarPtr(HDI), ByVal NMHDR.lPtrHDItem, LenB(HDI)
                             If (HDI.Mask And HDI_ORDER) = HDI_ORDER Then
                                 RaiseEvent ColumnAfterDrag(Me.ColumnHeaders(NMHDR.iItem + 1), HDI.iOrder + 1, Cancel)
