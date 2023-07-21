@@ -2121,7 +2121,7 @@ Public Property Set MouseIcon(ByVal Value As IPictureDisp)
 If Value Is Nothing Then
     Set PropMouseIcon = Nothing
 Else
-    If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
+    If Value.Type = vbPicTypeIcon Or Value.Handle = NULL_PTR Then
         Set PropMouseIcon = Value
     Else
         If ListViewDesignMode = True Then
@@ -2174,7 +2174,7 @@ Public Property Set HotMouseIcon(ByVal Value As IPictureDisp)
 If Value Is Nothing Then
     Set PropHotMouseIcon = Nothing
 Else
-    If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
+    If Value.Type = vbPicTypeIcon Or Value.Handle = NULL_PTR Then
         Set PropHotMouseIcon = Value
     Else
         If ListViewDesignMode = True Then
@@ -2227,7 +2227,7 @@ Public Property Set HeaderMouseIcon(ByVal Value As IPictureDisp)
 If Value Is Nothing Then
     Set PropHeaderMouseIcon = Nothing
 Else
-    If Value.Type = vbPicTypeIcon Or Value.Handle = 0 Then
+    If Value.Type = vbPicTypeIcon Or Value.Handle = NULL_PTR Then
         Set PropHeaderMouseIcon = Value
     Else
         If ListViewDesignMode = True Then
