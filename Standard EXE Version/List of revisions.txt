@@ -1,5 +1,9 @@
 List of revisions:
 
+25-Jul-2023
+- ODS_HOTLIGHT added to the OwnerDraw event in the CommandButtonW/CheckBoxW/OptionButtonW.
+  Condition is that the MouseTrack property is set to True.
+
 08-Jul-2023
 - Fixed const FR_HIDEMATCHCASE.
 
