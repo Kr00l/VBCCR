@@ -241,7 +241,7 @@ Private Const WM_LBUTTONDBLCLK As Long = &H203
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_COMMAND As Long = &H111
-Private Const WM_DRAWITEM As Long = &H2B, ODT_BUTTON As Long = &H4, ODA_FOCUS As Long = &H4, ODS_SELECTED As Long = &H1, ODS_DISABLED As Long = &H4, ODS_FOCUS As Long = &H10, ODS_NOACCEL As Long = &H100, ODS_NOFOCUSRECT As Long = &H200
+Private Const WM_DRAWITEM As Long = &H2B, ODT_BUTTON As Long = &H4, ODA_FOCUS As Long = &H4, ODS_SELECTED As Long = &H1, ODS_DISABLED As Long = &H4, ODS_FOCUS As Long = &H10, ODS_HOTLIGHT As Long = &H40, ODS_NOACCEL As Long = &H100, ODS_NOFOCUSRECT As Long = &H200
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_THEMECHANGED As Long = &H31A
@@ -1771,6 +1771,7 @@ Select Case wMsg
                     
                     If OptionButtonMouseOver(1) = False And PropMouseTrack = True Then
                         OptionButtonMouseOver(1) = True
+                        If PropDrawMode = OptDrawModeOwnerDraw Then InvalidateRect hWnd, ByVal 0&, 0
                         RaiseEvent MouseEnter
                     End If
                     If OptionButtonMouseOver(0) = True Or OptionButtonMouseOver(1) = True Then Call ComCtlsRequestMouseLeave(hWnd)
@@ -1799,6 +1800,7 @@ Select Case wMsg
         
         If OptionButtonMouseOver(1) = True Then
             OptionButtonMouseOver(1) = False
+            If PropDrawMode = OptDrawModeOwnerDraw Then InvalidateRect hWnd, ByVal 0&, 0
             RaiseEvent MouseLeave
         End If
 End Select
@@ -1889,10 +1891,10 @@ Select Case wMsg
                 End If
                 Dim hDCBmp2 As Long
                 Dim hBmp2 As Long, hBmpOld2 As Long
+                Dim Theme As Long
                 
                 #If ImplementThemedGraphical = True Then
                 
-                Dim Theme As Long
                 If OptionButtonEnabledVisualStyles = True And PropVisualStyles = True Then Theme = OpenThemeData(OptionButtonHandle, StrPtr("Button"))
                 If Theme <> 0 Then
                     Dim ButtonPart As Long, ButtonState As Long
@@ -1975,7 +1977,11 @@ Select Case wMsg
                         DIS.RCItem.Left = TextRect.Left
                     End If
                     CloseThemeData Theme
-                Else
+                End If
+                
+                #End If
+                
+                If Theme = 0 Then
                     Dim Flags As Long
                     Flags = DFCS_BUTTONPUSH
                     If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then Flags = Flags Or DFCS_PUSHED
@@ -2035,70 +2041,6 @@ Select Case wMsg
                         SetBkMode DIS.hDC, OldBkMode
                     End If
                 End If
-                
-                #Else
-                
-                Dim Flags As Long
-                Flags = DFCS_BUTTONPUSH
-                If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then Flags = Flags Or DFCS_PUSHED
-                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
-                If Me.Appearance = CCAppearanceFlat Then Flags = Flags Or DFCS_FLAT
-                If PropValue = True Then Flags = Flags Or DFCS_CHECKED
-                DrawFrameControl DIS.hDC, DIS.RCItem, DFC_BUTTON, Flags Or DFCS_ADJUSTRECT
-                If PropValue = True Then
-                    If OptionButtonOwnerDrawCheckedBrush = 0 Then
-                        hDCBmp2 = CreateCompatibleDC(DIS.hDC)
-                        If hDCBmp2 <> 0 Then
-                            hBmp2 = CreateCompatibleBitmap(DIS.hDC, 2, 2)
-                            If hBmp2 <> 0 Then
-                                hBmpOld2 = SelectObject(hDCBmp2, hBmp2)
-                                SetPixel hDCBmp2, 0, 0, vbWhite
-                                SetPixel hDCBmp2, 1, 1, vbWhite
-                                SetPixel hDCBmp2, 0, 1, WinColor(UserControl.BackColor)
-                                SetPixel hDCBmp2, 1, 0, WinColor(UserControl.BackColor)
-                                OptionButtonOwnerDrawCheckedBrush = CreatePatternBrush(hBmp2)
-                                SelectObject hDCBmp2, hBmpOld2
-                                DeleteObject hBmp2
-                            End If
-                            DeleteDC hDCBmp2
-                        End If
-                    End If
-                    If OptionButtonOwnerDrawCheckedBrush <> 0 Then FillRect DIS.hDC, DIS.RCItem, OptionButtonOwnerDrawCheckedBrush
-                Else
-                    FillRect DIS.hDC, DIS.RCItem, Brush
-                End If
-                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                    SetTextColor DIS.hDC, WinColor(vbGrayText)
-                Else
-                    SetTextColor DIS.hDC, WinColor(Me.ForeColor)
-                End If
-                Call OffsetRect(DIS.RCItem, 1, 1, -1, -1)
-                If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then
-                    If Not (DIS.ItemState And ODS_NOFOCUSRECT) = ODS_NOFOCUSRECT Then DrawFocusRect DIS.hDC, DIS.RCItem
-                End If
-                If Not Text = vbNullString Then
-                    Dim OldBkMode As Long
-                    OldBkMode = SetBkMode(DIS.hDC, 1)
-                    LSet TextRect = DIS.RCItem
-                    DrawText DIS.hDC, StrPtr(Text), -1, TextRect, DT_CALCRECT Or DT_WORDBREAK Or CLng(IIf((DIS.ItemState And ODS_NOACCEL) = ODS_NOACCEL, DT_HIDEPREFIX, 0))
-                    TextRect.Left = DIS.RCItem.Left
-                    TextRect.Right = DIS.RCItem.Right
-                    If ButtonPicture Is Nothing Then
-                        TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) / 2) + (3 * PixelsPerDIP_Y())
-                        TextRect.Bottom = TextRect.Top + TextRect.Bottom
-                    Else
-                        TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
-                        TextRect.Bottom = DIS.RCItem.Bottom
-                    End If
-                    If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Or PropValue = True Then Call OffsetRect(TextRect, 1, 1, 1, 1)
-                    DrawText DIS.hDC, StrPtr(Text), -1, TextRect, DT_CENTER Or DT_WORDBREAK Or CLng(IIf((DIS.ItemState And ODS_NOACCEL) = ODS_NOACCEL, DT_HIDEPREFIX, 0))
-                    DIS.RCItem.Bottom = TextRect.Top
-                    DIS.RCItem.Left = TextRect.Left
-                    SetBkMode DIS.hDC, OldBkMode
-                End If
-                
-                #End If
-                
                 If Not ButtonPicture Is Nothing Then
                     Dim CX As Long, CY As Long, X As Long, Y As Long
                     CX = CHimetricToPixel_X(ButtonPicture.Width)
@@ -2134,6 +2076,7 @@ Select Case wMsg
                 DeleteObject Brush
             Else
                 With DIS
+                If OptionButtonMouseOver(1) = True And Not (.ItemState And ODS_HOTLIGHT) = ODS_HOTLIGHT Then .ItemState = .ItemState Or ODS_HOTLIGHT
                 RaiseEvent OwnerDraw(.ItemAction, .ItemState, .hDC, .RCItem.Left, .RCItem.Top, .RCItem.Right, .RCItem.Bottom)
                 End With
             End If
