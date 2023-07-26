@@ -524,7 +524,7 @@ UserControl.PropertyChanged "InitImageLists"
 End Sub
 
 Friend Sub FListImagesClear()
-If ImageListHandle <> NULL_PTR Then Do While ImageList_Remove(ImageListHandle, 0) <> 0: Loop
+If ImageListHandle <> NULL_PTR Then ImageList_Remove ImageListHandle, -1
 PropImageWidth = 0
 PropImageHeight = 0
 If ImageListHandle <> NULL_PTR Then Call DestroyImageList
