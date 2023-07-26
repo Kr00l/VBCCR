@@ -2182,7 +2182,8 @@ Select Case wMsg
                 DeleteObject Brush
             Else
                 With DIS
-                If CheckBoxMouseOver(1) = True And Not (.ItemState And ODS_HOTLIGHT) = ODS_HOTLIGHT Then .ItemState = .ItemState Or ODS_HOTLIGHT
+                If (.ItemState And ODS_HOTLIGHT) = ODS_HOTLIGHT Then .ItemState = .ItemState And Not ODS_HOTLIGHT
+                If CheckBoxMouseOver(1) = True Then .ItemState = .ItemState Or ODS_HOTLIGHT
                 RaiseEvent OwnerDraw(.ItemAction, .ItemState, .hDC, .RCItem.Left, .RCItem.Top, .RCItem.Right, .RCItem.Bottom)
                 End With
             End If
