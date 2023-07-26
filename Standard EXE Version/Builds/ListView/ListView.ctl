@@ -631,7 +631,11 @@ Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const GWL_STYLE As Long = (-16)
 Private Const CF_UNICODETEXT As Long = 13
+#If VBA7 Then
+Private Const LPSTR_TEXTCALLBACK As LongPtr = (-1)
+#Else
 Private Const LPSTR_TEXTCALLBACK As Long = (-1)
+#End If
 Private Const MAXINT_4 As Long = 2147483647
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
