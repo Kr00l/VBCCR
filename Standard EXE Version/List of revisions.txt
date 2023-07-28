@@ -16,7 +16,7 @@ List of revisions:
 - Changing font for ProgressBar will cause an invalidation when a Text property is set.
 
 02-Jul-2023
-- PtInRect/LBItemFromPt/WindowFromPoint API and code adaptions so it can be migrated to x64 more easily.
+- PtInRect/LBItemFromPt/WindowFromPoint/DragDetect API and code adaptions so it can be migrated to x64 more easily.
 
 17-May-2023
 - Support of icons and metafiles for the Picture property in the TbrButtonMenu of the ToolBar control.
