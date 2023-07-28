@@ -238,7 +238,7 @@ Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, ByRef 
 Private Declare Function GetScrollInfo Lib "user32" (ByVal hWnd As Long, ByVal wBar As Long, ByRef lpScrollInfo As SCROLLINFO) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
-Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal PX As Integer, ByVal PY As Integer) As Long
+Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal XY As Currency) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
@@ -2554,11 +2554,12 @@ Select Case wMsg
         Exit Function
     Case WM_LBUTTONDOWN
         If PropOLEDragMode = vbOLEDragAutomatic And FontComboAutoDragInSel = True Then
-            Dim P2 As POINTAPI
+            Dim P2 As POINTAPI, XY1 As Currency
             P2.X = Get_X_lParam(lParam)
             P2.Y = Get_Y_lParam(lParam)
             ClientToScreen FontComboEditHandle, P2
-            If DragDetect(FontComboEditHandle, CUIntToInt(P2.X And &HFFFF&), CUIntToInt(P2.Y And &HFFFF&)) <> 0 Then
+            CopyMemory ByVal VarPtr(XY1), ByVal VarPtr(P2), 8
+            If DragDetect(FontComboEditHandle, XY1) <> 0 Then
                 Me.OLEDrag
                 WindowProcEdit = 0
             Else
@@ -2649,12 +2650,12 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         FontComboMouseOver(1) = False
         If FontComboMouseOver(2) = True Then
-            Dim Pos As Long, P As POINTAPI, XY As Currency
+            Dim Pos As Long, P5 As POINTAPI, XY2 As Currency
             Pos = GetMessagePos()
-            P.X = Get_X_lParam(Pos)
-            P.Y = Get_Y_lParam(Pos)
-            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
-            If WindowFromPoint(XY) <> FontComboHandle Or FontComboHandle = 0 Then
+            P5.X = Get_X_lParam(Pos)
+            P5.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY2), ByVal VarPtr(P5), 8
+            If WindowFromPoint(XY2) <> FontComboHandle Or FontComboHandle = 0 Then
                 FontComboMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If

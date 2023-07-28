@@ -210,7 +210,7 @@ Private Declare Function CreateCaret Lib "user32" (ByVal hWnd As Long, ByVal hBi
 Private Declare Function SetCaretPos Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 Private Declare Function ShowCaret Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function DestroyCaret Lib "user32" () As Long
-Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal PX As Integer, ByVal PY As Integer) As Long
+Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal XY As Currency) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -2006,14 +2006,15 @@ Select Case wMsg
     Case WM_LBUTTONDOWN
         If PropOLEDragMode = vbOLEDragAutomatic And TextBoxAutoDragInSel = True Then
             If GetFocus() <> hWnd Then SetFocusAPI UserControl.hWnd ' UCNoSetFocusFwd not applicable
-            Dim P2 As POINTAPI, P3 As POINTAPI
+            Dim P2 As POINTAPI, P3 As POINTAPI, XY As Currency
             P2.X = Get_X_lParam(lParam)
             P2.Y = Get_Y_lParam(lParam)
             P3.X = P2.X
             P3.Y = P2.Y
             ClientToScreen TextBoxHandle, P3
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P3), 8
             RaiseEvent MouseDown(vbLeftButton, GetShiftStateFromParam(wParam), UserControl.ScaleX(P2.X, vbPixels, vbTwips), UserControl.ScaleY(P2.Y, vbPixels, vbTwips))
-            If DragDetect(TextBoxHandle, CUIntToInt(P3.X And &HFFFF&), CUIntToInt(P3.Y And &HFFFF&)) <> 0 Then
+            If DragDetect(TextBoxHandle, XY) <> 0 Then
                 TextBoxIsClick = False
                 Me.OLEDrag
                 WindowProcControl = 0
