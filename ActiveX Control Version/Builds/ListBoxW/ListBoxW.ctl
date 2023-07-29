@@ -1379,6 +1379,7 @@ End Property
 Public Sub AddItem(ByVal Item As String, Optional ByVal Index As Variant)
 Attribute AddItem.VB_Description = "Adds an item to the list box."
 If ListBoxHandle <> NULL_PTR Then
+    If StrPtr(Item) = NULL_PTR Then Item = ""
     Dim RetVal As Long
     If IsMissing(Index) = True Then
         RetVal = CLng(SendMessage(ListBoxHandle, LB_ADDSTRING, 0, ByVal StrPtr(Item)))
