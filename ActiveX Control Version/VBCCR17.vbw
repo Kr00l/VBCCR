@@ -55,6 +55,7 @@ LvwWorkAreas = 26, 34, 822, 585, C
 PPListViewGeneral = 37, 53, 886, 690, C, 45, 8, 847, 671, C
 PPListViewImageLists = 0, 0, 0, 0, C, 44, 58, 768, 754, C
 PPListViewSorting = 149, 154, 921, 642, C, 48, 29, 748, 728, C
+MCIWndBase = 0, 0, 0, 0, C
 MCIWnd = 88, 116, 934, 646, C, 88, 116, 934, 646, C
 MonthView = 287, 202, 1133, 732, C, 110, 145, 956, 675, C
 PPMonthViewGeneral = 110, 145, 992, 675, C, 111, 45, 957, 575, C
