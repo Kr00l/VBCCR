@@ -63,6 +63,7 @@ Class=LvwWorkAreas; Builds\ListView\LvwWorkAreas.cls
 PropertyPage=Builds\ListView\PPListViewGeneral.pag
 PropertyPage=Builds\ListView\PPListViewImageLists.pag
 PropertyPage=Builds\ListView\PPListViewSorting.pag
+Module=MCIWndBase; Builds\MCIWnd\MCIWndBase.bas
 UserControl=Builds\MCIWnd\MCIWnd.ctl
 UserControl=Builds\MonthView\MonthView.ctl
 PropertyPage=Builds\MonthView\PPMonthViewGeneral.pag
