@@ -420,7 +420,7 @@ End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call MCIWndRegisterClass
+Call ComCtlsMCIWndRegisterClass
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
@@ -552,7 +552,7 @@ Private Sub UserControl_Terminate()
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyMCIWnd
-Call MCIWndReleaseClass
+Call ComCtlsMCIWndReleaseClass
 Call ComCtlsReleaseShellMod
 End Sub
 

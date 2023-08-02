@@ -133,6 +133,8 @@ Public Declare PtrSafe Function ComCtlsObjSetAddRef Lib "msvbvm60.dll" Alias "__
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32" (ByVal hMem As LongPtr)
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TINITCOMMONCONTROLSEX) As Long
+Private Declare PtrSafe Function MCIWndRegisterClass Lib "msvfw32" () As Long
+Private Declare PtrSafe Function UnregisterClass Lib "user32" Alias "UnregisterClassW" (ByVal lpClassName As LongPtr, ByVal hInstance As LongPtr) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare PtrSafe Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExW" (ByVal IDHook As Long, ByVal lpfn As LongPtr, ByVal hMod As LongPtr, ByVal dwThreadID As Long) As LongPtr
@@ -184,6 +186,8 @@ Public Declare Function ComCtlsObjSetAddRef Lib "msvbvm60.dll" Alias "__vbaObjSe
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TINITCOMMONCONTROLSEX) As Long
+Private Declare Function MCIWndRegisterClass Lib "msvfw32" () As Long
+Private Declare Function UnregisterClass Lib "user32" Alias "UnregisterClassW" (ByVal lpClassName As Long, ByVal hInstance As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExW" (ByVal IDHook As Long, ByVal lpfn As Long, ByVal hMod As Long, ByVal dwThreadID As Long) As Long
@@ -243,6 +247,7 @@ Private ComCtlsSubclassProcPtr As LongPtr
 #If (VBA7 = 0) Then
 Private ComCtlsSubclassW2K As Integer
 #End If
+Private MCIWndRefCount As Long
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
@@ -843,6 +848,16 @@ Select Case VarType(KeyOrIndex)
 End Select
 If LngValue < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 ImageIndex = LngValue
+End Sub
+
+Public Sub ComCtlsMCIWndRegisterClass()
+If MCIWndRefCount = 0 Then MCIWndRegisterClass
+MCIWndRefCount = MCIWndRefCount + 1
+End Sub
+
+Public Sub ComCtlsMCIWndReleaseClass()
+MCIWndRefCount = MCIWndRefCount - 1
+If MCIWndRefCount = 0 Then UnregisterClass StrPtr("MCIWndClass"), App.hInstance
 End Sub
 
 #If VBA7 Then
