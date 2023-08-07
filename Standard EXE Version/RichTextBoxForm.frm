@@ -277,12 +277,12 @@ Select Case Button.Caption
         End If
         End With
     Case "&Find"
-        Dim RetVal As Long
+        Dim RetVal As LongPtr
         RetVal = CommonDialogFind.ShowFind
-        If RetVal <> 0 Then
+        If RetVal <> NULL_PTR Then
             FindDialogHandle = RetVal
         Else
-            If FindDialogHandle <> 0 Then SetActiveWindow FindDialogHandle
+            If FindDialogHandle <> NULL_PTR Then SetActiveWindow FindDialogHandle
         End If
 End Select
 End Sub
