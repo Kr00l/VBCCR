@@ -18,7 +18,7 @@ Attribute VB_Name = "FrameW"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 #If (VBA7 = 0) Then
 Private Enum LongPtr

@@ -23,7 +23,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-Attribute VB_Ext_KEY = "PropPageWizardRun" ,"Yes"
 Option Explicit
 #If (VBA7 = 0) Then
 Private Enum LongPtr
@@ -7519,7 +7518,15 @@ Select Case wMsg
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
                     NMHDR.iItem = CLng(SendMessage(NMHDR.hdr.hWndFrom, HDM_GETFOCUSEDITEM, 0, ByVal 0&))
-                    If NMHDR.iItem > -1 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
+                    If NMHDR.iItem > -1 Then
+                        #If Win64 Then
+                        Dim hWnd32 As Long
+                        CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(ListViewFilterEditHandle), 4
+                        RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), hWnd32)
+                        #Else
+                        RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
+                        #End If
+                    End If
                 Case HDN_ENDFILTEREDIT
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
@@ -7830,7 +7837,15 @@ Select Case wMsg
                     Call ComCtlsSetSubclass(lParam, Me, 3)
                     Call ActivateIPAO(Me)
                 End If
-                If ListViewFilterEditIndex > 0 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
+                If ListViewFilterEditIndex > 0 Then
+                    #If Win64 Then
+                    Dim hWnd32 As Long
+                    CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(ListViewFilterEditHandle), 4
+                    RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), hWnd32)
+                    #Else
+                    RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
+                    #End If
+                End If
             Case EN_KILLFOCUS
                 ' When the user types ESC or RETURN the filter edit window sends EN_KILLFOCUS.
                 ' In all other cases the filter edit window sends WM_KILLFOCUS.
