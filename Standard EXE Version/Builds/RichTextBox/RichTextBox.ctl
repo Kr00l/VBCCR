@@ -257,6 +257,9 @@ wParam As LongPtr
 lParam As LongPtr
 CharRange As RECHARRANGE
 End Type
+' Must be declared at the beginning so that conditional compilation will not bug the events.
+Private WithEvents PropFont As StdFont
+Attribute PropFont.VB_VarHelpID = -1
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -269,8 +272,13 @@ Public Event MaxText()
 Attribute MaxText.VB_Description = "Occurs when the current text insertion has exceeded the maximum number of characters that can be entered in a control."
 Public Event SelChange(ByVal SelType As Integer, ByVal SelStart As Long, ByVal SelEnd As Long)
 Attribute SelChange.VB_Description = "Occurs when the current selection of text in a control has changed or the insertion point has moved."
+#If VBA7 Then
+Public Event LinkEvent(ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal LinkStart As Long, ByVal LinkEnd As Long)
+Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, when the user clicks the mouse or when the mouse pointer is over text that has a link format."
+#Else
 Public Event LinkEvent(ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal LinkStart As Long, ByVal LinkEnd As Long)
 Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, when the user clicks the mouse or when the mouse pointer is over text that has a link format."
+#End If
 Public Event ModifyProtected(ByRef Allow As Boolean, ByVal SelStart As Long, ByVal SelEnd As Long)
 Attribute ModifyProtected.VB_Description = "Occurs when the user attempts to edit protected text."
 Public Event Scroll()
@@ -309,12 +317,22 @@ Public Event OLEGetDropEffect(ByRef Effect As Long, ByVal Button As Integer, ByV
 Attribute OLEGetDropEffect.VB_Description = "Occurs during an OLE drag/drop operation to specify the effect of which indicates what the result of the drop operation would be."
 Public Event OLEStartDrag(ByRef AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated."
+#If VBA7 Then
+Public Event OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal SelStart As Long, ByVal SelEnd As Long, ByRef hMenu As LongPtr)
+Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu to use on a right-click. The rich text box control destroys the popup menu when it is finished."
+#Else
 Public Event OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, ByRef hMenu As Long)
 Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu to use on a right-click. The rich text box control destroys the popup menu when it is finished."
+#End If
 Public Event OLEContextMenuClick(ByVal ID As Long)
 Attribute OLEContextMenuClick.VB_Description = "Occurs when the user selects an item from a popup menu that was provided in the OLEGetContextMenu event."
+#If VBA7 Then
+Public Event OLEDeleteObject(ByVal LpOleObject As LongPtr)
+Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted. The OLE object is not necessarily being released."
+#Else
 Public Event OLEDeleteObject(ByVal LpOleObject As Long)
 Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted. The OLE object is not necessarily being released."
+#End If
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
@@ -816,8 +834,6 @@ Private RichTextBoxSHCreateDataObject As Integer
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
-Private WithEvents PropFont As StdFont
-Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
 Private PropOLEDragDrop As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
