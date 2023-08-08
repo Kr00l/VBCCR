@@ -1,5 +1,8 @@
 List of revisions:
 
+08-Aug-2023
+- Revision update. (Version 1.7.67)
+
 31-Jul-2023
 - Revision update. (Version 1.7.66)
 
