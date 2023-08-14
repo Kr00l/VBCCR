@@ -368,7 +368,11 @@ If (SelType And RtfSelTypeText) <> 0 Or SelType = RtfSelTypeEmpty Then
 End If
 End Sub
 
+#If VBA7 Then
+Private Sub RichTextBox1_OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal SelStart As Long, ByVal SelEnd As Long, hMenu As LongPtr)
+#Else
 Private Sub RichTextBox1_OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, hMenu As Long)
+#End If
 Dim hPopupMenu As LongPtr
 hPopupMenu = CreatePopupMenu()
 If hPopupMenu = NULL_PTR Then Exit Sub
