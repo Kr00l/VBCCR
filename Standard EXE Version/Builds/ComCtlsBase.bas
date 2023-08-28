@@ -1288,7 +1288,7 @@ Public Sub ComCtlsCdlFRAddHook(ByVal hDlg As Long)
 #End If
 If CdlFRHookHandle = NULL_PTR And CdlFRDialogCount = 0 Then
     Const WH_GETMESSAGE As Long = 3
-    CdlFRHookHandle = SetWindowsHookEx(WH_GETMESSAGE, AddressOf ComCtlsCdlFRHookProc, 0, App.ThreadID)
+    CdlFRHookHandle = SetWindowsHookEx(WH_GETMESSAGE, AddressOf ComCtlsCdlFRHookProc, NULL_PTR, App.ThreadID)
     ReDim CdlFRDialogHandle(0) ' As LongPtr
     CdlFRDialogHandle(0) = hDlg
 Else
