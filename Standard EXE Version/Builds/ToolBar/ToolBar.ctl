@@ -424,7 +424,11 @@ Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pI
 #End If
 Private Const ICC_BAR_CLASSES As Long = &H20
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+#If VBA7 Then
+Private Const HWND_DESKTOP As LongPtr = &H0
+#Else
 Private Const HWND_DESKTOP As Long = &H0
+#End If
 Private Const COLOR_MENU As Long = 4
 Private Const DST_ICON As Long = &H3
 Private Const DST_BITMAP As Long = &H4

@@ -71,9 +71,9 @@ Private Declare Function CallWindowProc Lib "user32" Alias "CallWindowProcW" (By
 Private Declare Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 #End If
 Private Const WM_CREATE As Long = &H1
-Private Const GWL_WNDPROC As Long = (-4)
+Private Const GWLP_WNDPROC As Long = (-4)
 Private Const GWL_STYLE As Long = (-16)
-Private Const GCL_WNDPROC As Long = (-24)
+Private Const GCLP_WNDPROC As Long = (-24)
 Private Const WS_POPUP As Long = &H80000000
 Private Const LBS_NODATA As Long = &H2000
 Private VcbOrigProcPtr As LongPtr
@@ -113,15 +113,15 @@ If wMsg = WM_CREATE Then
     ' When the job is done we need to restore the current and the default class window proc.
     Dim hWndClass As LongPtr
     hWndClass = CreateWindowEx(0, StrPtr("ComboLBox"), NULL_PTR, WS_POPUP, 0, 0, 0, 0, hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
-    If VcbComboLBoxOrigProcPtr = NULL_PTR Then VcbComboLBoxOrigProcPtr = SetClassLongPtr(hWndClass, GCL_WNDPROC, AddressOf VcbComboLBoxCreateProc)
+    If VcbComboLBoxOrigProcPtr = NULL_PTR Then VcbComboLBoxOrigProcPtr = SetClassLongPtr(hWndClass, GCLP_WNDPROC, AddressOf VcbComboLBoxCreateProc)
     VcbComboLBoxHandle = NULL_PTR
     VcbWindowProc = CallWindowProc(VcbOrigProcPtr, hWnd, wMsg, wParam, lParam)
     If VcbComboLBoxHandle <> NULL_PTR Then
-        If VcbComboLBoxOrigProcPtr <> NULL_PTR Then SetWindowLongPtr VcbComboLBoxHandle, GWL_WNDPROC, VcbComboLBoxOrigProcPtr
+        If VcbComboLBoxOrigProcPtr <> NULL_PTR Then SetWindowLongPtr VcbComboLBoxHandle, GWLP_WNDPROC, VcbComboLBoxOrigProcPtr
         VcbComboLBoxHandle = NULL_PTR
     End If
     If VcbComboLBoxOrigProcPtr <> NULL_PTR Then
-        SetClassLongPtr hWndClass, GCL_WNDPROC, VcbComboLBoxOrigProcPtr
+        SetClassLongPtr hWndClass, GCLP_WNDPROC, VcbComboLBoxOrigProcPtr
         VcbComboLBoxOrigProcPtr = NULL_PTR
     End If
     DestroyWindow hWndClass
