@@ -795,7 +795,7 @@ Private Sub CreateHotKey()
 If HotKeyHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
-HotKeyHandle = CreateWindowEx(0, StrPtr("msctls_hotkey32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+HotKeyHandle = CreateWindowEx(0, StrPtr("msctls_hotkey32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled

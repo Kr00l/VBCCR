@@ -1653,7 +1653,7 @@ Select Case PropDrawMode
         dwStyle = dwStyle Or CBS_OWNERDRAWVARIABLE Or CBS_HASSTRINGS
         If Not (dwStyle And CBS_NOINTEGRALHEIGHT) = CBS_NOINTEGRALHEIGHT Then dwStyle = dwStyle Or CBS_NOINTEGRALHEIGHT
 End Select
-ComboBoxHandle = CreateWindowEx(dwExStyle, StrPtr("ComboBox"), StrPtr("Combo Box"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+ComboBoxHandle = CreateWindowEx(dwExStyle, StrPtr("ComboBox"), StrPtr("Combo Box"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If ComboBoxHandle <> NULL_PTR Then
     Dim CBI As COMBOBOXINFO
     CBI.cbSize = LenB(CBI)
@@ -2529,6 +2529,8 @@ End Function
 
 Private Function WindowProcList(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
+    Case WM_CHAR
+        If PropLocked = True Then Exit Function
     Case WM_KEYDOWN, WM_KEYUP
         If PropLocked = True Then
             Dim KeyCode As Integer
