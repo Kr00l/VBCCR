@@ -1505,6 +1505,7 @@ End Property
 
 Public Property Let List(ByVal Index As Long, ByVal Value As String)
 If ListBoxHandle <> NULL_PTR Then
+    If StrPtr(Value) = NULL_PTR Then Value = ""
     If Index > -1 Then
         Dim ListIndex As Long, SelVal As Long, ItemData As LongPtr
         ListIndex = Me.ListIndex
