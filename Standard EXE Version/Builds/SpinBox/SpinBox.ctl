@@ -1151,9 +1151,9 @@ Select Case PropTextAlignment
 End Select
 If PropLocked = True Then dwStyleEdit = dwStyleEdit Or ES_READONLY
 If PropHideSelection = False Then dwStyleEdit = dwStyleEdit Or ES_NOHIDESEL
-SpinBoxEditHandle = CreateWindowEx(dwExStyleEdit, StrPtr("Edit"), NULL_PTR, dwStyleEdit, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+SpinBoxEditHandle = CreateWindowEx(dwExStyleEdit, StrPtr("Edit"), NULL_PTR, dwStyleEdit, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If SpinBoxEditHandle <> NULL_PTR Then
-    SpinBoxUpDownHandle = CreateWindowEx(0, StrPtr("msctls_updown32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+    SpinBoxUpDownHandle = CreateWindowEx(0, StrPtr("msctls_updown32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
     If SpinBoxUpDownHandle <> NULL_PTR Then
         SendMessage SpinBoxUpDownHandle, UDM_SETUNICODEFORMAT, 1, ByVal 0&
         SendMessage SpinBoxUpDownHandle, UDM_SETRANGE32, PropMin, ByVal PropMax
