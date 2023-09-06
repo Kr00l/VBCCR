@@ -2,6 +2,7 @@ List of revisions:
 
 06-Sep-2023
 - Passing vbNullString to the Let .List(i) property of the ComboBoxW/ListBoxW control does not cause an misbehavior anymore.
+- WM_CHAR now blocked in the list control if the Locked property is true in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo control.
 
 25-Jul-2023
 - ODS_HOTLIGHT added to the OwnerDraw event in the CommandButtonW/CheckBoxW/OptionButtonW.
