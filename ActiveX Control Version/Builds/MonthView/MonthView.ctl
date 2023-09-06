@@ -1620,7 +1620,7 @@ If MonthViewDesignMode = False Then
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 End If
-MonthViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysMonthCal32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+MonthViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysMonthCal32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If MonthViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then SendMessage MonthViewHandle, MCM_SETCALENDARBORDER, 1, ByVal 0&
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles

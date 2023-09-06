@@ -1905,7 +1905,7 @@ If PropDisableNoScroll = True Then dwStyle = dwStyle Or ES_DISABLENOSCROLL
 If PropSelectionBar = True Then dwStyle = dwStyle Or ES_SELECTIONBAR
 Dim ClassName As String
 ClassName = RtfGetClassName()
-RichTextBoxHandle = CreateWindowEx(dwExStyle, StrPtr(ClassName), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+RichTextBoxHandle = CreateWindowEx(dwExStyle, StrPtr(ClassName), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If RichTextBoxHandle <> NULL_PTR Then
     If PropPasswordChar <> 0 And PropUseSystemPasswordChar = False Then SendMessage RichTextBoxHandle, EM_SETPASSWORDCHAR, PropPasswordChar, ByVal 0&
     SendMessage RichTextBoxHandle, EM_EXLIMITTEXT, 0, ByVal PropMaxLength

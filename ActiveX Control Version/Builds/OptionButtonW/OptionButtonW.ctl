@@ -1576,7 +1576,7 @@ If (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
     ' The BS_OWNERDRAW style cannot be combined with any other button style.
     dwStyle = WS_CHILD Or WS_VISIBLE Or BS_OWNERDRAW
 End If
-OptionButtonHandle = CreateWindowEx(dwExStyle, StrPtr("Button"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+OptionButtonHandle = CreateWindowEx(dwExStyle, StrPtr("Button"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If OptionButtonHandle <> NULL_PTR Then
     Call ComCtlsShowAllUIStates(OptionButtonHandle)
     If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then SendMessage OptionButtonHandle, BM_SETCHECK, IIf(PropValue = True, BST_CHECKED, BST_UNCHECKED), ByVal 0&

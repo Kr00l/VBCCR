@@ -1685,7 +1685,7 @@ If PropStyle = LstStyleStandard Then
             dwStyle = dwStyle Or LBS_OWNERDRAWVARIABLE Or LBS_HASSTRINGS
     End Select
 End If
-ListBoxHandle = CreateWindowEx(dwExStyle, StrPtr("ListBox"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+ListBoxHandle = CreateWindowEx(dwExStyle, StrPtr("ListBox"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If ListBoxHandle <> NULL_PTR Then
     Call ComCtlsShowAllUIStates(ListBoxHandle)
     If PropMultiColumn = True And PropRightToLeft = True Then

@@ -1134,16 +1134,16 @@ dwStyle = WS_CHILD Or WS_VISIBLE Or ES_CENTER Or ES_AUTOHSCROLL Or ES_NUMBER
 If PropRightToLeft = True Then dwExStyle = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
 IPAddressRTLReading(1) = CBool((dwExStyle And WS_EX_RTLREADING) = WS_EX_RTLREADING)
 If PropLocked = True Then dwStyle = dwStyle Or ES_READONLY
-IPAddressEditHandle(1) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+IPAddressEditHandle(1) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If IPAddressEditHandle(1) <> NULL_PTR Then SendMessage IPAddressEditHandle(1), EM_SETLIMITTEXT, 3, ByVal 0&
 IPAddressRTLReading(2) = IPAddressRTLReading(1)
-IPAddressEditHandle(2) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+IPAddressEditHandle(2) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If IPAddressEditHandle(2) <> NULL_PTR Then SendMessage IPAddressEditHandle(2), EM_SETLIMITTEXT, 3, ByVal 0&
 IPAddressRTLReading(3) = IPAddressRTLReading(1)
-IPAddressEditHandle(3) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+IPAddressEditHandle(3) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If IPAddressEditHandle(3) <> NULL_PTR Then SendMessage IPAddressEditHandle(3), EM_SETLIMITTEXT, 3, ByVal 0&
 IPAddressRTLReading(4) = IPAddressRTLReading(1)
-IPAddressEditHandle(4) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+IPAddressEditHandle(4) = CreateWindowEx(dwExStyle, StrPtr("Edit"), NULL_PTR, dwStyle, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If IPAddressEditHandle(4) <> NULL_PTR Then SendMessage IPAddressEditHandle(4), EM_SETLIMITTEXT, 3, ByVal 0&
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
