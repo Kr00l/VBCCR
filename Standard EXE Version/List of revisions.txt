@@ -1,5 +1,8 @@
 List of revisions:
 
+06-Sep-2023
+- Passing vbNullString to the Let .List(i) property of the ComboBoxW/ListBoxW control does not cause an misbehavior anymore.
+
 25-Jul-2023
 - ODS_HOTLIGHT added to the OwnerDraw event in the CommandButtonW/CheckBoxW/OptionButtonW.
   Condition is that the MouseTrack property is set to True.
