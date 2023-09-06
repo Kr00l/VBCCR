@@ -1374,7 +1374,7 @@ dwStyle = WS_CHILD Or WS_VISIBLE Or WS_TABSTOP
 Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
 If PropAlignment = CCLeftRightAlignmentRight And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or LWS_RIGHT
 If PropUseMnemonic = False And ComCtlsSupportLevel() >= 2 Then dwStyle = dwStyle Or LWS_NOPREFIX
-LinkLabelHandle = CreateWindowEx(dwExStyle, StrPtr("SysLink"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+LinkLabelHandle = CreateWindowEx(dwExStyle, StrPtr("SysLink"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
@@ -1403,7 +1403,7 @@ If Done = False Then
     Done = True
 End If
 dwExStyle = WS_EX_TOOLWINDOW Or WS_EX_TOPMOST
-LinkLabelToolTipHandle = CreateWindowEx(dwExStyle, StrPtr("tooltips_class32"), StrPtr("Tool Tip"), WS_POPUP Or TTS_ALWAYSTIP Or TTS_NOPREFIX, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+LinkLabelToolTipHandle = CreateWindowEx(dwExStyle, StrPtr("tooltips_class32"), StrPtr("Tool Tip"), WS_POPUP Or TTS_ALWAYSTIP Or TTS_NOPREFIX, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If LinkLabelToolTipHandle <> NULL_PTR Then Call ComCtlsInitToolTip(LinkLabelToolTipHandle)
 Call SetVisualStylesToolTip
 If LinkLabelToolTipHandle <> NULL_PTR Then

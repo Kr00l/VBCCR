@@ -5712,7 +5712,7 @@ If ListViewDesignMode = False Then
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
 End If
-ListViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysListView32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+ListViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysListView32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If ListViewHandle <> NULL_PTR Then
     ListViewToolTipHandle = SendMessage(ListViewHandle, LVM_GETTOOLTIPS, 0, ByVal 0&)
     If ListViewToolTipHandle <> NULL_PTR Then Call ComCtlsInitToolTip(ListViewToolTipHandle)
@@ -5795,7 +5795,7 @@ End If
 Dim dwExStyle As Long
 dwExStyle = WS_EX_TOOLWINDOW Or WS_EX_TOPMOST
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
-ListViewHeaderToolTipHandle = CreateWindowEx(dwExStyle, StrPtr("tooltips_class32"), StrPtr("Tool Tip"), WS_POPUP Or TTS_ALWAYSTIP Or TTS_NOPREFIX, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+ListViewHeaderToolTipHandle = CreateWindowEx(dwExStyle, StrPtr("tooltips_class32"), StrPtr("Tool Tip"), WS_POPUP Or TTS_ALWAYSTIP Or TTS_NOPREFIX, 0, 0, 0, 0, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If ListViewHeaderToolTipHandle <> NULL_PTR Then
     Call ComCtlsInitToolTip(ListViewHeaderToolTipHandle)
     Dim TI As TOOLINFO

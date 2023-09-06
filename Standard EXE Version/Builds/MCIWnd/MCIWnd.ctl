@@ -1133,7 +1133,7 @@ Select Case PropCaption
     Case MciCaptionMode
         dwStyle = dwStyle Or MCIWNDF_SHOWMODE
 End Select
-MCIWndHandle = CreateWindowEx(dwExStyle, StrPtr("MCIWndClass"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+MCIWndHandle = CreateWindowEx(dwExStyle, StrPtr("MCIWndClass"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 Me.Enabled = UserControl.Enabled
 Me.VisualStyles = PropVisualStyles
 Me.Repeat = PropRepeat
