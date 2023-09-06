@@ -1154,7 +1154,7 @@ If PropRightToLeft = True Then
         dwExStyle = dwExStyle Or WS_EX_RTLREADING
     End If
 End If
-CommandLinkHandle = CreateWindowEx(dwExStyle, StrPtr("Button"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+CommandLinkHandle = CreateWindowEx(dwExStyle, StrPtr("Button"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If CommandLinkHandle <> NULL_PTR Then Call ComCtlsShowAllUIStates(CommandLinkHandle)
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles

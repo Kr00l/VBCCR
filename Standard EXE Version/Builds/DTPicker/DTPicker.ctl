@@ -1697,7 +1697,7 @@ If DTPickerDesignMode = False Then
     ' Thus it is necessary to subclass the parent before the control is created.
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 4)
 End If
-DTPickerHandle = CreateWindowEx(dwExStyle, StrPtr("SysDateTimePick32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+DTPickerHandle = CreateWindowEx(dwExStyle, StrPtr("SysDateTimePick32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 Set Me.Font = PropFont
 Set Me.CalendarFont = PropCalendarFont
 Me.VisualStyles = PropVisualStyles
