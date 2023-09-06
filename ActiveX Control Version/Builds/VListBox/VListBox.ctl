@@ -1318,7 +1318,7 @@ Select Case PropMultiSelect
 End Select
 If PropUseTabStops = True Then dwStyle = dwStyle Or LBS_USETABSTOPS
 If PropDisableNoScroll = True Then dwStyle = dwStyle Or LBS_DISABLENOSCROLL
-VListBoxHandle = CreateWindowEx(dwExStyle, StrPtr("ListBox"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+VListBoxHandle = CreateWindowEx(dwExStyle, StrPtr("ListBox"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If VListBoxHandle <> NULL_PTR Then
     Call ComCtlsShowAllUIStates(VListBoxHandle)
     If PropMultiColumn = True And PropRightToLeft = True Then
