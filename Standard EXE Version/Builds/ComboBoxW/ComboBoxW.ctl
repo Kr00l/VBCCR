@@ -1552,6 +1552,7 @@ End Property
 
 Public Property Let List(ByVal Index As Long, ByVal Value As String)
 If ComboBoxHandle <> NULL_PTR Then
+    If StrPtr(Value) = NULL_PTR Then Value = ""
     If Index > -1 Then
         Dim SelIndex As Long, ItemData As LongPtr
         SelIndex = CLng(SendMessage(ComboBoxHandle, CB_GETCURSEL, 0, ByVal 0&))
