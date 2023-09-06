@@ -3206,7 +3206,7 @@ If ToolBarDesignMode = True Then
     dwStyle = dwStyle Or TBSTYLE_TRANSPARENT
     dwExStyle = dwExStyle Or WS_EX_TRANSPARENT
 End If
-ToolBarHandle = CreateWindowEx(dwExStyle, StrPtr("ToolbarWindow32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+ToolBarHandle = CreateWindowEx(dwExStyle, StrPtr("ToolbarWindow32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If ToolBarHandle <> NULL_PTR Then
     Call ComCtlsShowAllUIStates(ToolBarHandle)
     Dim TBB As TBBUTTON

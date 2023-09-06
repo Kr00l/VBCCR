@@ -2897,7 +2897,7 @@ If TreeViewDesignMode = False Then
 Else
     dwStyle = dwStyle Or TVS_NOTOOLTIPS Or TVS_DISABLEDRAGDROP
 End If
-TreeViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysTreeView32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal 0&)
+TreeViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysTreeView32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If TreeViewHandle <> NULL_PTR Then
     TreeViewToolTipHandle = SendMessage(TreeViewHandle, TVM_GETTOOLTIPS, 0, ByVal 0&)
     If TreeViewToolTipHandle <> NULL_PTR Then Call ComCtlsInitToolTip(TreeViewToolTipHandle)
