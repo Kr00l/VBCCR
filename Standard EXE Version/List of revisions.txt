@@ -1,5 +1,9 @@
 List of revisions:
 
+09-Oct-2023
+- TabStrip's ClientLeft/ClientTop now matches to VBA and to VBFlexGrid. (CellLeft/ClientLeft etc.)
+  So use .Left + .ClientLeft instead of just .ClientLeft for positioning from a container.
+
 06-Sep-2023
 - Passing vbNullString to the Let .List(i) property of the ComboBoxW/ListBoxW control does not cause an misbehavior anymore.
 - WM_CHAR now blocked in the list control if the Locked property is true in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo control.
