@@ -1927,9 +1927,10 @@ Public Property Get ClientLeft() As Single
 Attribute ClientLeft.VB_Description = "Returns the left coordinate of the internal area."
 Attribute ClientLeft.VB_MemberFlags = "400"
 Dim RC As RECT
-GetWindowRect UserControl.hWnd, RC
-MapWindowPoints HWND_DESKTOP, UserControl.ContainerHwnd, RC, 2
-If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+If TabStripHandle <> NULL_PTR Then
+    GetClientRect TabStripHandle, RC
+    SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+End If
 ClientLeft = UserControl.ScaleX(RC.Left, vbPixels, vbContainerPosition)
 End Property
 
@@ -1937,9 +1938,10 @@ Public Property Get ClientTop() As Single
 Attribute ClientTop.VB_Description = "Returns the top coordinate of the internal area."
 Attribute ClientTop.VB_MemberFlags = "400"
 Dim RC As RECT
-GetWindowRect UserControl.hWnd, RC
-MapWindowPoints HWND_DESKTOP, UserControl.ContainerHwnd, RC, 2
-If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+If TabStripHandle <> NULL_PTR Then
+    GetClientRect TabStripHandle, RC
+    SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+End If
 ClientTop = UserControl.ScaleY(RC.Top, vbPixels, vbContainerPosition)
 End Property
 
@@ -1947,9 +1949,10 @@ Public Property Get ClientWidth() As Single
 Attribute ClientWidth.VB_Description = "Returns the width of the internal area."
 Attribute ClientWidth.VB_MemberFlags = "400"
 Dim RC As RECT
-GetWindowRect UserControl.hWnd, RC
-MapWindowPoints HWND_DESKTOP, UserControl.ContainerHwnd, RC, 2
-If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+If TabStripHandle <> NULL_PTR Then
+    GetClientRect TabStripHandle, RC
+    SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+End If
 ClientWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize)
 End Property
 
@@ -1957,9 +1960,10 @@ Public Property Get ClientHeight() As Single
 Attribute ClientHeight.VB_Description = "Returns the height of the internal area."
 Attribute ClientHeight.VB_MemberFlags = "400"
 Dim RC As RECT
-GetWindowRect UserControl.hWnd, RC
-MapWindowPoints HWND_DESKTOP, UserControl.ContainerHwnd, RC, 2
-If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+If TabStripHandle <> NULL_PTR Then
+    GetClientRect TabStripHandle, RC
+    SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
+End If
 ClientHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
 End Property
 
