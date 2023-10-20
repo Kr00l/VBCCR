@@ -120,19 +120,20 @@ End Property
 
 Public Property Get Child() As Object
 Attribute Child.VB_Description = "Returns/sets the control to be moved and sized with the band."
-If VarType(PropChild) = vbLong Then
-    If PropChild <> 0 Then Set Child = PtrToObj(PropChild)
-ElseIf VarType(PropChild) = vbString Then
-    If Not PropChild = vbNullString Then
-        Dim ControlEnum As Object
-        For Each ControlEnum In ShadowCoolBar.ContainedControls
-            If ProperControlName(ControlEnum) = PropChild Then
-                Set Child = ControlEnum
-                Exit For
-            End If
-        Next ControlEnum
-    End If
-End If
+Select Case VarType(PropChild)
+    Case vbLong, &H14 ' vbLongLong
+        If PropChild <> NULL_PTR Then Set Child = PtrToObj(PropChild)
+    Case vbString
+        If Not PropChild = vbNullString Then
+            Dim ControlEnum As Object
+            For Each ControlEnum In ShadowCoolBar.ContainedControls
+                If ProperControlName(ControlEnum) = PropChild Then
+                    Set Child = ControlEnum
+                    Exit For
+                End If
+            Next ControlEnum
+        End If
+End Select
 End Property
 
 Public Property Let Child(ByVal Value As Object)

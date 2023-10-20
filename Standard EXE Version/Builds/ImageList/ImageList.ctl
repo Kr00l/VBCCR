@@ -426,6 +426,7 @@ BackColor = PropBackColor
 End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
+If Value < 0 And Value > &H8000001E Then Err.Raise 380
 PropBackColor = Value
 If ImageListHandle <> NULL_PTR Then
     If PropUseBackColor = True Then
