@@ -47,7 +47,7 @@ Private Declare PtrSafe Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long
 Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As LongPtr
 Private Declare PtrSafe Function SysAllocString Lib "oleaut32" (ByVal lpString As LongPtr) As LongPtr
 Private Declare PtrSafe Function DispCallFunc Lib "oleaut32" (ByVal lpvInstance As LongPtr, ByVal oVft As LongPtr, ByVal CallConv As Long, ByVal vtReturn As Integer, ByVal cActuals As Long, ByVal prgvt As LongPtr, ByVal prgpvarg As LongPtr, ByRef pvargResult As Variant) As Long
-Private Declare PtrSafe Function VariantCopyToPtr Lib "oleaut32" Alias "VariantCopy" (ByVal pvargDest As LongPtr, ByRef pvargSrc As Variant) As Long
+Private Declare PtrSafe Function VariantCopy Lib "oleaut32" (ByRef pvargDest As Any, ByRef pvargSrc As Any) As Long
 Private Declare PtrSafe Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As LongPtr, ByRef pCLSID As Any) As Long
 #Else
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal hMem As Long)
@@ -56,7 +56,7 @@ Private Declare Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long)
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function SysAllocString Lib "oleaut32" (ByVal lpString As Long) As Long
 Private Declare Function DispCallFunc Lib "oleaut32" (ByVal lpvInstance As Long, ByVal oVft As Long, ByVal CallConv As Long, ByVal vtReturn As Integer, ByVal cActuals As Long, ByVal prgvt As Long, ByVal prgpvarg As Long, ByRef pvargResult As Variant) As Long
-Private Declare Function VariantCopyToPtr Lib "oleaut32" Alias "VariantCopy" (ByVal pvargDest As Long, ByRef pvargSrc As Variant) As Long
+Private Declare Function VariantCopy Lib "oleaut32" (ByRef pvargDest As Any, ByRef pvargSrc As Any) As Long
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 #End If
 Private Const CC_STDCALL As Long = 4
@@ -778,7 +778,7 @@ Const VARIANT_CB As Long = 16
 Dim Fetched As Long
 With This
 Do Until .Index > .Count
-    VariantCopyToPtr VntArrPtr, .Enumerable(.Index)
+    VariantCopy ByVal VntArrPtr, .Enumerable(.Index)
     .Index = .Index + 1
     Fetched = Fetched + 1
     If Fetched = VntCount Then Exit Do
