@@ -1278,25 +1278,29 @@ If FontComboDesignMode = False Then
     If FontComboHandle <> NULL_PTR Then
         Dim Success As Boolean, Handle As LongPtr, ShadowFontCombo As FontCombo
         Set ShadowFontCombo = Me
-        On Error Resume Next
-        If IsObject(Value) Then
-            If Not Value Is Extender Then
-                If TypeOf Value Is FontCombo Then
-                    Handle = Value.hWnd
-                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR And FontComboBuddyShadowObjectPointer = NULL_PTR)
-                    If Success = True Then
-                        FontComboBuddyControlHandle = Handle
-                        SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
-                        FontComboBuddyObjectPointer = ObjPtr(Value)
-                        PropBuddyName = ProperControlName(Value)
+        Select Case VarType(Value)
+            Case vbObject
+                If Not Value Is Nothing Then
+                    If TypeOf Value Is FontCombo And Not Value Is Extender Then
+                        On Error Resume Next
+                        Handle = Value.hWnd
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR And FontComboBuddyShadowObjectPointer = NULL_PTR)
+                        On Error GoTo 0
+                        If Success = True Then
+                            FontComboBuddyControlHandle = Handle
+                            SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
+                            FontComboBuddyObjectPointer = ObjPtr(Value)
+                            PropBuddyName = ProperControlName(Value)
+                        End If
+                    Else
+                        Err.Raise Number:=35610, Description:="Invalid object"
                     End If
                 End If
-            End If
-        ElseIf VarType(Value) = vbString Then
-            Dim ControlEnum As Object, CompareName As String
-            For Each ControlEnum In UserControl.ParentControls
-                If Not ControlEnum Is Extender Then
-                    If TypeOf ControlEnum Is FontCombo Then
+            Case vbString
+                On Error Resume Next
+                Dim ControlEnum As Object, CompareName As String
+                For Each ControlEnum In UserControl.ParentControls
+                    If TypeOf ControlEnum Is FontCombo And Not ControlEnum Is Extender Then
                         CompareName = ProperControlName(ControlEnum)
                         If CompareName = Value And Not CompareName = vbNullString Then
                             Err.Clear
@@ -1311,10 +1315,11 @@ If FontComboDesignMode = False Then
                             End If
                         End If
                     End If
-                End If
-            Next ControlEnum
-        End If
-        On Error GoTo 0
+                Next ControlEnum
+                On Error GoTo 0
+            Case Else
+                Err.Raise 13
+        End Select
         If Success = False Then
             If FontComboBuddyControlHandle <> NULL_PTR Then
                 SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal 0&

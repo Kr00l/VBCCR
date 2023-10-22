@@ -1639,65 +1639,74 @@ End Property
 Public Property Let ImageList(ByVal Value As Variant)
 If ToolBarHandle <> NULL_PTR Then
     Dim Success As Boolean, Handle As LongPtr, OldSize As SIZEAPI
-    On Error Resume Next
-    If IsObject(Value) Then
-        If TypeName(Value) = "ImageList" Then
-            Handle = Value.hImageList
-            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-        End If
-        If Success = True Then
-            LSet OldSize = ImageListSize
-            ImageList_GetIconSize Handle, ImageListSize.CX, ImageListSize.CY
-            If ImageListSizesAreEqual() = True Then
-                SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal Handle
-                ToolBarImageListObjectPointer = ObjPtr(Value)
-                PropImageListName = ProperControlName(Value)
-            Else
-                LSet ImageListSize = OldSize
-                If ToolBarDesignMode = True Then
-                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                    Exit Property
+    Select Case VarType(Value)
+        Case vbObject
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
                 Else
-                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
             End If
-        End If
-    ElseIf VarType(Value) = vbString Then
-        Dim ControlEnum As Object, CompareName As String
-        For Each ControlEnum In UserControl.ParentControls
-            If TypeName(ControlEnum) = "ImageList" Then
-                CompareName = ProperControlName(ControlEnum)
-                If CompareName = Value And Not CompareName = vbNullString Then
-                    Err.Clear
-                    Handle = ControlEnum.hImageList
-                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    If Success = True Then
-                        LSet OldSize = ImageListSize
-                        ImageList_GetIconSize Handle, ImageListSize.CX, ImageListSize.CY
-                        If ImageListSizesAreEqual() = True Then
-                            SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal Handle
-                            If ToolBarDesignMode = False Then ToolBarImageListObjectPointer = ObjPtr(ControlEnum)
-                            PropImageListName = Value
-                            Exit For
-                        Else
-                            LSet ImageListSize = OldSize
-                            If ToolBarDesignMode = True Then
-                                MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                                Exit Property
-                            Else
-                                Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
-                            End If
-                        End If
-                    ElseIf ToolBarDesignMode = True Then
-                        PropImageListName = Value
-                        Success = True
-                        Exit For
+            If Success = True Then
+                LSet OldSize = ImageListSize
+                ImageList_GetIconSize Handle, ImageListSize.CX, ImageListSize.CY
+                If ImageListSizesAreEqual() = True Then
+                    SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal Handle
+                    ToolBarImageListObjectPointer = ObjPtr(Value)
+                    PropImageListName = ProperControlName(Value)
+                Else
+                    LSet ImageListSize = OldSize
+                    If ToolBarDesignMode = True Then
+                        MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                        Exit Property
+                    Else
+                        Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                     End If
                 End If
             End If
-        Next ControlEnum
-    End If
-    On Error GoTo 0
+        Case vbString
+            On Error Resume Next
+            Dim ControlEnum As Object, CompareName As String
+            For Each ControlEnum In UserControl.ParentControls
+                If TypeName(ControlEnum) = "ImageList" Then
+                    CompareName = ProperControlName(ControlEnum)
+                    If CompareName = Value And Not CompareName = vbNullString Then
+                        Err.Clear
+                        Handle = ControlEnum.hImageList
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                        If Success = True Then
+                            LSet OldSize = ImageListSize
+                            ImageList_GetIconSize Handle, ImageListSize.CX, ImageListSize.CY
+                            If ImageListSizesAreEqual() = True Then
+                                SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal Handle
+                                If ToolBarDesignMode = False Then ToolBarImageListObjectPointer = ObjPtr(ControlEnum)
+                                PropImageListName = Value
+                                Exit For
+                            Else
+                                LSet ImageListSize = OldSize
+                                If ToolBarDesignMode = True Then
+                                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                                    Exit Property
+                                Else
+                                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                                End If
+                            End If
+                        ElseIf ToolBarDesignMode = True Then
+                            PropImageListName = Value
+                            Success = True
+                            Exit For
+                        End If
+                    End If
+                End If
+            Next ControlEnum
+            On Error GoTo 0
+        Case Else
+            Err.Raise 13
+    End Select
     If Success = False Then
         If SendMessage(ToolBarHandle, TB_GETIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETIMAGELIST, 0, ByVal 0&
         ToolBarImageListObjectPointer = NULL_PTR
@@ -1739,65 +1748,74 @@ End Property
 Public Property Let DisabledImageList(ByVal Value As Variant)
 If ToolBarHandle <> NULL_PTR Then
     Dim Success As Boolean, Handle As LongPtr, OldSize As SIZEAPI
-    On Error Resume Next
-    If IsObject(Value) Then
-        If TypeName(Value) = "ImageList" Then
-            Handle = Value.hImageList
-            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-        End If
-        If Success = True Then
-            LSet OldSize = DisabledImageListSize
-            ImageList_GetIconSize Handle, DisabledImageListSize.CX, DisabledImageListSize.CY
-            If ImageListSizesAreEqual() = True Then
-                SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal Handle
-                ToolBarDisabledImageListObjectPointer = ObjPtr(Value)
-                PropDisabledImageListName = ProperControlName(Value)
-            Else
-                LSet DisabledImageListSize = OldSize
-                If ToolBarDesignMode = True Then
-                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                    Exit Property
+    Select Case VarType(Value)
+        Case vbObject
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
                 Else
-                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
             End If
-        End If
-    ElseIf VarType(Value) = vbString Then
-        Dim ControlEnum As Object, CompareName As String
-        For Each ControlEnum In UserControl.ParentControls
-            If TypeName(ControlEnum) = "ImageList" Then
-                CompareName = ProperControlName(ControlEnum)
-                If CompareName = Value And Not CompareName = vbNullString Then
-                    Err.Clear
-                    Handle = ControlEnum.hImageList
-                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    If Success = True Then
-                        LSet OldSize = DisabledImageListSize
-                        ImageList_GetIconSize Handle, DisabledImageListSize.CX, DisabledImageListSize.CY
-                        If ImageListSizesAreEqual() = True Then
-                            SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal Handle
-                            If ToolBarDesignMode = False Then ToolBarDisabledImageListObjectPointer = ObjPtr(ControlEnum)
-                            PropDisabledImageListName = Value
-                            Exit For
-                        Else
-                            LSet DisabledImageListSize = OldSize
-                            If ToolBarDesignMode = True Then
-                                MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                                Exit Property
-                            Else
-                                Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
-                            End If
-                        End If
-                    ElseIf ToolBarDesignMode = True Then
-                        PropDisabledImageListName = Value
-                        Success = True
-                        Exit For
+            If Success = True Then
+                LSet OldSize = DisabledImageListSize
+                ImageList_GetIconSize Handle, DisabledImageListSize.CX, DisabledImageListSize.CY
+                If ImageListSizesAreEqual() = True Then
+                    SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal Handle
+                    ToolBarDisabledImageListObjectPointer = ObjPtr(Value)
+                    PropDisabledImageListName = ProperControlName(Value)
+                Else
+                    LSet DisabledImageListSize = OldSize
+                    If ToolBarDesignMode = True Then
+                        MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                        Exit Property
+                    Else
+                        Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                     End If
                 End If
             End If
-        Next ControlEnum
-    End If
-    On Error GoTo 0
+        Case vbString
+            On Error Resume Next
+            Dim ControlEnum As Object, CompareName As String
+            For Each ControlEnum In UserControl.ParentControls
+                If TypeName(ControlEnum) = "ImageList" Then
+                    CompareName = ProperControlName(ControlEnum)
+                    If CompareName = Value And Not CompareName = vbNullString Then
+                        Err.Clear
+                        Handle = ControlEnum.hImageList
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                        If Success = True Then
+                            LSet OldSize = DisabledImageListSize
+                            ImageList_GetIconSize Handle, DisabledImageListSize.CX, DisabledImageListSize.CY
+                            If ImageListSizesAreEqual() = True Then
+                                SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal Handle
+                                If ToolBarDesignMode = False Then ToolBarDisabledImageListObjectPointer = ObjPtr(ControlEnum)
+                                PropDisabledImageListName = Value
+                                Exit For
+                            Else
+                                LSet DisabledImageListSize = OldSize
+                                If ToolBarDesignMode = True Then
+                                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                                    Exit Property
+                                Else
+                                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                                End If
+                            End If
+                        ElseIf ToolBarDesignMode = True Then
+                            PropDisabledImageListName = Value
+                            Success = True
+                            Exit For
+                        End If
+                    End If
+                End If
+            Next ControlEnum
+            On Error GoTo 0
+        Case Else
+            Err.Raise 13
+    End Select
     If Success = False Then
         If SendMessage(ToolBarHandle, TB_GETDISABLEDIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETDISABLEDIMAGELIST, 0, ByVal 0&
         ToolBarDisabledImageListObjectPointer = NULL_PTR
@@ -1832,65 +1850,74 @@ End Property
 Public Property Let HotImageList(ByVal Value As Variant)
 If ToolBarHandle <> NULL_PTR Then
     Dim Success As Boolean, Handle As LongPtr, OldSize As SIZEAPI
-    On Error Resume Next
-    If IsObject(Value) Then
-        If TypeName(Value) = "ImageList" Then
-            Handle = Value.hImageList
-            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-        End If
-        If Success = True Then
-            LSet OldSize = HotImageListSize
-            ImageList_GetIconSize Handle, HotImageListSize.CX, HotImageListSize.CY
-            If ImageListSizesAreEqual() = True Then
-                SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal Handle
-                ToolBarHotImageListObjectPointer = ObjPtr(Value)
-                PropHotImageListName = ProperControlName(Value)
-            Else
-                LSet HotImageListSize = OldSize
-                If ToolBarDesignMode = True Then
-                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                    Exit Property
+    Select Case VarType(Value)
+        Case vbObject
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
                 Else
-                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
             End If
-        End If
-    ElseIf VarType(Value) = vbString Then
-        Dim ControlEnum As Object, CompareName As String
-        For Each ControlEnum In UserControl.ParentControls
-            If TypeName(ControlEnum) = "ImageList" Then
-                CompareName = ProperControlName(ControlEnum)
-                If CompareName = Value And Not CompareName = vbNullString Then
-                    Err.Clear
-                    Handle = ControlEnum.hImageList
-                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    If Success = True Then
-                        LSet OldSize = HotImageListSize
-                        ImageList_GetIconSize Handle, HotImageListSize.CX, HotImageListSize.CY
-                        If ImageListSizesAreEqual() = True Then
-                            SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal Handle
-                            If ToolBarDesignMode = False Then ToolBarHotImageListObjectPointer = ObjPtr(ControlEnum)
-                            PropHotImageListName = Value
-                            Exit For
-                        Else
-                            LSet HotImageListSize = OldSize
-                            If ToolBarDesignMode = True Then
-                                MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                                Exit Property
-                            Else
-                                Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
-                            End If
-                        End If
-                    ElseIf ToolBarDesignMode = True Then
-                        PropHotImageListName = Value
-                        Success = True
-                        Exit For
+            If Success = True Then
+                LSet OldSize = HotImageListSize
+                ImageList_GetIconSize Handle, HotImageListSize.CX, HotImageListSize.CY
+                If ImageListSizesAreEqual() = True Then
+                    SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal Handle
+                    ToolBarHotImageListObjectPointer = ObjPtr(Value)
+                    PropHotImageListName = ProperControlName(Value)
+                Else
+                    LSet HotImageListSize = OldSize
+                    If ToolBarDesignMode = True Then
+                        MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                        Exit Property
+                    Else
+                        Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                     End If
                 End If
             End If
-        Next ControlEnum
-    End If
-    On Error GoTo 0
+        Case vbString
+            On Error Resume Next
+            Dim ControlEnum As Object, CompareName As String
+            For Each ControlEnum In UserControl.ParentControls
+                If TypeName(ControlEnum) = "ImageList" Then
+                    CompareName = ProperControlName(ControlEnum)
+                    If CompareName = Value And Not CompareName = vbNullString Then
+                        Err.Clear
+                        Handle = ControlEnum.hImageList
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                        If Success = True Then
+                            LSet OldSize = HotImageListSize
+                            ImageList_GetIconSize Handle, HotImageListSize.CX, HotImageListSize.CY
+                            If ImageListSizesAreEqual() = True Then
+                                SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal Handle
+                                If ToolBarDesignMode = False Then ToolBarHotImageListObjectPointer = ObjPtr(ControlEnum)
+                                PropHotImageListName = Value
+                                Exit For
+                            Else
+                                LSet HotImageListSize = OldSize
+                                If ToolBarDesignMode = True Then
+                                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                                    Exit Property
+                                Else
+                                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                                End If
+                            End If
+                        ElseIf ToolBarDesignMode = True Then
+                            PropHotImageListName = Value
+                            Success = True
+                            Exit For
+                        End If
+                    End If
+                End If
+            Next ControlEnum
+            On Error GoTo 0
+        Case Else
+            Err.Raise 13
+    End Select
     If Success = False Then
         If SendMessage(ToolBarHandle, TB_GETHOTIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETHOTIMAGELIST, 0, ByVal 0&
         PropHotImageListName = "(None)"
@@ -1925,65 +1952,74 @@ End Property
 Public Property Let PressedImageList(ByVal Value As Variant)
 If ToolBarHandle <> NULL_PTR Then
     Dim Success As Boolean, Handle As LongPtr, OldSize As SIZEAPI
-    On Error Resume Next
-    If IsObject(Value) Then
-        If TypeName(Value) = "ImageList" Then
-            Handle = Value.hImageList
-            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-        End If
-        If Success = True Then
-            LSet OldSize = PressedImageListSize
-            ImageList_GetIconSize Handle, PressedImageListSize.CX, PressedImageListSize.CY
-            If ImageListSizesAreEqual() = True Then
-                If ComCtlsSupportLevel() >= 2 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal Handle
-                ToolBarPressedImageListObjectPointer = ObjPtr(Value)
-                PropPressedImageListName = ProperControlName(Value)
-            Else
-                LSet PressedImageListSize = OldSize
-                If ToolBarDesignMode = True Then
-                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                    Exit Property
+    Select Case VarType(Value)
+        Case vbObject
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
                 Else
-                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
             End If
-        End If
-    ElseIf VarType(Value) = vbString Then
-        Dim ControlEnum As Object, CompareName As String
-        For Each ControlEnum In UserControl.ParentControls
-            If TypeName(ControlEnum) = "ImageList" Then
-                CompareName = ProperControlName(ControlEnum)
-                If CompareName = Value And Not CompareName = vbNullString Then
-                    Err.Clear
-                    Handle = ControlEnum.hImageList
-                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    If Success = True Then
-                        LSet OldSize = PressedImageListSize
-                        ImageList_GetIconSize Handle, PressedImageListSize.CX, PressedImageListSize.CY
-                        If ImageListSizesAreEqual() = True Then
-                            If ComCtlsSupportLevel() >= 2 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal Handle
-                            PropPressedImageListName = Value
-                            If ToolBarDesignMode = False Then ToolBarPressedImageListObjectPointer = ObjPtr(ControlEnum)
-                            Exit For
-                        Else
-                            LSet PressedImageListSize = OldSize
-                            If ToolBarDesignMode = True Then
-                                MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
-                                Exit Property
-                            Else
-                                Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
-                            End If
-                        End If
-                    ElseIf ToolBarDesignMode = True Then
-                        PropPressedImageListName = Value
-                        Success = True
-                        Exit For
+            If Success = True Then
+                LSet OldSize = PressedImageListSize
+                ImageList_GetIconSize Handle, PressedImageListSize.CX, PressedImageListSize.CY
+                If ImageListSizesAreEqual() = True Then
+                    If ComCtlsSupportLevel() >= 2 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal Handle
+                    ToolBarPressedImageListObjectPointer = ObjPtr(Value)
+                    PropPressedImageListName = ProperControlName(Value)
+                Else
+                    LSet PressedImageListSize = OldSize
+                    If ToolBarDesignMode = True Then
+                        MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                        Exit Property
+                    Else
+                        Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
                     End If
                 End If
             End If
-        Next ControlEnum
-    End If
-    On Error GoTo 0
+        Case vbString
+            On Error Resume Next
+            Dim ControlEnum As Object, CompareName As String
+            For Each ControlEnum In UserControl.ParentControls
+                If TypeName(ControlEnum) = "ImageList" Then
+                    CompareName = ProperControlName(ControlEnum)
+                    If CompareName = Value And Not CompareName = vbNullString Then
+                        Err.Clear
+                        Handle = ControlEnum.hImageList
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                        If Success = True Then
+                            LSet OldSize = PressedImageListSize
+                            ImageList_GetIconSize Handle, PressedImageListSize.CX, PressedImageListSize.CY
+                            If ImageListSizesAreEqual() = True Then
+                                If ComCtlsSupportLevel() >= 2 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal Handle
+                                PropPressedImageListName = Value
+                                If ToolBarDesignMode = False Then ToolBarPressedImageListObjectPointer = ObjPtr(ControlEnum)
+                                Exit For
+                            Else
+                                LSet PressedImageListSize = OldSize
+                                If ToolBarDesignMode = True Then
+                                    MsgBox "ImageList Image sizes must be the same", vbCritical + vbOKOnly
+                                    Exit Property
+                                Else
+                                    Err.Raise Number:=380, Description:="ImageList Image sizes must be the same"
+                                End If
+                            End If
+                        ElseIf ToolBarDesignMode = True Then
+                            PropPressedImageListName = Value
+                            Success = True
+                            Exit For
+                        End If
+                    End If
+                End If
+            Next ControlEnum
+            On Error GoTo 0
+        Case Else
+            Err.Raise 13
+    End Select
     If Success = False Then
         If ComCtlsSupportLevel() >= 2 Then If SendMessage(ToolBarHandle, TB_GETPRESSEDIMAGELIST, 0, ByVal 0&) <> 0 Then SendMessage ToolBarHandle, TB_SETPRESSEDIMAGELIST, 0, ByVal 0&
         ToolBarPressedImageListObjectPointer = NULL_PTR

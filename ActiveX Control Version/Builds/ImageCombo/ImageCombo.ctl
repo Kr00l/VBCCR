@@ -1148,41 +1148,50 @@ End Property
 Public Property Let ImageList(ByVal Value As Variant)
 If ImageComboHandle <> NULL_PTR Then
     Dim Success As Boolean, Handle As LongPtr
-    On Error Resume Next
-    If IsObject(Value) Then
-        If TypeName(Value) = "ImageList" Then
-            Handle = Value.hImageList
-            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-        End If
-        If Success = True Then
-            SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
-            ImageComboImageListObjectPointer = ObjPtr(Value)
-            PropImageListName = ProperControlName(Value)
-        End If
-    ElseIf VarType(Value) = vbString Then
-        Dim ControlEnum As Object, CompareName As String
-        For Each ControlEnum In UserControl.ParentControls
-            If TypeName(ControlEnum) = "ImageList" Then
-                CompareName = ProperControlName(ControlEnum)
-                If CompareName = Value And Not CompareName = vbNullString Then
-                    Err.Clear
-                    Handle = ControlEnum.hImageList
+    Select Case VarType(Value)
+        Case vbObject
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
                     Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    If Success = True Then
-                        SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
-                        If ImageComboDesignMode = False Then ImageComboImageListObjectPointer = ObjPtr(ControlEnum)
-                        PropImageListName = Value
-                        Exit For
-                    ElseIf ImageComboDesignMode = True Then
-                        PropImageListName = Value
-                        Success = True
-                        Exit For
-                    End If
+                    On Error GoTo 0
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
             End If
-        Next ControlEnum
-    End If
-    On Error GoTo 0
+            If Success = True Then
+                SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
+                ImageComboImageListObjectPointer = ObjPtr(Value)
+                PropImageListName = ProperControlName(Value)
+            End If
+        Case vbString
+            On Error Resume Next
+            Dim ControlEnum As Object, CompareName As String
+            For Each ControlEnum In UserControl.ParentControls
+                If TypeName(ControlEnum) = "ImageList" Then
+                    CompareName = ProperControlName(ControlEnum)
+                    If CompareName = Value And Not CompareName = vbNullString Then
+                        Err.Clear
+                        Handle = ControlEnum.hImageList
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                        If Success = True Then
+                            SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
+                            If ImageComboDesignMode = False Then ImageComboImageListObjectPointer = ObjPtr(ControlEnum)
+                            PropImageListName = Value
+                            Exit For
+                        ElseIf ImageComboDesignMode = True Then
+                            PropImageListName = Value
+                            Success = True
+                            Exit For
+                        End If
+                    End If
+                End If
+            Next ControlEnum
+            On Error GoTo 0
+        Case Else
+            Err.Raise 13
+    End Select
     If Success = False Then
         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal 0&
         ImageComboImageListObjectPointer = NULL_PTR

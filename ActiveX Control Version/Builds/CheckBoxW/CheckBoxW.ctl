@@ -1180,41 +1180,50 @@ If CheckBoxHandle <> NULL_PTR Then
     ' PBS_DEFAULTED = 5
     ' PBS_STYLUSHOT = 6
     Dim Success As Boolean, Handle As LongPtr
-    On Error Resume Next
-    If IsObject(Value) Then
-        If TypeName(Value) = "ImageList" Then
-            Handle = Value.hImageList
-            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-        End If
-        If Success = True Then
-            Call SetImageList(Handle)
-            CheckBoxImageListObjectPointer = ObjPtr(Value)
-            PropImageListName = ProperControlName(Value)
-        End If
-    ElseIf VarType(Value) = vbString Then
-        Dim ControlEnum As Object, CompareName As String
-        For Each ControlEnum In UserControl.ParentControls
-            If TypeName(ControlEnum) = "ImageList" Then
-                CompareName = ProperControlName(ControlEnum)
-                If CompareName = Value And Not CompareName = vbNullString Then
-                    Err.Clear
-                    Handle = ControlEnum.hImageList
+    Select Case VarType(Value)
+        Case vbObject
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
                     Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    If Success = True Then
-                        Call SetImageList(Handle)
-                        If CheckBoxDesignMode = False Then CheckBoxImageListObjectPointer = ObjPtr(ControlEnum)
-                        PropImageListName = Value
-                        Exit For
-                    ElseIf CheckBoxDesignMode = True Then
-                        PropImageListName = Value
-                        Success = True
-                        Exit For
-                    End If
+                    On Error GoTo 0
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
             End If
-        Next ControlEnum
-    End If
-    On Error GoTo 0
+            If Success = True Then
+                Call SetImageList(Handle)
+                CheckBoxImageListObjectPointer = ObjPtr(Value)
+                PropImageListName = ProperControlName(Value)
+            End If
+        Case vbString
+            On Error Resume Next
+            Dim ControlEnum As Object, CompareName As String
+            For Each ControlEnum In UserControl.ParentControls
+                If TypeName(ControlEnum) = "ImageList" Then
+                    CompareName = ProperControlName(ControlEnum)
+                    If CompareName = Value And Not CompareName = vbNullString Then
+                        Err.Clear
+                        Handle = ControlEnum.hImageList
+                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                        If Success = True Then
+                            Call SetImageList(Handle)
+                            If CheckBoxDesignMode = False Then CheckBoxImageListObjectPointer = ObjPtr(ControlEnum)
+                            PropImageListName = Value
+                            Exit For
+                        ElseIf CheckBoxDesignMode = True Then
+                            PropImageListName = Value
+                            Success = True
+                            Exit For
+                        End If
+                    End If
+                End If
+            Next ControlEnum
+            On Error GoTo 0
+        Case Else
+            Err.Raise 13
+    End Select
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
         CheckBoxImageListObjectPointer = NULL_PTR

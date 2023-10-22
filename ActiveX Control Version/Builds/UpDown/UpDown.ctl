@@ -677,39 +677,47 @@ Public Property Let BuddyControl(ByVal Value As Variant)
 If UpDownDesignMode = False Then
     If UpDownHandle <> NULL_PTR Then
         Dim Success As Boolean
-        On Error Resume Next
-        If IsObject(Value) Then
-            If ControlIsValid(Value) = True Then
-                If Value.Container Is Extender.Container Then
-                    Success = CBool(Err.Number = 0)
-                    If Success = True Then
-                        UpDownBuddyObjectPointer = ObjPtr(Value)
-                        If ProperControlName(Value) <> PropBuddyName Then PropBuddyProperty = vbNullString
-                        PropBuddyName = ProperControlName(Value)
-                    End If
-                End If
-            End If
-        ElseIf VarType(Value) = vbString Then
-            Dim ControlEnum As Object, CompareName As String
-            For Each ControlEnum In UserControl.ParentControls
-                If ControlIsValid(ControlEnum) = True Then
-                    If ControlEnum.Container Is Extender.Container Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Err.Clear
+        Select Case VarType(Value)
+            Case vbObject
+                If Not Value Is Nothing Then
+                    If ControlIsValid(Value) = True Then
+                        On Error Resume Next
+                        If Value.Container Is Extender.Container Then
                             Success = CBool(Err.Number = 0)
                             If Success = True Then
-                                UpDownBuddyObjectPointer = ObjPtr(ControlEnum)
-                                If Value <> PropBuddyName Then PropBuddyProperty = vbNullString
-                                PropBuddyName = Value
-                                Exit For
+                                UpDownBuddyObjectPointer = ObjPtr(Value)
+                                If ProperControlName(Value) <> PropBuddyName Then PropBuddyProperty = vbNullString
+                                PropBuddyName = ProperControlName(Value)
                             End If
                         End If
+                        On Error GoTo 0
+                    Else
+                        Err.Raise Number:=35610, Description:="Invalid object"
                     End If
                 End If
-            Next ControlEnum
-        End If
-        On Error GoTo 0
+            Case vbString
+                Dim ControlEnum As Object, CompareName As String
+                For Each ControlEnum In UserControl.ParentControls
+                    If ControlIsValid(ControlEnum) = True Then
+                        On Error Resume Next
+                        If ControlEnum.Container Is Extender.Container Then
+                            CompareName = ProperControlName(ControlEnum)
+                            If CompareName = Value And Not CompareName = vbNullString Then
+                                Success = CBool(Err.Number = 0)
+                                If Success = True Then
+                                    UpDownBuddyObjectPointer = ObjPtr(ControlEnum)
+                                    If Value <> PropBuddyName Then PropBuddyProperty = vbNullString
+                                    PropBuddyName = Value
+                                    Exit For
+                                End If
+                            End If
+                        End If
+                        On Error GoTo 0
+                    End If
+                Next ControlEnum
+            Case Else
+                Err.Raise 13
+        End Select
         If Success = False Then
             UpDownBuddyObjectPointer = NULL_PTR
             PropBuddyName = "(None)"
