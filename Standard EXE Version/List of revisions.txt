@@ -1,5 +1,9 @@
 List of revisions:
 
+22-Oct-2023
+- Proper error raising for mis-use of the ImageList/BuddyControl property on all controls.
+- Proper error raising for mis-use in the BackColor property of the ImageList control.
+
 09-Oct-2023
 - TabStrip's ClientLeft/ClientTop now matches to VBA and to VBFlexGrid. (CellLeft/ClientLeft etc.)
   So use .Left + .ClientLeft instead of just .ClientLeft for positioning from a container.
