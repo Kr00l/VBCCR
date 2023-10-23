@@ -84,8 +84,8 @@ Private Declare PtrSafe Function ImageList_AddIcon Lib "comctl32" (ByVal hImageL
 Private Declare PtrSafe Function ImageList_GetIcon Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal fuFlags As Long) As LongPtr
 Private Declare PtrSafe Function ImageList_GetImageCount Lib "comctl32" (ByVal hImageList As LongPtr) As Long
 Private Declare PtrSafe Function ImageList_Destroy Lib "comctl32" (ByVal hImageList As LongPtr) As Long
-Private Declare PtrSafe Function ImageList_Draw Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDcDst As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal fStyle As Long) As Long
-Private Declare PtrSafe Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDcDst As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
+Private Declare PtrSafe Function ImageList_Draw Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal fStyle As Long) As Long
+Private Declare PtrSafe Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
 Private Declare PtrSafe Function ImageList_SetBkColor Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ClrBk As Long) As Long
 Private Declare PtrSafe Function ImageList_SetOverlayImage Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal iOverlay As Long) As Boolean
 Private Declare PtrSafe Function CreateDCAsNull Lib "gdi32" Alias "CreateDCW" (ByVal lpDriverName As LongPtr, ByRef lpDeviceName As Any, ByRef lpOutput As Any, ByRef lpInitData As Any) As LongPtr
@@ -105,8 +105,8 @@ Private Declare Function ImageList_AddIcon Lib "comctl32" (ByVal hImageList As L
 Private Declare Function ImageList_GetIcon Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal fuFlags As Long) As Long
 Private Declare Function ImageList_GetImageCount Lib "comctl32" (ByVal hImageList As Long) As Long
 Private Declare Function ImageList_Destroy Lib "comctl32" (ByVal hImageList As Long) As Long
-Private Declare Function ImageList_Draw Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal hDcDst As Long, ByVal X As Long, ByVal Y As Long, ByVal fStyle As Long) As Long
-Private Declare Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal hDcDst As Long, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
+Private Declare Function ImageList_Draw Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal fStyle As Long) As Long
+Private Declare Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
 Private Declare Function ImageList_SetBkColor Lib "comctl32" (ByVal hImageList As Long, ByVal ClrBk As Long) As Long
 Private Declare Function ImageList_SetOverlayImage Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal iOverlay As Long) As Boolean
 Private Declare Function CreateDCAsNull Lib "gdi32" Alias "CreateDCW" (ByVal lpDriverName As Long, ByRef lpDeviceName As Any, ByRef lpOutput As Any, ByRef lpInitData As Any) As Long
