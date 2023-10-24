@@ -356,6 +356,8 @@ Private Const SB_VERT As Long = 1
 Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
+Private Const SM_CXVSCROLL As Long = 2
+Private Const SM_CYHSCROLL As Long = 3
 Private Const SIF_RANGE As Long = &H1
 Private Const SIF_POS As Long = &H4
 Private Const SIF_TRACKPOS As Long = &H10
@@ -633,22 +635,31 @@ Private Sub UserControl_OLEDragOver(Data As DataObject, Effect As Long, Button A
 RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(X, vbPixels, vbContainerPosition), UserControl.ScaleY(Y, vbPixels, vbContainerPosition), State)
 If ListBoxHandle <> NULL_PTR Then
     If State = vbOver And Not Effect = vbDropEffectNone Then
-        If PropOLEDragDropScroll = True Then
-            Dim RC As RECT
-            GetWindowRect ListBoxHandle, RC
-            Dim dwStyle As Long
+        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then
+            Dim dwStyle As Long, dwExStyle As Long
             dwStyle = GetWindowLong(ListBoxHandle, GWL_STYLE)
+            dwExStyle = GetWindowLong(ListBoxHandle, GWL_EXSTYLE)
             If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
-                If Abs(X) < (16 * PixelsPerDIP_X()) Then
+                Dim CX1 As Long, CX2 As Long
+                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                    If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
+                        CX1 = GetSystemMetrics(SM_CXVSCROLL)
+                    Else
+                        CX2 = GetSystemMetrics(SM_CXVSCROLL)
+                    End If
+                End If
+                If X < ((16 * PixelsPerDIP_X()) + CX1) Then
                     SendMessage ListBoxHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
-                ElseIf Abs(X - (RC.Right - RC.Left)) < (16 * PixelsPerDIP_X()) Then
+                ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
                     SendMessage ListBoxHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
                 End If
             End If
             If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                If Abs(Y) < (16 * PixelsPerDIP_Y()) Then
+                Dim CY1 As Long, CY2 As Long
+                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
+                If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
                     SendMessage ListBoxHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
-                ElseIf Abs(Y - (RC.Bottom - RC.Top)) < (16 * PixelsPerDIP_Y()) Then
+                ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
                     SendMessage ListBoxHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
                 End If
             End If
