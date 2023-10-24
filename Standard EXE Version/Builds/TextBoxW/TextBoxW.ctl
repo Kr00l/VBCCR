@@ -86,12 +86,6 @@ TxtNetAddressTypeAnyAddressNoScope = 17
 TxtNetAddressTypeAnyService = 18
 TxtNetAddressTypeAnyServiceNoScope = 19
 End Enum
-Private Type RECT
-Left As Long
-Top As Long
-Right As Long
-Bottom As Long
-End Type
 Private Type SIZEAPI
 CX As Long
 CY As Long
@@ -208,7 +202,6 @@ Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLong
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
-Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
@@ -225,6 +218,7 @@ Private Declare PtrSafe Function ShowCaret Lib "user32" (ByVal hWnd As LongPtr) 
 Private Declare PtrSafe Function DestroyCaret Lib "user32" () As Long
 Private Declare PtrSafe Function DragDetect Lib "user32" (ByVal hWnd As LongPtr, ByVal XY As Currency) As Long
 Private Declare PtrSafe Function ReleaseCapture Lib "user32" () As Long
+Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function InitNetworkAddressControl Lib "shell32" () As Long
@@ -243,7 +237,6 @@ Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVa
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
-Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
@@ -260,10 +253,12 @@ Private Declare Function ShowCaret Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function DestroyCaret Lib "user32" () As Long
 Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal XY As Currency) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #End If
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const GWL_STYLE As Long = (-16)
+Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
@@ -274,6 +269,8 @@ Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
 Private Const SB_HORZ As Long = 0, SB_VERT As Long = 1
+Private Const SM_CXVSCROLL As Long = 2
+Private Const SM_CYHSCROLL As Long = 3
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -696,22 +693,31 @@ End If
 RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(X, vbPixels, vbContainerPosition), UserControl.ScaleY(Y, vbPixels, vbContainerPosition), State)
 If TextBoxHandle <> NULL_PTR Then
     If State = vbOver And Not Effect = vbDropEffectNone Then
-        If PropOLEDragDropScroll = True Then
-            Dim RC As RECT
-            GetWindowRect TextBoxHandle, RC
-            Dim dwStyle As Long
+        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then
+            Dim dwStyle As Long, dwExStyle As Long
             dwStyle = GetWindowLong(TextBoxHandle, GWL_STYLE)
+            dwExStyle = GetWindowLong(TextBoxHandle, GWL_EXSTYLE)
             If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
-                If Abs(X) < (16 * PixelsPerDIP_X()) Then
+                Dim CX1 As Long, CX2 As Long
+                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                    If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
+                        CX1 = GetSystemMetrics(SM_CXVSCROLL)
+                    Else
+                        CX2 = GetSystemMetrics(SM_CXVSCROLL)
+                    End If
+                End If
+                If X < ((16 * PixelsPerDIP_X()) + CX1) Then
                     SendMessage TextBoxHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
-                ElseIf Abs(X - (RC.Right - RC.Left)) < (16 * PixelsPerDIP_X()) Then
+                ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
                     SendMessage TextBoxHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
                 End If
             End If
             If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                If Abs(Y) < (16 * PixelsPerDIP_Y()) Then
+                Dim CY1 As Long, CY2 As Long
+                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
+                If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
                     SendMessage TextBoxHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
-                ElseIf Abs(Y - (RC.Bottom - RC.Top)) < (16 * PixelsPerDIP_Y()) Then
+                ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
                     SendMessage TextBoxHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
                 End If
             End If
