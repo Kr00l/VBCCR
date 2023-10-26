@@ -183,7 +183,6 @@ Begin VB.Form MainForm
       ImageList       =   "ImageList1"
       LineStyle       =   1
       Checkboxes      =   -1  'True
-      MultiSelect     =   2
    End
    Begin VB.CommandButton Command3 
       Caption         =   "Command3"
