@@ -1798,7 +1798,7 @@ If VListBoxHandle <> NULL_PTR Then
         If Brush <> NULL_PTR Then OldBrush = SelectObject(hDC, Brush)
         PatBlt hDC, RC.Left, RC.Top - 2, 1, 6, vbPatCopy
         PatBlt hDC, RC.Left + 1, RC.Top - 1, 1, 4, vbPatCopy
-        PatBlt hDC, RC.Left + 2, RC.Top, RC.Right - RC.Left - 2, RC.Bottom - RC.Top, vbPatCopy
+        PatBlt hDC, RC.Left + 2, RC.Top, RC.Right - RC.Left - 4, RC.Bottom - RC.Top, vbPatCopy
         PatBlt hDC, RC.Right - 2, RC.Top - 1, 1, 4, vbPatCopy
         PatBlt hDC, RC.Right - 1, RC.Top - 2, 1, 6, vbPatCopy
         If OldBrush <> NULL_PTR Then SelectObject hDC, OldBrush
