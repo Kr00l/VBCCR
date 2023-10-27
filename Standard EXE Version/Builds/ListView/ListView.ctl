@@ -1612,11 +1612,19 @@ ListViewDragIndex = 0
 End Sub
 
 Private Sub UserControl_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
-RaiseEvent OLEDragDrop(Data, Effect, Button, Shift, UserControl.ScaleX(X, vbPixels, vbContainerPosition), UserControl.ScaleY(Y, vbPixels, vbContainerPosition))
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If ListViewHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, ListViewHandle, P, 1
+RaiseEvent OLEDragDrop(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
 End Sub
 
 Private Sub UserControl_OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
-RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(X, vbPixels, vbContainerPosition), UserControl.ScaleY(Y, vbPixels, vbContainerPosition), State)
+Dim P1 As POINTAPI
+P1.X = X
+P1.Y = Y
+If ListViewHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, ListViewHandle, P1, 1
+RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(P1.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P1.Y, vbPixels, vbContainerPosition), State)
 If ListViewHandle <> NULL_PTR Then
     If ListViewDragIndex > 0 And Not Effect = vbDropEffectNone Then
         Select Case PropView
@@ -1629,7 +1637,7 @@ If ListViewHandle <> NULL_PTR Then
         End Select
     End If
     If State = vbOver And Not Effect = vbDropEffectNone Then
-        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then
+        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.ScaleWidth) And (Y >= 0 And Y <= UserControl.ScaleHeight) Then
             Dim dwStyle As Long, dwExStyle As Long
             dwStyle = GetWindowLong(ListViewHandle, GWL_STYLE)
             dwExStyle = GetWindowLong(ListViewHandle, GWL_EXSTYLE)
@@ -1664,11 +1672,11 @@ If ListViewHandle <> NULL_PTR Then
             Case LvwViewIcon, LvwViewSmallIcon, LvwViewTile
                 Select Case PropArrange
                     Case LvwArrangeNone, LvwArrangeLeft, LvwArrangeTop
-                        Dim ViewRect As RECT, P As POINTAPI
+                        Dim ViewRect As RECT, P2 As POINTAPI
                         SendMessage ListViewHandle, LVM_GETVIEWRECT, 0, ByVal VarPtr(ViewRect)
-                        If (CDbl(X) + (CDbl(ListViewDragOffsetX) - CDbl(ViewRect.Left))) <= MAXINT_4 Then P.X = CLng(CDbl(X) + (CDbl(ListViewDragOffsetX) - CDbl(ViewRect.Left))) Else P.X = MAXINT_4
-                        If (CDbl(Y) + (CDbl(ListViewDragOffsetY) - CDbl(ViewRect.Top))) <= MAXINT_4 Then P.Y = CLng(CDbl(Y) + (CDbl(ListViewDragOffsetY) - CDbl(ViewRect.Top))) Else P.Y = MAXINT_4
-                        SendMessage ListViewHandle, LVM_SETITEMPOSITION32, ListViewDragIndex - 1, ByVal VarPtr(P)
+                        If (CDbl(P1.X) + (CDbl(ListViewDragOffsetX) - CDbl(ViewRect.Left))) <= MAXINT_4 Then P2.X = CLng(CDbl(P1.X) + (CDbl(ListViewDragOffsetX) - CDbl(ViewRect.Left))) Else P2.X = MAXINT_4
+                        If (CDbl(P1.Y) + (CDbl(ListViewDragOffsetY) - CDbl(ViewRect.Top))) <= MAXINT_4 Then P2.Y = CLng(CDbl(P1.Y) + (CDbl(ListViewDragOffsetY) - CDbl(ViewRect.Top))) Else P2.Y = MAXINT_4
+                        SendMessage ListViewHandle, LVM_SETITEMPOSITION32, ListViewDragIndex - 1, ByVal VarPtr(P2)
                 End Select
         End Select
     End If

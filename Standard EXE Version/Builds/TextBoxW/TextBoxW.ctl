@@ -202,6 +202,7 @@ Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLong
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
+Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
@@ -237,6 +238,7 @@ Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVa
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
+Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
@@ -658,13 +660,17 @@ If PropOLEDropMode = vbOLEDropAutomatic Then
         Effect = vbDropEffectNone
     End If
 End If
-RaiseEvent OLEDragDrop(Data, Effect, Button, Shift, UserControl.ScaleX(X, vbPixels, vbContainerPosition), UserControl.ScaleY(Y, vbPixels, vbContainerPosition))
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If TextBoxHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, TextBoxHandle, P, 1
+RaiseEvent OLEDragDrop(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
 If PropOLEDropMode = vbOLEDropAutomatic Then
     If Not Effect = vbDropEffectNone And Not Text = vbNullString Then
         Me.Refresh
         If TextBoxHandle <> NULL_PTR Then
             Dim CharPos As Long
-            CharPos = CIntToUInt(LoWord(CLng(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(X, Y)))))
+            CharPos = CIntToUInt(LoWord(CLng(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P.X, P.Y)))))
             If TextBoxAutoDragIsActive = True Then
                 TextBoxAutoDragIsActive = False
                 Dim SelStart As Long, SelEnd As Long
@@ -690,10 +696,14 @@ Private Sub UserControl_OLEDragOver(Data As DataObject, Effect As Long, Button A
 If PropOLEDropMode = vbOLEDropAutomatic Then
     If Data.GetFormat(CF_UNICODETEXT) = True Or Data.GetFormat(vbCFText) = True Then Effect = vbDropEffectMove Else Effect = vbDropEffectNone
 End If
-RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(X, vbPixels, vbContainerPosition), UserControl.ScaleY(Y, vbPixels, vbContainerPosition), State)
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If TextBoxHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, TextBoxHandle, P, 1
+RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition), State)
 If TextBoxHandle <> NULL_PTR Then
     If State = vbOver And Not Effect = vbDropEffectNone Then
-        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then
+        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.ScaleWidth) And (Y >= 0 And Y <= UserControl.ScaleHeight) Then
             Dim dwStyle As Long, dwExStyle As Long
             dwStyle = GetWindowLong(TextBoxHandle, GWL_STYLE)
             dwExStyle = GetWindowLong(TextBoxHandle, GWL_EXSTYLE)
@@ -726,7 +736,7 @@ If TextBoxHandle <> NULL_PTR Then
     If PropOLEDropMode = vbOLEDropAutomatic Then
         If State = vbOver And Not Effect = vbDropEffectNone Then
             Dim CharPos As Long, CaretPos As Long
-            CharPos = CIntToUInt(LoWord(CLng(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(X, Y)))))
+            CharPos = CIntToUInt(LoWord(CLng(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P.X, P.Y)))))
             CaretPos = CLng(SendMessage(TextBoxHandle, EM_POSFROMCHAR, CharPos, ByVal 0&))
             If CaretPos > -1 Then
                 Dim hDC As LongPtr, Size As SIZEAPI
