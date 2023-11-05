@@ -425,7 +425,7 @@ Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, B
 Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
 #End If
 Private Const ICC_BAR_CLASSES As Long = &H20
-Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80, RDW_FRAME As Long = &H400
 #If VBA7 Then
 Private Const HWND_DESKTOP As LongPtr = &H0
 #Else
@@ -1237,7 +1237,7 @@ If PropTransparent = True Then
         DeleteObject ToolBarTransparentBrush
         ToolBarTransparentBrush = NULL_PTR
     End If
-    RedrawWindow ToolBarHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    RedrawWindow ToolBarHandle, NULL_PTR, NULL_PTR, RDW_FRAME Or RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
 Else
     MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End If

@@ -1409,11 +1409,15 @@ Select Case wMsg
     Case WM_PAINT, WM_PRINTCLIENT
         If Not PropText = vbNullString Then
             If wMsg = WM_PAINT Then
-                Dim hDC As LongPtr
-                hDC = GetDC(hWnd)
-                If hDC <> NULL_PTR Then
-                    Call TextDraw(hWnd, hDC)
-                    ReleaseDC hWnd, hDC
+                If wParam = 0 Then
+                    Dim hDC As LongPtr
+                    hDC = GetDC(hWnd)
+                    If hDC <> NULL_PTR Then
+                        Call TextDraw(hWnd, hDC)
+                        ReleaseDC hWnd, hDC
+                    End If
+                Else
+                    Call TextDraw(hWnd, wParam)
                 End If
             ElseIf wMsg = WM_PRINTCLIENT Then
                 If wParam <> 0 Then Call TextDraw(hWnd, wParam)
