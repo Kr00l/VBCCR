@@ -1365,7 +1365,12 @@ If CoolBarHandle <> NULL_PTR Then
         Dim Band As CbrBand, Child As Object
         For Each Band In Me.Bands
             Set Child = Band.Child
-            If Not Child Is Nothing Then Child.Move Child.Left
+            If Not Child Is Nothing Then
+                Child.Move Child.Left
+                On Error Resume Next
+                Child.Refresh
+                On Error GoTo 0
+            End If
         Next Band
     Else
         Dim RBBI As REBARBANDINFO, i As Long
@@ -2955,33 +2960,38 @@ Select Case wMsg
             Exit Function
         End If
     Case WM_PAINT
-        If PropDoubleBuffer = True Then
-            Dim ClientRect As RECT, hDC As LongPtr
-            Dim hDCBmp As LongPtr
-            Dim hBmp As LongPtr, hBmpOld As LongPtr
-            GetClientRect hWnd, ClientRect
-            Dim PS As PAINTSTRUCT
-            hDC = BeginPaint(hWnd, PS)
-            With PS
-            If wParam <> 0 Then hDC = wParam
-            hDCBmp = CreateCompatibleDC(hDC)
-            If hDCBmp <> NULL_PTR Then
-                hBmp = CreateCompatibleBitmap(hDC, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top)
-                If hBmp <> NULL_PTR Then
-                    hBmpOld = SelectObject(hDCBmp, hBmp)
-                    CoolBarDoubleBufferEraseBkgDC = hDCBmp
-                    SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
-                    CoolBarDoubleBufferEraseBkgDC = NULL_PTR
-                    With PS.RCPaint
-                    BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
-                    End With
-                    SelectObject hDCBmp, hBmpOld
-                    DeleteObject hBmp
+        If wParam = 0 Then
+            If PropDoubleBuffer = True Then
+                Dim ClientRect As RECT, hDC As LongPtr
+                Dim hDCBmp As LongPtr
+                Dim hBmp As LongPtr, hBmpOld As LongPtr
+                GetClientRect hWnd, ClientRect
+                Dim PS As PAINTSTRUCT
+                hDC = BeginPaint(hWnd, PS)
+                With PS
+                hDCBmp = CreateCompatibleDC(hDC)
+                If hDCBmp <> NULL_PTR Then
+                    hBmp = CreateCompatibleBitmap(hDC, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top)
+                    If hBmp <> NULL_PTR Then
+                        hBmpOld = SelectObject(hDCBmp, hBmp)
+                        CoolBarDoubleBufferEraseBkgDC = hDCBmp
+                        SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
+                        CoolBarDoubleBufferEraseBkgDC = NULL_PTR
+                        With PS.RCPaint
+                        BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
+                        End With
+                        SelectObject hDCBmp, hBmpOld
+                        DeleteObject hBmp
+                    End If
+                    DeleteDC hDCBmp
                 End If
-                DeleteDC hDCBmp
+                End With
+                EndPaint hWnd, PS
+                WindowProcControl = 0
+                Exit Function
             End If
-            End With
-            EndPaint hWnd, PS
+        Else
+            SendMessage hWnd, WM_PRINT, wParam, ByVal PRF_CLIENT Or PRF_ERASEBKGND
             WindowProcControl = 0
             Exit Function
         End If
@@ -3318,6 +3328,9 @@ Select Case wMsg
                             If Not Band.Child Is Nothing Then
                                 With Band.Child
                                 .Move UserControl.ScaleX(NMRBCS.RCChild.Left, vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top, vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
+                                On Error Resume Next
+                                .Refresh
+                                On Error GoTo 0
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)
@@ -3458,6 +3471,9 @@ Select Case wMsg
                                     End With
                                 End If
                                 .Move UserControl.ScaleX(NMRBCS.RCChild.Left + (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2), vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top + (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) / 2), vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
+                                On Error Resume Next
+                                .Refresh
+                                On Error GoTo 0
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)

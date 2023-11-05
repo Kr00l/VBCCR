@@ -2197,33 +2197,38 @@ Select Case wMsg
         End If
         Exit Function
     Case WM_PAINT
-        If PropDoubleBuffer = True Then
-            Dim ClientRect2 As RECT, hDC As LongPtr
-            Dim hDCBmp As LongPtr
-            Dim hBmp As LongPtr, hBmpOld As LongPtr
-            GetClientRect hWnd, ClientRect2
-            Dim PS As PAINTSTRUCT
-            hDC = BeginPaint(hWnd, PS)
-            With PS
-            If wParam <> 0 Then hDC = wParam
-            hDCBmp = CreateCompatibleDC(hDC)
-            If hDCBmp <> NULL_PTR Then
-                hBmp = CreateCompatibleBitmap(hDC, ClientRect2.Right - ClientRect2.Left, ClientRect2.Bottom - ClientRect2.Top)
-                If hBmp <> NULL_PTR Then
-                    hBmpOld = SelectObject(hDCBmp, hBmp)
-                    TabStripDoubleBufferEraseBkgDC = hDCBmp
-                    SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
-                    TabStripDoubleBufferEraseBkgDC = NULL_PTR
-                    With PS.RCPaint
-                    BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
-                    End With
-                    SelectObject hDCBmp, hBmpOld
-                    DeleteObject hBmp
+        If wParam = 0 Then
+            If PropDoubleBuffer = True Then
+                Dim ClientRect2 As RECT, hDC As LongPtr
+                Dim hDCBmp As LongPtr
+                Dim hBmp As LongPtr, hBmpOld As LongPtr
+                GetClientRect hWnd, ClientRect2
+                Dim PS As PAINTSTRUCT
+                hDC = BeginPaint(hWnd, PS)
+                With PS
+                hDCBmp = CreateCompatibleDC(hDC)
+                If hDCBmp <> NULL_PTR Then
+                    hBmp = CreateCompatibleBitmap(hDC, ClientRect2.Right - ClientRect2.Left, ClientRect2.Bottom - ClientRect2.Top)
+                    If hBmp <> NULL_PTR Then
+                        hBmpOld = SelectObject(hDCBmp, hBmp)
+                        TabStripDoubleBufferEraseBkgDC = hDCBmp
+                        SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
+                        TabStripDoubleBufferEraseBkgDC = NULL_PTR
+                        With PS.RCPaint
+                        BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
+                        End With
+                        SelectObject hDCBmp, hBmpOld
+                        DeleteObject hBmp
+                    End If
+                    DeleteDC hDCBmp
                 End If
-                DeleteDC hDCBmp
+                End With
+                EndPaint hWnd, PS
+                WindowProcControl = 0
+                Exit Function
             End If
-            End With
-            EndPaint hWnd, PS
+        Else
+            SendMessage hWnd, WM_PRINT, wParam, ByVal PRF_CLIENT Or PRF_ERASEBKGND
             WindowProcControl = 0
             Exit Function
         End If

@@ -346,6 +346,7 @@ Private Declare PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As Long
 Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetParent Lib "user32" (ByVal hWndChild As LongPtr, ByVal hWndNewParent As LongPtr) As LongPtr
+Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function IsWindowEnabled Lib "user32" (ByVal hWnd As LongPtr) As Long
@@ -392,6 +393,7 @@ Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef 
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
+Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function IsWindowEnabled Lib "user32" (ByVal hWnd As Long) As Long
@@ -4037,11 +4039,11 @@ If hDCBmp <> NULL_PTR Then
         hBmpOld = SelectObject(hDCBmp, hBmp)
         Dim WndRect As RECT, P As POINTAPI
         GetWindowRect .hWnd, WndRect
-        MapWindowPoints HWND_DESKTOP, .ContainerHwnd, WndRect, 2
+        MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
         P.X = WndRect.Left
         P.Y = WndRect.Top
         SetViewportOrgEx hDCBmp, -P.X, -P.Y, P
-        SendMessage .ContainerHwnd, WM_PAINT, hDCBmp, ByVal 0&
+        SendMessage GetParent(.hWnd), WM_PAINT, hDCBmp, ByVal 0&
         SetViewportOrgEx hDCBmp, P.X, P.Y, P
         CreateTransparentBrush = CreatePatternBrush(hBmp)
         SelectObject hDCBmp, hBmpOld
@@ -4131,33 +4133,38 @@ Select Case wMsg
             End If
         End If
     Case WM_PAINT
-        If PropDoubleBuffer = True Then
-            Dim ClientRect As RECT, hDC As LongPtr
-            Dim hDCBmp As LongPtr
-            Dim hBmp As LongPtr, hBmpOld As LongPtr
-            GetClientRect hWnd, ClientRect
-            Dim PS As PAINTSTRUCT
-            hDC = BeginPaint(hWnd, PS)
-            With PS
-            If wParam <> 0 Then hDC = wParam
-            hDCBmp = CreateCompatibleDC(hDC)
-            If hDCBmp <> NULL_PTR Then
-                hBmp = CreateCompatibleBitmap(hDC, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top)
-                If hBmp <> NULL_PTR Then
-                    hBmpOld = SelectObject(hDCBmp, hBmp)
-                    ToolBarDoubleBufferEraseBkgDC = hDCBmp
-                    SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
-                    ToolBarDoubleBufferEraseBkgDC = NULL_PTR
-                    With PS.RCPaint
-                    BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
-                    End With
-                    SelectObject hDCBmp, hBmpOld
-                    DeleteObject hBmp
+        If wParam = 0 Then
+            If PropDoubleBuffer = True Then
+                Dim ClientRect As RECT, hDC As LongPtr
+                Dim hDCBmp As LongPtr
+                Dim hBmp As LongPtr, hBmpOld As LongPtr
+                GetClientRect hWnd, ClientRect
+                Dim PS As PAINTSTRUCT
+                hDC = BeginPaint(hWnd, PS)
+                With PS
+                hDCBmp = CreateCompatibleDC(hDC)
+                If hDCBmp <> NULL_PTR Then
+                    hBmp = CreateCompatibleBitmap(hDC, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top)
+                    If hBmp <> NULL_PTR Then
+                        hBmpOld = SelectObject(hDCBmp, hBmp)
+                        ToolBarDoubleBufferEraseBkgDC = hDCBmp
+                        SendMessage hWnd, WM_PRINT, hDCBmp, ByVal PRF_CLIENT Or PRF_ERASEBKGND
+                        ToolBarDoubleBufferEraseBkgDC = NULL_PTR
+                        With PS.RCPaint
+                        BitBlt hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, hDCBmp, .Left, .Top, vbSrcCopy
+                        End With
+                        SelectObject hDCBmp, hBmpOld
+                        DeleteObject hBmp
+                    End If
+                    DeleteDC hDCBmp
                 End If
-                DeleteDC hDCBmp
+                End With
+                EndPaint hWnd, PS
+                WindowProcControl = 0
+                Exit Function
             End If
-            End With
-            EndPaint hWnd, PS
+        Else
+            SendMessage hWnd, WM_PRINT, wParam, ByVal PRF_CLIENT Or PRF_ERASEBKGND
             WindowProcControl = 0
             Exit Function
         End If
