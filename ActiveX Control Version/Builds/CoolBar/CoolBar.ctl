@@ -1365,12 +1365,7 @@ If CoolBarHandle <> NULL_PTR Then
         Dim Band As CbrBand, Child As Object
         For Each Band In Me.Bands
             Set Child = Band.Child
-            If Not Child Is Nothing Then
-                Child.Move Child.Left
-                On Error Resume Next
-                Child.Refresh
-                On Error GoTo 0
-            End If
+            If Not Child Is Nothing Then Child.Move Child.Left
         Next Band
     Else
         Dim RBBI As REBARBANDINFO, i As Long
@@ -1947,13 +1942,17 @@ If CoolBarHandle <> NULL_PTR Then
             Call EvaluateWndChild(Handle)
             If ControlIsValid(Value) = True And Handle <> NULL_PTR Then
                 .hWndChild = Handle
+                SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
+                On Error Resume Next
+                Value.Refresh
+                On Error GoTo 0
             Else
                 Err.Raise 380
             End If
         Else
             .hWndChild = INVALID_HANDLE_VALUE
+            SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
         End If
-        SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
         If PrevWndChild <> NULL_PTR And PrevWndChild <> .hWndChild And Not PrevWndChild = INVALID_HANDLE_VALUE Then
             SetParent PrevWndChild, UserControl.hWnd
             ShowWindow PrevWndChild, SW_SHOW
@@ -3328,9 +3327,6 @@ Select Case wMsg
                             If Not Band.Child Is Nothing Then
                                 With Band.Child
                                 .Move UserControl.ScaleX(NMRBCS.RCChild.Left, vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top, vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
-                                On Error Resume Next
-                                .Refresh
-                                On Error GoTo 0
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)
@@ -3471,9 +3467,6 @@ Select Case wMsg
                                     End With
                                 End If
                                 .Move UserControl.ScaleX(NMRBCS.RCChild.Left + (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2), vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top + (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) / 2), vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
-                                On Error Resume Next
-                                .Refresh
-                                On Error GoTo 0
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)
