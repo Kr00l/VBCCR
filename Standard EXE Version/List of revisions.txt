@@ -1,5 +1,9 @@
 List of revisions:
 
+05-Nov-2023
+- CoolBar/ToolBar/TabStrip/StatusBar control now redirects to WM_PRINT (PRF_CLIENT Or PRF_ERASEBKGND) upon WM_PAINT when wParam is <> 0.
+- All Transparent properties improved to use GetParent() instead of .ContainerHwnd.
+
 24-Oct-2023
 - OLEDragDropScroll property now adds the scroll bar sizes for the auto scroll margin.
 
