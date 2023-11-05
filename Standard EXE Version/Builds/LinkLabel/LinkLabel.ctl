@@ -167,6 +167,7 @@ Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindow
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetParent Lib "user32" (ByVal hWndChild As LongPtr, ByVal hWndNewParent As LongPtr) As LongPtr
+Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetFocus Lib "user32" () As LongPtr
 Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal nCmdShow As Long) As Long
@@ -200,6 +201,7 @@ Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (By
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
+Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
@@ -1990,11 +1992,11 @@ Select Case wMsg
                         hBmpOld = SelectObject(hDCBmp, hBmp)
                         Dim WndRect As RECT, P1 As POINTAPI
                         GetWindowRect .hWnd, WndRect
-                        MapWindowPoints HWND_DESKTOP, .ContainerHwnd, WndRect, 2
+                        MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
                         P1.X = WndRect.Left
                         P1.Y = WndRect.Top
                         SetViewportOrgEx hDCBmp, -P1.X, -P1.Y, P1
-                        SendMessage .ContainerHwnd, WM_PAINT, hDCBmp, ByVal 0&
+                        SendMessage GetParent(.hWnd), WM_PAINT, hDCBmp, ByVal 0&
                         SetViewportOrgEx hDCBmp, P1.X, P1.Y, P1
                         LinkLabelTransparentBrush = CreatePatternBrush(hBmp)
                         SelectObject hDCBmp, hBmpOld
