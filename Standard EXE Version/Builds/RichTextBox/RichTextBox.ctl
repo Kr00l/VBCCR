@@ -539,8 +539,9 @@ Private Const WM_COPY As Long = &H301
 Private Const WM_CUT As Long = &H300
 Private Const WM_PASTE As Long = &H302
 Private Const WM_CLEAR As Long = &H303
+Private Const WM_PAINT As Long = &HF
 Private Const WM_NCPAINT As Long = &H85
-Private Const WM_PRINT As Long = &H317, PRF_NONCLIENT As Long = &H2
+Private Const WM_PRINT As Long = &H317, PRF_NONCLIENT As Long = &H2, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
 Private Const EM_SETREADONLY As Long = &HCF, ES_READONLY As Long = &H800
 Private Const EM_SCROLL As Long = &HB5
 Private Const EM_LINESCROLL As Long = &HB6
@@ -3773,6 +3774,12 @@ Select Case wMsg
                 RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
+        End If
+    Case WM_PAINT
+        If wParam <> 0 Then
+            SendMessage hWnd, WM_PRINT, wParam, ByVal PRF_CLIENT Or PRF_ERASEBKGND
+            WindowProcControl = 0
+            Exit Function
         End If
     
     #If ImplementThemedBorder = True Then

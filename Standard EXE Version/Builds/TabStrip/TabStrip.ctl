@@ -1185,6 +1185,7 @@ If TabStripHandle <> NULL_PTR Then
     If TabStripBackColorBrush <> NULL_PTR Then DeleteObject TabStripBackColorBrush
     If TabStripDesignMode = False Or PropBackColor <> vbButtonFace Then TabStripBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
+UserControl.BackColor = PropBackColor
 Me.Refresh
 UserControl.PropertyChanged "BackColor"
 End Property
@@ -1859,6 +1860,7 @@ ElseIf PropBackColor <> vbButtonFace Then
         Call ComCtlsSetSubclass(UserControl.hWnd, Me, 4)
     End If
 End If
+UserControl.BackColor = PropBackColor
 End Sub
 
 Private Sub ReCreateTabStrip()
@@ -2393,12 +2395,11 @@ Select Case wMsg
         End If
     Case WM_PRINTCLIENT
         If TabStripHandle <> NULL_PTR And TabStripBackColorBrush <> NULL_PTR Then
-            If WindowFromDC(wParam) = TabStripHandle Or (TabStripDoubleBufferEraseBkgDC = wParam And TabStripDoubleBufferEraseBkgDC <> NULL_PTR) Then
-                Dim RC As RECT
-                GetClientRect TabStripHandle, RC
-                FillRect wParam, RC, TabStripBackColorBrush
-                Exit Function
-            End If
+            Dim RC As RECT
+            GetClientRect TabStripHandle, RC
+            FillRect wParam, RC, TabStripBackColorBrush
+            WindowProcUserControl = 0
+            Exit Function
         End If
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
