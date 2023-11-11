@@ -271,6 +271,7 @@ Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_CTLCOLORSTATIC As Long = &H138
 Private Const WM_PAINT As Long = &HF
+Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -1796,6 +1797,12 @@ Select Case wMsg
             Const NFR_ANSI As Long = 1
             Const NFR_UNICODE As Long = 2
             WindowProcControl = NFR_UNICODE
+            Exit Function
+        End If
+    Case WM_PAINT
+        If wParam <> 0 Then
+            SendMessage hWnd, WM_PRINT, wParam, ByVal PRF_CLIENT Or PRF_ERASEBKGND
+            WindowProcControl = 0
             Exit Function
         End If
 End Select
