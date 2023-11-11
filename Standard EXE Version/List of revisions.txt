@@ -1,5 +1,8 @@
 List of revisions:
 
+11-Nov-2023
+- RichTextBox/LinkLabel now react upon WM_PAINT where wParam is a hDC.
+
 05-Nov-2023
 - CoolBar/ToolBar/TabStrip/StatusBar control now redirects to WM_PRINT (PRF_CLIENT Or PRF_ERASEBKGND) upon WM_PAINT when wParam is <> 0.
 - All Transparent properties improved to use GetParent() instead of .ContainerHwnd.
