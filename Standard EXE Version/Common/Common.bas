@@ -1338,7 +1338,7 @@ Public Function WinColor(ByVal Color As Long, Optional ByVal hPal As Long) As Lo
 #If TWINBASIC Then
 WinColor = VBA.TranslateColor(Color, hPal)
 #Else
-If OleTranslateColor(Color, hPal, WinColor) <> 0 Then Err.Raise 380
+If OleTranslateColor(Color, hPal, WinColor) <> 0 Then Err.Raise 5
 #End If
 End Function
 
