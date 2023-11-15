@@ -1252,6 +1252,26 @@ Else
 End If
 End Function
 
+#If (TWINBASIC = 0) Then
+Public Function Nz(ByRef Value As Variant, Optional ByRef ValueIfNull As Variant) As Variant
+If IsNull(Value) Then Nz = ValueIfNull Else Nz = Value
+End Function
+#End If
+
+#If (TWINBASIC = 0) Then
+Public Function IsArrayInitialized(ByRef VarName As Variant) As Boolean
+Const VT_BYREF As Integer = &H4000
+Dim VT As Integer
+CopyMemory VT, ByVal VarPtr(VarName), 2
+If (VT And vbArray) = vbArray Then
+    Dim Ptr As LongPtr
+    CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(VarName), 8), PTR_SIZE
+    If (VT And VT_BYREF) = VT_BYREF Then CopyMemory Ptr, ByVal Ptr, PTR_SIZE
+    IsArrayInitialized = CBool(Ptr <> NULL_PTR)
+End If
+End Function
+#End If
+
 Public Function DPI_X() As Long
 Const LOGPIXELSX As Long = 88
 Dim hDCScreen As LongPtr
@@ -1315,7 +1335,11 @@ Public Function WinColor(ByVal Color As Long, Optional ByVal hPal As LongPtr) As
 #Else
 Public Function WinColor(ByVal Color As Long, Optional ByVal hPal As Long) As Long
 #End If
-If OleTranslateColor(Color, hPal, WinColor) <> 0 Then WinColor = -1
+#If TWINBASIC Then
+WinColor = VBA.TranslateColor(Color, hPal)
+#Else
+If OleTranslateColor(Color, hPal, WinColor) <> 0 Then Err.Raise 380
+#End If
 End Function
 
 Public Function PictureFromByteStream(ByRef ByteStream As Variant) As IPictureDisp
