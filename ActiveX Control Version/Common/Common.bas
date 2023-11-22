@@ -1253,7 +1253,7 @@ End If
 End Function
 
 #If (TWINBASIC = 0) Then
-Public Function Nz(ByRef Value As Variant, Optional ByRef ValueIfNull As Variant) As Variant
+Public Function Nz(ByRef Value As Variant, Optional ByRef ValueIfNull As Variant = Empty) As Variant
 If IsNull(Value) Then Nz = ValueIfNull Else Nz = Value
 End Function
 #End If
