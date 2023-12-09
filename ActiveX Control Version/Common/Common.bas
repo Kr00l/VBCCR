@@ -1156,7 +1156,7 @@ End If
 End Function
 
 Public Function UTF8_To_UTF16(ByRef Source() As Byte) As String
-If (0 / 1) + (Not Not Source()) = 0 Then Exit Function
+If IsArrayInitialized(Source()) = False Then Exit Function
 Const CP_UTF8 As Long = 65001
 Dim Size As Long, Pointer As LongPtr, Length As Long
 Size = UBound(Source) - LBound(Source) + 1
