@@ -1,5 +1,8 @@
 List of revisions:
 
+17-Dec-2023
+- Adjustment needed in the UserControl_Resize in the ComboBoxW/FontCombo/VirtualCombo control. (regression 10-Dec-2023)
+
 10-Dec-2023
 - Improvement in the internal CheckDropDownHeight method in the ComboBoxW/FontCombo/VirtualCombo control to match MS control on edge cases.
 
