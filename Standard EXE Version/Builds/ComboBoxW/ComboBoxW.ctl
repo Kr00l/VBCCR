@@ -685,7 +685,7 @@ If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If ComboBoxHandle = NULL_PTR Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> CboStyleSimpleCombo Then
-    If .ScaleHeight > 0 Then MoveWindow ComboBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    If .ScaleHeight > 0 Then MoveWindow ComboBoxHandle, 0, 0, .ScaleWidth, .ScaleHeight + CLng(SendMessage(ComboBoxHandle, CB_GETITEMHEIGHT, IIf(PropDrawMode <> CboDrawModeOwnerDrawVariable, 0, -1), ByVal 0&)) + 2, 1
     GetWindowRect ComboBoxHandle, WndRect
     If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
         .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
