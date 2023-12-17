@@ -679,7 +679,7 @@ If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If VirtualComboHandle = NULL_PTR Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> VcbStyleSimpleCombo Then
-    If .ScaleHeight > 0 Then MoveWindow VirtualComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    If .ScaleHeight > 0 Then MoveWindow VirtualComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + CLng(SendMessage(VirtualComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)) + 2, 1
     GetWindowRect VirtualComboHandle, WndRect
     If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
         .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
