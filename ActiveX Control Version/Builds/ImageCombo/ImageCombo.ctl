@@ -665,13 +665,13 @@ If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If ImageComboHandle = NULL_PTR Then InProc = False: Exit Sub
 Dim WndRect As RECT
 If PropStyle <> ImcStyleSimpleCombo Then
-    MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    If .ScaleHeight > 0 Then MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect ImageComboHandle, WndRect
     If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-        .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+        .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
         If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
-    ' Call SetDropDownHeight(True) is not needed as 'ImageComboComboHandle' is not touched.
+    ' Call CheckDropDownHeight(True) is not needed as 'ImageComboComboHandle' is not touched.
 Else
     Dim ListRect As RECT, EditHeight As Long, ItemHeight As Long
     Dim Height As Long, Temp As Long, Count As Long
@@ -1202,7 +1202,7 @@ If ImageComboHandle <> NULL_PTR Then
     On Error Resume Next
     Call UserControl_Resize
     On Error GoTo 0
-    Call SetDropDownHeight(True)
+    Call CheckDropDownHeight(True)
     SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
 End If
 UserControl.PropertyChanged "ImageList"
@@ -1380,7 +1380,7 @@ Select Case Value
             Err.Raise 380
         End If
 End Select
-Call SetDropDownHeight(True)
+Call CheckDropDownHeight(True)
 UserControl.PropertyChanged "MaxDropDownItems"
 End Property
 
@@ -1516,17 +1516,17 @@ Else
 End If
 End With
 If ImageComboHandle <> NULL_PTR Then SendMessage ImageComboHandle, CBEM_INSERTITEM, 0, ByVal VarPtr(CBEI)
-Call SetDropDownHeight(False)
+Call CheckDropDownHeight(False)
 End Sub
 
 Friend Sub FComboItemsRemove(ByVal Index As Long)
 If ImageComboHandle <> NULL_PTR Then SendMessage ImageComboHandle, CBEM_DELETEITEM, Index - 1, ByVal 0&
-Call SetDropDownHeight(False)
+Call CheckDropDownHeight(False)
 End Sub
 
 Friend Sub FComboItemsClear()
 If ImageComboHandle <> NULL_PTR Then SendMessage ImageComboHandle, CB_RESETCONTENT, 0, ByVal 0&
-Call SetDropDownHeight(False)
+Call CheckDropDownHeight(False)
 End Sub
 
 Friend Property Get FComboItemText(ByVal Index As Long) As String
@@ -2007,10 +2007,10 @@ Attribute OLEDraggedItem.VB_MemberFlags = "400"
 If ImageComboDragIndex > 0 Then Set OLEDraggedItem = Me.ComboItems(ImageComboDragIndex)
 End Property
 
-Private Sub SetDropDownHeight(ByVal Calculate As Boolean)
+Private Sub CheckDropDownHeight(ByVal Calculate As Boolean)
 Static LastCount As Long, ItemHeight As Long, ImageHeight As Long
 If ImageComboHandle <> NULL_PTR Then
-    Dim Count As Long, hImageList As LongPtr
+    Dim Count As Long, Height As Long, hImageList As LongPtr
     Count = CLng(SendMessage(ImageComboHandle, CB_GETCOUNT, 0, ByVal 0&))
     Select Case Count
         Case 0
@@ -2025,12 +2025,11 @@ If ImageComboHandle <> NULL_PTR Then
         hImageList = SendMessage(ImageComboHandle, CBEM_GETIMAGELIST, 0, ByVal 0&)
         If hImageList <> NULL_PTR Then ImageList_GetIconSize hImageList, 0, ImageHeight
     End If
-    If ImageComboComboHandle <> NULL_PTR Then
-        If PropStyle <> ImcStyleSimpleCombo Then
-            MoveWindow ImageComboComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + (IIf(ImageHeight > ItemHeight, ImageHeight, ItemHeight) * Count) + 2, 1
-        Else
-            RedrawWindow ImageComboComboHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
-        End If
+    If ImageHeight > ItemHeight Then Height = (ImageHeight * Count) Else Height = (ItemHeight * Count)
+    If PropStyle <> ImcStyleSimpleCombo Then
+        If ImageComboListHandle <> NULL_PTR Then SetWindowPos ImageComboListHandle, NULL_PTR, 0, 0, UserControl.ScaleWidth, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+    Else
+        If ImageComboComboHandle <> NULL_PTR Then RedrawWindow ImageComboComboHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
     End If
     LastCount = Count
 End If
