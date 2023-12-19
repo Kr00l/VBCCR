@@ -1,5 +1,9 @@
 List of revisions:
 
+19-Dec-2023
+- Included OLEDragDropScroll/OLEDropMode and related UserControl events in the RichTextBox control.
+  Renamed OLEDragDrop to OLEDragDropRTF. OLEDragDropRTF is the auto-mode by rich edit control.
+
 18-Dec-2023
 - Adjustment needed in the UserControl_Resize in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo control. (regression 10-Dec-2023)
 
