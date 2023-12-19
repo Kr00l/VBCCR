@@ -157,8 +157,8 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       Top             =   120
       Width           =   1620
    End
-   Begin VB.CheckBox CheckOLEDragDrop 
-      Caption         =   "OLEDragDrop"
+   Begin VB.CheckBox CheckOLEDragDropRTF 
+      Caption         =   "OLEDragDropRTF"
       Height          =   285
       Left            =   4200
       TabIndex        =   23
@@ -335,7 +335,7 @@ If .TextMode <> ComboTextMode.ItemData(ComboTextMode.ListIndex) Then .TextMode =
 .UndoLimit = CLng(TextUndoLimit.Text)
 .IMEMode = ComboIMEMode.ItemData(ComboIMEMode.ListIndex)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
-.OLEDragDrop = CBool(CheckOLEDragDrop.Value = vbChecked)
+.OLEDragDropRTF = CBool(CheckOLEDragDropRTF.Value = vbChecked)
 .HideSelection = CBool(CheckHideSelection.Value = vbChecked)
 .UseSystemPasswordChar = CBool(CheckUseSystemPasswordChar.Value = vbChecked)
 .MultiLine = CBool(CheckMultiLine.Value = vbChecked)
@@ -387,7 +387,7 @@ For i = 0 To ComboIMEMode.ListCount - 1
     End If
 Next i
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
-CheckOLEDragDrop.Value = IIf(.OLEDragDrop = True, vbChecked, vbUnchecked)
+CheckOLEDragDropRTF.Value = IIf(.OLEDragDropRTF = True, vbChecked, vbUnchecked)
 CheckHideSelection.Value = IIf(.HideSelection = True, vbChecked, vbUnchecked)
 CheckUseSystemPasswordChar.Value = IIf(.UseSystemPasswordChar = True, vbChecked, vbUnchecked)
 CheckMultiLine.Value = IIf(.MultiLine = True, vbChecked, vbUnchecked)
@@ -630,7 +630,7 @@ If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
 
-Private Sub CheckOLEDragDrop_Click()
+Private Sub CheckOLEDragDropRTF_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

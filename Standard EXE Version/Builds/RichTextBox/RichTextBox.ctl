@@ -39,7 +39,7 @@ Private Const PTR_SIZE As Long = 4
 #If False Then
 Private RtfLoadSaveFormatRTF, RtfLoadSaveFormatText, RtfLoadSaveFormatUnicodeText
 Private RtfFindOptionWholeWord, RtfFindOptionMatchCase, RtfFindOptionNoHighlight, RtfFindOptionReverse
-Private RtfActionTypeUnknown, RtfActionTypeTyping, RtfActionTypeDelete, RtfActionTypeOLEDragDrop, RtfActionTypeCut, RtfActionTypePaste, RtfActionTypeAutoTable
+Private RtfActionTypeUnknown, RtfActionTypeTyping, RtfActionTypeDelete, RtfActionTypeDragDrop, RtfActionTypeCut, RtfActionTypePaste, RtfActionTypeAutoTable
 Private RtfSelAlignmentLeft, RtfSelAlignmentRight, RtfSelAlignmentCenter, RtfSelAlignmentJustified
 Private RtfSelTypeEmpty, RtfSelTypeText, RtfSelTypeObject, RtfSelTypeMultiChar, RtfSelTypeMultiObject
 Private RtfTextModeRichText, RtfTextModePlainText
@@ -68,7 +68,7 @@ Public Enum RtfActionTypeConstants
 RtfActionTypeUnknown = UID_UNKNOWN
 RtfActionTypeTyping = UID_TYPING
 RtfActionTypeDelete = UID_DELETE
-RtfActionTypeOLEDragDrop = UID_DRAGDROP
+RtfActionTypeDragDrop = UID_DRAGDROP
 RtfActionTypeCut = UID_CUT
 RtfActionTypePaste = UID_PASTE
 RtfActionTypeAutoTable = UID_AUTOTABLE
@@ -250,6 +250,12 @@ wParam As LongPtr
 lParam As LongPtr
 CharRange As RECHARRANGE
 End Type
+Private Type NMENDROPFILES
+hdr As NMHDR
+hDrop As LongPtr
+CharPos As Long
+fProtected As Long
+End Type
 Private Type NMENPROTECTED
 hdr As NMHDR
 wMsg As Long
@@ -311,28 +317,40 @@ Public Event MouseEnter()
 Attribute MouseEnter.VB_Description = "Occurs when the user moves the mouse into the control."
 Public Event MouseLeave()
 Attribute MouseLeave.VB_Description = "Occurs when the user moves the mouse out of the control."
-Public Event OLECompleteDrag()
-Attribute OLECompleteDrag.VB_Description = "Occurs at the OLE drag/drop source control after a drag/drop has been completed or canceled."
+Public Event OLEDragDropDone()
+Attribute OLEDragDropDone.VB_Description = "Occurs at the OLE drag/drop source control after a drag/drop has been completed or canceled by the rich text box control."
 Public Event OLEGetDropEffect(ByRef Effect As Long, ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
-Attribute OLEGetDropEffect.VB_Description = "Occurs during an OLE drag/drop operation to specify the effect of which indicates what the result of the drop operation would be."
-Public Event OLEStartDrag(ByRef AllowedEffects As Long)
-Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated."
+Attribute OLEGetDropEffect.VB_Description = "Occurs during an OLE drag/drop operation by the rich text box control to specify the effect of which indicates what the result of the drop operation would be."
+Public Event OLEGetDragEffect(ByRef AllowedEffects As Long)
+Attribute OLEGetDragEffect.VB_Description = "Occurs when an OLE drag/drop operation is initiated by the rich text box control."
 #If VBA7 Then
 Public Event OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal SelStart As Long, ByVal SelEnd As Long, ByRef hMenu As LongPtr)
-Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu to use on a right-click. The rich text box control destroys the popup menu when it is finished."
+Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu for the rich text box control to use on a right-click. The rich text box control destroys the popup menu when it is finished."
 #Else
 Public Event OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, ByRef hMenu As Long)
-Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu to use on a right-click. The rich text box control destroys the popup menu when it is finished."
+Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu for the rich text box control to use on a right-click. The rich text box control destroys the popup menu when it is finished."
 #End If
 Public Event OLEContextMenuClick(ByVal ID As Long)
-Attribute OLEContextMenuClick.VB_Description = "Occurs when the user selects an item from a popup menu that was provided in the OLEGetContextMenu event."
+Attribute OLEContextMenuClick.VB_Description = "Occurs when the user selects an item from a popup menu that was provided to the rich text box control in the OLEGetContextMenu event."
 #If VBA7 Then
 Public Event OLEDeleteObject(ByVal LpOleObject As LongPtr)
-Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted. The OLE object is not necessarily being released."
+Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted in the rich text box control. The OLE object is not necessarily being released."
 #Else
 Public Event OLEDeleteObject(ByVal LpOleObject As Long)
-Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted. The OLE object is not necessarily being released."
+Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted in the rich text box control. The OLE object is not necessarily being released."
 #End If
+Public Event OLECompleteDrag(Effect As Long)
+Attribute OLECompleteDrag.VB_Description = "Occurs at the OLE drag/drop source control after a manual or automatic drag/drop has been completed or canceled."
+Public Event OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Attribute OLEDragDrop.VB_Description = "Occurs when data is dropped onto the control via an OLE drag/drop operation, and OLEDropMode is set to manual."
+Public Event OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+Attribute OLEDragOver.VB_Description = "Occurs when the mouse is moved over the control during an OLE drag/drop operation, if its OLEDropMode property is set to manual."
+Public Event OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+Attribute OLEGiveFeedback.VB_Description = "Occurs at the source control of an OLE drag/drop operation when the mouse cursor needs to be changed."
+Public Event OLESetData(Data As DataObject, DataFormat As Integer)
+Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source control when the drop target requests data that was not provided to the DataObject during the OLEDragStart event."
+Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
@@ -351,6 +369,7 @@ Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
+Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetMessagePos Lib "user32" () As Long
@@ -381,6 +400,7 @@ Private Declare PtrSafe Function SHCreateFileDataObject Lib "shell32" Alias "#74
 Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
+Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -399,6 +419,7 @@ Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hW
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
+Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
@@ -429,6 +450,7 @@ Private Declare Function SHCreateFileDataObject Lib "shell32" Alias "#740" (ByVa
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As Long) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As Any) As Long
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -462,7 +484,6 @@ Private Declare PtrSafe Function GetDCEx Lib "user32" (ByVal hWnd As LongPtr, By
 Private Declare PtrSafe Function ExcludeClipRect Lib "gdi32" (ByVal hDC As LongPtr, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
 Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, ByRef lpRect As RECT, ByVal hBrush As LongPtr) As Long
-Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #Else
 Private Declare Function OpenThemeData Lib "uxtheme" (ByVal hWnd As Long, ByVal lpszClassList As Long) As Long
 Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As Long
@@ -475,7 +496,6 @@ Private Declare Function GetDCEx Lib "user32" (ByVal hWnd As Long, ByVal hRgnCli
 Private Declare Function ExcludeClipRect Lib "gdi32" (ByVal hDC As Long, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
-Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #End If
 
 #End If
@@ -500,7 +520,11 @@ Private Const WS_EX_CLIENTEDGE As Long = &H200
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
-Private Const SB_THUMBTRACK As Long = 5
+Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
+Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
+Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
+Private Const SM_CXVSCROLL As Long = 2
+Private Const SM_CYHSCROLL As Long = 3
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -627,7 +651,7 @@ Private Const ENM_SCROLL As Long = &H4
 Private Const ENM_KEYEVENTS As Long = &H10000
 Private Const ENM_MOUSEEVENTS As Long = &H20000
 Private Const ENM_SELCHANGE As Long = &H80000
-Private Const ENM_DROPFILES As Long = &H100000 ' Not applicable if an IRichEditOleCallback is set.
+Private Const ENM_DROPFILES As Long = &H100000 ' Only applicable if ES_NOOLEDRAGDROP is set.
 Private Const ENM_PROTECTED As Long = &H200000
 Private Const ENM_CORRECTTEXT As Long = &H400000
 Private Const ENM_SCROLLEVENTS As Long = &H8
@@ -640,7 +664,7 @@ Private Const EN_MAXTEXT As Long = &H501
 Private Const EN_HSCROLL As Long = &H601
 Private Const EN_VSCROLL As Long = &H602
 Private Const EN_SELCHANGE As Long = &H702
-Private Const EN_DROPFILES As Long = &H703 ' Not applicable if an IRichEditOleCallback is set.
+Private Const EN_DROPFILES As Long = &H703 ' Only applicable if ES_NOOLEDRAGDROP is set.
 Private Const EN_PROTECTED As Long = &H704
 Private Const EN_SAVECLIPBOARD As Long = &H708
 Private Const EN_LINK As Long = &H70B
@@ -836,7 +860,9 @@ Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
 Private PropVisualStyles As Boolean
-Private PropOLEDragDrop As Boolean
+Private PropOLEDragDropRTF As Boolean
+Private PropOLEDragDropScroll As Boolean
+Private PropOLEDropMode As VBRUN.OLEDropConstants
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
@@ -968,7 +994,9 @@ RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
-PropOLEDragDrop = True
+PropOLEDragDropRTF = True
+PropOLEDragDropScroll = True
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
@@ -1008,7 +1036,9 @@ With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
-PropOLEDragDrop = .ReadProperty("OLEDragDrop", True)
+PropOLEDragDropRTF = .ReadProperty("OLEDragDropRTF", True)
+PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
+Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
@@ -1056,7 +1086,9 @@ With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
-.WriteProperty "OLEDragDrop", PropOLEDragDrop, True
+.WriteProperty "OLEDragDropRTF", PropOLEDragDropRTF, True
+.WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
+.WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
@@ -1090,6 +1122,76 @@ Buffer = vbNullString
 StreamStringOut Buffer, SF_RTF
 .WriteProperty "TextRTF", StrToVar(Buffer), vbNullString
 End With
+End Sub
+
+Private Sub UserControl_OLECompleteDrag(Effect As Long)
+RaiseEvent OLECompleteDrag(Effect)
+End Sub
+
+Private Sub UserControl_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If RichTextBoxHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, RichTextBoxHandle, P, 1
+RaiseEvent OLEDragDrop(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+End Sub
+
+Private Sub UserControl_OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If RichTextBoxHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, RichTextBoxHandle, P, 1
+RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition), State)
+If RichTextBoxHandle <> NULL_PTR Then
+    If State = vbOver And Not Effect = vbDropEffectNone Then
+        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.ScaleWidth) And (Y >= 0 And Y <= UserControl.ScaleHeight) Then
+            Dim dwStyle As Long, dwExStyle As Long
+            dwStyle = GetWindowLong(RichTextBoxHandle, GWL_STYLE)
+            dwExStyle = GetWindowLong(RichTextBoxHandle, GWL_EXSTYLE)
+            If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
+                Dim CX1 As Long, CX2 As Long
+                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                    If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
+                        CX1 = GetSystemMetrics(SM_CXVSCROLL)
+                    Else
+                        CX2 = GetSystemMetrics(SM_CXVSCROLL)
+                    End If
+                End If
+                If X < ((16 * PixelsPerDIP_X()) + CX1) Then
+                    SendMessage RichTextBoxHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
+                ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
+                    SendMessage RichTextBoxHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
+                End If
+            End If
+            If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                Dim CY1 As Long, CY2 As Long
+                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
+                If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
+                    SendMessage RichTextBoxHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
+                ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
+                    SendMessage RichTextBoxHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
+                End If
+            End If
+        End If
+    End If
+End If
+End Sub
+
+Private Sub UserControl_OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+RaiseEvent OLEGiveFeedback(Effect, DefaultCursors)
+End Sub
+
+Private Sub UserControl_OLESetData(Data As DataObject, DataFormat As Integer)
+RaiseEvent OLESetData(Data, DataFormat)
+End Sub
+
+Private Sub UserControl_OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+RaiseEvent OLEStartDrag(Data, AllowedEffects)
+End Sub
+
+Public Sub OLEDrag()
+Attribute OLEDrag.VB_Description = "Starts an OLE drag/drop event with the given control as the source."
+UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
@@ -1336,15 +1438,60 @@ If RichTextBoxHandle <> NULL_PTR Then EnableWindow RichTextBoxHandle, IIf(Value 
 UserControl.PropertyChanged "Enabled"
 End Property
 
-Public Property Get OLEDragDrop() As Boolean
-Attribute OLEDragDrop.VB_Description = "Returns/Sets whether this object can act as an OLE drag source and drop target."
-OLEDragDrop = PropOLEDragDrop
+Public Property Get OLEDragDropRTF() As Boolean
+Attribute OLEDragDropRTF.VB_Description = "Returns/Sets whether the rich text box control can act as an OLE drag source and drop target."
+OLEDragDropRTF = PropOLEDragDropRTF
 End Property
 
-Public Property Let OLEDragDrop(ByVal Value As Boolean)
-PropOLEDragDrop = Value
+Public Property Let OLEDragDropRTF(ByVal Value As Boolean)
+PropOLEDragDropRTF = Value
+If PropOLEDragDropRTF = True Then
+    PropOLEDragDropScroll = True
+    Me.OLEDropMode = OLEDropModeNone
+End If
 If RichTextBoxHandle <> NULL_PTR Then Call ReCreateRichTextBox
-UserControl.PropertyChanged "OLEDragDrop"
+UserControl.PropertyChanged "OLEDragDropRTF"
+End Property
+
+Public Property Get OLEDragDropScroll() As Boolean
+Attribute OLEDragDropScroll.VB_Description = "Returns/Sets whether this object will scroll during an OLE drag/drop operation."
+OLEDragDropScroll = PropOLEDragDropScroll
+End Property
+
+Public Property Let OLEDragDropScroll(ByVal Value As Boolean)
+If PropOLEDragDropRTF = True And Value = False Then
+    If RichTextBoxDesignMode = True Then
+        MsgBox "OLEDragDropScroll must be True when OLEDragDropRTF is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="OLEDragDropScroll must be True when OLEDragDropRTF is True"
+    End If
+End If
+PropOLEDragDropScroll = Value
+UserControl.PropertyChanged "OLEDragDropScroll"
+End Property
+
+Public Property Get OLEDropMode() As OLEDropModeConstants
+Attribute OLEDropMode.VB_Description = "Returns/Sets whether this object can act as an OLE drop target."
+OLEDropMode = UserControl.OLEDropMode
+End Property
+
+Public Property Let OLEDropMode(ByVal Value As OLEDropModeConstants)
+If PropOLEDragDropRTF = True And Value = OLEDropModeManual Then
+    If RichTextBoxDesignMode = True Then
+        MsgBox "OLEDropMode must be 0 - None when OLEDragDropRTF is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="OLEDropMode must be 0 - None when OLEDragDropRTF is True"
+    End If
+End If
+Select Case Value
+    Case OLEDropModeNone, OLEDropModeManual
+        UserControl.OLEDropMode = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "OLEDropMode"
 End Property
 
 Public Property Get MousePointer() As Integer
@@ -1878,7 +2025,7 @@ Private Sub CreateRichTextBox()
 If RichTextBoxHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
-If PropOLEDragDrop = False Then dwStyle = dwStyle Or ES_NOOLEDRAGDROP
+If PropOLEDragDropRTF = False Then dwStyle = dwStyle Or ES_NOOLEDRAGDROP
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING Or WS_EX_RIGHT Or WS_EX_LEFTSCROLLBAR
 If PropBorderStyle = vbFixedSingle Then
     dwStyle = dwStyle Or ES_SUNKEN
@@ -1928,7 +2075,7 @@ Me.AutoURLDetect = PropAutoURLDetect
 If PropUndoLimit <> 100 Then Me.UndoLimit = PropUndoLimit
 If RichTextBoxDesignMode = False Then
     If RichTextBoxHandle <> NULL_PTR Then
-        SendMessage RichTextBoxHandle, EM_SETEVENTMASK, 0, ByVal ENM_CHANGE Or ENM_SCROLL Or ENM_SELCHANGE Or ENM_DRAGDROPDONE Or ENM_LINK Or ENM_PROTECTED
+        SendMessage RichTextBoxHandle, EM_SETEVENTMASK, 0, ByVal ENM_CHANGE Or ENM_SCROLL Or ENM_SELCHANGE Or ENM_DRAGDROPDONE Or ENM_LINK Or ENM_DROPFILES Or ENM_PROTECTED
         SendMessage RichTextBoxHandle, EM_SETEDITSTYLE, SES_BEEPONMAXTEXT, ByVal SES_BEEPONMAXTEXT
         If PropAllowOverType = True And PropOverTypeMode = True Then
             SendMessage RichTextBoxHandle, WM_KEYDOWN, vbKeyInsert, ByVal 0&
@@ -3658,7 +3805,7 @@ End Sub
 
 Friend Sub FIRichEditOleCallback_GetDragDropEffect(ByVal Drag As Boolean, ByVal KeyState As Long, ByRef dwEffect As Long)
 If Drag = True Then
-    RaiseEvent OLEStartDrag(dwEffect) ' AllowedEffects
+    RaiseEvent OLEGetDragEffect(dwEffect) ' AllowedEffects
 Else
     Dim Pos As Long, P As POINTAPI
     Pos = GetMessagePos()
@@ -3978,13 +4125,23 @@ Select Case wMsg
                     RaiseEvent SelChange(.SelType, .CharRange.Min, .CharRange.Max)
                     End With
                 Case EN_DRAGDROPDONE
-                    RaiseEvent OLECompleteDrag
+                    RaiseEvent OLEDragDropDone
                 Case EN_LINK
                     Dim NMENL As NMENLINK
                     CopyMemory NMENL, ByVal lParam, LenB(NMENL)
                     With NMENL
                     RaiseEvent LinkEvent(.wMsg, .wParam, .lParam, .CharRange.Min, .CharRange.Max)
                     End With
+                Case EN_DROPFILES
+                    Dim NMENDF As NMENDROPFILES, Cancel As Boolean
+                    CopyMemory NMENDF, ByVal lParam, LenB(NMENDF)
+                    ' WIP
+                    If Cancel = True Then
+                        WindowProcUserControl = 1
+                    Else
+                        WindowProcUserControl = 0
+                    End If
+                    Exit Function
                 Case EN_PROTECTED
                     Dim NMENP As NMENPROTECTED
                     CopyMemory NMENP, ByVal lParam, LenB(NMENP)
