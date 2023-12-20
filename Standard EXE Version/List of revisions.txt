@@ -1,5 +1,9 @@
 List of revisions:
 
+20-Dec-2023
+- Included the DropFiles event in the RichTextBox control. (EN_DROPFILES)
+  Ensure that there is no OLE drop target set and that the application calls the DragAcceptFiles API on the RichTextBox window handle.
+
 19-Dec-2023
 - Included OLEDragDropScroll/OLEDropMode and related UserControl events in the RichTextBox control.
   Renamed OLEDragDrop to OLEDragDropRTF. OLEDragDropRTF is the auto-mode by rich edit control.
