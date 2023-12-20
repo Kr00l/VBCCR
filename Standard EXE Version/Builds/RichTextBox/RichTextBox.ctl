@@ -285,6 +285,8 @@ Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, wh
 Public Event LinkEvent(ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal LinkStart As Long, ByVal LinkEnd As Long)
 Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, when the user clicks the mouse or when the mouse pointer is over text that has a link format."
 #End If
+Public Event DropFiles(ByVal FileList As Variant, ByVal CharPos As Long, ByVal Protected As Boolean, ByRef Cancel As Boolean)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target and the application called the DragAcceptFiles API."
 Public Event ModifyProtected(ByRef Allow As Boolean, ByVal SelStart As Long, ByVal SelEnd As Long)
 Attribute ModifyProtected.VB_Description = "Occurs when the user attempts to edit protected text."
 Public Event Scroll()
@@ -401,6 +403,7 @@ Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW"
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -451,6 +454,7 @@ Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal 
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As Any) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -4135,7 +4139,22 @@ Select Case wMsg
                 Case EN_DROPFILES
                     Dim NMENDF As NMENDROPFILES, Cancel As Boolean
                     CopyMemory NMENDF, ByVal lParam, LenB(NMENDF)
-                    ' WIP
+                    With NMENDF
+                    If .hDrop <> NULL_PTR Then
+                        Dim Count As Long
+                        Count = DragQueryFile(.hDrop, &HFFFFFFFF, NULL_PTR, 0)
+                        If Count > 0 Then
+                            Dim FileList() As String, iFile As Long, Buffer As String
+                            ReDim FileList(0 To (Count - 1)) As String
+                            For iFile = 0 To (Count - 1)
+                                Buffer = String(DragQueryFile(.hDrop, iFile, NULL_PTR, 0), vbNullChar)
+                                DragQueryFile .hDrop, iFile, StrPtr(Buffer), Len(Buffer) + 1
+                                FileList(iFile) = Buffer
+                            Next iFile
+                            RaiseEvent DropFiles(FileList(), .CharPos, CBool(.fProtected <> 0), Cancel)
+                        End If
+                    End If
+                    End With
                     If Cancel = True Then
                         WindowProcUserControl = 1
                     Else
