@@ -554,12 +554,12 @@ If PropRightToLeft = True Then Me.RightToLeft = True
 PropRedraw = .ReadProperty("Redraw", True)
 PropStyle = .ReadProperty("Style", CboStyleDropDownCombo)
 PropLocked = .ReadProperty("Locked", False)
-PropText = VarToStr(.ReadProperty("Text", vbNullString))
+PropText = .ReadProperty("Text", vbNullString) ' Unicode not necessary
 PropExtendedUI = .ReadProperty("ExtendedUI", False)
 PropMaxDropDownItems = .ReadProperty("MaxDropDownItems", 9)
 PropIntegralHeight = .ReadProperty("IntegralHeight", True)
 PropMaxLength = .ReadProperty("MaxLength", 0)
-PropCueBanner = VarToStr(.ReadProperty("CueBanner", vbNullString))
+PropCueBanner = .ReadProperty("CueBanner", vbNullString) ' Unicode not necessary
 PropUseListBackColor = .ReadProperty("UseListBackColor", False)
 PropUseListForeColor = .ReadProperty("UseListForeColor", False)
 PropListBackColor = .ReadProperty("ListBackColor", vbWindowBackground)
@@ -594,12 +594,12 @@ With PropBag
 .WriteProperty "Redraw", PropRedraw, True
 .WriteProperty "Style", PropStyle, CboStyleDropDownCombo
 .WriteProperty "Locked", PropLocked, False
-.WriteProperty "Text", StrToVar(PropText), vbNullString
+.WriteProperty "Text", PropText, vbNullString ' Unicode not necessary
 .WriteProperty "ExtendedUI", PropExtendedUI, False
 .WriteProperty "MaxDropDownItems", PropMaxDropDownItems, 9
 .WriteProperty "IntegralHeight", PropIntegralHeight, True
 .WriteProperty "MaxLength", PropMaxLength, 0
-.WriteProperty "CueBanner", StrToVar(PropCueBanner), vbNullString
+.WriteProperty "CueBanner", PropCueBanner, vbNullString ' Unicode not necessary
 .WriteProperty "UseListBackColor", PropUseListBackColor, False
 .WriteProperty "UseListForeColor", PropUseListForeColor, False
 .WriteProperty "ListBackColor", PropListBackColor, vbWindowBackground

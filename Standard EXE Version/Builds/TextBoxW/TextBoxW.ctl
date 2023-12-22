@@ -604,7 +604,7 @@ PropUseSystemPasswordChar = .ReadProperty("UseSystemPasswordChar", False)
 PropMultiLine = .ReadProperty("MultiLine", False)
 PropMaxLength = .ReadProperty("MaxLength", 0)
 PropScrollBars = .ReadProperty("ScrollBars", vbSBNone)
-PropCueBanner = VarToStr(.ReadProperty("CueBanner", vbNullString))
+PropCueBanner = .ReadProperty("CueBanner", vbNullString) ' Unicode not necessary
 PropCharacterCasing = .ReadProperty("CharacterCasing", TxtCharacterCasingNormal)
 PropWantReturn = .ReadProperty("WantReturn", False)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
@@ -643,7 +643,7 @@ With PropBag
 .WriteProperty "MultiLine", PropMultiLine, False
 .WriteProperty "MaxLength", PropMaxLength, 0
 .WriteProperty "ScrollBars", PropScrollBars, vbSBNone
-.WriteProperty "CueBanner", StrToVar(PropCueBanner), vbNullString
+.WriteProperty "CueBanner", PropCueBanner, vbNullString ' Unicode not necessary
 .WriteProperty "CharacterCasing", PropCharacterCasing, TxtCharacterCasingNormal
 .WriteProperty "WantReturn", PropWantReturn, False
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl

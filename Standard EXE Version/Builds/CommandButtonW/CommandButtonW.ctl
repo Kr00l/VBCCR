@@ -622,6 +622,7 @@ On Error GoTo 0
 PropDisplayAsDefault = False
 Set PropFont = Ambient.Font
 PropVisualStyles = True
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft

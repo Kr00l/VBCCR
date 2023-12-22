@@ -846,6 +846,7 @@ On Error GoTo 0
 If ToolBarAlignable = True Then Extender.Align = vbAlignTop
 Set PropFont = Ambient.Font
 PropVisualStyles = True
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft

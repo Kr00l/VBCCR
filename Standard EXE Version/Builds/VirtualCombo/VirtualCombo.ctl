@@ -565,7 +565,7 @@ PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
 PropStyle = .ReadProperty("Style", VcbStyleDropDownCombo)
 PropLocked = .ReadProperty("Locked", False)
-PropText = VarToStr(.ReadProperty("Text", vbNullString))
+PropText = .ReadProperty("Text", vbNullString) ' Unicode not necessary
 PropExtendedUI = .ReadProperty("ExtendedUI", False)
 PropMaxDropDownItems = .ReadProperty("MaxDropDownItems", 9)
 PropIntegralHeight = .ReadProperty("IntegralHeight", True)
@@ -601,7 +601,7 @@ With PropBag
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
 .WriteProperty "Style", PropStyle, VcbStyleDropDownCombo
 .WriteProperty "Locked", PropLocked, False
-.WriteProperty "Text", StrToVar(PropText), vbNullString
+.WriteProperty "Text", PropText, vbNullString ' Unicode not necessary
 .WriteProperty "ExtendedUI", PropExtendedUI, False
 .WriteProperty "MaxDropDownItems", PropMaxDropDownItems, 9
 .WriteProperty "IntegralHeight", PropIntegralHeight, True
