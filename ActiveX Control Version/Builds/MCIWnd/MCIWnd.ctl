@@ -437,6 +437,7 @@ On Error Resume Next
 MCIWndDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 PropVisualStyles = True
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropBackColor = vbWindowBackground

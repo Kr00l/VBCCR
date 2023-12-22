@@ -524,7 +524,7 @@ Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropOLEDragMode = vbOLEDragManual
 PropOLEDragDropScroll = True
-PropOLEDropMode = vbOLEDropNone
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
@@ -589,7 +589,7 @@ PropUseSystemPasswordChar = .ReadProperty("UseSystemPasswordChar", False)
 PropMultiLine = .ReadProperty("MultiLine", False)
 PropMaxLength = .ReadProperty("MaxLength", 0)
 PropScrollBars = .ReadProperty("ScrollBars", vbSBNone)
-PropCueBanner = VarToStr(.ReadProperty("CueBanner", vbNullString))
+PropCueBanner = .ReadProperty("CueBanner", vbNullString) ' Unicode not necessary
 PropCharacterCasing = .ReadProperty("CharacterCasing", TxtCharacterCasingNormal)
 PropWantReturn = .ReadProperty("WantReturn", False)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
@@ -610,7 +610,7 @@ With PropBag
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
-.WriteProperty "OLEDropMode", PropOLEDropMode, vbOLEDropNone
+.WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
@@ -627,7 +627,7 @@ With PropBag
 .WriteProperty "MultiLine", PropMultiLine, False
 .WriteProperty "MaxLength", PropMaxLength, 0
 .WriteProperty "ScrollBars", PropScrollBars, vbSBNone
-.WriteProperty "CueBanner", StrToVar(PropCueBanner), vbNullString
+.WriteProperty "CueBanner", PropCueBanner, vbNullString ' Unicode not necessary
 .WriteProperty "CharacterCasing", PropCharacterCasing, TxtCharacterCasingNormal
 .WriteProperty "WantReturn", PropWantReturn, False
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
