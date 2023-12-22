@@ -1,8 +1,11 @@
 List of revisions:
 
+22-Dec-2023
+- Included AllowDropFiles property in the RichTextBox/TextBoxW control.
+- Included DropFiles event in the TextBoxW control.
+
 20-Dec-2023
 - Included the DropFiles event in the RichTextBox control. (EN_DROPFILES)
-  Ensure that there is no OLE drop target set and that the application calls the DragAcceptFiles API on the RichTextBox window handle.
 
 19-Dec-2023
 - Included OLEDragDropScroll/OLEDropMode and related UserControl events in the RichTextBox control.
