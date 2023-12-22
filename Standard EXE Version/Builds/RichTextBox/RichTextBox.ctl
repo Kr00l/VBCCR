@@ -285,8 +285,8 @@ Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, wh
 Public Event LinkEvent(ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal LinkStart As Long, ByVal LinkEnd As Long)
 Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, when the user clicks the mouse or when the mouse pointer is over text that has a link format."
 #End If
-Public Event DropFiles(ByVal FileList As Variant, ByVal CharPos As Long, ByVal Protected As Boolean, ByRef Cancel As Boolean)
-Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target and the application called the DragAcceptFiles API."
+Public Event DropFiles(ByVal FileList As Variant, ByVal X As Single, ByVal Y As Single, ByVal CharPos As Long, ByVal Protected As Boolean, ByRef Cancel As Boolean)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event ModifyProtected(ByRef Allow As Boolean, ByVal SelStart As Long, ByVal SelEnd As Long)
 Attribute ModifyProtected.VB_Description = "Occurs when the user attempts to edit protected text."
 Public Event Scroll()
@@ -355,6 +355,7 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As LongPtr, ByVal fAccept As Long)
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
@@ -404,8 +405,10 @@ Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
+Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -455,6 +458,7 @@ Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) A
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As Any) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
+Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -520,6 +524,7 @@ Private Const CF_UNICODETEXT As Long = 13
 Private Const CP_UNICODE As Long = 1200
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_EX_ACCEPTFILES As Long = &H10
 Private Const WS_EX_CLIENTEDGE As Long = &H200
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
@@ -556,6 +561,7 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DROPFILES As Long = &H233
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_CONTEXTMENU As Long = &H7B
@@ -864,6 +870,7 @@ Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDBorderStyle As Long
 Private PropVisualStyles As Boolean
+Private PropAllowDropFiles As Boolean
 Private PropOLEDragDropRTF As Boolean
 Private PropOLEDragDropScroll As Boolean
 Private PropOLEDropMode As VBRUN.OLEDropConstants
@@ -998,6 +1005,7 @@ RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
+PropAllowDropFiles = False
 PropOLEDragDropRTF = True
 PropOLEDragDropScroll = True
 Me.OLEDropMode = vbOLEDropNone
@@ -1040,6 +1048,7 @@ With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
+PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
 PropOLEDragDropRTF = .ReadProperty("OLEDragDropRTF", True)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -1090,6 +1099,7 @@ With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
+.WriteProperty "AllowDropFiles", PropAllowDropFiles, False
 .WriteProperty "OLEDragDropRTF", PropOLEDragDropRTF, True
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -1440,6 +1450,21 @@ Public Property Let Enabled(ByVal Value As Boolean)
 UserControl.Enabled = Value
 If RichTextBoxHandle <> NULL_PTR Then EnableWindow RichTextBoxHandle, IIf(Value = True, 1, 0)
 UserControl.PropertyChanged "Enabled"
+End Property
+
+Public Property Get AllowDropFiles() As Boolean
+Attribute AllowDropFiles.VB_Description = "Returns/sets a value that determines whether drag-drop files are allowed or not. Only applicable when there is no OLE drop target available."
+If RichTextBoxHandle <> NULL_PTR Then
+    AllowDropFiles = CBool((GetWindowLong(RichTextBoxHandle, GWL_EXSTYLE) And WS_EX_ACCEPTFILES) <> 0)
+Else
+    AllowDropFiles = PropAllowDropFiles
+End If
+End Property
+
+Public Property Let AllowDropFiles(ByVal Value As Boolean)
+PropAllowDropFiles = Value
+If RichTextBoxHandle <> NULL_PTR Then DragAcceptFiles RichTextBoxHandle, IIf(PropAllowDropFiles = True, 1, 0)
+UserControl.PropertyChanged "AllowDropFiles"
 End Property
 
 Public Property Get OLEDragDropRTF() As Boolean
@@ -2029,6 +2054,7 @@ Private Sub CreateRichTextBox()
 If RichTextBoxHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
+If PropAllowDropFiles = True Then dwExStyle = dwExStyle Or WS_EX_ACCEPTFILES
 If PropOLEDragDropRTF = False Then dwStyle = dwStyle Or ES_NOOLEDRAGDROP
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING Or WS_EX_RIGHT Or WS_EX_LEFTSCROLLBAR
 If PropBorderStyle = vbFixedSingle Then
@@ -4142,17 +4168,19 @@ Select Case wMsg
                     With NMENDF
                     If .hDrop <> NULL_PTR Then
                         Dim Count As Long
-                        Count = DragQueryFile(.hDrop, &HFFFFFFFF, NULL_PTR, 0)
+                        Count = DragQueryFile(.hDrop, -1, NULL_PTR, 0)
                         If Count > 0 Then
-                            Dim FileList() As String, iFile As Long, Buffer As String
+                            Dim FileList() As String, iFile As Long, FileBuffer As String, P As POINTAPI
                             ReDim FileList(0 To (Count - 1)) As String
                             For iFile = 0 To (Count - 1)
-                                Buffer = String(DragQueryFile(.hDrop, iFile, NULL_PTR, 0), vbNullChar)
-                                DragQueryFile .hDrop, iFile, StrPtr(Buffer), Len(Buffer) + 1
-                                FileList(iFile) = Buffer
+                                FileBuffer = String(DragQueryFile(.hDrop, iFile, NULL_PTR, 0), vbNullChar)
+                                DragQueryFile .hDrop, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
+                                FileList(iFile) = FileBuffer
                             Next iFile
-                            RaiseEvent DropFiles(FileList(), .CharPos, CBool(.fProtected <> 0), Cancel)
+                            DragQueryPoint .hDrop, P
+                            RaiseEvent DropFiles(FileList(), UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition), .CharPos, CBool(.fProtected <> 0), Cancel)
                         End If
+                        ' The DragFinish API is not needed as the rich edit control will release the memory allocated.
                     End If
                     End With
                     If Cancel = True Then

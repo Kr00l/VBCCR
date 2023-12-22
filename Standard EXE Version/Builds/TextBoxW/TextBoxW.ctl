@@ -142,6 +142,8 @@ Public Event Change()
 Attribute Change.VB_Description = "Occurs when the contents of a control have changed."
 Public Event MaxText()
 Attribute MaxText.VB_Description = "Occurs when the current text insertion has exceeded the maximum number of characters that can be entered in a control."
+Public Event DropFiles(ByVal FileList As Variant, ByVal X As Single, ByVal Y As Single)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event Scroll()
 Attribute Scroll.VB_Description = "Occurs when you reposition the scroll box on a control."
 Public Event ContextMenu(ByRef Handled As Boolean, ByVal X As Single, ByVal Y As Single)
@@ -186,6 +188,8 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As LongPtr, ByVal fAccept As Long)
+Private Declare PtrSafe Sub DragFinish Lib "shell32" (ByVal hDrop As LongPtr)
 Private Declare PtrSafe Function InitNetworkAddressControl Lib "shell32" () As Long
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
@@ -220,8 +224,12 @@ Private Declare PtrSafe Function DestroyCaret Lib "user32" () As Long
 Private Declare PtrSafe Function DragDetect Lib "user32" (ByVal hWnd As LongPtr, ByVal XY As Currency) As Long
 Private Declare PtrSafe Function ReleaseCapture Lib "user32" () As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
+Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
+Private Declare Sub DragFinish Lib "shell32" (ByVal hDrop As Long)
 Private Declare Function InitNetworkAddressControl Lib "shell32" () As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -256,6 +264,8 @@ Private Declare Function DestroyCaret Lib "user32" () As Long
 Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal XY As Currency) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
+Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
 #End If
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -264,6 +274,7 @@ Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_EX_ACCEPTFILES As Long = &H10
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
@@ -297,6 +308,7 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DROPFILES As Long = &H233
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_CONTEXTMENU As Long = &H7B
@@ -406,6 +418,7 @@ Private DispIDMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
+Private PropAllowDropFiles As Boolean
 Private PropOLEDragMode As VBRUN.OLEDragConstants
 Private PropOLEDragDropScroll As Boolean
 Private PropOLEDropMode As VBRUN.OLEDropConstants
@@ -522,9 +535,10 @@ TextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
+PropAllowDropFiles = False
 PropOLEDragMode = vbOLEDragManual
 PropOLEDragDropScroll = True
-PropOLEDropMode = vbOLEDropNone
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
@@ -563,6 +577,7 @@ PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.BackColor = .ReadProperty("BackColor", vbWindowBackground)
 Me.ForeColor = .ReadProperty("ForeColor", vbWindowText)
 Me.Enabled = .ReadProperty("Enabled", True)
+PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
 PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -608,9 +623,10 @@ With PropBag
 .WriteProperty "BackColor", Me.BackColor, vbWindowBackground
 .WriteProperty "ForeColor", Me.ForeColor, vbWindowText
 .WriteProperty "Enabled", Me.Enabled, True
+.WriteProperty "AllowDropFiles", PropAllowDropFiles, False
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
-.WriteProperty "OLEDropMode", PropOLEDropMode, vbOLEDropNone
+.WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
@@ -1055,6 +1071,21 @@ Public Property Let Enabled(ByVal Value As Boolean)
 UserControl.Enabled = Value
 If TextBoxHandle <> NULL_PTR Then EnableWindow TextBoxHandle, IIf(Value = True, 1, 0)
 UserControl.PropertyChanged "Enabled"
+End Property
+
+Public Property Get AllowDropFiles() As Boolean
+Attribute AllowDropFiles.VB_Description = "Returns/sets a value that determines whether drag-drop files are allowed or not. Only applicable when there is no OLE drop target available."
+If TextBoxHandle <> NULL_PTR Then
+    AllowDropFiles = CBool((GetWindowLong(TextBoxHandle, GWL_EXSTYLE) And WS_EX_ACCEPTFILES) <> 0)
+Else
+    AllowDropFiles = PropAllowDropFiles
+End If
+End Property
+
+Public Property Let AllowDropFiles(ByVal Value As Boolean)
+PropAllowDropFiles = Value
+If TextBoxHandle <> NULL_PTR Then DragAcceptFiles TextBoxHandle, IIf(PropAllowDropFiles = True, 1, 0)
+UserControl.PropertyChanged "AllowDropFiles"
 End Property
 
 Public Property Get OLEDragMode() As VBRUN.OLEDragConstants
@@ -1595,6 +1626,7 @@ Private Sub CreateTextBox()
 If TextBoxHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
+If PropAllowDropFiles = True Then dwExStyle = dwExStyle Or WS_EX_ACCEPTFILES
 If PropRightToLeft = True Then dwExStyle = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
 Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
 Select Case PropAlignment
@@ -2191,20 +2223,39 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    Case WM_DROPFILES
+        If wParam <> NULL_PTR Then
+            Dim Count As Long
+            Count = DragQueryFile(wParam, -1, NULL_PTR, 0)
+            If Count > 0 Then
+                Dim FileList() As String, iFile As Long, FileBuffer As String, P4 As POINTAPI
+                ReDim FileList(0 To (Count - 1)) As String
+                For iFile = 0 To (Count - 1)
+                    FileBuffer = String(DragQueryFile(wParam, iFile, NULL_PTR, 0), vbNullChar)
+                    DragQueryFile wParam, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
+                    FileList(iFile) = FileBuffer
+                Next iFile
+                DragQueryPoint wParam, P4
+                RaiseEvent DropFiles(FileList(), UserControl.ScaleX(P4.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P4.Y, vbPixels, vbContainerPosition))
+            End If
+            DragFinish wParam
+        End If
+        WindowProcControl = 0
+        Exit Function
     Case WM_VSCROLL, WM_HSCROLL
         ' The notification codes EN_HSCROLL and EN_VSCROLL are not sent when clicking the scroll bar thumb itself.
         If LoWord(CLng(wParam)) = SB_THUMBTRACK Then RaiseEvent Scroll
     Case WM_CONTEXTMENU
         If wParam = TextBoxHandle Then
-            Dim P4 As POINTAPI, Handled As Boolean
-            P4.X = Get_X_lParam(lParam)
-            P4.Y = Get_Y_lParam(lParam)
-            If P4.X = -1 And P4.Y = -1 Then
+            Dim P5 As POINTAPI, Handled As Boolean
+            P5.X = Get_X_lParam(lParam)
+            P5.Y = Get_Y_lParam(lParam)
+            If P5.X = -1 And P5.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient TextBoxHandle, P4
-                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P4.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P4.Y, vbPixels, vbContainerPosition))
+                ScreenToClient TextBoxHandle, P5
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P5.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P5.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
         End If
