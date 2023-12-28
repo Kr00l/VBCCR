@@ -154,6 +154,7 @@ Private Const DT_WORDBREAK As Long = &H10
 Private Const DT_NOCLIP As Long = &H100
 Private Const DT_CALCRECT As Long = &H400
 Private Const DT_NOPREFIX As Long = &H800
+Private Const DT_EDITCONTROL As Long = &H2000
 Private Const DT_PATH_ELLIPSIS As Long = &H4000
 Private Const DT_END_ELLIPSIS As Long = &H8000&
 Private Const DT_MODIFYSTRING As Long = &H10000
@@ -194,6 +195,7 @@ Private PropCaption As String
 Private PropUseMnemonic As Boolean
 Private PropAutoSize As Boolean
 Private PropWordWrap As Boolean
+Private PropMimicTextBox As Boolean
 Private PropEllipsisFormat As LblEllipsisFormatConstants
 Private PropVerticalAlignment As CCVerticalAlignmentConstants
 
@@ -250,6 +252,7 @@ PropCaption = Ambient.DisplayName
 PropUseMnemonic = True
 PropAutoSize = False
 PropWordWrap = False
+PropMimicTextBox = False
 PropEllipsisFormat = LblEllipsisFormatNone
 PropVerticalAlignment = CCVerticalAlignmentTop
 End Sub
@@ -283,6 +286,7 @@ PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropUseMnemonic = .ReadProperty("UseMnemonic", True)
 PropAutoSize = .ReadProperty("AutoSize", False)
 PropWordWrap = .ReadProperty("WordWrap", False)
+PropMimicTextBox = .ReadProperty("MimicTextBox", False)
 PropEllipsisFormat = .ReadProperty("EllipsisFormat", LblEllipsisFormatNone)
 PropVerticalAlignment = .ReadProperty("VerticalAlignment", CCVerticalAlignmentTop)
 End With
@@ -313,6 +317,7 @@ With PropBag
 .WriteProperty "UseMnemonic", PropUseMnemonic, True
 .WriteProperty "AutoSize", PropAutoSize, False
 .WriteProperty "WordWrap", PropWordWrap, False
+.WriteProperty "MimicTextBox", PropMimicTextBox, False
 .WriteProperty "EllipsisFormat", PropEllipsisFormat, LblEllipsisFormatNone
 .WriteProperty "VerticalAlignment", PropVerticalAlignment, CCVerticalAlignmentTop
 End With
@@ -355,6 +360,7 @@ End Select
 If PropRightToLeft = True Then DrawFlags = DrawFlags Or DT_RTLREADING
 If PropUseMnemonic = False Then DrawFlags = DrawFlags Or DT_NOPREFIX
 If PropWordWrap = True Then DrawFlags = DrawFlags Or DT_WORDBREAK
+If PropMimicTextBox = True Then DrawFlags = DrawFlags Or DT_EDITCONTROL
 Select Case PropEllipsisFormat
     Case LblEllipsisFormatEnd
         DrawFlags = DrawFlags Or DT_END_ELLIPSIS
@@ -946,6 +952,18 @@ Call RedrawLabel
 UserControl.PropertyChanged "WordWrap"
 End Property
 
+Public Property Get MimicTextBox() As Boolean
+Attribute MimicTextBox.VB_Description = "Returns/sets a value that determines whether or not to mimic the text-displaying characteristics of a multiline text box. This includes to break on characters instead on words. This is only meaningful if the word wrap property is set to true."
+MimicTextBox = PropMimicTextBox
+End Property
+
+Public Property Let MimicTextBox(ByVal Value As Boolean)
+PropMimicTextBox = Value
+LabelAutoSizeFlag = PropAutoSize
+Call RedrawLabel
+UserControl.PropertyChanged "MimicTextBox"
+End Property
+
 Public Property Get EllipsisFormat() As LblEllipsisFormatConstants
 Attribute EllipsisFormat.VB_Description = "Returns/sets a value indicating if and where the ellipsis character is appended, denoting that the caption extends beyond the length of the label. The auto size and the word wrap property may be set to false to see the ellipsis character."
 EllipsisFormat = PropEllipsisFormat
@@ -1028,6 +1046,7 @@ End Select
 If PropRightToLeft = True Then DrawFlags = DrawFlags Or DT_RTLREADING
 If PropUseMnemonic = False Then DrawFlags = DrawFlags Or DT_NOPREFIX
 If PropWordWrap = True Then DrawFlags = DrawFlags Or DT_WORDBREAK
+If PropMimicTextBox = True Then DrawFlags = DrawFlags Or DT_EDITCONTROL
 Buffer = PropCaption
 If Buffer = vbNullString Then Buffer = " "
 LSet CalcRect = RC

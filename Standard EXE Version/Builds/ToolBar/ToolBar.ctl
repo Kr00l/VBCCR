@@ -278,6 +278,8 @@ Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when you press and release a mouse button and then press and release it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event Resize()
+Attribute Resize.VB_Description = "Occurs when a form is first displayed or the size of an object changes."
 Public Event BeginCustomization()
 Attribute BeginCustomization.VB_Description = "Occurs at the begin of a customization."
 Public Event InitCustomizationDialog(ByVal hDlg As Long, ByRef HideHelpButton As Boolean)
@@ -1148,6 +1150,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
+Static PrevHeight As Long, PrevWidth As Long
 Static InProc As Boolean
 If InProc = True Or ToolBarResizeFrozen = True Then Exit Sub
 InProc = True
@@ -1245,8 +1248,15 @@ End If
 End With
 InProc = False
 If Count > 0 And PropWrappable = True Then
-    If Rows <> SendMessage(ToolBarHandle, TB_GETROWS, 0, ByVal 0&) Then Call UserControl_Resize
+    If Rows <> SendMessage(ToolBarHandle, TB_GETROWS, 0, ByVal 0&) Then Call UserControl_Resize: Exit Sub
 End If
+With UserControl
+If PrevHeight <> .ScaleHeight Or PrevWidth <> .ScaleWidth Then
+    PrevHeight = .ScaleHeight
+    PrevWidth = .ScaleWidth
+    RaiseEvent Resize
+End If
+End With
 End Sub
 
 Private Sub UserControl_Show()
