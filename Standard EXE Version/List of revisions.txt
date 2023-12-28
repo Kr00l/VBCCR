@@ -1,5 +1,9 @@
 List of revisions:
 
+28-Dec-2023
+- Included the Resize event in the ToolBar control. (like in the CoolBar control)
+- Included the MimicTextBox property in the LabelW control. (DT_EDITCONTROL)
+
 22-Dec-2023
 - Included AllowDropFiles property in the RichTextBox/TextBoxW control.
 - Included DropFiles event in the TextBoxW control.
