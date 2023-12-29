@@ -142,7 +142,7 @@ Public Event Change()
 Attribute Change.VB_Description = "Occurs when the contents of a control have changed."
 Public Event MaxText()
 Attribute MaxText.VB_Description = "Occurs when the current text insertion has exceeded the maximum number of characters that can be entered in a control."
-Public Event DropFiles(ByVal FileList As Variant, ByVal X As Single, ByVal Y As Single)
+Public Event DropFiles(ByRef FileList As Variant, ByVal X As Single, ByVal Y As Single)
 Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event Scroll()
 Attribute Scroll.VB_Description = "Occurs when you reposition the scroll box on a control."
@@ -2225,12 +2225,12 @@ Select Case wMsg
         Exit Function
     Case WM_DROPFILES
         If wParam <> NULL_PTR Then
-            Dim Count As Long
-            Count = DragQueryFile(wParam, -1, NULL_PTR, 0)
-            If Count > 0 Then
+            Dim FileCount As Long
+            FileCount = DragQueryFile(wParam, -1, NULL_PTR, 0)
+            If FileCount > 0 Then
                 Dim FileList() As String, iFile As Long, FileBuffer As String, P4 As POINTAPI
-                ReDim FileList(0 To (Count - 1)) As String
-                For iFile = 0 To (Count - 1)
+                ReDim FileList(0 To (FileCount - 1)) As String
+                For iFile = 0 To (FileCount - 1)
                     FileBuffer = String(DragQueryFile(wParam, iFile, NULL_PTR, 0), vbNullChar)
                     DragQueryFile wParam, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
                     FileList(iFile) = FileBuffer

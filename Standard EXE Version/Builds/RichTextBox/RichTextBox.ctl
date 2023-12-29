@@ -285,7 +285,7 @@ Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, wh
 Public Event LinkEvent(ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal LinkStart As Long, ByVal LinkEnd As Long)
 Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, when the user clicks the mouse or when the mouse pointer is over text that has a link format."
 #End If
-Public Event DropFiles(ByVal FileList As Variant, ByVal X As Single, ByVal Y As Single, ByVal CharPos As Long, ByVal Protected As Boolean, ByRef Cancel As Boolean)
+Public Event DropFiles(ByRef FileList As Variant, ByVal X As Single, ByVal Y As Single, ByVal CharPos As Long, ByVal Protected As Boolean, ByRef Cancel As Boolean)
 Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event ModifyProtected(ByRef Allow As Boolean, ByVal SelStart As Long, ByVal SelEnd As Long)
 Attribute ModifyProtected.VB_Description = "Occurs when the user attempts to edit protected text."
@@ -4167,12 +4167,12 @@ Select Case wMsg
                     CopyMemory NMENDF, ByVal lParam, LenB(NMENDF)
                     With NMENDF
                     If .hDrop <> NULL_PTR Then
-                        Dim Count As Long
-                        Count = DragQueryFile(.hDrop, -1, NULL_PTR, 0)
-                        If Count > 0 Then
+                        Dim FileCount As Long
+                        FileCount = DragQueryFile(.hDrop, -1, NULL_PTR, 0)
+                        If FileCount > 0 Then
                             Dim FileList() As String, iFile As Long, FileBuffer As String, P As POINTAPI
-                            ReDim FileList(0 To (Count - 1)) As String
-                            For iFile = 0 To (Count - 1)
+                            ReDim FileList(0 To (FileCount - 1)) As String
+                            For iFile = 0 To (FileCount - 1)
                                 FileBuffer = String(DragQueryFile(.hDrop, iFile, NULL_PTR, 0), vbNullChar)
                                 DragQueryFile .hDrop, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
                                 FileList(iFile) = FileBuffer

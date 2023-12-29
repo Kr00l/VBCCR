@@ -150,7 +150,10 @@ Private Declare Function SelectClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRg
 Private Const DT_LEFT As Long = &H0
 Private Const DT_CENTER As Long = &H1
 Private Const DT_RIGHT As Long = &H2
+Private Const DT_VCENTER As Long = &H4
+Private Const DT_BOTTOM As Long = &H8
 Private Const DT_WORDBREAK As Long = &H10
+Private Const DT_SINGLELINE As Long = &H20
 Private Const DT_NOCLIP As Long = &H100
 Private Const DT_CALCRECT As Long = &H400
 Private Const DT_NOPREFIX As Long = &H800
@@ -195,8 +198,9 @@ Private PropCaption As String
 Private PropUseMnemonic As Boolean
 Private PropAutoSize As Boolean
 Private PropWordWrap As Boolean
-Private PropMimicTextBox As Boolean
+Private PropSingleLine As Boolean
 Private PropEllipsisFormat As LblEllipsisFormatConstants
+Private PropMimicTextBox As Boolean
 Private PropVerticalAlignment As CCVerticalAlignmentConstants
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
@@ -252,8 +256,9 @@ PropCaption = Ambient.DisplayName
 PropUseMnemonic = True
 PropAutoSize = False
 PropWordWrap = False
-PropMimicTextBox = False
+PropSingleLine = False
 PropEllipsisFormat = LblEllipsisFormatNone
+PropMimicTextBox = False
 PropVerticalAlignment = CCVerticalAlignmentTop
 End Sub
 
@@ -286,8 +291,9 @@ PropCaption = .ReadProperty("Caption", vbNullString) ' Unicode not necessary
 PropUseMnemonic = .ReadProperty("UseMnemonic", True)
 PropAutoSize = .ReadProperty("AutoSize", False)
 PropWordWrap = .ReadProperty("WordWrap", False)
-PropMimicTextBox = .ReadProperty("MimicTextBox", False)
+PropSingleLine = .ReadProperty("SingleLine", False)
 PropEllipsisFormat = .ReadProperty("EllipsisFormat", LblEllipsisFormatNone)
+PropMimicTextBox = .ReadProperty("MimicTextBox", False)
 PropVerticalAlignment = .ReadProperty("VerticalAlignment", CCVerticalAlignmentTop)
 End With
 If PropUseMnemonic = True Then
@@ -317,8 +323,9 @@ With PropBag
 .WriteProperty "UseMnemonic", PropUseMnemonic, True
 .WriteProperty "AutoSize", PropAutoSize, False
 .WriteProperty "WordWrap", PropWordWrap, False
-.WriteProperty "MimicTextBox", PropMimicTextBox, False
+.WriteProperty "SingleLine", PropSingleLine, False
 .WriteProperty "EllipsisFormat", PropEllipsisFormat, LblEllipsisFormatNone
+.WriteProperty "MimicTextBox", PropMimicTextBox, False
 .WriteProperty "VerticalAlignment", PropVerticalAlignment, CCVerticalAlignmentTop
 End With
 End Sub
@@ -359,8 +366,11 @@ Select Case PropAlignment
 End Select
 If PropRightToLeft = True Then DrawFlags = DrawFlags Or DT_RTLREADING
 If PropUseMnemonic = False Then DrawFlags = DrawFlags Or DT_NOPREFIX
-If PropWordWrap = True Then DrawFlags = DrawFlags Or DT_WORDBREAK
-If PropMimicTextBox = True Then DrawFlags = DrawFlags Or DT_EDITCONTROL
+If PropWordWrap = True Then
+    DrawFlags = DrawFlags Or DT_WORDBREAK
+ElseIf PropSingleLine = True Then
+    DrawFlags = DrawFlags Or DT_SINGLELINE
+End If
 Select Case PropEllipsisFormat
     Case LblEllipsisFormatEnd
         DrawFlags = DrawFlags Or DT_END_ELLIPSIS
@@ -369,19 +379,29 @@ Select Case PropEllipsisFormat
     Case LblEllipsisFormatWord
         DrawFlags = DrawFlags Or DT_WORD_ELLIPSIS
 End Select
-If PropVerticalAlignment <> CCVerticalAlignmentTop Then
-    Dim Height As Long, Result As Long
-    Buffer = PropCaption
-    If Buffer = vbNullString Then Buffer = " "
-    LSet CalcRect = RC
-    Height = DrawText(.hDC, StrPtr(Buffer), -1, CalcRect, DrawFlags Or DT_CALCRECT)
+If PropMimicTextBox = True Then DrawFlags = DrawFlags Or DT_EDITCONTROL
+If Not (DrawFlags And DT_SINGLELINE) = DT_SINGLELINE Then
+    If PropVerticalAlignment <> CCVerticalAlignmentTop Then
+        Dim Height As Long, Result As Long
+        Buffer = PropCaption
+        If Buffer = vbNullString Then Buffer = " "
+        LSet CalcRect = RC
+        Height = DrawText(.hDC, StrPtr(Buffer), -1, CalcRect, DrawFlags Or DT_CALCRECT)
+        Select Case PropVerticalAlignment
+            Case CCVerticalAlignmentCenter
+                Result = ((((RC.Bottom - RC.Top) - (BorderHeight * 2)) - Height) / 2)
+            Case CCVerticalAlignmentBottom
+                Result = (((RC.Bottom - RC.Top) - (BorderHeight * 2)) - Height)
+        End Select
+        If Result > 0 Then RC.Top = RC.Top + Result
+    End If
+Else
     Select Case PropVerticalAlignment
         Case CCVerticalAlignmentCenter
-            Result = ((((RC.Bottom - RC.Top) - (BorderHeight * 2)) - Height) / 2)
+            DrawFlags = DrawFlags Or DT_VCENTER
         Case CCVerticalAlignmentBottom
-            Result = (((RC.Bottom - RC.Top) - (BorderHeight * 2)) - Height)
+            DrawFlags = DrawFlags Or DT_BOTTOM
     End Select
-    If Result > 0 Then RC.Top = RC.Top + Result
 End If
 SetRect RC, RC.Left + BorderWidth, RC.Top + BorderHeight, RC.Right - (BorderWidth * 2), RC.Bottom - (BorderHeight * 2)
 If Not PropCaption = vbNullString Then
@@ -946,22 +966,31 @@ WordWrap = PropWordWrap
 End Property
 
 Public Property Let WordWrap(ByVal Value As Boolean)
+If PropSingleLine = True And Value = True Then
+    If LabelDesignMode = True Then
+        MsgBox "WordWrap must be False when SingleLine is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="WordWrap must be False when SingleLine is True"
+    End If
+End If
 PropWordWrap = Value
 LabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
 UserControl.PropertyChanged "WordWrap"
 End Property
 
-Public Property Get MimicTextBox() As Boolean
-Attribute MimicTextBox.VB_Description = "Returns/sets a value that determines whether or not to mimic the text-displaying characteristics of a multiline text box. This includes to break on characters instead on words. This is only meaningful if the word wrap property is set to true."
-MimicTextBox = PropMimicTextBox
+Public Property Get SingleLine() As Boolean
+Attribute SingleLine.VB_Description = "Returns/sets whether text is displayed on a single line only."
+SingleLine = PropSingleLine
 End Property
 
-Public Property Let MimicTextBox(ByVal Value As Boolean)
-PropMimicTextBox = Value
+Public Property Let SingleLine(ByVal Value As Boolean)
+PropSingleLine = Value
+If PropSingleLine = True Then PropWordWrap = False
 LabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
-UserControl.PropertyChanged "MimicTextBox"
+UserControl.PropertyChanged "SingleLine"
 End Property
 
 Public Property Get EllipsisFormat() As LblEllipsisFormatConstants
@@ -979,6 +1008,18 @@ End Select
 LabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
 UserControl.PropertyChanged "EllipsisFormat"
+End Property
+
+Public Property Get MimicTextBox() As Boolean
+Attribute MimicTextBox.VB_Description = "Returns/sets a value that determines whether or not to mimic the text-displaying characteristics of a multiline text box. This includes to break on characters instead on words. This is only meaningful if the word wrap property is set to true."
+MimicTextBox = PropMimicTextBox
+End Property
+
+Public Property Let MimicTextBox(ByVal Value As Boolean)
+PropMimicTextBox = Value
+LabelAutoSizeFlag = PropAutoSize
+Call RedrawLabel
+UserControl.PropertyChanged "MimicTextBox"
 End Property
 
 Public Property Get VerticalAlignment() As CCVerticalAlignmentConstants
@@ -1016,6 +1057,7 @@ DisplayedCaption = LabelDisplayedCaption
 End Property
 
 Private Sub DoAutoSize(ByVal hDC As LongPtr)
+If hDC = NULL_PTR Then Exit Sub
 Dim RC As RECT, CalcRect As RECT, DrawFlags As Long, Buffer As String
 Dim BorderWidth As Long, BorderHeight As Long
 With UserControl
@@ -1045,7 +1087,12 @@ Select Case PropAlignment
 End Select
 If PropRightToLeft = True Then DrawFlags = DrawFlags Or DT_RTLREADING
 If PropUseMnemonic = False Then DrawFlags = DrawFlags Or DT_NOPREFIX
-If PropWordWrap = True Then DrawFlags = DrawFlags Or DT_WORDBREAK
+If PropWordWrap = True Then
+    DrawFlags = DrawFlags Or DT_WORDBREAK
+ElseIf PropSingleLine = True Then
+    DrawFlags = DrawFlags Or DT_SINGLELINE
+End If
+' Ellipsis format will be ignored.
 If PropMimicTextBox = True Then DrawFlags = DrawFlags Or DT_EDITCONTROL
 Buffer = PropCaption
 If Buffer = vbNullString Then Buffer = " "
@@ -1056,7 +1103,7 @@ OldRight = .Extender.Left + .Extender.Width
 OldCenter = .Extender.Left + (.Extender.Width / 2)
 OldBottom = .Extender.Top + .Extender.Height
 OldVCenter = .Extender.Top + (.Extender.Height / 2)
-If PropWordWrap = True Then
+If (DrawFlags And DT_WORDBREAK) = DT_WORDBREAK Then
     If .ScaleWidth < ((CalcRect.Right - CalcRect.Left) + (BorderWidth * 2)) Then
         .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((CalcRect.Right - CalcRect.Left) + (BorderWidth * 2), vbPixels, vbContainerSize), .ScaleY((CalcRect.Bottom - CalcRect.Top) + (BorderHeight * 2), vbPixels, vbContainerSize)
     Else
