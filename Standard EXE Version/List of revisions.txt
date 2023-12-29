@@ -1,5 +1,8 @@
 List of revisions:
 
+29-Dec-2023
+- Included the SingleLine property in the LabelW control.
+
 28-Dec-2023
 - Included the Resize event in the ToolBar control. (like in the CoolBar control)
 - Included the MimicTextBox property in the LabelW control. (DT_EDITCONTROL)
