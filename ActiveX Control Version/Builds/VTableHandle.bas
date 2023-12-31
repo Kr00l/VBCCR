@@ -774,7 +774,11 @@ If VntArrPtr = NULL_PTR Then
     Exit Function
 End If
 On Error GoTo CATCH_EXCEPTION
+#If Win64 Then
+Const VARIANT_CB As Long = 24
+#Else
 Const VARIANT_CB As Long = 16
+#End If
 Dim Fetched As Long
 With This
 Do Until .Index > .Count
