@@ -1,5 +1,11 @@
 List of revisions:
 
+01-Jan-2024
+- Included the WindowedLabel control.
+
+31-Dec-2023
+- Const VARIANT_CB now 24 instead of 16 for Win64.
+
 29-Dec-2023
 - Included the SingleLine property in the LabelW control.
 

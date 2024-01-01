@@ -111,6 +111,7 @@ PropertyPage=Builds\UpDown\PPUpDownGeneral.pag
 Module=VirtualComboBase; Builds\VirtualCombo\VirtualComboBase.bas
 UserControl=Builds\VirtualCombo\VirtualCombo.ctl
 UserControl=Builds\VListBox\VListBox.ctl
+UserControl=Builds\WindowedLabel\WindowedLabel.ctl
 ResFile32="Resources\Resources.res"
 IconForm="MainForm"
 Startup="Sub Main"
