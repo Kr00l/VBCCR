@@ -1,5 +1,8 @@
 List of revisions:
 
+02-Jan-2024
+- Bugfix in the UserControl_Resize in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo control. (regression 18-Dec-2023)
+
 01-Jan-2024
 - Included the WindowedLabel control.
 
