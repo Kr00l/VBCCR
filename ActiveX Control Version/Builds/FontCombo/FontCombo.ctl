@@ -785,7 +785,7 @@ If PropStyle <> FtcStyleSimpleCombo Then
     If .ScaleHeight > 0 Then MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     GetWindowRect FontComboHandle, WndRect
     If (WndRect.Bottom - WndRect.Top) <> .ScaleHeight Or (WndRect.Right - WndRect.Left) <> .ScaleWidth Then
-        .Extender.Move .Extender.Left, .Extender.Top, .ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+        .Extender.Move .Extender.Left, .Extender.Top, .Extender.Width, .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
         If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
     MoveWindow FontComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + CLng(SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)) + 2, 1
