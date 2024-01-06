@@ -1,7 +1,10 @@
 List of revisions:
 
+06-Jan-2024
+- Included the CueBannerAlways property in the TextBoxW control.
+
 03-Jan-2024
-- Included AllowDropFiles property and DropFiles event in the ListBoxW control.
+- Included the AllowDropFiles property and DropFiles event in the ListBoxW control.
 
 02-Jan-2024
 - Bugfix in the UserControl_Resize in the ComboBoxW/FontCombo/VirtualCombo/ImageCombo control. (regression 18-Dec-2023)
