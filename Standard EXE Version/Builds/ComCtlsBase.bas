@@ -12,6 +12,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private OLEDropModeNone, OLEDropModeManual
 Private CCAppearanceFlat, CCAppearance3D
@@ -251,6 +254,14 @@ Private MCIWndRefCount As Long
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
+Private ComCtlsPreTranslateMsgHookHandle As LongPtr
+Private ComCtlsPreTranslateMsgHwnd() As LongPtr, ComCtlsPreTranslateMsgCount As Long
+
+#End If
 
 Public Sub ComCtlsLoadShellMod()
 If ShellModHandle = NULL_PTR And ShellModCount = 0 Then ShellModHandle = LoadLibrary(StrPtr("shell32.dll"))
@@ -1344,3 +1355,73 @@ If nCode >= HC_ACTION And wParam = PM_REMOVE Then
 End If
 ComCtlsCdlFRHookProc = CallNextHookEx(CdlFRHookHandle, nCode, wParam, lParam)
 End Function
+
+#If ImplementPreTranslateMsg = True Then
+
+#If VBA7 Then
+Public Sub ComCtlsPreTranslateMsgAddHook(ByVal hWnd As LongPtr)
+#Else
+Public Sub ComCtlsPreTranslateMsgAddHook(ByVal hWnd As Long)
+#End If
+If ComCtlsPreTranslateMsgHookHandle = NULL_PTR And ComCtlsPreTranslateMsgCount = 0 Then
+    Const WH_GETMESSAGE As Long = 3
+    ComCtlsPreTranslateMsgHookHandle = SetWindowsHookEx(WH_GETMESSAGE, AddressOf ComCtlsPreTranslateMsgHookProc, NULL_PTR, App.ThreadID)
+    ReDim ComCtlsPreTranslateMsgHwnd(0) ' As LongPtr
+    ComCtlsPreTranslateMsgHwnd(0) = hWnd
+Else
+    ReDim Preserve ComCtlsPreTranslateMsgHwnd(0 To ComCtlsPreTranslateMsgCount) ' As LongPtr
+    ComCtlsPreTranslateMsgHwnd(ComCtlsPreTranslateMsgCount) = hWnd
+End If
+ComCtlsPreTranslateMsgCount = ComCtlsPreTranslateMsgCount + 1
+End Sub
+
+#If VBA7 Then
+Public Sub ComCtlsPreTranslateMsgReleaseHook(ByVal hWnd As LongPtr)
+#Else
+Public Sub ComCtlsPreTranslateMsgReleaseHook(ByVal hWnd As Long)
+#End If
+ComCtlsPreTranslateMsgCount = ComCtlsPreTranslateMsgCount - 1
+If ComCtlsPreTranslateMsgHookHandle <> NULL_PTR And ComCtlsPreTranslateMsgCount = 0 Then
+    UnhookWindowsHookEx ComCtlsPreTranslateMsgHookHandle
+    ComCtlsPreTranslateMsgHookHandle = NULL_PTR
+    Erase ComCtlsPreTranslateMsgHwnd()
+Else
+    If ComCtlsPreTranslateMsgCount > 0 Then
+        Dim i As Long
+        For i = 0 To ComCtlsPreTranslateMsgCount
+            If ComCtlsPreTranslateMsgHwnd(i) = hWnd And i < ComCtlsPreTranslateMsgCount Then
+                ComCtlsPreTranslateMsgHwnd(i) = ComCtlsPreTranslateMsgHwnd(i + 1)
+            End If
+        Next i
+        ReDim Preserve ComCtlsPreTranslateMsgHwnd(0 To ComCtlsPreTranslateMsgCount - 1) ' As LongPtr
+    End If
+End If
+End Sub
+
+Private Function ComCtlsPreTranslateMsgHookProc(ByVal nCode As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Const HC_ACTION As Long = 0, PM_REMOVE As Long = &H1
+Const WM_KEYFIRST As Long = &H100, WM_KEYLAST As Long = &H108, WM_NULL As Long = &H0
+If nCode >= HC_ACTION And wParam = PM_REMOVE Then
+    Dim Msg As TMSG
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    If Msg.Message >= WM_KEYFIRST And Msg.Message <= WM_KEYLAST Then
+        If ComCtlsPreTranslateMsgCount > 0 Then
+            Dim i As Long
+            For i = 0 To ComCtlsPreTranslateMsgCount - 1
+                If Msg.hWnd = ComCtlsPreTranslateMsgHwnd(i) Then
+                    If SendMessage(Msg.hWnd, UM_PRETRANSLATEMSG, 0, ByVal lParam) <> 0 Then
+                        Msg.Message = WM_NULL
+                        Msg.wParam = 0
+                        Msg.lParam = 0
+                        CopyMemory ByVal lParam, Msg, LenB(Msg)
+                        Exit For
+                    End If
+                End If
+            Next i
+        End If
+    End If
+End If
+ComCtlsPreTranslateMsgHookProc = CallNextHookEx(ComCtlsPreTranslateMsgHookHandle, nCode, wParam, lParam)
+End Function
+
+#End If
