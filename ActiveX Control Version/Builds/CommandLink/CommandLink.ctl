@@ -269,12 +269,12 @@ Private CommandLinkFontHandle As LongPtr
 Private CommandLinkCharCodeCache As Long
 Private CommandLinkMouseOver As Boolean
 Private CommandLinkDesignMode As Boolean
+Private CommandLinkDisplayAsDefault As Boolean
 Private CommandLinkImageListHandle As LongPtr
 Private CommandLinkImageListObjectPointer As LongPtr
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
-Private PropDisplayAsDefault As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -426,7 +426,7 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 CommandLinkDesignMode = Not Ambient.UserMode
 On Error GoTo 0
-PropDisplayAsDefault = False
+CommandLinkDisplayAsDefault = False
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
@@ -455,8 +455,8 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 CommandLinkDesignMode = Not Ambient.UserMode
 On Error GoTo 0
+CommandLinkDisplayAsDefault = False
 With PropBag
-PropDisplayAsDefault = .ReadProperty("Default", False)
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
@@ -481,7 +481,6 @@ End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
-.WriteProperty "Default", Ambient.DisplayAsDefault, False
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "BackColor", Me.BackColor, vbButtonFace
@@ -502,7 +501,9 @@ End With
 End Sub
 
 Private Sub UserControl_Paint()
-If CommandLinkHandle = NULL_PTR Then
+If CommandLinkHandle <> NULL_PTR Then
+    If CommandLinkDisplayAsDefault Xor Ambient.DisplayAsDefault Then Call UserControl_AmbientChanged("DisplayAsDefault")
+Else
     Dim i As Long
     For i = 8 To (UserControl.ScaleHeight + UserControl.ScaleWidth) Step 8
         UserControl.Line (-1, i)-(i, -1), vbBlack
@@ -551,18 +552,20 @@ End Sub
 Private Sub UserControl_AmbientChanged(PropertyName As String)
 Select Case PropertyName
     Case "DisplayAsDefault"
-        PropDisplayAsDefault = Ambient.DisplayAsDefault
-        Dim dwStyle As Long
-        dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
-        If PropDisplayAsDefault = True Then
-            If Not (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
-                SetWindowLong CommandLinkHandle, GWL_STYLE, dwStyle Or BS_DEFPUSHBUTTON
-                Me.Refresh
-            End If
-        Else
-            If (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
-                SetWindowLong CommandLinkHandle, GWL_STYLE, dwStyle And Not BS_DEFPUSHBUTTON
-                Me.Refresh
+        CommandLinkDisplayAsDefault = Ambient.DisplayAsDefault
+        If CommandLinkHandle <> NULL_PTR Then
+            Dim dwStyle As Long
+            dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
+            If CommandLinkDisplayAsDefault = True Then
+                If Not (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
+                    SetWindowLong CommandLinkHandle, GWL_STYLE, dwStyle Or BS_DEFPUSHBUTTON
+                    RedrawWindow CommandLinkHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+                End If
+            Else
+                If (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
+                    SetWindowLong CommandLinkHandle, GWL_STYLE, dwStyle And Not BS_DEFPUSHBUTTON
+                    RedrawWindow CommandLinkHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+                End If
             End If
         End If
 End Select
@@ -1158,7 +1161,7 @@ Private Sub CreateCommandLink()
 If CommandLinkHandle <> NULL_PTR Or ComCtlsSupportLevel() <= 1 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or BS_COMMANDLINK Or BS_PUSHBUTTON Or BS_TEXT Or BS_NOTIFY
-If PropDisplayAsDefault = True Then dwStyle = dwStyle Or BS_DEFPUSHBUTTON
+If CommandLinkDisplayAsDefault = True Then dwStyle = dwStyle Or BS_DEFPUSHBUTTON
 If PropRightToLeft = True Then
     If PropRightToLeftLayout = True Then
         dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
