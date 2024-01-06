@@ -438,6 +438,7 @@ Private PropMultiLine As Boolean
 Private PropMaxLength As Long
 Private PropScrollBars As VBRUN.ScrollBarConstants
 Private PropCueBanner As String
+Private PropCueBannerAlways As Boolean
 Private PropCharacterCasing As TxtCharacterCasingConstants
 Private PropWantReturn As Boolean
 Private PropIMEMode As CCIMEModeConstants
@@ -556,6 +557,7 @@ PropMultiLine = False
 PropMaxLength = 0
 PropScrollBars = vbSBNone
 PropCueBanner = vbNullString
+PropCueBannerAlways = False
 PropCharacterCasing = TxtCharacterCasingNormal
 PropWantReturn = False
 PropIMEMode = CCIMEModeNoControl
@@ -605,6 +607,7 @@ PropMultiLine = .ReadProperty("MultiLine", False)
 PropMaxLength = .ReadProperty("MaxLength", 0)
 PropScrollBars = .ReadProperty("ScrollBars", vbSBNone)
 PropCueBanner = .ReadProperty("CueBanner", vbNullString) ' Unicode not necessary
+PropCueBannerAlways = .ReadProperty("CueBannerAlways", False)
 PropCharacterCasing = .ReadProperty("CharacterCasing", TxtCharacterCasingNormal)
 PropWantReturn = .ReadProperty("WantReturn", False)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
@@ -644,6 +647,7 @@ With PropBag
 .WriteProperty "MaxLength", PropMaxLength, 0
 .WriteProperty "ScrollBars", PropScrollBars, vbSBNone
 .WriteProperty "CueBanner", PropCueBanner, vbNullString ' Unicode not necessary
+.WriteProperty "CueBannerAlways", PropCueBannerAlways, False
 .WriteProperty "CharacterCasing", PropCharacterCasing, TxtCharacterCasingNormal
 .WriteProperty "WantReturn", PropWantReturn, False
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
@@ -1453,8 +1457,19 @@ End Property
 
 Public Property Let CueBanner(ByVal Value As String)
 PropCueBanner = Value
-If TextBoxHandle <> NULL_PTR And PropMultiLine = False And ComCtlsSupportLevel() >= 1 Then SendMessage TextBoxHandle, EM_SETCUEBANNER, 0, ByVal StrPtr(PropCueBanner)
+If TextBoxHandle <> NULL_PTR And PropMultiLine = False And ComCtlsSupportLevel() >= 1 Then SendMessage TextBoxHandle, EM_SETCUEBANNER, IIf(PropCueBannerAlways = True, 1, 0), ByVal StrPtr(PropCueBanner)
 UserControl.PropertyChanged "CueBanner"
+End Property
+
+Public Property Get CueBannerAlways() As Boolean
+Attribute CueBannerAlways.VB_Description = "Returns/sets a value indicating if the cue banner is displayed even when the text box has focus. Only applicable if the multi line property is set to false. Requires comctl32.dll version 6.0 or higher."
+CueBannerAlways = PropCueBannerAlways
+End Property
+
+Public Property Let CueBannerAlways(ByVal Value As Boolean)
+PropCueBannerAlways = Value
+If TextBoxHandle <> NULL_PTR And PropMultiLine = False And ComCtlsSupportLevel() >= 1 Then SendMessage TextBoxHandle, EM_SETCUEBANNER, IIf(PropCueBannerAlways = True, 1, 0), ByVal StrPtr(PropCueBanner)
+UserControl.PropertyChanged "CueBannerAlways"
 End Property
 
 Public Property Get CharacterCasing() As TxtCharacterCasingConstants
