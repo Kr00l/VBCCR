@@ -445,6 +445,7 @@ Private CommandButtonFontHandle As LongPtr
 Private CommandButtonCharCodeCache As Long
 Private CommandButtonMouseOver(0 To 1) As Boolean
 Private CommandButtonDesignMode As Boolean
+Private CommandButtonDisplayAsDefault As Boolean
 Private CommandButtonImageListHandle As LongPtr
 Private CommandButtonImageListGlyphHandle As LongPtr, CommandButtonDefaultImageListGlyphHandle As LongPtr
 Private CommandButtonImageListObjectPointer As LongPtr
@@ -453,7 +454,6 @@ Private CommandButtonPictureRenderFlag As Integer
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
-Private PropDisplayAsDefault As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -619,7 +619,7 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 CommandButtonDesignMode = Not Ambient.UserMode
 On Error GoTo 0
-PropDisplayAsDefault = False
+CommandButtonDisplayAsDefault = False
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
@@ -657,8 +657,8 @@ If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
 On Error Resume Next
 CommandButtonDesignMode = Not Ambient.UserMode
 On Error GoTo 0
+CommandButtonDisplayAsDefault = False
 With PropBag
-PropDisplayAsDefault = .ReadProperty("Default", False)
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Appearance = .ReadProperty("Appearance", CCAppearance3D)
@@ -699,7 +699,6 @@ End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
-.WriteProperty "Default", Ambient.DisplayAsDefault, False
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Appearance", Me.Appearance, CCAppearance3D
@@ -733,6 +732,12 @@ With PropBag
 .WriteProperty "MaskColor", PropMaskColor, &HC0C0C0
 .WriteProperty "DrawMode", PropDrawMode, CmdDrawModeNormal
 End With
+End Sub
+
+Private Sub UserControl_Paint()
+If CommandButtonHandle <> NULL_PTR Then
+    If CommandButtonDisplayAsDefault Xor Ambient.DisplayAsDefault Then Call UserControl_AmbientChanged("DisplayAsDefault")
+End If
 End Sub
 
 Private Sub UserControl_OLECompleteDrag(Effect As Long)
@@ -776,23 +781,25 @@ End Sub
 Private Sub UserControl_AmbientChanged(PropertyName As String)
 Select Case PropertyName
     Case "DisplayAsDefault"
-        PropDisplayAsDefault = Ambient.DisplayAsDefault
-        Dim dwStyle As Long
-        dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
-        If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
-            If PropDisplayAsDefault = True Then
-                If Not (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
-                    SetWindowLong CommandButtonHandle, GWL_STYLE, dwStyle Or BS_DEFPUSHBUTTON
-                    Me.Refresh
+        CommandButtonDisplayAsDefault = Ambient.DisplayAsDefault
+        If CommandButtonHandle <> NULL_PTR Then
+            Dim dwStyle As Long
+            dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
+            If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
+                If CommandButtonDisplayAsDefault = True Then
+                    If Not (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
+                        SetWindowLong CommandButtonHandle, GWL_STYLE, dwStyle Or BS_DEFPUSHBUTTON
+                        RedrawWindow CommandButtonHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+                    End If
+                Else
+                    If (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
+                        SetWindowLong CommandButtonHandle, GWL_STYLE, dwStyle And Not BS_DEFPUSHBUTTON
+                        RedrawWindow CommandButtonHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+                    End If
                 End If
             Else
-                If (dwStyle And BS_DEFPUSHBUTTON) = BS_DEFPUSHBUTTON Then
-                    SetWindowLong CommandButtonHandle, GWL_STYLE, dwStyle And Not BS_DEFPUSHBUTTON
-                    Me.Refresh
-                End If
+                RedrawWindow CommandButtonHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
             End If
-        Else
-            Me.Refresh
         End If
 End Select
 End Sub
@@ -838,6 +845,24 @@ End Sub
 Public Property Get Name() As String
 Attribute Name.VB_Description = "Returns the name used in code to identify an object."
 Name = Ambient.DisplayName
+End Property
+
+Public Property Get Default() As Boolean
+Attribute Default.VB_Description = "Determines which CommandButton control is the default command button on a form."
+Default = Extender.Default
+End Property
+
+Public Property Let Default(ByVal Value As Boolean)
+Extender.Default = Value
+End Property
+
+Public Property Get Cancel() As Boolean
+Attribute Cancel.VB_Description = "Indicates whether a command button is the Cancel button on a form."
+Cancel = Extender.Cancel
+End Property
+
+Public Property Let Cancel(ByVal Value As Boolean)
+Extender.Cancel = Value
 End Property
 
 Public Property Get Tag() As String
@@ -1791,7 +1816,7 @@ Private Sub CreateCommandButton()
 If CommandButtonHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or BS_PUSHBUTTON Or BS_TEXT Or BS_NOTIFY
-If PropDisplayAsDefault = True Then dwStyle = dwStyle Or BS_DEFPUSHBUTTON
+If CommandButtonDisplayAsDefault = True Then dwStyle = dwStyle Or BS_DEFPUSHBUTTON
 If Me.Appearance = CCAppearanceFlat Then dwStyle = dwStyle Or BS_FLAT
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING
 Select Case PropAlignment
@@ -2311,7 +2336,7 @@ Select Case wMsg
                         ButtonState = PBS_HOT
                     ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
                         ButtonState = PBS_PRESSED
-                    ElseIf (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Or PropDisplayAsDefault = True Then
+                    ElseIf (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Or CommandButtonDisplayAsDefault = True Then
                         ButtonState = PBS_DEFAULTED
                     Else
                         ButtonState = PBS_NORMAL
@@ -2372,7 +2397,7 @@ Select Case wMsg
                     If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then Flags = Flags Or DFCS_PUSHED
                     If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
                     If Me.Appearance = CCAppearanceFlat Then Flags = Flags Or DFCS_FLAT
-                    If PropDisplayAsDefault = True Then DrawEdge DIS.hDC, DIS.RCItem, BDR_RAISEDOUTER, BF_RECT Or BF_MONO Or BF_ADJUST
+                    If CommandButtonDisplayAsDefault = True Then DrawEdge DIS.hDC, DIS.RCItem, BDR_RAISEDOUTER, BF_RECT Or BF_MONO Or BF_ADJUST
                     DrawFrameControl DIS.hDC, DIS.RCItem, DFC_BUTTON, Flags Or DFCS_ADJUSTRECT
                     FillRect DIS.hDC, DIS.RCItem, Brush
                     If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
@@ -2384,7 +2409,7 @@ Select Case wMsg
                     If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then
                         If Not (DIS.ItemState And ODS_NOFOCUSRECT) = ODS_NOFOCUSRECT Then DrawFocusRect DIS.hDC, DIS.RCItem
                     End If
-                    If PropDisplayAsDefault = True Then Call OffsetRect(DIS.RCItem, -1, -1, 1, 1)
+                    If CommandButtonDisplayAsDefault = True Then Call OffsetRect(DIS.RCItem, -1, -1, 1, 1)
                     If Not Text = vbNullString Then
                         Dim OldBkMode As Long
                         OldBkMode = SetBkMode(DIS.hDC, 1)
@@ -2446,9 +2471,9 @@ Select Case wMsg
                 #If Win64 Then
                 Dim hDC32 As Long
                 CopyMemory ByVal VarPtr(hDC32), ByVal VarPtr(.hDC), 4
-                RaiseEvent OwnerDraw(PropDisplayAsDefault, .ItemAction, .ItemState, hDC32, .RCItem.Left, .RCItem.Top, .RCItem.Right, .RCItem.Bottom)
+                RaiseEvent OwnerDraw(CommandButtonDisplayAsDefault, .ItemAction, .ItemState, hDC32, .RCItem.Left, .RCItem.Top, .RCItem.Right, .RCItem.Bottom)
                 #Else
-                RaiseEvent OwnerDraw(PropDisplayAsDefault, .ItemAction, .ItemState, .hDC, .RCItem.Left, .RCItem.Top, .RCItem.Right, .RCItem.Bottom)
+                RaiseEvent OwnerDraw(CommandButtonDisplayAsDefault, .ItemAction, .ItemState, .hDC, .RCItem.Left, .RCItem.Top, .RCItem.Right, .RCItem.Bottom)
                 #End If
                 End With
             End If
