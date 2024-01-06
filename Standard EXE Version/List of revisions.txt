@@ -2,6 +2,9 @@ List of revisions:
 
 06-Jan-2024
 - Included the CueBannerAlways property in the TextBoxW control.
+- "Object.Default" not written anymore to the property bag in CommandButtonW/CommandLink control.
+- The Default and Cancel property are now also available when setting to a shadow object. ('Set' command)
+  Affected are only the CommandButtonW/CommandLink control.
 
 03-Jan-2024
 - Included the AllowDropFiles property and DropFiles event in the ListBoxW control.
