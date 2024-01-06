@@ -699,7 +699,7 @@ End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
-.WriteProperty "Default", PropDisplayAsDefault, False
+.WriteProperty "Default", Ambient.DisplayAsDefault, False
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Appearance", Me.Appearance, CCAppearance3D
