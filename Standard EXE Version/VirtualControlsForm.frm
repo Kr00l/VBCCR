@@ -29,7 +29,7 @@ Begin VB.Form VirtualControlsForm
       _ExtentX        =   5741
       _ExtentY        =   556
       Style           =   2
-      Text            =   "VirtualControlsForm.frx":0000
+      Text            =   "VirtualCombo1"
    End
    Begin ComCtlsDemo.ListView ListView1 
       Height          =   3495
@@ -111,19 +111,36 @@ Private Sub ListView1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText
 ' This event must be handled to enable incremental search on key presses
 If Count = 0 Then Exit Sub
 Dim i As Long
-For i = StartIndex To ListView1.VirtualItemCount
-    If StrComp(Left$(VirtualLvwItems(i, 0).Text, Len(SearchText)), SearchText, vbTextCompare) = 0 Then
-        FoundIndex = i
-        Exit For
-    End If
-Next i
-If FoundIndex = 0 And Wrap = True Then
-    For i = 1 To StartIndex - 1
+If Partial = True Then
+    For i = StartIndex To ListView1.VirtualItemCount
         If StrComp(Left$(VirtualLvwItems(i, 0).Text, Len(SearchText)), SearchText, vbTextCompare) = 0 Then
             FoundIndex = i
             Exit For
         End If
     Next i
+    If FoundIndex = 0 And Wrap = True Then
+        For i = 1 To StartIndex - 1
+            If StrComp(Left$(VirtualLvwItems(i, 0).Text, Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+                FoundIndex = i
+                Exit For
+            End If
+        Next i
+    End If
+Else
+    For i = StartIndex To ListView1.VirtualItemCount
+        If StrComp(VirtualLvwItems(i, 0).Text, SearchText, vbTextCompare) = 0 Then
+            FoundIndex = i
+            Exit For
+        End If
+    Next i
+    If FoundIndex = 0 And Wrap = True Then
+        For i = 1 To StartIndex - 1
+            If StrComp(VirtualLvwItems(i, 0).Text, SearchText, vbTextCompare) = 0 Then
+                FoundIndex = i
+                Exit For
+            End If
+        Next i
+    End If
 End If
 End Sub
 
@@ -165,19 +182,36 @@ End Sub
 Private Sub VListBox1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, FoundIndex As Long)
 If VListBox1.ListCount = 0 Then Exit Sub
 Dim i As Long
-For i = StartIndex + 1 To VListBox1.ListCount - 1
-    If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
-        FoundIndex = i
-        Exit For
-    End If
-Next i
-If FoundIndex = -1 Then
-    For i = 0 To StartIndex - 1
+If Partial = True Then
+    For i = StartIndex + 1 To VListBox1.ListCount - 1
         If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
             FoundIndex = i
             Exit For
         End If
     Next i
+    If FoundIndex = -1 Then
+        For i = 0 To StartIndex - 1
+            If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+                FoundIndex = i
+                Exit For
+            End If
+        Next i
+    End If
+Else
+    For i = StartIndex + 1 To VListBox1.ListCount - 1
+        If StrComp(VirtualItems(i), SearchText, vbTextCompare) = 0 Then
+            FoundIndex = i
+            Exit For
+        End If
+    Next i
+    If FoundIndex = -1 Then
+        For i = 0 To StartIndex - 1
+            If StrComp(VirtualItems(i), SearchText, vbTextCompare) = 0 Then
+                FoundIndex = i
+                Exit For
+            End If
+        Next i
+    End If
 End If
 End Sub
 
@@ -194,19 +228,36 @@ End Sub
 Private Sub VirtualCombo1_FindVirtualItem(ByVal StartIndex As Long, ByVal SearchText As String, ByVal Partial As Boolean, FoundIndex As Long)
 If VirtualCombo1.ListCount = 0 Then Exit Sub
 Dim i As Long
-For i = StartIndex + 1 To VirtualCombo1.ListCount - 1
-    If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
-        FoundIndex = i
-        Exit For
-    End If
-Next i
-If FoundIndex = -1 Then
-    For i = 0 To StartIndex - 1
+If Partial = True Then
+    For i = StartIndex + 1 To VirtualCombo1.ListCount - 1
         If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
             FoundIndex = i
             Exit For
         End If
     Next i
+    If FoundIndex = -1 Then
+        For i = 0 To StartIndex - 1
+            If StrComp(Left$(VirtualItems(i), Len(SearchText)), SearchText, vbTextCompare) = 0 Then
+                FoundIndex = i
+                Exit For
+            End If
+        Next i
+    End If
+Else
+    For i = StartIndex + 1 To VirtualCombo1.ListCount - 1
+        If StrComp(VirtualItems(i), SearchText, vbTextCompare) = 0 Then
+            FoundIndex = i
+            Exit For
+        End If
+    Next i
+    If FoundIndex = -1 Then
+        For i = 0 To StartIndex - 1
+            If StrComp(VirtualItems(i), SearchText, vbTextCompare) = 0 Then
+                FoundIndex = i
+                Exit For
+            End If
+        Next i
+    End If
 End If
 End Sub
 

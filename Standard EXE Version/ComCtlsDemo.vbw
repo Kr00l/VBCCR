@@ -1,7 +1,7 @@
 MainForm = 300, 454, 1349, 1273, C, 198, 161, 974, 889, C
 PagerForm = 25, 25, 932, 818, C, 25, 25, 646, 642, C
 RichTextBoxForm = 369, 195, 1330, 897, C, 50, 50, 1247, 732, C
-VirtualControlsForm = 183, 127, 1395, 800, C, 22, 29, 1175, 801, C
+VirtualControlsForm = 77, 125, 1289, 798, C, 22, 29, 1175, 801, C
 Common = 268, 180, 1321, 902, C
 Startup = 125, 144, 1066, 820, C
 VisualStyles = 107, 183, 1157, 911, C
@@ -106,6 +106,6 @@ PPTreeViewGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 UpDown = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 PPUpDownGeneral = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 VirtualComboBase = 0, 0, 0, 0, C
-VirtualCombo = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+VirtualCombo = 26, 26, 1077, 686, C, 52, 52, 1103, 712, C
 VListBox = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 WindowedLabel = 0, 0, 0, 0, C, 0, 0, 0, 0, C

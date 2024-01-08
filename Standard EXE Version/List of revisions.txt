@@ -1,5 +1,10 @@
 List of revisions:
 
+08-Jan-2024
+- Update of edit text when changing list index by code in the VirtualCombo control.
+  This is needed due to missing CBS_HASSTRINGS and set of LBS_NODATA. (which is correct so)
+  It now also handles LB_FINDSTRINGEXACT message in the WindowProcList.
+
 06-Jan-2024
 - Included the CueBannerAlways property in the TextBoxW control.
 - "Object.Default" not written anymore to the property bag in CommandButtonW/CommandLink control.
