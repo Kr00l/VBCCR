@@ -348,6 +348,7 @@ Private Const LB_FINDSTRING As Long = &H18F
 Private Const LB_GETTEXT As Long = &H189
 Private Const LB_GETTEXTLEN As Long = &H18A
 Private Const LB_GETCOUNT As Long = &H18B
+Private Const LB_FINDSTRINGEXACT As Long = &H1A2
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
 Private Const CB_GETCOUNT As Long = &H146
@@ -1492,6 +1493,14 @@ If VirtualComboHandle <> NULL_PTR Then
     Else
         SendMessage VirtualComboHandle, CB_SETCURSEL, -1, ByVal 0&
     End If
+    If PropStyle <> VcbStyleDropDownList And VirtualComboEditHandle <> NULL_PTR Then
+        If Not Value = -1 Then
+            SendMessage VirtualComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(Me.List(Value))
+        Else
+            SendMessage VirtualComboEditHandle, WM_SETTEXT, 0, ByVal 0&
+        End If
+        If GetFocus() = VirtualComboEditHandle Then SendMessage VirtualComboEditHandle, EM_SETSEL, 0, ByVal -1&
+    End If
     If Changed = True Then RaiseEvent Click
 End If
 End Property
@@ -2394,8 +2403,8 @@ Select Case wMsg
                     Exit Function
                 End If
         End Select
-    Case LB_FINDSTRING
-        Static LastSearchText As String, LastStartIndex As Long, LastResult As Long
+    Case LB_FINDSTRING, LB_FINDSTRINGEXACT
+        Static LastSearchText(0 To 1) As String, LastStartIndex(0 To 1) As Long, LastResult(0 To 1) As Long
         Dim Length As Long
         If lParam <> 0 Then Length = lstrlen(lParam)
         If Length > 0 And UserControl.EventsFrozen = False Then
@@ -2403,20 +2412,40 @@ Select Case wMsg
             SearchText = String$(Length, vbNullChar)
             CopyMemory ByVal StrPtr(SearchText), ByVal lParam, Length * 2
             Result = LB_ERR
-            If Not LastSearchText = vbNullString And SearchText = LastSearchText And wParam = LastStartIndex Then
-                If LastResult > SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) - 1 Then LastResult = LB_ERR
-                Result = LastResult
-            Else
-                RaiseEvent FindVirtualItem(CLng(wParam), SearchText, True, Result)
+            If wMsg = LB_FINDSTRING Then
+                If Not LastSearchText(0) = vbNullString And SearchText = LastSearchText(0) And wParam = LastStartIndex(0) Then
+                    If LastResult(0) > SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) - 1 Then LastResult(0) = LB_ERR
+                    Result = LastResult(0)
+                Else
+                    RaiseEvent FindVirtualItem(CLng(wParam), SearchText, True, Result)
+                End If
+                WindowProcList = Result
+                LastSearchText(0) = SearchText
+            ElseIf wMsg = LB_FINDSTRINGEXACT Then
+                If Not LastSearchText(1) = vbNullString And SearchText = LastSearchText(1) And wParam = LastStartIndex(1) Then
+                    If LastResult(1) > SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) - 1 Then LastResult(1) = LB_ERR
+                    Result = LastResult(1)
+                Else
+                    RaiseEvent FindVirtualItem(CLng(wParam), SearchText, False, Result)
+                End If
+                WindowProcList = Result
+                LastSearchText(1) = SearchText
             End If
-            WindowProcList = Result
-            LastSearchText = SearchText
         Else
             WindowProcList = LB_ERR
-            LastSearchText = vbNullString
+            If wMsg = LB_FINDSTRING Then
+                LastSearchText(0) = vbNullString
+            ElseIf wMsg = LB_FINDSTRINGEXACT Then
+                LastSearchText(1) = vbNullString
+            End If
         End If
-        LastStartIndex = CLng(wParam)
-        LastResult = CLng(WindowProcList)
+        If wMsg = LB_FINDSTRING Then
+            LastStartIndex(0) = CLng(wParam)
+            LastResult(0) = CLng(WindowProcList)
+        ElseIf wMsg = LB_FINDSTRINGEXACT Then
+            LastStartIndex(1) = CLng(wParam)
+            LastResult(1) = CLng(WindowProcList)
+        End If
         Exit Function
     Case LB_GETTEXTLEN, LB_GETTEXT
         If wParam > -1 And wParam < SendMessage(hWnd, LB_GETCOUNT, 0, ByVal 0&) And UserControl.EventsFrozen = False Then
