@@ -2223,20 +2223,12 @@ Select Case wMsg
         Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
-                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' In case DragDetect returns 0 then the control will set the focus automatically.
                 ' Otherwise not. So check and change focus, if needed.
                 If ImageComboEditHandle = NULL_PTR Then
-                    Select Case GetFocus()
-                        Case hWnd, ImageComboHandle
-                        Case Else
-                            SetFocusAPI hWnd
-                    End Select
+                    If GetFocus() = UserControl.hWnd Then SetFocusAPI hWnd
                 Else
-                    Select Case GetFocus()
-                        Case hWnd, ImageComboHandle, ImageComboEditHandle
-                        Case Else
-                            SetFocusAPI ImageComboEditHandle
-                    End Select
+                    If GetFocus() = UserControl.hWnd Then SetFocusAPI ImageComboEditHandle
                 End If
                 ' See UM_BUTTONDOWN
                 If ComCtlsSupportLevel() = 0 Then

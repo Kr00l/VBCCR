@@ -7699,18 +7699,18 @@ Select Case wMsg
         Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
         Select Case wMsg
             Case WM_LBUTTONDOWN
-                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' In case DragDetect returns 0 then the control will set the focus automatically.
                 ' Otherwise not. So check and change focus, if needed.
-                If GetFocus() <> hWnd Then SetFocusAPI hWnd
+                If GetFocus() = UserControl.hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
             Case WM_MBUTTONDOWN
                 RaiseEvent MouseDown(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
                 ListViewButtonDown = 0
                 ListViewIsClick = True
             Case WM_RBUTTONDOWN
-                ' In case DragDetect returns 0 then the control will set focus the focus automatically.
+                ' In case DragDetect returns 0 then the control will set the focus automatically.
                 ' Otherwise not. So check and change focus, if needed.
-                If GetFocus() <> hWnd Then SetFocusAPI hWnd
+                If GetFocus() = UserControl.hWnd Then SetFocusAPI hWnd
                 ' See UM_BUTTONDOWN
             Case WM_MOUSEMOVE
                 If ListViewMouseOver = False And PropMouseTrack = True Then
