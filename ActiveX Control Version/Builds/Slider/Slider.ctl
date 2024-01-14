@@ -1768,14 +1768,20 @@ Select Case wMsg
                 Case TB_THUMBTRACK, TB_THUMBPOSITION
                     If RetVal <> PropValue Then
                         PropValue = RetVal
-                        RaiseEvent Scroll
+                        UserControl.PropertyChanged "Value"
+                        On Error Resume Next
+                        UserControl.Extender.DataChanged = True
+                        On Error GoTo 0
                     End If
+                    RaiseEvent Scroll
                 Case TB_ENDTRACK
-                    PropValue = RetVal
-                    UserControl.PropertyChanged "Value"
-                    On Error Resume Next
-                    UserControl.Extender.DataChanged = True
-                    On Error GoTo 0
+                    If RetVal <> PropValue Then
+                        PropValue = RetVal
+                        UserControl.PropertyChanged "Value"
+                        On Error Resume Next
+                        UserControl.Extender.DataChanged = True
+                        On Error GoTo 0
+                    End If
                     RaiseEvent Change
             End Select
         End If
