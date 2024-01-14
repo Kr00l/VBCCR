@@ -272,10 +272,14 @@ If BuddyControlEnumerated = False Then
     For Each ControlEnum In .ControlsEnum
         If ControlIsValid(ControlEnum) = True Then
             If ControlEnum.Container Is .ControlsContainer Then
+                PropUBound = UBound(BuddyProperties())
+                ReDim Preserve BuddyProperties(0 To PropUBound + 1) As String
+                On Error Resume Next
+                CallByName ControlEnum, "", VbGet
+                If Err.Number = 0 Then BuddyProperties(PropUBound + 1) = BuddyProperties(PropUBound + 1) & "_Default|"
+                On Error GoTo 0
                 If Not TLI Is Nothing Then
                     Set ObjInterface = TLI.InterfaceInfoFromObject(ControlEnum)
-                    PropUBound = UBound(BuddyProperties())
-                    ReDim Preserve BuddyProperties(0 To PropUBound + 1) As String
                     For Each ObjMember In ObjInterface.Members
                         With ObjMember
                         Select Case .InvokeKind
@@ -288,6 +292,7 @@ If BuddyControlEnumerated = False Then
                         End Select
                         End With
                     Next ObjMember
+                    LastMemberName = vbNullString
                 End If
                 ComboBuddyControl.AddItem ProperControlName(ControlEnum)
             End If
@@ -556,7 +561,7 @@ If CheckSyncBuddy.Value = vbChecked Then
         FreezeChanged = False
         Exit Sub
     Else
-        If ComboBuddyProperty.Text = vbNullString Then ComboBuddyProperty.Text = "_Value"
+        If ComboBuddyProperty.Text = vbNullString Then ComboBuddyProperty.Text = "_Default"
     End If
 Else
     ComboBuddyProperty.Text = vbNullString
