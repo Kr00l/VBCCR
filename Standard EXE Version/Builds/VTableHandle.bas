@@ -165,7 +165,7 @@ Debug.Assert Not (This Is Nothing)
 Dim HResult As Long, IID As OLEGuids.OLECLSID, ObjectPointer As LongPtr
 CLSIDFromString StrPtr(IIDString), IID
 HResult = This.QueryInterface(VarPtr(IID), ObjectPointer)
-If ObjectPointer <> 0 Then
+If ObjectPointer <> NULL_PTR Then
     Dim IUnk As OLEGuids.IUnknownUnrestricted
     CopyMemory IUnk, ObjectPointer, PTR_SIZE
     IUnk.Release
