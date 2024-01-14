@@ -1,5 +1,8 @@
 List of revisions:
 
+14-Jan-2024
+- Improvement in the BuddyControl property in the UpDown control.
+
 10-Jan-2024
 - Bugfix for WM_LBUTTONDOWN/WM_RBUTTONDOWN handler on ListView/TreeView/ImageCombo control.
   Those windows controls do have an internal DragDetect modal message loop.

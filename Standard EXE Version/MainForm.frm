@@ -169,7 +169,7 @@ Begin VB.Form MainForm
       Wrappable       =   0   'False
       ButtonHeight    =   30
       ButtonWidth     =   114
-      InitButtons     =   "MainForm.frx":1012
+      InitButtons     =   "MainForm.frx":1016
    End
    Begin ComCtlsDemo.TreeView TreeView1 
       Height          =   2415
@@ -253,7 +253,7 @@ Begin VB.Form MainForm
       SelStart        =   5
    End
    Begin ComCtlsDemo.MonthView MonthView1 
-      Bindings        =   "MainForm.frx":1DEA
+      Bindings        =   "MainForm.frx":1DEE
       Height          =   2340
       Left            =   120
       TabIndex        =   2
@@ -276,7 +276,7 @@ Begin VB.Form MainForm
       CalendarDayState=   -1  'True
       Value           =   44012
       Format          =   3
-      CustomFormat    =   "MainForm.frx":1DF5
+      CustomFormat    =   "MainForm.frx":1DF9
    End
    Begin VB.PictureBox Picture2 
       AutoRedraw      =   -1  'True
@@ -292,7 +292,7 @@ Begin VB.Form MainForm
    Begin VB.PictureBox Picture1 
       Height          =   495
       Left            =   1440
-      Picture         =   "MainForm.frx":1E2F
+      Picture         =   "MainForm.frx":1E33
       ScaleHeight     =   435
       ScaleWidth      =   555
       TabIndex        =   11
@@ -335,7 +335,7 @@ Begin VB.Form MainForm
       _ExtentY        =   1005
       ImageWidth      =   8
       ImageHeight     =   7
-      InitListImages  =   "MainForm.frx":2173
+      InitListImages  =   "MainForm.frx":2177
    End
    Begin ComCtlsDemo.ImageList ImageList3 
       Left            =   3000
@@ -345,7 +345,7 @@ Begin VB.Form MainForm
       ImageWidth      =   32
       ImageHeight     =   32
       BackColor       =   16777215
-      InitListImages  =   "MainForm.frx":23E3
+      InitListImages  =   "MainForm.frx":23E7
    End
    Begin ComCtlsDemo.ListView ListView3 
       Height          =   2895
@@ -392,7 +392,7 @@ Begin VB.Form MainForm
       TabFixedWidth   =   133
       TabMinWidth     =   7
       ShowTips        =   -1  'True
-      InitTabs        =   "MainForm.frx":28CB
+      InitTabs        =   "MainForm.frx":28CF
    End
    Begin VB.PictureBox Picture3 
       AutoRedraw      =   -1  'True
