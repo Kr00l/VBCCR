@@ -31,6 +31,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private SldOrientationHorizontal, SldOrientationVertical
 Private SldTipSideAboveLeft, SldTipSideBelowRight
@@ -73,6 +76,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type NMHDR
 hWndFrom As LongPtr
@@ -328,6 +339,14 @@ Private SliderMaxExtentX As Long
 Private SliderMaxExtentY As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIDMousePointer As Long
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
+Private SliderUsePreTranslateMsg As Boolean
+
+#End If
+
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
@@ -408,8 +427,19 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_BAR_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then SliderUsePreTranslateMsg = True
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+
+#End If
+
 SliderMaxExtentX = 45 * PixelsPerDIP_X()
 SliderMaxExtentY = 45 * PixelsPerDIP_Y()
 End Sub
@@ -587,8 +617,19 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If SliderUsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
+
+#End If
+
 Call DestroySlider
 Call ComCtlsReleaseShellMod
 End Sub
@@ -1464,6 +1505,15 @@ Me.TipSide = PropTipSide
 If PropSelectRange = True Then Me.SelStart = PropSelStart
 If SliderDesignMode = False Then
     If SliderHandle <> NULL_PTR Then Call ComCtlsSetSubclass(SliderHandle, Me, 1)
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If SliderUsePreTranslateMsg = True Then
+        If SliderHandle <> NULL_PTR Then Call ComCtlsPreTranslateMsgAddHook(SliderHandle)
+    End If
+    
+    #End If
+    
 End If
 End Sub
 
@@ -1487,6 +1537,15 @@ Private Sub DestroySlider()
 If SliderHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(SliderHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If SliderDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If SliderUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook(SliderHandle)
+    
+    #End If
+    
+End If
 ShowWindow SliderHandle, SW_HIDE
 SetParent SliderHandle, NULL_PTR
 DestroyWindow SliderHandle
@@ -1629,6 +1688,20 @@ If SliderHandle <> NULL_PTR Then
 End If
 End Sub
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -1646,9 +1719,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If SliderUsePreTranslateMsg = False Then Call ActivateIPAO(Me)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If SliderUsePreTranslateMsg = False Then Call DeActivateIPAO
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_MBUTTONDOWN
@@ -1711,6 +1804,15 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -1768,14 +1870,20 @@ Select Case wMsg
                 Case TB_THUMBTRACK, TB_THUMBPOSITION
                     If RetVal <> PropValue Then
                         PropValue = RetVal
-                        RaiseEvent Scroll
+                        UserControl.PropertyChanged "Value"
+                        On Error Resume Next
+                        UserControl.Extender.DataChanged = True
+                        On Error GoTo 0
                     End If
+                    RaiseEvent Scroll
                 Case TB_ENDTRACK
-                    PropValue = RetVal
-                    UserControl.PropertyChanged "Value"
-                    On Error Resume Next
-                    UserControl.Extender.DataChanged = True
-                    On Error GoTo 0
+                    If RetVal <> PropValue Then
+                        PropValue = RetVal
+                        UserControl.PropertyChanged "Value"
+                        On Error Resume Next
+                        UserControl.Extender.DataChanged = True
+                        On Error GoTo 0
+                    End If
                     RaiseEvent Change
             End Select
         End If
