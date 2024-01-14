@@ -292,6 +292,7 @@ PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
 PropBuddyName = .ReadProperty("BuddyControl", "(None)")
 PropBuddyProperty = VarToStr(.ReadProperty("BuddyProperty", vbNullString))
+If PropBuddyProperty = "_Value" Then PropBuddyProperty = "_Default" ' Compatibility
 PropMin = .ReadProperty("Min", 0)
 PropMax = .ReadProperty("Max", 10)
 PropValue = .ReadProperty("Value", 0)
@@ -744,8 +745,15 @@ If Not BuddyControl Is Nothing Then
     Dim Success As Boolean
     On Error Resume Next
     Select Case Value
-        Case vbNullString, "_Value"
+        Case vbNullString
             Success = True
+        Case "_Default"
+            CallByName BuddyControl, "", VbGet
+            Success = CBool(Err.Number = 0)
+        Case "_Value" ' Compatibility
+            Value = "_Default"
+            CallByName BuddyControl, "", VbGet
+            Success = CBool(Err.Number = 0)
         Case Else
             CallByName BuddyControl, Value, VbLet, CallByName(BuddyControl, Value, VbGet)
             Success = CBool(Err.Number = 0)
@@ -785,7 +793,9 @@ End Property
 
 Public Property Let SyncBuddy(ByVal Value As Boolean)
 If Value = True Then
-    If GetBuddyControl() Is Nothing Then
+    Dim BuddyControl As Control
+    Set BuddyControl = GetBuddyControl()
+    If BuddyControl Is Nothing Then
         If UpDownDesignMode = True Then
             MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
             Exit Property
@@ -793,7 +803,21 @@ If Value = True Then
             Err.Raise Number:=35754, Description:="BuddyControl property must be set first"
         End If
     End If
-    If PropBuddyProperty = vbNullString Then PropBuddyProperty = "_Value"
+    If PropBuddyProperty = vbNullString Then
+        On Error Resume Next
+        CallByName BuddyControl, "", VbGet
+        If Err.Number = 0 Then PropBuddyProperty = "_Default"
+        On Error GoTo 0
+        If PropBuddyProperty = vbNullString Then
+            If UpDownDesignMode = True Then
+                MsgBox "Invalid property value", vbCritical + vbOKOnly
+                PropBuddyProperty = vbNullString
+                Exit Property
+            Else
+                Err.Raise 380
+            End If
+        End If
+    End If
 Else
     PropBuddyProperty = vbNullString
 End If
@@ -1038,7 +1062,7 @@ If UpDownDesignMode = False Then
     Dim VarValue As Variant, LngValue As Long
     If Not PropBuddyControl Is Nothing Then
         On Error Resume Next
-        If PropBuddyProperty = "_Value" Then
+        If PropBuddyProperty = "_Default" Then
             VarValue = CallByName(PropBuddyControl, "", VbGet)
         Else
             VarValue = CallByName(PropBuddyControl, PropBuddyProperty, VbGet)
@@ -1087,13 +1111,13 @@ If UpDownDesignMode = False Then
                             StrValue = CStr(Me.Value)
                         End If
                     End If
-                    If PropBuddyProperty = "_Value" Then
+                    If PropBuddyProperty = "_Default" Then
                         CallByName PropBuddyControl, "", VbLet, StrValue
                     ElseIf Not PropBuddyProperty = vbNullString Then
                         CallByName PropBuddyControl, PropBuddyProperty, VbLet, StrValue
                     End If
                 Case vbDouble, vbSingle, vbLong, vbInteger, vbByte
-                    If PropBuddyProperty = "_Value" Then
+                    If PropBuddyProperty = "_Default" Then
                         CallByName PropBuddyControl, "", VbLet, Me.Value
                     ElseIf Not PropBuddyProperty = vbNullString Then
                         CallByName PropBuddyControl, PropBuddyProperty, VbLet, Me.Value
