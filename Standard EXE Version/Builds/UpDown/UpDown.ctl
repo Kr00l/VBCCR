@@ -733,7 +733,7 @@ UserControl.PropertyChanged "BuddyControl"
 End Property
 
 Public Property Get BuddyProperty() As String
-Attribute BuddyProperty.VB_Description = "Returns/sets the property used to synchronize the control with its buddy control. Specifying a property named '_Value' means that the default property will be used."
+Attribute BuddyProperty.VB_Description = "Returns/sets the property used to synchronize the control with its buddy control. Specifying a property named '_Default' means that the default property will be used."
 Attribute BuddyProperty.VB_ProcData.VB_Invoke_Property = "PPUpDownGeneral"
 BuddyProperty = PropBuddyProperty
 End Property
