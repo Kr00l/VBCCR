@@ -342,6 +342,8 @@ Private Const MCM_GETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 16)
 Private Const MCM_GETMAXTODAYWIDTH As Long = (MCM_FIRST + 21)
 Private Const MCN_FIRST As Long = (-750)
 Private Const MCN_GETDAYSTATE As Long = (MCN_FIRST + 3)
+Private Const UDN_FIRST As Long = (-721)
+Private Const UDN_DELTAPOS As Long = (UDN_FIRST - 1)
 Private Const EN_SETFOCUS As Long = &H100
 Private Const EN_KILLFOCUS As Long = &H200
 Implements ISubclass
@@ -1977,6 +1979,12 @@ Select Case wMsg
                     NMDS.prgDayState.LPMONTHDAYSTATE = VarPtr(DayState(1))
                     CopyMemory ByVal lParam, NMDS, LenB(NMDS)
                 End If
+            Case UDN_DELTAPOS
+                If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+                WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                ' Fallback just in case the control would not set the focus automatically.
+                If GetFocus() = UserControl.hWnd Then SetFocusAPI hWnd
+                Exit Function
         End Select
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
