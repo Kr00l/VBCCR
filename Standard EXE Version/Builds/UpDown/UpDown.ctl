@@ -762,7 +762,6 @@ If Not BuddyControl Is Nothing Then
     If Success = False Then
         If UpDownDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
-            PropBuddyProperty = vbNullString
             Exit Property
         Else
             Err.Raise 380
@@ -811,7 +810,6 @@ If Value = True Then
         If PropBuddyProperty = vbNullString Then
             If UpDownDesignMode = True Then
                 MsgBox "Invalid property value", vbCritical + vbOKOnly
-                PropBuddyProperty = vbNullString
                 Exit Property
             Else
                 Err.Raise 380
