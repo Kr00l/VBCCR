@@ -670,6 +670,19 @@ For i = 1 To Count
 Next i
 End Sub
 
+Private Sub CoolBar1_HeightChanged(ByVal NewHeight As Single)
+' .Move will not always refresh the child when there was no change.
+' However, a height change can cause issues for the transparent background of the child controls.
+Dim Band As CbrBand
+For Each Band In CoolBar1.Bands
+    If Not Band.Child Is Nothing Then
+        On Error Resume Next
+        Band.Child.Refresh
+        On Error GoTo 0
+    End If
+Next Band
+End Sub
+
 Private Sub ListView1_ColumnCheck(ByVal ColumnHeader As LvwColumnHeader)
 MsgBox "Checkbox of the column header '" & ColumnHeader.Text & "' was clicked"
 End Sub
