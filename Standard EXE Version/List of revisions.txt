@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Jan-2024
+- Fixed focus issue for the up down button in the DTPicker control.
+
 14-Jan-2024
 - Improvement in the BuddyControl property in the UpDown control.
 
