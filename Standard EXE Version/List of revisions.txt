@@ -1,5 +1,8 @@
 List of revisions:
 
+16-Jan-2024
+- Final bugfix in the UserControl_Resize for the ImageCombo control. (regression 18-Dec-2023)
+
 15-Jan-2024
 - Fixed focus issue for the up down button in the DTPicker control.
 
