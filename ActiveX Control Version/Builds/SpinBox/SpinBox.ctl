@@ -182,6 +182,7 @@ Private Const WM_SYSKEYDOWN As Long = &H104
 Private Const WM_SYSKEYUP As Long = &H105
 Private Const WM_UNICHAR As Long = &H109, UNICODE_NOCHAR As Long = &HFFFF&
 Private Const WM_IME_CHAR As Long = &H286
+Private Const WM_NCLBUTTONDOWN As Long = &HA1
 Private Const WM_LBUTTONDOWN As Long = &H201
 Private Const WM_LBUTTONUP As Long = &H202
 Private Const WM_MBUTTONDOWN As Long = &H207
@@ -196,7 +197,7 @@ Private Const WM_VSCROLL As Long = &H115
 Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETFONT As Long = &H30
-Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1, HTBORDER As Long = 18
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -1371,17 +1372,32 @@ End Select
 End Function
 
 Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
-If wMsg = UM_CHECKVALUE Then
-    If wParam <> PropValue Then
-        PropValue = CLng(wParam)
-        UserControl.PropertyChanged "Value"
-        On Error Resume Next
-        UserControl.Extender.DataChanged = True
-        On Error GoTo 0
-        RaiseEvent Change
-    End If
-    Exit Function
-End If
+Select Case wMsg
+    Case WM_SETCURSOR
+        If LoWord(CLng(lParam)) = HTCLIENT Then
+            If MousePointerID(PropMousePointer) <> 0 Then
+                SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
+                WindowProcControl = 1
+                Exit Function
+            ElseIf PropMousePointer = 99 Then
+                If Not PropMouseIcon Is Nothing Then
+                    SetCursor PropMouseIcon.Handle
+                    WindowProcControl = 1
+                    Exit Function
+                End If
+            End If
+        End If
+    Case UM_CHECKVALUE
+        If wParam <> PropValue Then
+            PropValue = CLng(wParam)
+            UserControl.PropertyChanged "Value"
+            On Error Resume Next
+            UserControl.Extender.DataChanged = True
+            On Error GoTo 0
+            RaiseEvent Change
+        End If
+        Exit Function
+End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -1441,19 +1457,22 @@ Select Case wMsg
     Case WM_KILLFOCUS
         Call DeActivateIPAO
     Case WM_SETCURSOR
-        If LoWord(CLng(lParam)) = HTCLIENT Then
-            If MousePointerID(PropMousePointer) <> 0 Then
-                SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
-                WindowProcEdit = 1
-                Exit Function
-            ElseIf PropMousePointer = 99 Then
-                If Not PropMouseIcon Is Nothing Then
-                    SetCursor PropMouseIcon.Handle
+        Select Case LoWord(CLng(lParam))
+            Case HTCLIENT, HTBORDER
+                If MousePointerID(PropMousePointer) <> 0 Then
+                    SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
                     WindowProcEdit = 1
                     Exit Function
+                ElseIf PropMousePointer = 99 Then
+                    If Not PropMouseIcon Is Nothing Then
+                        SetCursor PropMouseIcon.Handle
+                        WindowProcEdit = 1
+                        Exit Function
+                    End If
                 End If
-            End If
-        End If
+        End Select
+    Case WM_NCLBUTTONDOWN
+        If GetFocus() <> hWnd Then SetFocusAPI UserControl.hWnd
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
@@ -1565,11 +1584,11 @@ Select Case wMsg
     Case WM_NCMOUSELEAVE
         SpinBoxMouseOver(1) = False
         If SpinBoxMouseOver(2) = True Then
-            Dim Pos As Long, P As POINTAPI, XY As Currency
+            Dim Pos As Long, P3 As POINTAPI, XY As Currency
             Pos = GetMessagePos()
-            P.X = Get_X_lParam(Pos)
-            P.Y = Get_Y_lParam(Pos)
-            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P), 8
+            P3.X = Get_X_lParam(Pos)
+            P3.Y = Get_Y_lParam(Pos)
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P3), 8
             If WindowFromPoint(XY) <> SpinBoxUpDownHandle Or SpinBoxUpDownHandle = NULL_PTR Then
                 SpinBoxMouseOver(2) = False
                 RaiseEvent MouseLeave

@@ -671,7 +671,9 @@ If PropStyle <> ImcStyleSimpleCombo Then
         .Extender.Move .Extender.Left, .Extender.Top, .Extender.Width, .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
         If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
-    ' Call CheckDropDownHeight(True) is not needed as 'ImageComboComboHandle' is not touched.
+    MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    If ImageComboComboHandle <> NULL_PTR Then MoveWindow ImageComboComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + CLng(SendMessage(ImageComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)) + 2, 1
+    Call CheckDropDownHeight(True)
 Else
     Dim ListRect As RECT, EditHeight As Long, ItemHeight As Long
     Dim Height As Long, Temp As Long, Count As Long
@@ -701,8 +703,8 @@ Else
     End If
     .Extender.Height = .ScaleY(Height, vbPixels, vbContainerSize)
     If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
+    MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End If
-MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
 End Sub
