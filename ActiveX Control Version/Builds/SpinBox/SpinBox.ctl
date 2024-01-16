@@ -189,6 +189,7 @@ Private Const WM_MBUTTONDOWN As Long = &H207
 Private Const WM_MBUTTONUP As Long = &H208
 Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
+Private Const WM_NCMOUSEMOVE As Long = &HA0
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_NCMOUSELEAVE As Long = &H2A2
 Private Const WM_MOUSELEAVE As Long = &H2A3
@@ -1573,7 +1574,18 @@ Select Case wMsg
             Case WM_RBUTTONUP
                 RaiseEvent MouseUp(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
         End Select
-    Case WM_MOUSELEAVE
+    Case WM_NCMOUSEMOVE, WM_MOUSELEAVE
+        If wMsg = WM_NCMOUSEMOVE Then
+            If (SpinBoxMouseOver(1) = False And PropMouseTrack = True) Or (SpinBoxMouseOver(2) = False And PropMouseTrack = True) Then
+                If SpinBoxMouseOver(1) = False And PropMouseTrack = True Then SpinBoxMouseOver(1) = True
+                If SpinBoxMouseOver(2) = False And PropMouseTrack = True Then
+                    SpinBoxMouseOver(2) = True
+                    RaiseEvent MouseEnter
+                End If
+            Else
+                Exit Function
+            End If
+        End If
         Dim TME As TRACKMOUSEEVENTSTRUCT
         With TME
         .cbSize = LenB(TME)
@@ -1589,7 +1601,9 @@ Select Case wMsg
             P3.X = Get_X_lParam(Pos)
             P3.Y = Get_Y_lParam(Pos)
             CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P3), 8
-            If WindowFromPoint(XY) <> SpinBoxUpDownHandle Or SpinBoxUpDownHandle = NULL_PTR Then
+            Dim hWndPoint As LongPtr
+            hWndPoint = WindowFromPoint(XY)
+            If hWndPoint <> hWnd And (hWndPoint <> SpinBoxUpDownHandle Or SpinBoxUpDownHandle = NULL_PTR) Then
                 SpinBoxMouseOver(2) = False
                 RaiseEvent MouseLeave
             End If
