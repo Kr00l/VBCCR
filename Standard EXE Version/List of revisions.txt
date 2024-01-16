@@ -2,6 +2,9 @@ List of revisions:
 
 16-Jan-2024
 - Final bugfix in the UserControl_Resize for the ImageCombo control. (regression 18-Dec-2023)
+- MousePointer covers now the whole SpinBox. (incl. border and up down control)
+  Also bugfix in the MouseTrack property as WM_NCMOUSEMOVE was not covered.
+  WM_NCLBUTTONDOWN will set focus for the edit control as the border of the up down control does also.
 
 15-Jan-2024
 - Fixed focus issue for the up down button in the DTPicker control.
