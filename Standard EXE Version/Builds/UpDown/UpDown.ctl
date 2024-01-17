@@ -114,6 +114,8 @@ Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongP
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
+Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
+Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -126,6 +128,8 @@ Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef l
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
+Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
+Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 #End If
 Private Const ICC_UPDOWN_CLASS As Long = &H10
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -141,6 +145,7 @@ Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_CAPTURECHANGED As Long = &H215
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
@@ -174,6 +179,7 @@ Private UpDownDesignMode As Boolean
 Private UpDownBuddyObjectPointer As LongPtr
 Private DispIDBuddyControl As Long, BuddyControlArray() As String
 Private PropVisualStyles As Boolean
+Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
@@ -259,6 +265,7 @@ UpDownDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
+PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
@@ -287,6 +294,8 @@ With PropBag
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
+PropMousePointer = .ReadProperty("MousePointer", 0)
+Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
 PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
@@ -314,6 +323,8 @@ With PropBag
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
+.WriteProperty "MousePointer", PropMousePointer, 0
+.WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
@@ -605,6 +616,50 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
+Public Property Get MousePointer() As CCMousePointerConstants
+Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
+MousePointer = PropMousePointer
+End Property
+
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
+Select Case Value
+    Case 0 To 16, 99
+        PropMousePointer = Value
+    Case Else
+        Err.Raise 380
+End Select
+If UpDownDesignMode = False Then Call RefreshMousePointer
+UserControl.PropertyChanged "MousePointer"
+End Property
+
+Public Property Get MouseIcon() As IPictureDisp
+Attribute MouseIcon.VB_Description = "Returns/sets a custom mouse icon."
+Set MouseIcon = PropMouseIcon
+End Property
+
+Public Property Let MouseIcon(ByVal Value As IPictureDisp)
+Set Me.MouseIcon = Value
+End Property
+
+Public Property Set MouseIcon(ByVal Value As IPictureDisp)
+If Value Is Nothing Then
+    Set PropMouseIcon = Nothing
+Else
+    If Value.Type = vbPicTypeIcon Or Value.Handle = NULL_PTR Then
+        Set PropMouseIcon = Value
+    Else
+        If UpDownDesignMode = True Then
+            MsgBox "Invalid property value", vbCritical + vbOKOnly
+            Exit Property
+        Else
+            Err.Raise 380
+        End If
+    End If
+End If
+If UpDownDesignMode = False Then Call RefreshMousePointer
+UserControl.PropertyChanged "MouseIcon"
+End Property
+
 Public Property Get MouseTrack() As Boolean
 Attribute MouseTrack.VB_Description = "Returns/sets whether mouse events occurs when the mouse pointer enters or leaves the control."
 MouseTrack = PropMouseTrack
@@ -745,22 +800,21 @@ Dim BuddyControl As Control
 Set BuddyControl = GetBuddyControl()
 If Not BuddyControl Is Nothing Then
     Dim Success As Boolean
-    On Error Resume Next
-    Select Case Value
-        Case vbNullString
-            Success = True
-        Case "_Default"
-            CallByName BuddyControl, "", VbGet
-            Success = CBool(Err.Number = 0)
-        Case "_Value" ' Compatibility
-            Value = "_Default"
-            CallByName BuddyControl, "", VbGet
-            Success = CBool(Err.Number = 0)
-        Case Else
-            CallByName BuddyControl, Value, VbLet, CallByName(BuddyControl, Value, VbGet)
-            Success = CBool(Err.Number = 0)
-    End Select
-    On Error GoTo 0
+    If Value = vbNullString Then
+        Success = True
+    Else
+        On Error Resume Next
+        Select Case LCase$(Value)
+            Case "_default", "_value"
+                Value = "_Default"
+                CallByName BuddyControl, "", VbGet
+                Success = CBool(Err.Number = 0)
+            Case Else
+                CallByName BuddyControl, Value, VbLet, CallByName(BuddyControl, Value, VbGet)
+                Success = CBool(Err.Number = 0)
+        End Select
+        On Error GoTo 0
+    End If
     If Success = False Then
         If UpDownDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
@@ -772,17 +826,16 @@ If Not BuddyControl Is Nothing Then
         PropBuddyProperty = Value
     End If
 Else
-    Select Case Value
-        Case vbNullString
-            PropBuddyProperty = Value
-        Case Else
-            If UpDownDesignMode = True Then
-                MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
-                Exit Property
-            Else
-                Err.Raise Number:=35754, Description:="BuddyControl property must be set first"
-            End If
-    End Select
+    If Value = vbNullString Then
+        PropBuddyProperty = Value
+    Else
+        If UpDownDesignMode = True Then
+            MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
+            Exit Property
+        Else
+            Err.Raise Number:=35754, Description:="BuddyControl property must be set first"
+        End If
+    End If
 End If
 UserControl.PropertyChanged "BuddyProperty"
 End Property
@@ -1178,6 +1231,22 @@ End Select
 End Function
 
 Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Select Case wMsg
+    Case WM_SETCURSOR
+        If LoWord(CLng(lParam)) = HTCLIENT Then
+            If MousePointerID(PropMousePointer) <> 0 Then
+                SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
+                WindowProcControl = 1
+                Exit Function
+            ElseIf PropMousePointer = 99 Then
+                If Not PropMouseIcon Is Nothing Then
+                    SetCursor PropMouseIcon.Handle
+                    WindowProcControl = 1
+                    Exit Function
+                End If
+            End If
+        End If
+End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
