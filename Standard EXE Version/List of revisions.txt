@@ -1,6 +1,7 @@
 List of revisions:
 
 17-Jan-2024
+- Included the MousePointer property in the UpDown control. (not exist in MS UpDown)
 - DownClick/UpClick for UpDown/SpinBox now fires upon WM_CAPTURECHANGED where
   cached delta value on UDN_DELTAPOS decided if down or up click. (like MS UpDown)
   ByRef Delta on BeforeChange event copied back to iDelta of the NMUPDOWN structure upon UDN_DELTAPOS.
