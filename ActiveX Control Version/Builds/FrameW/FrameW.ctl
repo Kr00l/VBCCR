@@ -86,6 +86,7 @@ Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal 
 Private Declare PtrSafe Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As LongPtr, ByVal lpchText As LongPtr, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
 Private Declare PtrSafe Function SetTextColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
+Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
 Private Declare PtrSafe Function SetBkMode Lib "gdi32" (ByVal hDC As LongPtr, ByVal nBkMode As Long) As Long
 Private Declare PtrSafe Function GetClientRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
@@ -105,6 +106,7 @@ Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString
 Private Declare Function DrawText Lib "user32" Alias "DrawTextW" (ByVal hDC As Long, ByVal lpchText As Long, ByVal nCount As Long, ByRef lpRect As RECT, ByVal uFormat As Long) As Long
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
@@ -910,11 +912,11 @@ Set .Picture = Nothing
 If PropTransparent = True Then
     Dim WndRect As RECT, P As POINTAPI
     GetWindowRect .hWnd, WndRect
-    MapWindowPoints HWND_DESKTOP, .ContainerHwnd, WndRect, 2
+    MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
     P.X = WndRect.Left
     P.Y = WndRect.Top
     SetViewportOrgEx .hDC, -P.X, -P.Y, P
-    SendMessage .ContainerHwnd, WM_PAINT, .hDC, ByVal 0&
+    SendMessage GetParent(.hWnd), WM_PAINT, .hDC, ByVal 0&
     SetViewportOrgEx .hDC, P.X, P.Y, P
 End If
 If PropBorderStyle <> vbBSNone Then
