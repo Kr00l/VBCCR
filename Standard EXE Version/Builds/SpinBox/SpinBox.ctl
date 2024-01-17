@@ -193,6 +193,7 @@ Private Const WM_NCMOUSEMOVE As Long = &HA0
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_NCMOUSELEAVE As Long = &H2A2
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_CAPTURECHANGED As Long = &H215
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_CONTEXTMENU As Long = &H7B
@@ -212,6 +213,8 @@ Private Const ES_NOHIDESEL As Long = &H100
 Private Const ES_LEFT As Long = &H0
 Private Const ES_CENTER As Long = &H1
 Private Const ES_RIGHT As Long = &H2
+Private Const NM_FIRST As Long = 0
+Private Const NM_RELEASEDCAPTURE As Long = (NM_FIRST - 16)
 Private Const UDN_FIRST As Long = (-721)
 Private Const UDN_DELTAPOS As Long = (UDN_FIRST - 1)
 Private Const UDS_WRAP As Long = &H1
@@ -247,6 +250,7 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private SpinBoxUpDownHandle As LongPtr, SpinBoxEditHandle As LongPtr
 Private SpinBoxFontHandle As LongPtr
 Private SpinBoxCharCodeCache As Long
+Private SpinBoxDeltaCache As Long
 Private SpinBoxMouseOver(0 To 2) As Boolean
 Private SpinBoxDesignMode As Boolean
 Private UCNoSetFocusFwd As Boolean
@@ -1447,6 +1451,12 @@ Select Case wMsg
                 RaiseEvent MouseLeave
             End If
         End If
+    Case WM_CAPTURECHANGED
+        If SpinBoxDeltaCache < 0 Then
+            RaiseEvent DownClick
+        ElseIf SpinBoxDeltaCache > 0 Then
+            RaiseEvent UpClick
+        End If
 End Select
 End Function
 
@@ -1617,22 +1627,18 @@ Select Case wMsg
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = SpinBoxUpDownHandle Then
-            If NM.Code = UDN_DELTAPOS Then
-                Dim NMUD As NMUPDOWN
-                CopyMemory NMUD, ByVal lParam, LenB(NMUD)
-                RaiseEvent BeforeChange(NMUD.iPos, NMUD.iDelta)
-                Select Case NMUD.iDelta
-                    Case 0
+            Select Case NM.Code
+                Case UDN_DELTAPOS
+                    Dim NMUD As NMUPDOWN
+                    CopyMemory NMUD, ByVal lParam, LenB(NMUD)
+                    RaiseEvent BeforeChange(NMUD.iPos, NMUD.iDelta)
+                    SpinBoxDeltaCache = NMUD.iDelta
+                    CopyMemory ByVal lParam, NMUD, LenB(NMUD)
+                    If NMUD.iDelta = 0 Then
                         WindowProcUserControl = 1
                         Exit Function
-                    Case Is < 0
-                        RaiseEvent DownClick
-                    Case Is > 0
-                        RaiseEvent UpClick
-                End Select
-                WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-                Exit Function
-            End If
+                    End If
+            End Select
         End If
     Case WM_COMMAND
         Static ChangeFrozen As Boolean
