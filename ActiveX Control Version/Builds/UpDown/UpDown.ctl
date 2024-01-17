@@ -141,6 +141,7 @@ Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_CAPTURECHANGED As Long = &H215
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_NOTIFY As Long = &H4E
@@ -167,6 +168,7 @@ Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private UpDownHandle As LongPtr
+Private UpDownDeltaCache As Long
 Private UpDownMouseOver As Boolean
 Private UpDownDesignMode As Boolean
 Private UpDownBuddyObjectPointer As LongPtr
@@ -1209,6 +1211,12 @@ Select Case wMsg
             UpDownMouseOver = False
             RaiseEvent MouseLeave
         End If
+    Case WM_CAPTURECHANGED
+        If UpDownDeltaCache < 0 Then
+            RaiseEvent DownClick
+        ElseIf UpDownDeltaCache > 0 Then
+            RaiseEvent UpClick
+        End If
 End Select
 End Function
 
@@ -1218,20 +1226,18 @@ Select Case wMsg
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = UpDownHandle Then
-            If NM.Code = UDN_DELTAPOS Then
-                Dim NMUD As NMUPDOWN
-                CopyMemory NMUD, ByVal lParam, LenB(NMUD)
-                RaiseEvent BeforeChange(NMUD.iPos, NMUD.iDelta)
-                Select Case NMUD.iDelta
-                    Case 0
+            Select Case NM.Code
+                Case UDN_DELTAPOS
+                    Dim NMUD As NMUPDOWN
+                    CopyMemory NMUD, ByVal lParam, LenB(NMUD)
+                    RaiseEvent BeforeChange(NMUD.iPos, NMUD.iDelta)
+                    UpDownDeltaCache = NMUD.iDelta
+                    CopyMemory ByVal lParam, NMUD, LenB(NMUD)
+                    If NMUD.iDelta = 0 Then
                         WindowProcUserControl = 1
                         Exit Function
-                    Case Is < 0
-                        RaiseEvent DownClick
-                    Case Is > 0
-                        RaiseEvent UpClick
-                End Select
-            End If
+                    End If
+            End Select
         End If
     Case WM_VSCROLL, WM_HSCROLL
         If lParam = UpDownHandle Then
