@@ -1363,6 +1363,8 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_LBUTTONDOWN
+        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
     Case UM_CHECKVALUE
         If wParam <> PropValue Then
             PropValue = CLng(wParam)
