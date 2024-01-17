@@ -1451,8 +1451,10 @@ Select Case wMsg
         End If
     Case WM_CAPTURECHANGED
         If SpinBoxDeltaCache < 0 Then
+            SpinBoxDeltaCache = 0
             RaiseEvent DownClick
         ElseIf SpinBoxDeltaCache > 0 Then
+            SpinBoxDeltaCache = 0
             RaiseEvent UpClick
         End If
 End Select

@@ -745,22 +745,21 @@ Dim BuddyControl As Control
 Set BuddyControl = GetBuddyControl()
 If Not BuddyControl Is Nothing Then
     Dim Success As Boolean
-    On Error Resume Next
-    Select Case Value
-        Case vbNullString
-            Success = True
-        Case "_Default"
-            CallByName BuddyControl, "", VbGet
-            Success = CBool(Err.Number = 0)
-        Case "_Value" ' Compatibility
-            Value = "_Default"
-            CallByName BuddyControl, "", VbGet
-            Success = CBool(Err.Number = 0)
-        Case Else
-            CallByName BuddyControl, Value, VbLet, CallByName(BuddyControl, Value, VbGet)
-            Success = CBool(Err.Number = 0)
-    End Select
-    On Error GoTo 0
+    If Value = vbNullString Then
+        Success = True
+    Else
+        On Error Resume Next
+        Select Case LCase$(Value)
+            Case "_default", "_value"
+                Value = "_Default"
+                CallByName BuddyControl, "", VbGet
+                Success = CBool(Err.Number = 0)
+            Case Else
+                CallByName BuddyControl, Value, VbLet, CallByName(BuddyControl, Value, VbGet)
+                Success = CBool(Err.Number = 0)
+        End Select
+        On Error GoTo 0
+    End If
     If Success = False Then
         If UpDownDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
@@ -772,17 +771,16 @@ If Not BuddyControl Is Nothing Then
         PropBuddyProperty = Value
     End If
 Else
-    Select Case Value
-        Case vbNullString
-            PropBuddyProperty = Value
-        Case Else
-            If UpDownDesignMode = True Then
-                MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
-                Exit Property
-            Else
-                Err.Raise Number:=35754, Description:="BuddyControl property must be set first"
-            End If
-    End Select
+    If Value = vbNullString Then
+        PropBuddyProperty = Value
+    Else
+        If UpDownDesignMode = True Then
+            MsgBox "BuddyControl property must be set first", vbCritical + vbOKOnly
+            Exit Property
+        Else
+            Err.Raise Number:=35754, Description:="BuddyControl property must be set first"
+        End If
+    End If
 End If
 UserControl.PropertyChanged "BuddyProperty"
 End Property
@@ -1213,8 +1211,10 @@ Select Case wMsg
         End If
     Case WM_CAPTURECHANGED
         If UpDownDeltaCache < 0 Then
+            UpDownDeltaCache = 0
             RaiseEvent DownClick
         ElseIf UpDownDeltaCache > 0 Then
+            UpDownDeltaCache = 0
             RaiseEvent UpClick
         End If
 End Select
