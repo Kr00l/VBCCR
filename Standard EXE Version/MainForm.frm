@@ -152,6 +152,7 @@ Begin VB.Form MainForm
       Width           =   1455
       _ExtentX        =   2566
       _ExtentY        =   582
+      MousePointer    =   4
       Max             =   1000
    End
    Begin ComCtlsDemo.ToolBar ToolBar1 
