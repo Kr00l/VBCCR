@@ -1,5 +1,10 @@
 List of revisions:
 
+17-Jan-2024
+- DownClick/UpClick for UpDown/SpinBox now fires upon WM_CAPTURECHANGED where
+  cached delta value on UDN_DELTAPOS decided if down or up click. (like MS UpDown)
+  ByRef Delta on BeforeChange event copied back to iDelta of the NMUPDOWN structure upon UDN_DELTAPOS.
+
 16-Jan-2024
 - Final bugfix in the UserControl_Resize for the ImageCombo control. (regression 18-Dec-2023)
 - MousePointer covers now the whole SpinBox. (incl. border and up down control)

@@ -9,6 +9,14 @@ Begin VB.Form MainForm
    ScaleHeight     =   8805
    ScaleWidth      =   9915
    StartUpPosition =   3  'Windows Default
+   Begin ComCtlsDemo.UpDown UpDown2 
+      Height          =   1455
+      Left            =   6960
+      Top             =   1680
+      Width           =   255
+      _ExtentX        =   450
+      _ExtentY        =   2566
+   End
    Begin ComCtlsDemo.StatusBar StatusBar1 
       Align           =   2  'Align Bottom
       Height          =   345
