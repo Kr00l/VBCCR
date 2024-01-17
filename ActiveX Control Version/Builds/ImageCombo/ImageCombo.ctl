@@ -672,7 +672,6 @@ If PropStyle <> ImcStyleSimpleCombo Then
         If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
     End If
     MoveWindow ImageComboHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-    If ImageComboComboHandle <> NULL_PTR Then MoveWindow ImageComboComboHandle, 0, 0, .ScaleWidth, .ScaleHeight + CLng(SendMessage(ImageComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&)) + 2, 1
     Call CheckDropDownHeight(True)
 Else
     Dim ListRect As RECT, EditHeight As Long, ItemHeight As Long
@@ -2029,7 +2028,7 @@ If ImageComboHandle <> NULL_PTR Then
     End If
     If ImageHeight > ItemHeight Then Height = (ImageHeight * Count) Else Height = (ItemHeight * Count)
     If PropStyle <> ImcStyleSimpleCombo Then
-        If ImageComboListHandle <> NULL_PTR Then SetWindowPos ImageComboListHandle, NULL_PTR, 0, 0, UserControl.ScaleWidth, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+        If ImageComboComboHandle <> NULL_PTR Then MoveWindow ImageComboComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
     Else
         If ImageComboComboHandle <> NULL_PTR Then RedrawWindow ImageComboComboHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
     End If
