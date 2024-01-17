@@ -403,7 +403,7 @@ Else
             DrawFlags = DrawFlags Or DT_BOTTOM
     End Select
 End If
-SetRect RC, RC.Left + BorderWidth, RC.Top + BorderHeight, RC.Right - (BorderWidth * 2), RC.Bottom - (BorderHeight * 2)
+SetRect RC, RC.Left + BorderWidth, RC.Top + BorderHeight, RC.Right - BorderWidth, RC.Bottom - BorderHeight
 If Not PropCaption = vbNullString Then
     ' The function could add up to four additional characters to this string.
     ' The buffer containing the string should be large enough to accommodate these extra characters.
