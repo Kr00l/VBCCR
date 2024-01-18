@@ -61,6 +61,13 @@ library OLEGuids
 	typedef	OLECLSID *REFIID;
 	typedef struct
 	{
+		LONG rgvarg;
+		LONG rgdispidNamedArgs;
+		LONG cArgs;
+		LONG cNamedArgs;
+	}OLEDISPPARAMS;
+	typedef struct
+	{
 		LONG cElems;
 		LONG pElems;
 	}OLECAUUID;
