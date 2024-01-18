@@ -670,14 +670,19 @@ If .Bands.Count > 0 And CurrIndex = 0 Then
         ErrValue = Err.Number
         On Error GoTo 0
         If ErrValue = 0 Then
-            Dim ControlEnum As Object, Handle As Long
+            Dim ControlEnum As Object, Handle As LongPtr
             For Each ControlEnum In ContainedControls
                 On Error Resume Next
-                Handle = ControlEnum.hWndUserControl
-                If Err.Number <> 0 Then Handle = ControlEnum.hWnd
+                Handle = GetWindowFromObject(ControlEnum.Object)
                 On Error GoTo 0
-                If ControlIsValid(ControlEnum) = True And Handle <> 0 Then ComboChild.AddItem ProperControlName(ControlEnum)
-                Handle = 0
+                If Handle = NULL_PTR Then
+                    On Error Resume Next
+                    Handle = ControlEnum.hWndUserControl
+                    If Err.Number <> 0 Then Handle = ControlEnum.hWnd
+                    On Error GoTo 0
+                End If
+                If ControlIsValid(ControlEnum) = True And Handle <> NULL_PTR Then ComboChild.AddItem ProperControlName(ControlEnum)
+                Handle = NULL_PTR
             Next ControlEnum
         End If
         ChildEnumerated = True
@@ -1237,7 +1242,7 @@ If CheckUseCoolBarPicture.Value = vbUnchecked Then
     PictureCommandPictureBrowse.Enabled = True
     CommandPictureBrowse.Enabled = True
     If Not CurrPicture Is Nothing Then
-        If CurrPicture.Handle <> 0 Then
+        If CurrPicture.Handle <> NULL_PTR Then
             PictureCommandPictureNo.Enabled = True
             CommandPictureNo.Enabled = True
         Else
@@ -1272,7 +1277,7 @@ If CurrIndex > 0 Then
     If .ShowOpen = True Then
         Set CurrPicture = PictureFromPath(.FileName)
         If Not CurrPicture Is Nothing Then
-            If CurrPicture.Handle <> 0 Then
+            If CurrPicture.Handle <> NULL_PTR Then
                 If CurrPicture.Type = vbPicTypeBitmap Then
                     PictureCommandPictureNo.Enabled = True
                     CommandPictureNo.Enabled = True
@@ -1423,7 +1428,7 @@ If .Bands.Count > 0 Then
         PictureCommandPictureBrowse.Enabled = True
         CommandPictureBrowse.Enabled = True
         If Not CurrPicture Is Nothing Then
-            If CurrPicture.Handle <> 0 Then
+            If CurrPicture.Handle <> NULL_PTR Then
                 PictureCommandPictureNo.Enabled = True
                 CommandPictureNo.Enabled = True
                 LabelPictureType.Caption = "(Bitmap)"
@@ -1441,7 +1446,7 @@ If .Bands.Count > 0 Then
         LabelPicture.Enabled = False
         LabelPictureType.Enabled = False
         If Not CurrPicture Is Nothing Then
-            If CurrPicture.Handle <> 0 Then
+            If CurrPicture.Handle <> NULL_PTR Then
                 LabelPictureType.Caption = "(Bitmap)"
             Else
                 LabelPictureType.Caption = "(None)"

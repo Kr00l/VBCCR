@@ -1820,9 +1820,14 @@ If Visible = False Then .fStyle = .fStyle Or RBBS_HIDDEN
 If Not Child Is Nothing Then
     Dim Handle As LongPtr
     On Error Resume Next
-    Handle = Child.hWndUserControl
-    If Err.Number <> 0 Then Handle = Child.hWnd
+    Handle = GetWindowFromObject(Child.Object)
     On Error GoTo 0
+    If Handle = NULL_PTR Then
+        On Error Resume Next
+        Handle = Child.hWndUserControl
+        If Err.Number <> 0 Then Handle = Child.hWnd
+        On Error GoTo 0
+    End If
     Call EvaluateWndChild(Handle)
     If ControlIsValid(Child) = True And Handle <> NULL_PTR Then
         .hWndChild = Handle
@@ -1936,9 +1941,14 @@ If CoolBarHandle <> NULL_PTR Then
         If Not Value Is Nothing Then
             Dim Handle As LongPtr
             On Error Resume Next
-            Handle = Value.hWndUserControl
-            If Err.Number <> 0 Then Handle = Value.hWnd
+            Handle = GetWindowFromObject(Value.Object)
             On Error GoTo 0
+            If Handle = NULL_PTR Then
+                On Error Resume Next
+                Handle = Value.hWndUserControl
+                If Err.Number <> 0 Then Handle = Value.hWnd
+                On Error GoTo 0
+            End If
             Call EvaluateWndChild(Handle)
             If ControlIsValid(Value) = True And Handle <> NULL_PTR Then
                 .hWndChild = Handle
