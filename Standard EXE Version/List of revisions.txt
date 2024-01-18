@@ -1,5 +1,9 @@
 List of revisions:
 
+18-Jan-2024
+- CoolBar control accepts now child objects that do not expose a hWnd property.
+  New function GetWindowFromObject in VTableHandle.bas.
+
 17-Jan-2024
 - Included the MousePointer property in the UpDown control. (not exist in MS UpDown)
 - DownClick/UpClick for UpDown/SpinBox now fires upon WM_CAPTURECHANGED where
