@@ -151,7 +151,7 @@ If Not Value Is Nothing Then
 Else
     PropChild = Empty
 End If
-ShadowCoolBar.FBandChild(PropID) = Value
+Set ShadowCoolBar.FBandChild(PropID) = Value
 End Property
 
 Public Property Get Style() As CbrBandStyleConstants
