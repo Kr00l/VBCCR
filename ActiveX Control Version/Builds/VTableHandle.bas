@@ -174,6 +174,18 @@ End If
 VTableInterfaceSupported = CBool(HResult = S_OK)
 End Function
 
+#If VBA7 Then
+Public Function GetWindowFromObject(ByVal This As Object) As LongPtr
+#Else
+Public Function GetWindowFromObject(ByVal This As Object) As Long
+#End If
+Dim PropOleWindow As OLEGuids.IOleWindow
+If TypeOf This Is OLEGuids.IOleWindow Then
+    Set PropOleWindow = This
+    GetWindowFromObject = PropOleWindow.GetWindow()
+End If
+End Function
+
 Public Sub SyncObjectRectsToContainer(ByVal This As Object)
 On Error GoTo CATCH_EXCEPTION
 Dim PropOleObject As OLEGuids.IOleObject
