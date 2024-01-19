@@ -177,7 +177,7 @@ Private UpDownDeltaCache As Long
 Private UpDownMouseOver As Boolean
 Private UpDownDesignMode As Boolean
 Private UpDownBuddyObjectPointer As LongPtr
-Private DispIDBuddyControl As Long, BuddyControlArray() As String
+Private DispIdBuddyControl As Long, BuddyControlArray() As String
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
@@ -203,15 +203,15 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDBuddyControl Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdBuddyControl Then
     DisplayName = PropBuddyName
     Handled = True
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDBuddyControl Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdBuddyControl Then
     On Error GoTo CATCH_EXCEPTION
     Dim ControlEnum As Object, PropUBound As Long
     PropUBound = UBound(StringsOut())
@@ -244,8 +244,8 @@ CATCH_EXCEPTION:
 Handled = False
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDBuddyControl Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdBuddyControl Then
     If Cookie < UBound(BuddyControlArray()) Then Value = BuddyControlArray(Cookie)
     Handled = True
 End If
@@ -259,7 +259,7 @@ ReDim BuddyControlArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+If DispIdBuddyControl = 0 Then DispIdBuddyControl = GetDispId(Me, "BuddyControl")
 On Error Resume Next
 UpDownDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -286,7 +286,7 @@ Call CreateUpDown
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDBuddyControl = 0 Then DispIDBuddyControl = GetDispID(Me, "BuddyControl")
+If DispIdBuddyControl = 0 Then DispIdBuddyControl = GetDispId(Me, "BuddyControl")
 On Error Resume Next
 UpDownDesignMode = Not Ambient.UserMode
 On Error GoTo 0

@@ -721,11 +721,11 @@ Private ToolBarDisabledImageListObjectPointer As LongPtr
 Private ToolBarHotImageListObjectPointer As LongPtr
 Private ToolBarPressedImageListObjectPointer As LongPtr
 Private ToolBarPopupMenuHandle As LongPtr, ToolBarPopupMenuButton As TbrButton, ToolBarPopupMenuKeyboard As Boolean
-Private DispIDMousePointer As Long
-Private DispIDImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
-Private DispIDDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
-Private DispIDHotImageList As Long, HotImageListArray() As String, HotImageListSize As SIZEAPI
-Private DispIDPressedImageList As Long, PressedImageListArray() As String, PressedImageListSize As SIZEAPI
+Private DispIdMousePointer As Long
+Private DispIdImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
+Private DispIdDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
+Private DispIdHotImageList As Long, HotImageListArray() As String, HotImageListSize As SIZEAPI
+Private DispIdPressedImageList As Long, PressedImageListArray() As String, PressedImageListSize As SIZEAPI
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropButtons As TbrButtons
@@ -769,30 +769,30 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
-ElseIf DispID = DispIDDisabledImageList Then
+ElseIf DispId = DispIdDisabledImageList Then
     DisplayName = PropDisabledImageListName
     Handled = True
-ElseIf DispID = DispIDHotImageList Then
+ElseIf DispId = DispIdHotImageList Then
     DisplayName = PropHotImageListName
     Handled = True
-ElseIf DispID = DispIDPressedImageList Then
+ElseIf DispId = DispIdPressedImageList Then
     DisplayName = PropPressedImageListName
     Handled = True
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
-ElseIf DispID = DispIDImageList Or DispID = DispIDDisabledImageList Or DispID = DispIDHotImageList Or DispID = DispIDPressedImageList Then
+ElseIf DispId = DispIdImageList Or DispId = DispIdDisabledImageList Or DispId = DispIdHotImageList Or DispId = DispIdPressedImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     DisabledImageListArray() = ImageListArray()
@@ -806,20 +806,20 @@ CATCH_EXCEPTION:
 Handled = False
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
-ElseIf DispID = DispIDDisabledImageList Then
+ElseIf DispId = DispIdDisabledImageList Then
     If Cookie < UBound(DisabledImageListArray()) Then Value = DisabledImageListArray(Cookie)
     Handled = True
-ElseIf DispID = DispIDHotImageList Then
+ElseIf DispId = DispIdHotImageList Then
     If Cookie < UBound(HotImageListArray()) Then Value = HotImageListArray(Cookie)
     Handled = True
-ElseIf DispID = DispIDPressedImageList Then
+ElseIf DispId = DispIdPressedImageList Then
     If Cookie < UBound(PressedImageListArray()) Then Value = PressedImageListArray(Cookie)
     Handled = True
 End If
@@ -836,11 +836,11 @@ ReDim PressedImageListArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
-If DispIDDisabledImageList = 0 Then DispIDDisabledImageList = GetDispID(Me, "DisabledImageList")
-If DispIDHotImageList = 0 Then DispIDHotImageList = GetDispID(Me, "HotImageList")
-If DispIDPressedImageList = 0 Then DispIDPressedImageList = GetDispID(Me, "PressedImageList")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
+If DispIdDisabledImageList = 0 Then DispIdDisabledImageList = GetDispId(Me, "DisabledImageList")
+If DispIdHotImageList = 0 Then DispIdHotImageList = GetDispId(Me, "HotImageList")
+If DispIdPressedImageList = 0 Then DispIdPressedImageList = GetDispId(Me, "PressedImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ToolBarAlignable = False Else ToolBarAlignable = True
 ToolBarDesignMode = Not Ambient.UserMode
@@ -883,11 +883,11 @@ Call CreateToolBar
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
-If DispIDDisabledImageList = 0 Then DispIDDisabledImageList = GetDispID(Me, "DisabledImageList")
-If DispIDHotImageList = 0 Then DispIDHotImageList = GetDispID(Me, "HotImageList")
-If DispIDPressedImageList = 0 Then DispIDPressedImageList = GetDispID(Me, "PressedImageList")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
+If DispIdDisabledImageList = 0 Then DispIdDisabledImageList = GetDispId(Me, "DisabledImageList")
+If DispIdHotImageList = 0 Then DispIdHotImageList = GetDispId(Me, "HotImageList")
+If DispIdPressedImageList = 0 Then DispIdPressedImageList = GetDispId(Me, "PressedImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ToolBarAlignable = False Else ToolBarAlignable = True
 ToolBarDesignMode = Not Ambient.UserMode
