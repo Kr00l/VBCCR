@@ -329,8 +329,8 @@ Private MonthViewMouseOver As Boolean
 Private MonthViewDesignMode As Boolean
 Private MonthViewSelectDate As Date
 Private MonthViewSelChangeStartDate As Date, MonthViewSelChangeEndDate As Date
-Private DispIDMousePointer As Long
-Private DispIDStartOfWeek As Long
+Private DispIdMousePointer As Long
+Private DispIdStartOfWeek As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -392,11 +392,11 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDStartOfWeek Then
+ElseIf DispId = DispIdStartOfWeek Then
     Select Case PropStartOfWeek
         Case 0: DisplayName = "0 - System"
         Case 1: DisplayName = "1 - Monday"
@@ -411,11 +411,11 @@ ElseIf DispID = DispIDStartOfWeek Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
-ElseIf DispID = DispIDStartOfWeek Then
+ElseIf DispId = DispIdStartOfWeek Then
     ReDim StringsOut(0 To (7 + 1)) As String
     ReDim CookiesOut(0 To (7 + 1)) As Long
     StringsOut(0) = "0 - System": CookiesOut(0) = 0
@@ -430,8 +430,8 @@ ElseIf DispID = DispIDStartOfWeek Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Or DispID = DispIDStartOfWeek Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Or DispId = DispIdStartOfWeek Then
     Value = Cookie
     Handled = True
 End If
@@ -445,8 +445,8 @@ Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdStartOfWeek = 0 Then DispIdStartOfWeek = GetDispId(Me, "StartOfWeek")
 On Error Resume Next
 MonthViewDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -484,8 +484,8 @@ Call CreateMonthView
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDStartOfWeek = 0 Then DispIDStartOfWeek = GetDispID(Me, "StartOfWeek")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdStartOfWeek = 0 Then DispIdStartOfWeek = GetDispId(Me, "StartOfWeek")
 On Error Resume Next
 MonthViewDesignMode = Not Ambient.UserMode
 On Error GoTo 0

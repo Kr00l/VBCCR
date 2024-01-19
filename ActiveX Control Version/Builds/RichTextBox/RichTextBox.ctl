@@ -833,8 +833,8 @@ Private RichTextBoxIsOleCallback As Boolean
 Private RichTextBoxEnabledVisualStyles As Boolean
 Private RichTextBoxSHCreateDataObject As Integer
 Private UCNoSetFocusFwd As Boolean
-Private DispIDMousePointer As Long
-Private DispIDBorderStyle As Long
+Private DispIdMousePointer As Long
+Private DispIdBorderStyle As Long
 Private PropVisualStyles As Boolean
 Private PropOLEDragDrop As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -916,11 +916,11 @@ Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Lon
 #End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDBorderStyle Then
+ElseIf DispId = DispIdBorderStyle Then
     Select Case PropBorderStyle
         Case vbBSNone: DisplayName = vbBSNone & " - None"
         Case vbFixedSingle: DisplayName = vbFixedSingle & " - Fixed Single"
@@ -929,11 +929,11 @@ ElseIf DispID = DispIDBorderStyle Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
-ElseIf DispID = DispIDBorderStyle Then
+ElseIf DispId = DispIdBorderStyle Then
     ReDim StringsOut(0 To (1 + 1)) As String
     ReDim CookiesOut(0 To (1 + 1)) As Long
     StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
@@ -942,11 +942,11 @@ ElseIf DispID = DispIDBorderStyle Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDBorderStyle Then
+ElseIf DispId = DispIdBorderStyle Then
     Value = Cookie
     Handled = True
 End If
@@ -961,8 +961,8 @@ Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDBorderStyle = 0 Then DispIDBorderStyle = GetDispID(Me, "BorderStyle")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -999,8 +999,8 @@ Me.Text = Ambient.DisplayName
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDBorderStyle = 0 Then DispIDBorderStyle = GetDispID(Me, "BorderStyle")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
