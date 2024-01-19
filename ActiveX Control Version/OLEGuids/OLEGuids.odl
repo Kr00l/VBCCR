@@ -225,7 +225,7 @@ library OLEGuids
 		HRESULT GetTypeInfoCount([out] LONG *pctInfo);
     		HRESULT GetTypeInfo([in] LONG itinfo, [in] LONG lcid, [out] LONG *pptinfo);
     		HRESULT GetIDsOfNames([in] REFIID riid, [in] LONG *rgszNames, [in] LONG cNames, [in] LONG lcid, [in, out] LONG *rgDispID);
-    		HRESULT Invoke([in] LONG DispIDMember, [in] REFIID riid, [in] LONG lcid, [in] SHORT wFlags, [in] LONG lpdispparams, [in, out] VARIANT *pvarResult, [in] LONG lpexcepinfo, [out] LONG *puArgErr);
+    		HRESULT Invoke([in] LONG DispIDMember, [in] REFIID riid, [in] LONG lcid, [in] SHORT wFlags, [in] LONG lpdispparams, [in] LONG lpvarResult, [in] LONG lpexcepinfo, [out] LONG *puArgErr);
 	};
 	[
 		uuid(376BD3AA-3845-101B-84ED-08002B2EC713),
