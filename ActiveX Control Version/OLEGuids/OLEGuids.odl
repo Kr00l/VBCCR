@@ -148,7 +148,7 @@ library OLEGuids
 	{
 		LONG GetControlInfo([out] OLECONTROLINFO *pCI);
 		LONG OnMnemonic([in] OLEACCELMSG *pMsg);
-		HRESULT OnAmbientPropertyChange([in] LONG DispID);
+		HRESULT OnAmbientPropertyChange([in] LONG DispId);
 		HRESULT FreezeEvents([in] LONG bFreeze);
 	};
 	[
@@ -224,8 +224,8 @@ library OLEGuids
 		typedef IDispatch *LPDISPATCH;
 		HRESULT GetTypeInfoCount([out] LONG *pctInfo);
     		HRESULT GetTypeInfo([in] LONG itinfo, [in] LONG lcid, [out] LONG *pptinfo);
-    		HRESULT GetIDsOfNames([in] REFIID riid, [in] LONG *rgszNames, [in] LONG cNames, [in] LONG lcid, [in, out] LONG *rgDispID);
-    		HRESULT Invoke([in] LONG DispIDMember, [in] REFIID riid, [in] LONG lcid, [in] SHORT wFlags, [in] LONG lpdispparams, [in] LONG lpvarResult, [in] LONG lpexcepinfo, [out] LONG *puArgErr);
+    		HRESULT GetIDsOfNames([in] REFIID riid, [in] LONG *rgszNames, [in] LONG cNames, [in] LONG lcid, [in, out] LONG *rgDispId);
+    		HRESULT Invoke([in] LONG DispId, [in] REFIID riid, [in] LONG lcid, [in] SHORT wFlags, [in] LONG lpdispparams, [in] LONG lpvarResult, [in] LONG lpexcepinfo, [out] LONG *puArgErr);
 	};
 	[
 		uuid(376BD3AA-3845-101B-84ED-08002B2EC713),
@@ -233,10 +233,10 @@ library OLEGuids
 	]
 	interface IPerPropertyBrowsing : IUnknown
 	{
-		LONG GetDisplayString([in] LONG DispID, [out] LONG *lpDisplayName);
-		LONG MapPropertyToPage([in] LONG DispID, [out] OLECLSID *pCLSID);
-		LONG GetPredefinedStrings([in] LONG DispID, [out] OLECALPOLESTR *pCaStringsOut, [out] OLECADWORD *pCaCookiesOut);
-		LONG GetPredefinedValue([in] LONG DispID, [in] LONG dwCookie, [out] VARIANT *pVarOut);
+		LONG GetDisplayString([in] LONG DispId, [out] LONG *lpDisplayName);
+		LONG MapPropertyToPage([in] LONG DispId, [out] OLECLSID *pCLSID);
+		LONG GetPredefinedStrings([in] LONG DispId, [out] OLECALPOLESTR *pCaStringsOut, [out] OLECADWORD *pCaCookiesOut);
+		LONG GetPredefinedValue([in] LONG DispId, [in] LONG dwCookie, [out] VARIANT *pVarOut);
 	};
 	[
 		uuid(B196B28B-BAB4-101A-B69C-00AA00341D07),
@@ -321,11 +321,11 @@ library OLEGuids
     	interface IPerPropertyBrowsingVB : IDispatch 
 	{
 		[id(0x00000001)]
-        	HRESULT GetDisplayString([in, out] boolean *Handled, [in] LONG DispID, [in, out] BSTR *DisplayName);
+        	HRESULT GetDisplayString([in, out] boolean *Handled, [in] LONG DispId, [in, out] BSTR *DisplayName);
 		[id(0x00000002)]
-        	HRESULT GetPredefinedStrings([in, out] boolean *Handled, [in] LONG DispID, [in, out] SAFEARRAY(BSTR) *StringsOut, [in, out] SAFEARRAY(LONG) *CookiesOut);
+        	HRESULT GetPredefinedStrings([in, out] boolean *Handled, [in] LONG DispId, [in, out] SAFEARRAY(BSTR) *StringsOut, [in, out] SAFEARRAY(LONG) *CookiesOut);
 		[id(0x00000003)]
-		HRESULT GetPredefinedValue([in, out] boolean *Handled, [in] LONG DispID, [in] LONG Cookie, [in, out] VARIANT *Value);
+		HRESULT GetPredefinedValue([in, out] boolean *Handled, [in] LONG DispId, [in] LONG Cookie, [in, out] VARIANT *Value);
     	};
 	[
 		uuid(00020D00-0000-0000-C000-000000000046),
