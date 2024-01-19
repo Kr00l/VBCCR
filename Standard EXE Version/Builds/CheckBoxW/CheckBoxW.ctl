@@ -406,9 +406,9 @@ Private CheckBoxImageListObjectPointer As LongPtr
 Private CheckBoxEnabledVisualStyles As Boolean
 Private CheckBoxPictureRenderFlag As Integer
 Private UCNoSetFocusFwd As Boolean
-Private DispIDMousePointer As Long
-Private DispIDImageList As Long, ImageListArray() As String
-Private DispIDValue As Long
+Private DispIdMousePointer As Long
+Private DispIdImageList As Long, ImageListArray() As String
+Private DispIdValue As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -527,14 +527,14 @@ If CheckBoxHandle <> NULL_PTR And wMsg = WM_SYSKEYDOWN Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
-ElseIf DispID = DispIDValue Then
+ElseIf DispId = DispIdValue Then
     Select Case PropValue
         Case vbUnchecked: DisplayName = vbUnchecked & " - Unchecked"
         Case vbChecked: DisplayName = vbChecked & " - Checked"
@@ -544,16 +544,16 @@ ElseIf DispID = DispIDValue Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     On Error GoTo 0
     Handled = True
-ElseIf DispID = DispIDValue Then
+ElseIf DispId = DispIdValue Then
     ReDim StringsOut(0 To (2 + 1)) As String
     ReDim CookiesOut(0 To (2 + 1)) As Long
     StringsOut(0) = vbUnchecked & " - Unchecked": CookiesOut(0) = vbUnchecked
@@ -566,11 +566,11 @@ CATCH_EXCEPTION:
 Handled = False
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Or DispID = DispIDValue Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Or DispId = DispIdValue Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
@@ -586,9 +586,9 @@ ReDim ImageListArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
-If DispIDValue = 0 Then DispIDValue = GetDispID(Me, "Value")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
+If DispIdValue = 0 Then DispIdValue = GetDispId(Me, "Value")
 On Error Resume Next
 CheckBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -622,9 +622,9 @@ Call CreateCheckBox
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
-If DispIDValue = 0 Then DispIDValue = GetDispID(Me, "Value")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
+If DispIdValue = 0 Then DispIdValue = GetDispId(Me, "Value")
 On Error Resume Next
 CheckBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0

@@ -160,10 +160,16 @@ End If
 SetLastError HResult ' S_OK will clear the last error code, if any.
 End Function
 
-Public Function CallByDispID(ByVal This As Object, ByVal DispID As Long, ByVal CallType As VbCallType, ParamArray ArgList() As Variant) As Variant
-Debug.Assert Not (This Is Nothing)
+Public Function GetDispId(ByVal This As Object, ByRef MethodName As String) As Long
+Dim IDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID
+Set IDispatch = This
+IDispatch.GetIDsOfNames IID_NULL, StrPtr(MethodName), 1, 0, GetDispId
+End Function
+
+#If (TWINBASIC = 0) Then
+Public Function CallByDispId(ByVal This As Object, ByVal DispId As Long, ByVal CallType As VbCallType, ParamArray ArgList() As Variant) As Variant
 Const DISPID_PROPERTYPUT As Long = -3
-Dim PropDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID, wFlags As Integer, pDispParams As OLEGuids.OLEDISPPARAMS
+Dim PropDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID, pDispParams As OLEGuids.OLEDISPPARAMS
 Set PropDispatch = This
 If UBound(ArgList) > -1 Then
     Dim i As Long, ArgListRev As Variant
@@ -174,17 +180,17 @@ If UBound(ArgList) > -1 Then
     pDispParams.rgvarg = VarPtr(ArgListRev(0))
     pDispParams.cArgs = UBound(ArgListRev) + 1
 End If
-Dim PropPutDispID As Long
+Dim PropPutDispId As Long
 If (CallType And (VbLet Or VbSet)) <> 0 Then
-    PropPutDispID = DISPID_PROPERTYPUT
-    pDispParams.rgdispidNamedArgs = VarPtr(PropPutDispID)
+    PropPutDispId = DISPID_PROPERTYPUT
+    pDispParams.rgdispidNamedArgs = VarPtr(PropPutDispId)
     pDispParams.cNamedArgs = 1
 End If
-PropDispatch.Invoke DispID, IID_NULL, 0, CallType, VarPtr(pDispParams), VarPtr(CallByDispID), NULL_PTR, 0&
+PropDispatch.Invoke DispId, IID_NULL, 0, CallType, VarPtr(pDispParams), VarPtr(CallByDispId), NULL_PTR, 0&
 End Function
+#End If
 
 Public Function VTableInterfaceSupported(ByVal This As OLEGuids.IUnknownUnrestricted, ByVal IIDString As String) As Boolean
-Debug.Assert Not (This Is Nothing)
 Dim HResult As Long, IID As OLEGuids.OLECLSID, ObjectPointer As LongPtr
 CLSIDFromString StrPtr(IIDString), IID
 HResult = This.QueryInterface(VarPtr(IID), ObjectPointer)
@@ -202,8 +208,9 @@ Public Function GetWindowFromObject(ByVal This As Object) As LongPtr
 #Else
 Public Function GetWindowFromObject(ByVal This As Object) As Long
 #End If
-Dim PropOleWindow As OLEGuids.IOleWindow
+If This Is Nothing Then Exit Function
 If TypeOf This Is OLEGuids.IOleWindow Then
+    Dim PropOleWindow As OLEGuids.IOleWindow
     Set PropOleWindow = This
     GetWindowFromObject = PropOleWindow.GetWindow()
 End If
@@ -478,8 +485,8 @@ CATCH_EXCEPTION:
 IOleControl_OnMnemonic = Original_IOleControl_OnMnemonic(This, Msg)
 End Function
 
-Private Function IOleControl_OnAmbientPropertyChange(ByRef This As LongPtr, ByVal DispID As Long) As Long
-IOleControl_OnAmbientPropertyChange = Original_IOleControl_OnAmbientPropertyChange(This, DispID)
+Private Function IOleControl_OnAmbientPropertyChange(ByRef This As LongPtr, ByVal DispId As Long) As Long
+IOleControl_OnAmbientPropertyChange = Original_IOleControl_OnAmbientPropertyChange(This, DispId)
 End Function
 
 Private Function IOleControl_FreezeEvents(ByRef This As LongPtr, ByVal bFreeze As Long) As Long
@@ -512,12 +519,12 @@ Else
 End If
 End Function
 
-Private Function Original_IOleControl_OnAmbientPropertyChange(ByRef This As LongPtr, ByVal DispID As Long) As Long
+Private Function Original_IOleControl_OnAmbientPropertyChange(ByRef This As LongPtr, ByVal DispId As Long) As Long
 If OriginalVTableControl <> NULL_PTR Then
     Dim ShadowIOleControl As OLEGuids.IOleControl
     This = OriginalVTableControl
     CopyMemory ShadowIOleControl, VarPtr(This), PTR_SIZE
-    ShadowIOleControl.OnAmbientPropertyChange DispID
+    ShadowIOleControl.OnAmbientPropertyChange DispId
     CopyMemory ShadowIOleControl, NULL_PTR, PTR_SIZE
     This = GetVTableControl()
 End If
@@ -546,12 +553,6 @@ End Sub
 Private Sub RestoreIPPB(ByVal This As OLEGuids.IPerPropertyBrowsing)
 If OriginalVTablePPB <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), OriginalVTablePPB, PTR_SIZE
 End Sub
-
-Public Function GetDispID(ByVal This As Object, ByRef MethodName As String) As Long
-Dim IDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID
-Set IDispatch = This
-IDispatch.GetIDsOfNames IID_NULL, StrPtr(MethodName), 1, 0, GetDispID
-End Function
 
 Private Function GetVTablePPB() As LongPtr
 If VTablePPB(0) = NULL_PTR Then
@@ -611,7 +612,7 @@ If OriginalVTablePPB <> NULL_PTR Then
 End If
 End Function
 
-Private Function IPPB_GetDisplayString(ByRef This As LongPtr, ByVal DispID As Long, ByRef lpDisplayName As LongPtr) As Long
+Private Function IPPB_GetDisplayString(ByRef This As LongPtr, ByVal DispId As Long, ByRef lpDisplayName As LongPtr) As Long
 If VarPtr(lpDisplayName) = NULL_PTR Then
     IPPB_GetDisplayString = E_POINTER
     Exit Function
@@ -619,23 +620,23 @@ End If
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB, Handled As Boolean, DisplayName As String
 Set ShadowIPerPropertyBrowsingVB = PtrToObj(VarPtr(This))
-ShadowIPerPropertyBrowsingVB.GetDisplayString Handled, DispID, DisplayName
+ShadowIPerPropertyBrowsingVB.GetDisplayString Handled, DispId, DisplayName
 If Handled = False Then
-    IPPB_GetDisplayString = Original_IPPB_GetDisplayString(This, DispID, lpDisplayName)
+    IPPB_GetDisplayString = Original_IPPB_GetDisplayString(This, DispId, lpDisplayName)
 Else
     lpDisplayName = SysAllocString(StrPtr(DisplayName))
     IPPB_GetDisplayString = S_OK
 End If
 Exit Function
 CATCH_EXCEPTION:
-IPPB_GetDisplayString = Original_IPPB_GetDisplayString(This, DispID, lpDisplayName)
+IPPB_GetDisplayString = Original_IPPB_GetDisplayString(This, DispId, lpDisplayName)
 End Function
 
-Private Function IPPB_MapPropertyToPage(ByRef This As LongPtr, ByVal DispID As Long, ByRef pCLSID As OLEGuids.OLECLSID) As Long
-IPPB_MapPropertyToPage = Original_IPPB_MapPropertyToPage(This, DispID, pCLSID)
+Private Function IPPB_MapPropertyToPage(ByRef This As LongPtr, ByVal DispId As Long, ByRef pCLSID As OLEGuids.OLECLSID) As Long
+IPPB_MapPropertyToPage = Original_IPPB_MapPropertyToPage(This, DispId, pCLSID)
 End Function
 
-Private Function IPPB_GetPredefinedStrings(ByRef This As LongPtr, ByVal DispID As Long, ByRef pCaStringsOut As OLEGuids.OLECALPOLESTR, ByRef pCaCookiesOut As OLEGuids.OLECADWORD) As Long
+Private Function IPPB_GetPredefinedStrings(ByRef This As LongPtr, ByVal DispId As Long, ByRef pCaStringsOut As OLEGuids.OLECALPOLESTR, ByRef pCaCookiesOut As OLEGuids.OLECADWORD) As Long
 If VarPtr(pCaStringsOut) = NULL_PTR Or VarPtr(pCaCookiesOut) = NULL_PTR Then
     IPPB_GetPredefinedStrings = E_POINTER
     Exit Function
@@ -645,9 +646,9 @@ Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB, Handled As 
 ReDim StringsOutArray(0) As String
 ReDim CookiesOutArray(0) As Long
 Set ShadowIPerPropertyBrowsingVB = PtrToObj(VarPtr(This))
-ShadowIPerPropertyBrowsingVB.GetPredefinedStrings Handled, DispID, StringsOutArray(), CookiesOutArray()
+ShadowIPerPropertyBrowsingVB.GetPredefinedStrings Handled, DispId, StringsOutArray(), CookiesOutArray()
 If Handled = False Or UBound(StringsOutArray()) = 0 Then
-    IPPB_GetPredefinedStrings = Original_IPPB_GetPredefinedStrings(This, DispID, pCaStringsOut, pCaCookiesOut)
+    IPPB_GetPredefinedStrings = Original_IPPB_GetPredefinedStrings(This, DispId, pCaStringsOut, pCaCookiesOut)
 Else
     Dim cElems As Long, pElems As LongPtr, nElemCount As Long
     Dim Buffer As String, lpString As LongPtr
@@ -672,10 +673,10 @@ Else
 End If
 Exit Function
 CATCH_EXCEPTION:
-IPPB_GetPredefinedStrings = Original_IPPB_GetPredefinedStrings(This, DispID, pCaStringsOut, pCaCookiesOut)
+IPPB_GetPredefinedStrings = Original_IPPB_GetPredefinedStrings(This, DispId, pCaStringsOut, pCaCookiesOut)
 End Function
 
-Private Function IPPB_GetPredefinedValue(ByRef This As LongPtr, ByVal DispID As Long, ByVal dwCookie As Long, ByRef pVarOut As Variant) As Long
+Private Function IPPB_GetPredefinedValue(ByRef This As LongPtr, ByVal DispId As Long, ByVal dwCookie As Long, ByRef pVarOut As Variant) As Long
 If VarPtr(pVarOut) = NULL_PTR Then
     IPPB_GetPredefinedValue = E_POINTER
     Exit Function
@@ -683,56 +684,56 @@ End If
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB, Handled As Boolean
 Set ShadowIPerPropertyBrowsingVB = PtrToObj(VarPtr(This))
-ShadowIPerPropertyBrowsingVB.GetPredefinedValue Handled, DispID, dwCookie, pVarOut
+ShadowIPerPropertyBrowsingVB.GetPredefinedValue Handled, DispId, dwCookie, pVarOut
 If Handled = False Then
-    IPPB_GetPredefinedValue = Original_IPPB_GetPredefinedValue(This, DispID, dwCookie, pVarOut)
+    IPPB_GetPredefinedValue = Original_IPPB_GetPredefinedValue(This, DispId, dwCookie, pVarOut)
 Else
     IPPB_GetPredefinedValue = S_OK
 End If
 Exit Function
 CATCH_EXCEPTION:
-IPPB_GetPredefinedValue = Original_IPPB_GetPredefinedValue(This, DispID, dwCookie, pVarOut)
+IPPB_GetPredefinedValue = Original_IPPB_GetPredefinedValue(This, DispId, dwCookie, pVarOut)
 End Function
 
-Private Function Original_IPPB_GetDisplayString(ByRef This As LongPtr, ByVal DispID As Long, ByRef lpDisplayName As LongPtr) As Long
+Private Function Original_IPPB_GetDisplayString(ByRef This As LongPtr, ByVal DispId As Long, ByRef lpDisplayName As LongPtr) As Long
 If OriginalVTablePPB <> NULL_PTR Then
     Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
     This = OriginalVTablePPB
     CopyMemory ShadowIPPB, VarPtr(This), PTR_SIZE
-    Original_IPPB_GetDisplayString = ShadowIPPB.GetDisplayString(DispID, lpDisplayName)
+    Original_IPPB_GetDisplayString = ShadowIPPB.GetDisplayString(DispId, lpDisplayName)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
 End If
 End Function
 
-Private Function Original_IPPB_MapPropertyToPage(ByRef This As LongPtr, ByVal DispID As Long, ByRef pCLSID As OLEGuids.OLECLSID) As Long
+Private Function Original_IPPB_MapPropertyToPage(ByRef This As LongPtr, ByVal DispId As Long, ByRef pCLSID As OLEGuids.OLECLSID) As Long
 If OriginalVTablePPB <> NULL_PTR Then
     Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
     This = OriginalVTablePPB
     CopyMemory ShadowIPPB, VarPtr(This), PTR_SIZE
-    Original_IPPB_MapPropertyToPage = ShadowIPPB.MapPropertyToPage(DispID, pCLSID)
+    Original_IPPB_MapPropertyToPage = ShadowIPPB.MapPropertyToPage(DispId, pCLSID)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
 End If
 End Function
 
-Private Function Original_IPPB_GetPredefinedStrings(ByRef This As LongPtr, ByVal DispID As Long, ByRef pCaStringsOut As OLEGuids.OLECALPOLESTR, ByRef pCaCookiesOut As OLEGuids.OLECADWORD) As Long
+Private Function Original_IPPB_GetPredefinedStrings(ByRef This As LongPtr, ByVal DispId As Long, ByRef pCaStringsOut As OLEGuids.OLECALPOLESTR, ByRef pCaCookiesOut As OLEGuids.OLECADWORD) As Long
 If OriginalVTablePPB <> NULL_PTR Then
     Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
     This = OriginalVTablePPB
     CopyMemory ShadowIPPB, VarPtr(This), PTR_SIZE
-    Original_IPPB_GetPredefinedStrings = ShadowIPPB.GetPredefinedStrings(DispID, pCaStringsOut, pCaCookiesOut)
+    Original_IPPB_GetPredefinedStrings = ShadowIPPB.GetPredefinedStrings(DispId, pCaStringsOut, pCaCookiesOut)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
 End If
 End Function
 
-Private Function Original_IPPB_GetPredefinedValue(ByRef This As LongPtr, ByVal DispID As Long, ByVal dwCookie As Long, ByRef pVarOut As Variant) As Long
+Private Function Original_IPPB_GetPredefinedValue(ByRef This As LongPtr, ByVal DispId As Long, ByVal dwCookie As Long, ByRef pVarOut As Variant) As Long
 If OriginalVTablePPB <> NULL_PTR Then
     Dim ShadowIPPB As OLEGuids.IPerPropertyBrowsing
     This = OriginalVTablePPB
     CopyMemory ShadowIPPB, VarPtr(This), PTR_SIZE
-    Original_IPPB_GetPredefinedValue = ShadowIPPB.GetPredefinedValue(DispID, dwCookie, pVarOut)
+    Original_IPPB_GetPredefinedValue = ShadowIPPB.GetPredefinedValue(DispId, dwCookie, pVarOut)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
 End If

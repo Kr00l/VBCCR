@@ -17,6 +17,7 @@ Private Const PTR_SIZE As Long = 4
 
 #If False Then
 Private OLEDropModeNone, OLEDropModeManual
+Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerCustom
 Private CCAppearanceFlat, CCAppearance3D
 Private CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
 Private CCBackStyleTransparent, CCBackStyleOpaque
@@ -28,6 +29,26 @@ Private CCRightToLeftModeNoControl, CCRightToLeftModeVBAME, CCRightToLeftModeSys
 Public Enum OLEDropModeConstants
 OLEDropModeNone = vbOLEDropNone
 OLEDropModeManual = vbOLEDropManual
+End Enum
+Public Enum CCMousePointerConstants
+CCMousePointerDefault = 0
+CCMousePointerArrow = 1
+CCMousePointerCrosshair = 2
+CCMousePointerIbeam = 3
+CCMousePointerHand = 4
+CCMousePointerSizePointer = 5
+CCMousePointerSizeNESW = 6
+CCMousePointerSizeNS = 7
+CCMousePointerSizeNWSE = 8
+CCMousePointerSizeWE = 9
+CCMousePointerUpArrow = 10
+CCMousePointerHourglass = 11
+CCMousePointerNoDrop = 12
+CCMousePointerArrowHourglass = 13
+CCMousePointerArrowQuestion = 14
+CCMousePointerSizeAll = 15
+CCMousePointerArrowCD = 16
+CCMousePointerCustom = 99
 End Enum
 Public Enum CCAppearanceConstants
 CCAppearanceFlat = 0
@@ -621,42 +642,42 @@ End Sub
 
 Public Sub ComCtlsPPInitComboMousePointer(ByVal ComboBox As Object)
 With ComboBox
-.AddItem "0 - Default"
-.ItemData(.NewIndex) = 0
-.AddItem "1 - Arrow"
-.ItemData(.NewIndex) = 1
-.AddItem "2 - Cross"
-.ItemData(.NewIndex) = 2
-.AddItem "3 - I-Beam"
-.ItemData(.NewIndex) = 3
-.AddItem "4 - Hand"
-.ItemData(.NewIndex) = 4
-.AddItem "5 - Size"
-.ItemData(.NewIndex) = 5
-.AddItem "6 - Size NE SW"
-.ItemData(.NewIndex) = 6
-.AddItem "7 - Size N S"
-.ItemData(.NewIndex) = 7
-.AddItem "8 - Size NW SE"
-.ItemData(.NewIndex) = 8
-.AddItem "9 - Size W E"
-.ItemData(.NewIndex) = 9
-.AddItem "10 - Up Arrow"
-.ItemData(.NewIndex) = 10
-.AddItem "11 - Hourglass"
-.ItemData(.NewIndex) = 11
-.AddItem "12 - No Drop"
-.ItemData(.NewIndex) = 12
-.AddItem "13 - Arrow and Hourglass"
-.ItemData(.NewIndex) = 13
-.AddItem "14 - Arrow and Question"
-.ItemData(.NewIndex) = 14
-.AddItem "15 - Size All"
-.ItemData(.NewIndex) = 15
-.AddItem "16 - Arrow and CD"
-.ItemData(.NewIndex) = 16
-.AddItem "99 - Custom"
-.ItemData(.NewIndex) = 99
+.AddItem CCMousePointerDefault & " - Default"
+.ItemData(.NewIndex) = CCMousePointerDefault
+.AddItem CCMousePointerArrow & " - Arrow"
+.ItemData(.NewIndex) = CCMousePointerArrow
+.AddItem CCMousePointerCrosshair & " - Cross"
+.ItemData(.NewIndex) = CCMousePointerCrosshair
+.AddItem CCMousePointerIbeam & " - I-Beam"
+.ItemData(.NewIndex) = CCMousePointerIbeam
+.AddItem CCMousePointerHand & " - Hand"
+.ItemData(.NewIndex) = CCMousePointerHand
+.AddItem CCMousePointerSizePointer & " - Size"
+.ItemData(.NewIndex) = CCMousePointerSizePointer
+.AddItem CCMousePointerSizeNESW & " - Size NE SW"
+.ItemData(.NewIndex) = CCMousePointerSizeNESW
+.AddItem CCMousePointerSizeNS & " - Size N S"
+.ItemData(.NewIndex) = CCMousePointerSizeNS
+.AddItem CCMousePointerSizeNWSE & " - Size NW SE"
+.ItemData(.NewIndex) = CCMousePointerSizeNWSE
+.AddItem CCMousePointerSizeWE & " - Size W E"
+.ItemData(.NewIndex) = CCMousePointerSizeWE
+.AddItem CCMousePointerUpArrow & " - Up Arrow"
+.ItemData(.NewIndex) = CCMousePointerUpArrow
+.AddItem CCMousePointerHourglass & " - Hourglass"
+.ItemData(.NewIndex) = CCMousePointerHourglass
+.AddItem CCMousePointerNoDrop & " - No Drop"
+.ItemData(.NewIndex) = CCMousePointerNoDrop
+.AddItem CCMousePointerArrowHourglass & " - Arrow and Hourglass"
+.ItemData(.NewIndex) = CCMousePointerArrowHourglass
+.AddItem CCMousePointerArrowQuestion & " - Arrow and Question"
+.ItemData(.NewIndex) = CCMousePointerArrowQuestion
+.AddItem CCMousePointerSizeAll & " - Size All"
+.ItemData(.NewIndex) = CCMousePointerSizeAll
+.AddItem CCMousePointerArrowCD & " - Arrow and CD"
+.ItemData(.NewIndex) = CCMousePointerArrowCD
+.AddItem CCMousePointerCustom & " - Custom"
+.ItemData(.NewIndex) = CCMousePointerCustom
 End With
 End Sub
 
