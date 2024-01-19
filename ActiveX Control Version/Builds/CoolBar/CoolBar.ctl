@@ -577,9 +577,9 @@ Private CoolBarDoubleBufferEraseBkgDC As LongPtr
 Private CoolBarAlignable As Boolean
 Private CoolBarTheme As LongPtr
 Private CoolBarImageListObjectPointer As LongPtr
-Private DispIDMousePointer As Long
-Private DispIDBorderStyle As Long
-Private DispIDImageList As Long, ImageListArray() As String
+Private DispIdMousePointer As Long
+Private DispIdBorderStyle As Long
+Private DispIdImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropBands As CbrBands
@@ -612,33 +612,33 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDBorderStyle Then
+ElseIf DispId = DispIdBorderStyle Then
     Select Case PropBorderStyle
         Case vbBSNone: DisplayName = vbBSNone & " - None"
         Case vbFixedSingle: DisplayName = vbFixedSingle & " - Fixed Single"
     End Select
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
-ElseIf DispID = DispIDBorderStyle Then
+ElseIf DispId = DispIdBorderStyle Then
     ReDim StringsOut(0 To (1 + 1)) As String
     ReDim CookiesOut(0 To (1 + 1)) As Long
     StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
     StringsOut(1) = vbFixedSingle & " - Fixed Single": CookiesOut(1) = vbFixedSingle
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     On Error GoTo 0
@@ -649,14 +649,14 @@ CATCH_EXCEPTION:
 Handled = False
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDBorderStyle Then
+ElseIf DispId = DispIdBorderStyle Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDImageList Then
+ElseIf DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
@@ -671,9 +671,9 @@ CoolBarToolTipIndex = -1
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDBorderStyle = 0 Then DispIDBorderStyle = GetDispID(Me, "BorderStyle")
-If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
+If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then CoolBarAlignable = False Else CoolBarAlignable = True
 CoolBarDesignMode = Not Ambient.UserMode
@@ -711,9 +711,9 @@ If CoolBarDesignMode = True Then RedrawWindow UserControl.hWnd, NULL_PTR, NULL_P
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDBorderStyle = 0 Then DispIDBorderStyle = GetDispID(Me, "BorderStyle")
-If DispIDImageList = 0 Then DispIDImageList = GetDispID(Me, "ImageList")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
+If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then CoolBarAlignable = False Else CoolBarAlignable = True
 CoolBarDesignMode = Not Ambient.UserMode
