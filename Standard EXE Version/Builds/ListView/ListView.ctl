@@ -1144,13 +1144,13 @@ Private ListViewSmallIconsObjectPointer As LongPtr
 Private ListViewColumnHeaderIconsObjectPointer As LongPtr
 Private ListViewGroupIconsObjectPointer As LongPtr
 Private UCNoSetFocusFwd As Boolean
-Private DispIDMousePointer As Long
-Private DispIDHotMousePointer As Long
-Private DispIDHeaderMousePointer As Long
-Private DispIDIcons As Long, IconsArray() As String
-Private DispIDSmallIcons As Long, SmallIconsArray() As String
-Private DispIDColumnHeaderIcons As Long, ColumnHeaderIconsArray() As String
-Private DispIDGroupIcons As Long, GroupIconsArray() As String
+Private DispIdMousePointer As Long
+Private DispIdHotMousePointer As Long
+Private DispIdHeaderMousePointer As Long
+Private DispIdIcons As Long, IconsArray() As String
+Private DispIdSmallIcons As Long, SmallIconsArray() As String
+Private DispIdColumnHeaderIcons As Long, ColumnHeaderIconsArray() As String
+Private DispIdGroupIcons As Long, GroupIconsArray() As String
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropListItems As LvwListItems
@@ -1260,36 +1260,36 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDHotMousePointer Then
+ElseIf DispId = DispIdHotMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropHotMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDHeaderMousePointer Then
+ElseIf DispId = DispIdHeaderMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropHeaderMousePointer, DisplayName)
     Handled = True
-ElseIf DispID = DispIDIcons Then
+ElseIf DispId = DispIdIcons Then
     DisplayName = PropIconsName
     Handled = True
-ElseIf DispID = DispIDSmallIcons Then
+ElseIf DispId = DispIdSmallIcons Then
     DisplayName = PropSmallIconsName
     Handled = True
-ElseIf DispID = DispIDColumnHeaderIcons Then
+ElseIf DispId = DispIdColumnHeaderIcons Then
     DisplayName = PropColumnHeaderIconsName
     Handled = True
-ElseIf DispID = DispIDGroupIcons Then
+ElseIf DispId = DispIdGroupIcons Then
     DisplayName = PropGroupIconsName
     Handled = True
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Or DispID = DispIDHotMousePointer Or DispID = DispIDHeaderMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Or DispId = DispIdHotMousePointer Or DispId = DispIdHeaderMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
-ElseIf DispID = DispIDIcons Or DispID = DispIDSmallIcons Or DispID = DispIDColumnHeaderIcons Or DispID = DispIDGroupIcons Then
+ElseIf DispId = DispIdIcons Or DispId = DispIdSmallIcons Or DispId = DispIdColumnHeaderIcons Or DispId = DispIdGroupIcons Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, IconsArray())
     SmallIconsArray() = IconsArray()
@@ -1303,20 +1303,20 @@ CATCH_EXCEPTION:
 Handled = False
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Or DispID = DispIDHotMousePointer Or DispID = DispIDHeaderMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Or DispId = DispIdHotMousePointer Or DispId = DispIdHeaderMousePointer Then
     Value = Cookie
     Handled = True
-ElseIf DispID = DispIDIcons Then
+ElseIf DispId = DispIdIcons Then
     If Cookie < UBound(IconsArray()) Then Value = IconsArray(Cookie)
     Handled = True
-ElseIf DispID = DispIDSmallIcons Then
+ElseIf DispId = DispIdSmallIcons Then
     If Cookie < UBound(SmallIconsArray()) Then Value = SmallIconsArray(Cookie)
     Handled = True
-ElseIf DispID = DispIDColumnHeaderIcons Then
+ElseIf DispId = DispIdColumnHeaderIcons Then
     If Cookie < UBound(ColumnHeaderIconsArray()) Then Value = ColumnHeaderIconsArray(Cookie)
     Handled = True
-ElseIf DispID = DispIDGroupIcons Then
+ElseIf DispId = DispIdGroupIcons Then
     If Cookie < UBound(GroupIconsArray()) Then Value = GroupIconsArray(Cookie)
     Handled = True
 End If
@@ -1338,13 +1338,13 @@ ReDim GroupIconsArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDHotMousePointer = 0 Then DispIDHotMousePointer = GetDispID(Me, "HotMousePointer")
-If DispIDHeaderMousePointer = 0 Then DispIDHeaderMousePointer = GetDispID(Me, "HeaderMousePointer")
-If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
-If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
-If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
-If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdHotMousePointer = 0 Then DispIdHotMousePointer = GetDispId(Me, "HotMousePointer")
+If DispIdHeaderMousePointer = 0 Then DispIdHeaderMousePointer = GetDispId(Me, "HeaderMousePointer")
+If DispIdIcons = 0 Then DispIdIcons = GetDispId(Me, "Icons")
+If DispIdSmallIcons = 0 Then DispIdSmallIcons = GetDispId(Me, "SmallIcons")
+If DispIdColumnHeaderIcons = 0 Then DispIdColumnHeaderIcons = GetDispId(Me, "ColumnHeaderIcons")
+If DispIdGroupIcons = 0 Then DispIdGroupIcons = GetDispId(Me, "GroupIcons")
 On Error Resume Next
 ListViewDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -1431,13 +1431,13 @@ End If
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
-If DispIDHotMousePointer = 0 Then DispIDHotMousePointer = GetDispID(Me, "HotMousePointer")
-If DispIDHeaderMousePointer = 0 Then DispIDHeaderMousePointer = GetDispID(Me, "HeaderMousePointer")
-If DispIDIcons = 0 Then DispIDIcons = GetDispID(Me, "Icons")
-If DispIDSmallIcons = 0 Then DispIDSmallIcons = GetDispID(Me, "SmallIcons")
-If DispIDColumnHeaderIcons = 0 Then DispIDColumnHeaderIcons = GetDispID(Me, "ColumnHeaderIcons")
-If DispIDGroupIcons = 0 Then DispIDGroupIcons = GetDispID(Me, "GroupIcons")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
+If DispIdHotMousePointer = 0 Then DispIdHotMousePointer = GetDispId(Me, "HotMousePointer")
+If DispIdHeaderMousePointer = 0 Then DispIdHeaderMousePointer = GetDispId(Me, "HeaderMousePointer")
+If DispIdIcons = 0 Then DispIdIcons = GetDispId(Me, "Icons")
+If DispIdSmallIcons = 0 Then DispIdSmallIcons = GetDispId(Me, "SmallIcons")
+If DispIdColumnHeaderIcons = 0 Then DispIdColumnHeaderIcons = GetDispId(Me, "ColumnHeaderIcons")
+If DispIdGroupIcons = 0 Then DispIdGroupIcons = GetDispId(Me, "GroupIcons")
 On Error Resume Next
 ListViewDesignMode = Not Ambient.UserMode
 On Error GoTo 0

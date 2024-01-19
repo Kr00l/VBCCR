@@ -350,7 +350,7 @@ Private MCIWndIsClick As Boolean
 Private MCIWndMouseOver As Boolean
 Private MCIWndDesignMode As Boolean
 Private UCNoSetFocusFwd As Boolean
-Private DispIDMousePointer As Long
+Private DispIdMousePointer As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
@@ -403,22 +403,22 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispID As Long, ByRef DisplayName As String)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
     Handled = True
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispID As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdMousePointer Then
     Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
     Handled = True
 End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispID As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispID = DispIDMousePointer Then
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdMousePointer Then
     Value = Cookie
     Handled = True
 End If
@@ -432,7 +432,7 @@ Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 On Error Resume Next
 MCIWndDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -457,7 +457,7 @@ Call CreateMCIWnd
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIDMousePointer = 0 Then DispIDMousePointer = GetDispID(Me, "MousePointer")
+If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 On Error Resume Next
 MCIWndDesignMode = Not Ambient.UserMode
 On Error GoTo 0
