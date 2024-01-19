@@ -160,6 +160,29 @@ End If
 SetLastError HResult ' S_OK will clear the last error code, if any.
 End Function
 
+Public Function CallByDispID(ByVal This As Object, ByVal DispID As Long, ByVal CallType As VbCallType, ParamArray ArgList() As Variant) As Variant
+Debug.Assert Not (This Is Nothing)
+Const DISPID_PROPERTYPUT As Long = -3
+Dim PropDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID, wFlags As Integer, pDispParams As OLEGuids.OLEDISPPARAMS
+Set PropDispatch = This
+If UBound(ArgList) > -1 Then
+    Dim i As Long, ArgListRev As Variant
+    ReDim ArgListRev(LBound(ArgList) To UBound(ArgList)) As Variant
+    For i = LBound(ArgList) To UBound(ArgList)
+        VariantCopy ArgListRev(i), ArgList(UBound(ArgList) - i)
+    Next i
+    pDispParams.rgvarg = VarPtr(ArgListRev(0))
+    pDispParams.cArgs = UBound(ArgListRev) + 1
+End If
+Dim PropPutDispID As Long
+If (CallType And (VbLet Or VbSet)) <> 0 Then
+    PropPutDispID = DISPID_PROPERTYPUT
+    pDispParams.rgdispidNamedArgs = VarPtr(PropPutDispID)
+    pDispParams.cNamedArgs = 1
+End If
+PropDispatch.Invoke DispID, IID_NULL, 0, CallType, VarPtr(pDispParams), VarPtr(CallByDispID), NULL_PTR, 0&
+End Function
+
 Public Function VTableInterfaceSupported(ByVal This As OLEGuids.IUnknownUnrestricted, ByVal IIDString As String) As Boolean
 Debug.Assert Not (This Is Nothing)
 Dim HResult As Long, IID As OLEGuids.OLECLSID, ObjectPointer As LongPtr
