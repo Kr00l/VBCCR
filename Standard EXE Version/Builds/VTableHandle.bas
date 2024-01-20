@@ -160,10 +160,23 @@ End If
 SetLastError HResult ' S_OK will clear the last error code, if any.
 End Function
 
+Public Function VTableInterfaceSupported(ByVal This As OLEGuids.IUnknownUnrestricted, ByVal IIDString As String) As Boolean
+Dim HResult As Long, IID As OLEGuids.OLECLSID, ObjectPointer As LongPtr
+CLSIDFromString StrPtr(IIDString), IID
+HResult = This.QueryInterface(VarPtr(IID), ObjectPointer)
+If ObjectPointer <> NULL_PTR Then
+    Dim IUnk As OLEGuids.IUnknownUnrestricted
+    CopyMemory IUnk, ObjectPointer, PTR_SIZE
+    IUnk.Release
+    CopyMemory IUnk, NULL_PTR, PTR_SIZE
+End If
+VTableInterfaceSupported = CBool(HResult = S_OK)
+End Function
+
 Public Function GetDispId(ByVal This As Object, ByRef MethodName As String) As Long
-Dim IDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID
-Set IDispatch = This
-IDispatch.GetIDsOfNames IID_NULL, StrPtr(MethodName), 1, 0, GetDispId
+Dim PropDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID
+Set PropDispatch = This
+PropDispatch.GetIDsOfNames IID_NULL, StrPtr(MethodName), 1, 0, GetDispId
 End Function
 
 #If (TWINBASIC = 0) Then
@@ -189,19 +202,6 @@ End If
 PropDispatch.Invoke DispId, IID_NULL, 0, CallType, VarPtr(pDispParams), VarPtr(CallByDispId), NULL_PTR, 0&
 End Function
 #End If
-
-Public Function VTableInterfaceSupported(ByVal This As OLEGuids.IUnknownUnrestricted, ByVal IIDString As String) As Boolean
-Dim HResult As Long, IID As OLEGuids.OLECLSID, ObjectPointer As LongPtr
-CLSIDFromString StrPtr(IIDString), IID
-HResult = This.QueryInterface(VarPtr(IID), ObjectPointer)
-If ObjectPointer <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    CopyMemory IUnk, ObjectPointer, PTR_SIZE
-    IUnk.Release
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-End If
-VTableInterfaceSupported = CBool(HResult = S_OK)
-End Function
 
 #If VBA7 Then
 Public Function GetWindowFromObject(ByVal This As Object) As LongPtr
