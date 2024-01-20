@@ -143,11 +143,6 @@ Private Declare Function GetClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn A
 Private Declare Function SelectClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long) As Long
 #End If
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
-#If VBA7 Then
-Private Const HWND_DESKTOP As LongPtr = &H0
-#Else
-Private Const HWND_DESKTOP As Long = &H0
-#End If
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
@@ -188,12 +183,10 @@ Private Const BF_BOTTOM As Long = &H8
 Private Const BF_RECT As Long = (BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM)
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
-Implements OLEGuids.IPerPropertyBrowsingVB
 Private WindowedLabelAutoSizeFlag As Boolean
 Private WindowedLabelDisplayedCaption As String
 Private WindowedLabelMouseOver As Boolean
 Private WindowedLabelDesignMode As Boolean
-Private DispIdMousePointer As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -221,34 +214,11 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-End If
-End Sub
-
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-End If
-End Sub
-
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-End If
-End Sub
-
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 On Error Resume Next
 WindowedLabelDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -275,7 +245,6 @@ If WindowedLabelDesignMode = False Then Call ComCtlsSetSubclass(UserControl.hWnd
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 On Error Resume Next
 WindowedLabelDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -406,7 +375,6 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
-Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
 Call ComCtlsReleaseShellMod
 End Sub
@@ -643,12 +611,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -929,33 +897,18 @@ Private Sub DrawLabel()
 With UserControl
 .Cls
 Set .Picture = Nothing
+Dim RC As RECT, CalcRect As RECT, DrawFlags As Long, Buffer As String
+GetClientRect .hWnd, RC
 If PropTransparent = True Then
-    Dim BorderWidth As Long, BorderHeight As Long
-    Select Case PropBorderStyle
-        Case CCBorderStyleSingle
-            BorderWidth = GetSystemMetrics(SM_CXBORDER)
-            BorderHeight = GetSystemMetrics(SM_CYBORDER)
-        Case CCBorderStyleThin
-            BorderWidth = GetSystemMetrics(SM_CXBORDER)
-            BorderHeight = GetSystemMetrics(SM_CYBORDER)
-        Case CCBorderStyleSunken
-            BorderWidth = GetSystemMetrics(SM_CXEDGE)
-            BorderHeight = GetSystemMetrics(SM_CYEDGE)
-        Case CCBorderStyleRaised
-            BorderWidth = GetSystemMetrics(SM_CXDLGFRAME)
-            BorderHeight = GetSystemMetrics(SM_CYDLGFRAME)
-    End Select
-    Dim WndRect As RECT, P As POINTAPI
-    GetWindowRect .hWnd, WndRect
-    MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
-    P.X = WndRect.Left + BorderWidth
-    P.Y = WndRect.Top + BorderHeight
+    Dim ClientRect As RECT, P As POINTAPI
+    LSet ClientRect = RC
+    MapWindowPoints .hWnd, GetParent(.hWnd), ClientRect, 2
+    P.X = ClientRect.Left
+    P.Y = ClientRect.Top
     SetViewportOrgEx .hDC, -P.X, -P.Y, P
     SendMessage GetParent(.hWnd), WM_PAINT, .hDC, ByVal 0&
     SetViewportOrgEx .hDC, P.X, P.Y, P
 End If
-Dim RC As RECT, CalcRect As RECT, DrawFlags As Long, Buffer As String
-GetClientRect UserControl.hWnd, RC
 Dim OldBkMode As Long, OldTextColor As Long
 OldBkMode = SetBkMode(.hDC, 1)
 If .Enabled = True Then

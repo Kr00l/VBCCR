@@ -207,7 +207,6 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private FrameMouseOver As Boolean
 Private FrameDesignMode As Boolean
 Private FramePictureRenderFlag As Integer
-Private DispIdMousePointer As Long
 Private DispIdBorderStyle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -234,10 +233,7 @@ Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECL
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     Select Case PropBorderStyle
         Case vbBSNone: DisplayName = vbBSNone & " - None"
         Case vbFixedSingle: DisplayName = vbFixedSingle & " - Fixed Single"
@@ -247,10 +243,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     ReDim StringsOut(0 To (1 + 1)) As String
     ReDim CookiesOut(0 To (1 + 1)) As Long
     StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
@@ -260,10 +253,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     Value = Cookie
     Handled = True
 End If
@@ -275,13 +265,13 @@ Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set Me.Font = Ambient.Font
 PropVisualStyles = True
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
@@ -298,7 +288,6 @@ If FrameDesignMode = False Then Call ComCtlsSetSubclass(UserControl.hWnd, Me, 0)
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 FrameDesignMode = Not Ambient.UserMode
@@ -678,12 +667,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
