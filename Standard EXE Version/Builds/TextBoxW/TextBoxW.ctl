@@ -524,15 +524,14 @@ Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
 #If ImplementPreTranslateMsg = True Then
 
 If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then TextBoxUsePreTranslateMsg = True
-Call SetVTableHandling(Me, VTableInterfaceControl)
 
 #Else
 
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
-Call SetVTableHandling(Me, VTableInterfaceControl)
 
 #End If
 
+Call SetVTableHandling(Me, VTableInterfaceControl)
 End Sub
 
 Private Sub UserControl_InitProperties()
@@ -831,15 +830,14 @@ Private Sub UserControl_Terminate()
 #If ImplementPreTranslateMsg = True Then
 
 If TextBoxUsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
-Call RemoveVTableHandling(Me, VTableInterfaceControl)
 
 #Else
 
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
-Call RemoveVTableHandling(Me, VTableInterfaceControl)
 
 #End If
 
+Call RemoveVTableHandling(Me, VTableInterfaceControl)
 Call DestroyTextBox
 Call ComCtlsReleaseShellMod
 End Sub
@@ -2130,7 +2128,16 @@ If lParam <> NULL_PTR Then
     Dim Msg As TMSG, Handled As Boolean, RetVal As Long
     CopyMemory Msg, ByVal lParam, LenB(Msg)
     IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
-    If Handled = True Then PreTranslateMsg = 1
+    If Handled = True Then
+        PreTranslateMsg = 1
+    ElseIf PropWantReturn = True Then
+        If Msg.Message = WM_KEYDOWN Or Msg.Message = WM_KEYUP Then
+            If (CLng(Msg.wParam) And &HFF&) = vbKeyReturn Then
+                SendMessage Msg.hWnd, Msg.Message, Msg.wParam, ByVal Msg.lParam
+                PreTranslateMsg = 1
+            End If
+        End If
+    End If
 End If
 End Function
 
