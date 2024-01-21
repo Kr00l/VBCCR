@@ -157,7 +157,7 @@ Begin VB.Form MainForm
    End
    Begin ComCtlsDemo.ToolBar ToolBar1 
       Align           =   1  'Align Top
-      Height          =   360
+      Height          =   480
       Left            =   0
       Top             =   0
       Width           =   9915
@@ -168,6 +168,7 @@ Begin VB.Form MainForm
       TextAlignment   =   1
       ShowTips        =   -1  'True
       Wrappable       =   0   'False
+      ButtonHeight    =   30
       ButtonWidth     =   114
       InitButtons     =   "MainForm.frx":1016
    End
@@ -254,11 +255,11 @@ Begin VB.Form MainForm
    End
    Begin ComCtlsDemo.MonthView MonthView1 
       Bindings        =   "MainForm.frx":1DEE
-      Height          =   2355
+      Height          =   2340
       Left            =   120
       TabIndex        =   2
       Top             =   2520
-      Width           =   2490
+      Width           =   2580
       _ExtentX        =   4551
       _ExtentY        =   4128
       BorderStyle     =   3

@@ -28,7 +28,7 @@ Begin VB.Form RichTextBoxForm
          _ExtentX        =   2355
          _ExtentY        =   556
          Style           =   0
-         Text            =   "RichTextBoxForm.frx":0290
+         Text            =   "FontCombo2"
          RecentMax       =   3
       End
       Begin ComCtlsDemo.ToolBar ToolBar1 
@@ -42,7 +42,7 @@ Begin VB.Form RichTextBoxForm
          Wrappable       =   0   'False
          AllowCustomize  =   0   'False
          ButtonWidth     =   83
-         InitButtons     =   "RichTextBoxForm.frx":02C4
+         InitButtons     =   "RichTextBoxForm.frx":0290
       End
       Begin ComCtlsDemo.FontCombo FontCombo1 
          Height          =   315
@@ -54,7 +54,7 @@ Begin VB.Form RichTextBoxForm
          _ExtentY        =   556
          BuddyControl    =   "FontCombo2"
          FontType        =   2
-         Text            =   "RichTextBoxForm.frx":06F8
+         Text            =   "FontCombo1"
          RecentMax       =   3
       End
    End
@@ -69,8 +69,8 @@ Begin VB.Form RichTextBoxForm
       HideSelection   =   0   'False
       MultiLine       =   -1  'True
       ScrollBars      =   3
-      Text            =   "RichTextBoxForm.frx":072C
-      TextRTF         =   "RichTextBoxForm.frx":0764
+      Text            =   "RichTextBoxForm.frx":06C4
+      TextRTF         =   "RichTextBoxForm.frx":06FC
    End
 End
 Attribute VB_Name = "RichTextBoxForm"
