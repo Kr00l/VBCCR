@@ -442,6 +442,8 @@ Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when the user presses and releases a mouse button and then presses and releases it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event DropFiles(ByRef FileList As Variant, ByVal X As Single, ByVal Y As Single)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event BeforeScroll(ByVal DeltaX As Single, ByVal DeltaY As Single)
 Attribute BeforeScroll.VB_Description = "Occurs when the control is about to be scrolled. Requires comctl32.dll version 6.0 or higher."
 Public Event AfterScroll(ByVal DeltaX As Single, ByVal DeltaY As Single)
@@ -552,6 +554,8 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As LongPtr, ByVal fAccept As Long)
+Private Declare PtrSafe Sub DragFinish Lib "shell32" (ByVal hDrop As LongPtr)
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function lstrcmp Lib "kernel32" Alias "lstrcmpW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As Long
 Private Declare PtrSafe Function lstrcmpi Lib "kernel32" Alias "lstrcmpiW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As Long
@@ -588,8 +592,12 @@ Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
+Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
+Private Declare Sub DragFinish Lib "shell32" (ByVal hDrop As Long)
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrcmp Lib "kernel32" Alias "lstrcmpW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function lstrcmpi Lib "kernel32" Alias "lstrcmpiW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
@@ -626,6 +634,8 @@ Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hW
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
+Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
 #End If
 Private Const ICC_LISTVIEW_CLASSES As Long = &H1
 Private Const ICC_TAB_CLASSES As Long = &H8
@@ -644,6 +654,7 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_POPUP As Long = &H80000000
 Private Const WS_EX_TOOLWINDOW As Long = &H80
 Private Const WS_EX_TOPMOST As Long = &H8
+Private Const WS_EX_ACCEPTFILES As Long = &H10
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
@@ -680,6 +691,7 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SIZE As Long = &H5
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_DROPFILES As Long = &H233
 Private Const WM_SETREDRAW As Long = &HB
 Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const COLOR_HOTLIGHT As Long = 26
@@ -1144,9 +1156,6 @@ Private ListViewSmallIconsObjectPointer As LongPtr
 Private ListViewColumnHeaderIconsObjectPointer As LongPtr
 Private ListViewGroupIconsObjectPointer As LongPtr
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
-Private DispIdHotMousePointer As Long
-Private DispIdHeaderMousePointer As Long
 Private DispIdIcons As Long, IconsArray() As String
 Private DispIdSmallIcons As Long, SmallIconsArray() As String
 Private DispIdColumnHeaderIcons As Long, ColumnHeaderIconsArray() As String
@@ -1159,6 +1168,7 @@ Private PropGroups As LvwGroups
 Private PropWorkAreas As LvwWorkAreas
 Private PropVisualStyles As Boolean
 Private PropVisualTheme As LvwVisualThemeConstants
+Private PropAllowDropFiles As Boolean
 Private PropOLEDragMode As VBRUN.OLEDragConstants
 Private PropOLEDragDropScroll As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -1261,16 +1271,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdHotMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropHotMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdHeaderMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropHeaderMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdIcons Then
+If DispId = DispIdIcons Then
     DisplayName = PropIconsName
     Handled = True
 ElseIf DispId = DispIdSmallIcons Then
@@ -1286,10 +1287,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Or DispId = DispIdHotMousePointer Or DispId = DispIdHeaderMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdIcons Or DispId = DispIdSmallIcons Or DispId = DispIdColumnHeaderIcons Or DispId = DispIdGroupIcons Then
+If DispId = DispIdIcons Or DispId = DispIdSmallIcons Or DispId = DispIdColumnHeaderIcons Or DispId = DispIdGroupIcons Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, IconsArray())
     SmallIconsArray() = IconsArray()
@@ -1304,10 +1302,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Or DispId = DispIdHotMousePointer Or DispId = DispIdHeaderMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdIcons Then
+If DispId = DispIdIcons Then
     If Cookie < UBound(IconsArray()) Then Value = IconsArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdSmallIcons Then
@@ -1338,9 +1333,6 @@ ReDim GroupIconsArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
-If DispIdHotMousePointer = 0 Then DispIdHotMousePointer = GetDispId(Me, "HotMousePointer")
-If DispIdHeaderMousePointer = 0 Then DispIdHeaderMousePointer = GetDispId(Me, "HeaderMousePointer")
 If DispIdIcons = 0 Then DispIdIcons = GetDispId(Me, "Icons")
 If DispIdSmallIcons = 0 Then DispIdSmallIcons = GetDispId(Me, "SmallIcons")
 If DispIdColumnHeaderIcons = 0 Then DispIdColumnHeaderIcons = GetDispId(Me, "ColumnHeaderIcons")
@@ -1351,6 +1343,7 @@ On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = LvwVisualThemeStandard
+PropAllowDropFiles = False
 PropOLEDragMode = vbOLEDragManual
 PropOLEDragDropScroll = True
 Me.OLEDropMode = vbOLEDropNone
@@ -1431,9 +1424,6 @@ End If
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
-If DispIdHotMousePointer = 0 Then DispIdHotMousePointer = GetDispId(Me, "HotMousePointer")
-If DispIdHeaderMousePointer = 0 Then DispIdHeaderMousePointer = GetDispId(Me, "HeaderMousePointer")
 If DispIdIcons = 0 Then DispIdIcons = GetDispId(Me, "Icons")
 If DispIdSmallIcons = 0 Then DispIdSmallIcons = GetDispId(Me, "SmallIcons")
 If DispIdColumnHeaderIcons = 0 Then DispIdColumnHeaderIcons = GetDispId(Me, "ColumnHeaderIcons")
@@ -1446,6 +1436,7 @@ Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 PropVisualTheme = .ReadProperty("VisualTheme", LvwVisualThemeStandard)
 Me.Enabled = .ReadProperty("Enabled", True)
+PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
 PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -1537,6 +1528,7 @@ With PropBag
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "VisualTheme", PropVisualTheme, LvwVisualThemeStandard
 .WriteProperty "Enabled", Me.Enabled, True
+.WriteProperty "AllowDropFiles", PropAllowDropFiles, False
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -2077,6 +2069,21 @@ If ListViewHandle <> NULL_PTR Then EnableWindow ListViewHandle, IIf(Value = True
 UserControl.PropertyChanged "Enabled"
 End Property
 
+Public Property Get AllowDropFiles() As Boolean
+Attribute AllowDropFiles.VB_Description = "Returns/sets a value that determines whether drag-drop files are allowed or not. Only applicable when there is no OLE drop target available."
+If ListViewHandle <> NULL_PTR Then
+    AllowDropFiles = CBool((GetWindowLong(ListViewHandle, GWL_EXSTYLE) And WS_EX_ACCEPTFILES) <> 0)
+Else
+    AllowDropFiles = PropAllowDropFiles
+End If
+End Property
+
+Public Property Let AllowDropFiles(ByVal Value As Boolean)
+PropAllowDropFiles = Value
+If ListViewHandle <> NULL_PTR Then DragAcceptFiles ListViewHandle, IIf(PropAllowDropFiles = True, 1, 0)
+UserControl.PropertyChanged "AllowDropFiles"
+End Property
+
 Public Property Get OLEDragMode() As VBRUN.OLEDragConstants
 Attribute OLEDragMode.VB_Description = "Returns/Sets whether this control can act as an OLE drag/drop source, and whether this process is started automatically or under programmatic control."
 OLEDragMode = PropOLEDragMode
@@ -2117,12 +2124,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -2161,12 +2168,12 @@ If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
-Public Property Get HotMousePointer() As Integer
+Public Property Get HotMousePointer() As CCMousePointerConstants
 Attribute HotMousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over an item while hot tracking is enabled."
 HotMousePointer = PropHotMousePointer
 End Property
 
-Public Property Let HotMousePointer(ByVal Value As Integer)
+Public Property Let HotMousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropHotMousePointer = Value
@@ -2223,12 +2230,12 @@ If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "HotMouseIcon"
 End Property
 
-Public Property Get HeaderMousePointer() As Integer
+Public Property Get HeaderMousePointer() As CCMousePointerConstants
 Attribute HeaderMousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over the column headers."
 HeaderMousePointer = PropHeaderMousePointer
 End Property
 
-Public Property Let HeaderMousePointer(ByVal Value As Integer)
+Public Property Let HeaderMousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropHeaderMousePointer = Value
@@ -5720,6 +5727,7 @@ Private Sub CreateListView()
 If ListViewHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or LVS_SHAREIMAGELISTS
+If PropAllowDropFiles = True Then dwExStyle = dwExStyle Or WS_EX_ACCEPTFILES
 If PropRightToLeft = True Then
     If PropRightToLeftLayout = True Then
         dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
@@ -7412,6 +7420,25 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_DROPFILES
+        If wParam <> NULL_PTR Then
+            Dim FileCount As Long
+            FileCount = DragQueryFile(wParam, -1, NULL_PTR, 0)
+            If FileCount > 0 Then
+                Dim FileList() As String, iFile As Long, FileBuffer As String, P As POINTAPI
+                ReDim FileList(0 To (FileCount - 1)) As String
+                For iFile = 0 To (FileCount - 1)
+                    FileBuffer = String(DragQueryFile(wParam, iFile, NULL_PTR, 0), vbNullChar)
+                    DragQueryFile wParam, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
+                    FileList(iFile) = FileBuffer
+                Next iFile
+                DragQueryPoint wParam, P
+                RaiseEvent DropFiles(FileList(), UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+            End If
+            DragFinish wParam
+        End If
+        WindowProcControl = 0
+        Exit Function
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = CLng(wParam) And &HFF&
