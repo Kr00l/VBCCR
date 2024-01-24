@@ -847,6 +847,17 @@ Public Function CloneOLEFont(ByVal Font As IFont) As StdFont
 If Not Font Is Nothing Then Font.Clone CloneOLEFont
 End Function
 
+#If VBA7 Then
+Public Function CloneGDIFont(ByVal hFont As LongPtr) As LongPtr
+#Else
+Public Function CloneGDIFont(ByVal hFont As Long) As Long
+#End If
+If hFont = NULL_PTR Then Exit Function
+Dim LF As LOGFONT
+GetObjectAPI hFont, LenB(LF), LF
+CloneGDIFont = CreateFontIndirect(LF)
+End Function
+
 Public Function GetNumberGroupDigit() As String
 GetNumberGroupDigit = Mid$(FormatNumber(1000, 0, , , vbTrue), 2, 1)
 If GetNumberGroupDigit = "0" Then GetNumberGroupDigit = vbNullString
