@@ -198,6 +198,7 @@ Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr,
 Private Declare PtrSafe Function MoveWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetParent Lib "user32" (ByVal hWndChild As LongPtr, ByVal hWndNewParent As LongPtr) As LongPtr
+Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
@@ -214,6 +215,7 @@ Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, By
 Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
 Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
 Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
+Private Declare PtrSafe Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As LongPtr
 Private Declare PtrSafe Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As LongPtr
 Private Declare PtrSafe Function CombineRgn Lib "gdi32" (ByVal hRgnDest As LongPtr, ByVal hRgnSrc1 As LongPtr, ByVal hRgnSrc2 As LongPtr, ByVal nCombineMode As Long) As Long
@@ -236,6 +238,7 @@ Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmd
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
+Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
@@ -252,6 +255,7 @@ Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect 
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
+Private Declare Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As Long) As Long
 Private Declare Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function CombineRgn Lib "gdi32" (ByVal hRgnDest As Long, ByVal hRgnSrc1 As Long, ByVal hRgnSrc2 As Long, ByVal nCombineMode As Long) As Long
@@ -401,6 +405,7 @@ Private TabStripHandle As LongPtr, TabStripToolTipHandle As LongPtr
 Private TabStripAcceleratorHandle As LongPtr
 Private TabStripFontHandle As LongPtr
 Private TabStripBackColorBrush As LongPtr
+Private TabStripTransparentBrush As LongPtr
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
 Private TabStripDesignMode As Boolean
@@ -408,7 +413,6 @@ Private TabStripDoubleBufferEraseBkgDC As LongPtr
 Private TabStripImageListObjectPointer As LongPtr
 Private TabStripStyleCache As Long
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
 Private DispIdImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -436,6 +440,7 @@ Private PropShowTips As Boolean
 Private PropDrawMode As TbsDrawModeConstants
 Private PropTabScrollWheel As Boolean
 Private PropDoubleBuffer As Boolean
+Private PropTransparent As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -538,20 +543,14 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
 End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     On Error GoTo 0
@@ -563,10 +562,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
@@ -582,7 +578,6 @@ ReDim ImageListArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 TabStripDesignMode = Not Ambient.UserMode
@@ -613,12 +608,12 @@ PropShowTips = False
 PropDrawMode = TbsDrawModeNormal
 PropTabScrollWheel = True
 PropDoubleBuffer = True
+PropTransparent = False
 Call CreateTabStrip
 Me.Tabs.Add
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 TabStripDesignMode = Not Ambient.UserMode
@@ -653,6 +648,7 @@ PropShowTips = .ReadProperty("ShowTips", False)
 PropDrawMode = .ReadProperty("DrawMode", TbsDrawModeNormal)
 PropTabScrollWheel = .ReadProperty("TabScrollWheel", True)
 PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
+PropTransparent = .ReadProperty("Transparent", False)
 End With
 With New PropertyBag
 On Error Resume Next
@@ -727,6 +723,7 @@ With PropBag
 .WriteProperty "DrawMode", PropDrawMode, TbsDrawModeNormal
 .WriteProperty "TabScrollWheel", PropTabScrollWheel, True
 .WriteProperty "DoubleBuffer", PropDoubleBuffer, True
+.WriteProperty "Transparent", PropTransparent, False
 End With
 Dim Count As Long
 Count = Me.Tabs.Count
@@ -795,7 +792,18 @@ If InProc = True Then Exit Sub
 InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-If TabStripHandle <> NULL_PTR Then MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+If TabStripHandle <> NULL_PTR Then
+    If PropTransparent = True Then
+        MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If TabStripTransparentBrush <> NULL_PTR Then
+            DeleteObject TabStripTransparentBrush
+            TabStripTransparentBrush = NULL_PTR
+        End If
+        RedrawWindow TabStripHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
+End If
 End With
 InProc = False
 End Sub
@@ -1061,12 +1069,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -1570,6 +1578,17 @@ PropDoubleBuffer = Value
 UserControl.PropertyChanged "DoubleBuffer"
 End Property
 
+Public Property Get Transparent() As Boolean
+Attribute Transparent.VB_Description = "Returns/sets a value indicating if the background is a replica of the underlying background to simulate transparency."
+Transparent = PropTransparent
+End Property
+
+Public Property Let Transparent(ByVal Value As Boolean)
+PropTransparent = Value
+Me.Refresh
+UserControl.PropertyChanged "Transparent"
+End Property
+
 Public Property Get Tabs() As TbsTabs
 Attribute Tabs.VB_Description = "Returns a reference to a collection of the tab objects."
 If PropTabs Is Nothing Then
@@ -1932,12 +1951,20 @@ If TabStripBackColorBrush <> NULL_PTR Then
     DeleteObject TabStripBackColorBrush
     TabStripBackColorBrush = NULL_PTR
 End If
+If TabStripTransparentBrush <> NULL_PTR Then
+    DeleteObject TabStripTransparentBrush
+    TabStripTransparentBrush = NULL_PTR
+End If
 TabStripStyleCache = 0
 End Sub
 
 Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
+If TabStripTransparentBrush <> NULL_PTR Then
+    DeleteObject TabStripTransparentBrush
+    TabStripTransparentBrush = NULL_PTR
+End If
 UserControl.Refresh
 RedrawWindow UserControl.hWnd, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
@@ -2064,6 +2091,32 @@ If TabStripHandle <> NULL_PTR Then
 End If
 End Function
 
+Private Function CreateTransparentBrush(ByVal hDC As LongPtr) As LongPtr
+Dim hDCBmp As LongPtr
+Dim hBmp As LongPtr, hBmpOld As LongPtr
+With UserControl
+hDCBmp = CreateCompatibleDC(hDC)
+If hDCBmp <> NULL_PTR Then
+    hBmp = CreateCompatibleBitmap(hDC, .ScaleWidth, .ScaleHeight)
+    If hBmp <> NULL_PTR Then
+        hBmpOld = SelectObject(hDCBmp, hBmp)
+        Dim WndRect As RECT, P As POINTAPI
+        GetWindowRect .hWnd, WndRect
+        MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
+        P.X = WndRect.Left
+        P.Y = WndRect.Top
+        SetViewportOrgEx hDCBmp, -P.X, -P.Y, P
+        SendMessage GetParent(.hWnd), WM_PAINT, hDCBmp, ByVal 0&
+        SetViewportOrgEx hDCBmp, P.X, P.Y, P
+        CreateTransparentBrush = CreatePatternBrush(hBmp)
+        SelectObject hDCBmp, hBmpOld
+        DeleteObject hBmp
+    End If
+    DeleteDC hDCBmp
+End If
+End With
+End Function
+
 Private Sub SetVisualStylesUpDown()
 If TabStripHandle <> NULL_PTR Then
     Dim UpDownHandle As LongPtr
@@ -2149,7 +2202,10 @@ Select Case wMsg
             Dim ClientRect1 As RECT
             GetClientRect hWnd, ClientRect1
             FillRect wParam, ClientRect1, GetSysColorBrush(COLOR_BTNFACE)
-            If TabStripBackColorBrush <> NULL_PTR Then
+            If PropTransparent = True Then
+                If TabStripTransparentBrush = NULL_PTR Then TabStripTransparentBrush = CreateTransparentBrush(wParam)
+            End If
+            If TabStripBackColorBrush <> NULL_PTR Or TabStripTransparentBrush <> NULL_PTR Then
                 Dim Count As Long, i As Long, RC As RECT
                 Count = CLng(SendMessage(hWnd, TCM_GETITEMCOUNT, 0, ByVal 0&))
                 Dim hRgn As LongPtr, hRgnTab As LongPtr, hRgnFill As LongPtr
@@ -2191,7 +2247,11 @@ Select Case wMsg
                 Next i
                 hRgnFill = CreateRectRgn(ClientRect1.Left, ClientRect1.Top, ClientRect1.Right, ClientRect1.Bottom)
                 CombineRgn hRgnFill, hRgnFill, hRgn, RGN_DIFF
-                FillRgn wParam, hRgnFill, TabStripBackColorBrush
+                If TabStripTransparentBrush = NULL_PTR Then
+                    FillRgn wParam, hRgnFill, TabStripBackColorBrush
+                Else
+                    FillRgn wParam, hRgnFill, TabStripTransparentBrush
+                End If
                 DeleteObject hRgnFill
                 DeleteObject hRgn
             End If
@@ -2394,12 +2454,21 @@ Select Case wMsg
             End Select
         End If
     Case WM_PRINTCLIENT
-        If TabStripHandle <> NULL_PTR And TabStripBackColorBrush <> NULL_PTR Then
-            Dim RC As RECT
-            GetClientRect TabStripHandle, RC
-            FillRect wParam, RC, TabStripBackColorBrush
-            WindowProcUserControl = 0
-            Exit Function
+        If TabStripHandle <> NULL_PTR Then
+            If PropTransparent = True Then
+                If TabStripTransparentBrush = NULL_PTR Then TabStripTransparentBrush = CreateTransparentBrush(wParam)
+            End If
+            If TabStripBackColorBrush <> NULL_PTR Or TabStripTransparentBrush <> NULL_PTR Then
+                Dim RC As RECT
+                GetClientRect TabStripHandle, RC
+                If TabStripTransparentBrush = NULL_PTR Then
+                    FillRect wParam, RC, TabStripBackColorBrush
+                Else
+                    FillRect wParam, RC, TabStripTransparentBrush
+                End If
+                WindowProcUserControl = 0
+                Exit Function
+            End If
         End If
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
