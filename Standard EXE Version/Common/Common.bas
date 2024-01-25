@@ -634,6 +634,14 @@ End If
 LSet GetAppVersionInfo = Value
 End Function
 
+Public Function HasClipboardText() As Boolean
+Const CF_UNICODETEXT As Long = 13
+If OpenClipboard(NULL_PTR) <> 0 Then
+    HasClipboardText = CBool(IsClipboardFormatAvailable(CF_UNICODETEXT) <> 0)
+    CloseClipboard
+End If
+End Function
+
 Public Function GetClipboardText() As String
 Const CF_UNICODETEXT As Long = 13
 Dim lpText As LongPtr, lpMem As LongPtr, Length As Long
