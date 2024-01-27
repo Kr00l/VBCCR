@@ -1,5 +1,8 @@
 List of revisions:
 
+27-Jan-2024
+- Included the IncrementalSearchString property in the ListView and TreeView control.
+
 24-Jan-2024
 - Included the AllowDropFiles property and DropFiles event in the ListView control.
 - Included the Transparent property in the TabStrip control.
