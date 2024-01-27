@@ -6888,6 +6888,19 @@ If ListViewHandle <> NULL_PTR Then
 End If
 End Sub
 
+Public Property Get IncrementalSearchString() As String
+Attribute IncrementalSearchString.VB_Description = "Returns the incremental search string, or an empty string if the list view is not in incremental search mode."
+Attribute IncrementalSearchString.VB_MemberFlags = "400"
+If ListViewHandle <> NULL_PTR Then
+    Dim Length As Long
+    Length = SendMessage(ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal 0&)
+    If Length > 0 Then
+        IncrementalSearchString = String(Length, vbNullChar)
+        SendMessage ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal StrPtr(IncrementalSearchString)
+    End If
+End If
+End Property
+
 Private Sub SetVisualStylesHeader()
 If ListViewHandle <> NULL_PTR Then
     If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader

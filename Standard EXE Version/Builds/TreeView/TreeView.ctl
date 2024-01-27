@@ -3199,6 +3199,19 @@ If TreeViewHandle <> NULL_PTR Then
 End If
 End Sub
 
+Public Property Get IncrementalSearchString() As String
+Attribute IncrementalSearchString.VB_Description = "Returns the incremental search string, or an empty string if the tree view is not in incremental search mode."
+Attribute IncrementalSearchString.VB_MemberFlags = "400"
+If TreeViewHandle <> NULL_PTR Then
+    Dim Length As Long
+    Length = SendMessage(TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal 0&)
+    If Length > 0 Then
+        IncrementalSearchString = String(Length, vbNullChar)
+        SendMessage TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal StrPtr(IncrementalSearchString)
+    End If
+End If
+End Property
+
 Private Sub SetVisualStylesToolTip()
 If TreeViewHandle <> NULL_PTR Then
     If TreeViewToolTipHandle <> NULL_PTR And EnabledVisualStyles() = True Then

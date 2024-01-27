@@ -1818,8 +1818,8 @@ Attribute CanUndo.VB_Description = "Determines whether there are any actions in 
 If TextBoxHandle <> NULL_PTR Then CanUndo = CBool(SendMessage(TextBoxHandle, EM_CANUNDO, 0, ByVal 0&) <> 0)
 End Function
 
-Public Sub ResetUndoFlag()
-Attribute ResetUndoFlag.VB_Description = "Resets the undo flag."
+Public Sub ResetUndoQueue()
+Attribute ResetUndoQueue.VB_Description = "Resets the undo queue."
 If TextBoxHandle <> NULL_PTR Then SendMessage TextBoxHandle, EM_EMPTYUNDOBUFFER, 0, ByVal 0&
 End Sub
 
