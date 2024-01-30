@@ -720,7 +720,7 @@ If CurrIndex > 0 Then
     With PropShadowButtons(CurrIndex)
     .Caption = TextCaption.Text
     .Tag = TextTag.Text
-    .Style = ComboStyle.ItemData(ComboStyle.ListIndex)
+    .Style = CLng(ComboStyle.ItemData(ComboStyle.ListIndex))
     If IsNumeric(TextImage.Text) Then
         .Image = CLng(TextImage.Text)
     Else
@@ -728,7 +728,7 @@ If CurrIndex > 0 Then
     End If
     .ToolTipText = TextToolTipText.Text
     .Description = TextDescription.Text
-    .Value = ComboValue.ItemData(ComboValue.ListIndex)
+    .Value = CLng(ComboValue.ItemData(ComboValue.ListIndex))
     .ForeColor = CommandForeColor.BackColor
     .Enabled = CBool(CheckEnabled.Value = vbChecked)
     .Visible = CBool(CheckVisible.Value = vbChecked)

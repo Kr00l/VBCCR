@@ -638,7 +638,7 @@ With PropertyPage.SelectedControls(0)
 .VirtualItemCount = CLng(TextVirtualItemCount.Text)
 Dim i As Long, Flags As LvwVirtualPropertyConstants
 For i = 0 To ListVirtualDisabledInfos.ListCount - 1
-    If ListVirtualDisabledInfos.Selected(i) = True Then Flags = Flags Or ListVirtualDisabledInfos.ItemData(i)
+    If ListVirtualDisabledInfos.Selected(i) = True Then Flags = Flags Or CLng(ListVirtualDisabledInfos.ItemData(i))
 Next i
 .VirtualDisabledInfos = Flags
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)

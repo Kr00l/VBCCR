@@ -593,7 +593,7 @@ If CurrIndex > 0 Then
             If PropShadowBands(i).ChildName = PropShadowBands(CurrIndex).ChildName Then PropShadowBands(i).ChildName = vbNullString
         End If
     Next i
-    .Style = ComboStyle.ItemData(ComboStyle.ListIndex)
+    .Style = CLng(ComboStyle.ItemData(ComboStyle.ListIndex))
     If IsNumeric(TextImage.Text) Then
         .Image = CLng(TextImage.Text)
     Else
@@ -603,7 +603,7 @@ If CurrIndex > 0 Then
     .MinWidth = CSng(TextMinWidth.Text)
     .MinHeight = CSng(TextMinHeight.Text)
     .IdealWidth = CSng(TextIdealWidth.Text)
-    .Gripper = ComboGripper.ItemData(ComboGripper.ListIndex)
+    .Gripper = CLng(ComboGripper.ItemData(ComboGripper.ListIndex))
     .ToolTipText = TextToolTipText.Text
     .UseCoolBarPicture = CBool(CheckUseCoolBarPicture.Value = vbChecked)
     Set .Picture = CurrPicture
