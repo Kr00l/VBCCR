@@ -517,11 +517,11 @@ If CurrIndex > 0 Then
     .Text = TextText.Text
     .Tag = TextTag.Text
     .ToolTipText = TextToolTipText.Text
-    .Style = ComboStyle.ItemData(ComboStyle.ListIndex)
-    .Bevel = ComboBevel.ItemData(ComboBevel.ListIndex)
-    .AutoSize = ComboAutoSize.ItemData(ComboAutoSize.ListIndex)
-    .Alignment = ComboAlignment.ItemData(ComboAlignment.ListIndex)
-    .DTFormat = ComboDTFormat.ItemData(ComboDTFormat.ListIndex)
+    .Style = CLng(ComboStyle.ItemData(ComboStyle.ListIndex))
+    .Bevel = CLng(ComboBevel.ItemData(ComboBevel.ListIndex))
+    .AutoSize = CLng(ComboAutoSize.ItemData(ComboAutoSize.ListIndex))
+    .Alignment = CLng(ComboAlignment.ItemData(ComboAlignment.ListIndex))
+    .DTFormat = CLng(ComboDTFormat.ItemData(ComboDTFormat.ListIndex))
     .ForeColor = CommandForeColor.BackColor
     .MinWidth = TextMinWidth.Text
     Set .Picture = ImagePicture.Picture

@@ -3204,7 +3204,7 @@ Attribute IncrementalSearchString.VB_Description = "Returns the incremental sear
 Attribute IncrementalSearchString.VB_MemberFlags = "400"
 If TreeViewHandle <> NULL_PTR Then
     Dim Length As Long
-    Length = SendMessage(TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal 0&)
+    Length = CLng(SendMessage(TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal 0&))
     If Length > 0 Then
         IncrementalSearchString = String(Length, vbNullChar)
         SendMessage TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal StrPtr(IncrementalSearchString)

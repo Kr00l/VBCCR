@@ -1171,6 +1171,7 @@ Private PropVisualTheme As LvwVisualThemeConstants
 Private PropAllowDropFiles As Boolean
 Private PropOLEDragMode As VBRUN.OLEDragConstants
 Private PropOLEDragDropScroll As Boolean
+Private PropOLEDragDropScrollOrientation As CCScrollOrientationConstants
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropHotMousePointer As Integer, PropHotMouseIcon As IPictureDisp
 Private PropHeaderMousePointer As Integer, PropHeaderMouseIcon As IPictureDisp
@@ -1346,6 +1347,7 @@ PropVisualTheme = LvwVisualThemeStandard
 PropAllowDropFiles = False
 PropOLEDragMode = vbOLEDragManual
 PropOLEDragDropScroll = True
+PropOLEDragDropScrollOrientation = CCScrollOrientationBoth
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropHotMousePointer = 0: Set PropHotMouseIcon = Nothing
@@ -1439,6 +1441,7 @@ Me.Enabled = .ReadProperty("Enabled", True)
 PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
 PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
+PropOLEDragDropScrollOrientation = .ReadProperty("OLEDragDropScrollOrientation", CCScrollOrientationBoth)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
@@ -1531,6 +1534,7 @@ With PropBag
 .WriteProperty "AllowDropFiles", PropAllowDropFiles, False
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
+.WriteProperty "OLEDragDropScrollOrientation", PropOLEDragDropScrollOrientation, CCScrollOrientationBoth
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
@@ -1633,28 +1637,32 @@ If ListViewHandle <> NULL_PTR Then
             Dim dwStyle As Long, dwExStyle As Long
             dwStyle = GetWindowLong(ListViewHandle, GWL_STYLE)
             dwExStyle = GetWindowLong(ListViewHandle, GWL_EXSTYLE)
-            If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
-                Dim CX1 As Long, CX2 As Long
-                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                    If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
-                        CX1 = GetSystemMetrics(SM_CXVSCROLL)
-                    Else
-                        CX2 = GetSystemMetrics(SM_CXVSCROLL)
+            If PropOLEDragDropScrollOrientation = CCScrollOrientationHorizontal Or PropOLEDragDropScrollOrientation = CCScrollOrientationBoth Then
+                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
+                    Dim CX1 As Long, CX2 As Long
+                    If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                        If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
+                            CX1 = GetSystemMetrics(SM_CXVSCROLL)
+                        Else
+                            CX2 = GetSystemMetrics(SM_CXVSCROLL)
+                        End If
+                    End If
+                    If X < ((16 * PixelsPerDIP_X()) + CX1) Then
+                        SendMessage ListViewHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
+                    ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
+                        SendMessage ListViewHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
                     End If
                 End If
-                If X < ((16 * PixelsPerDIP_X()) + CX1) Then
-                    SendMessage ListViewHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
-                ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
-                    SendMessage ListViewHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
-                End If
             End If
-            If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                Dim CY1 As Long, CY2 As Long
-                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
-                If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
-                    SendMessage ListViewHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
-                ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
-                    SendMessage ListViewHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
+            If PropOLEDragDropScrollOrientation = CCScrollOrientationVertical Or PropOLEDragDropScrollOrientation = CCScrollOrientationBoth Then
+                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                    Dim CY1 As Long, CY2 As Long
+                    If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
+                    If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
+                        SendMessage ListViewHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
+                    ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
+                        SendMessage ListViewHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
+                    End If
                 End If
             End If
         End If
@@ -2107,6 +2115,21 @@ End Property
 Public Property Let OLEDragDropScroll(ByVal Value As Boolean)
 PropOLEDragDropScroll = Value
 UserControl.PropertyChanged "OLEDragDropScroll"
+End Property
+
+Public Property Get OLEDragDropScrollOrientation() As CCScrollOrientationConstants
+Attribute OLEDragDropScrollOrientation.VB_Description = "Returns/Sets the scroll orientation for an OLE drag/drop scroll."
+OLEDragDropScrollOrientation = PropOLEDragDropScrollOrientation
+End Property
+
+Public Property Let OLEDragDropScrollOrientation(ByVal Value As CCScrollOrientationConstants)
+Select Case Value
+    Case CCScrollOrientationHorizontal, CCScrollOrientationVertical, CCScrollOrientationBoth
+        PropOLEDragDropScrollOrientation = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "OLEDragDropScrollOrientation"
 End Property
 
 Public Property Get OLEDropMode() As OLEDropModeConstants
@@ -6893,7 +6916,7 @@ Attribute IncrementalSearchString.VB_Description = "Returns the incremental sear
 Attribute IncrementalSearchString.VB_MemberFlags = "400"
 If ListViewHandle <> NULL_PTR Then
     Dim Length As Long
-    Length = SendMessage(ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal 0&)
+    Length = CLng(SendMessage(ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal 0&))
     If Length > 0 Then
         IncrementalSearchString = String(Length, vbNullChar)
         SendMessage ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal StrPtr(IncrementalSearchString)

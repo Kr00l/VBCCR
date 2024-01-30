@@ -506,9 +506,15 @@ Attribute ZOrder.VB_Description = "Places a specified object at the front or bac
 If IsMissing(Position) Then Extender.ZOrder Else Extender.ZOrder Position
 End Sub
 
+#If VBA7 Then
+Public Property Get hWnd() As LongPtr
+Attribute hWnd.VB_Description = "Returns a handle to a control."
+Attribute hWnd.VB_UserMemId = -515
+#Else
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
 Attribute hWnd.VB_UserMemId = -515
+#End If
 hWnd = UserControl.hWnd
 End Property
 
@@ -1086,7 +1092,7 @@ End Function
 Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_SETCURSOR
-        If LoWord(lParam) = HTCLIENT Then
+        If LoWord(CLng(lParam)) = HTCLIENT Then
             If MousePointerID(PropMousePointer) <> 0 Then
                 SetCursor LoadCursor(0, MousePointerID(PropMousePointer))
                 WindowProcUserControl = 1
@@ -1113,7 +1119,7 @@ Select Case wMsg
         If wMsg = WM_GETTEXT Then
             If wParam > 0 And lParam <> 0 Then
                 Length = Len(PropCaption) + 1
-                If wParam < Length Then Length = wParam
+                If wParam < Length Then Length = CLng(wParam)
                 Text = Left$(PropCaption, Length - 1) & vbNullChar
                 CopyMemory ByVal lParam, ByVal StrPtr(Text), Length * 2
                 WindowProcUserControl = Length - 1
