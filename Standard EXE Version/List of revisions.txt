@@ -1,5 +1,8 @@
 List of revisions:
 
+30-Jan-2024
+- Included the OLEDragDropScrollOrientation property in the ListView control.
+
 27-Jan-2024
 - Included the IncrementalSearchString property in the ListView and TreeView control.
 
