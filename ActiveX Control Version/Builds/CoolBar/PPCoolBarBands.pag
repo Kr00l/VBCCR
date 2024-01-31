@@ -547,6 +547,7 @@ Private Declare Function OleCreatePropertyFrame Lib "oleaut32" (ByVal hWndOwner 
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 #End If
 Private Const CLSID_StandardColorPage As String = "{7EBDAAE1-8120-11CF-899F-00AA00688B10}"
+Private Const DISPID_HWND As Long = -515
 Private SelectedControl As Object
 Private CurrIndex As Long, CurrPicture As IPictureDisp
 Private PropShadowBands() As ShadowBandStruct
@@ -700,6 +701,11 @@ If .Bands.Count > 0 And CurrIndex = 0 Then
                     Handle = ControlEnum.hWndUserControl
                     If Err.Number <> 0 Then Handle = ControlEnum.hWnd
                     On Error GoTo 0
+                    If Handle = NULL_PTR Then
+                        On Error Resume Next
+                        Handle = CallByDispId(ControlEnum.Object, DISPID_HWND, VbGet Or VbMethod)
+                        On Error GoTo 0
+                    End If
                 End If
                 If ControlIsValid(ControlEnum) = True And Handle <> NULL_PTR Then ComboChild.AddItem ProperControlName(ControlEnum)
                 Handle = NULL_PTR
