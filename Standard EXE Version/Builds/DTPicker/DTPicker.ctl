@@ -366,7 +366,6 @@ Private DTPickerCalendarFontHandle As LongPtr
 Private WithEvents PropCalendarFont As StdFont
 Attribute PropCalendarFont.VB_VarHelpID = -1
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
 Private DispIdStartOfWeek As Long
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -434,10 +433,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdStartOfWeek Then
+If DispId = DispIdStartOfWeek Then
     Select Case PropStartOfWeek
         Case 0: DisplayName = "0 - System"
         Case 1: DisplayName = "1 - Monday"
@@ -453,10 +449,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdStartOfWeek Then
+If DispId = DispIdStartOfWeek Then
     ReDim StringsOut(0 To (7 + 1)) As String
     ReDim CookiesOut(0 To (7 + 1)) As Long
     StringsOut(0) = "0 - System": CookiesOut(0) = 0
@@ -472,7 +465,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Or DispId = DispIdStartOfWeek Then
+If DispId = DispIdStartOfWeek Then
     Value = Cookie
     Handled = True
 End If
@@ -486,7 +479,6 @@ Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdStartOfWeek = 0 Then DispIdStartOfWeek = GetDispId(Me, "StartOfWeek")
 On Error Resume Next
 DTPickerDesignMode = Not Ambient.UserMode
@@ -526,7 +518,6 @@ Call CreateDTPicker
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdStartOfWeek = 0 Then DispIdStartOfWeek = GetDispId(Me, "StartOfWeek")
 On Error Resume Next
 DTPickerDesignMode = Not Ambient.UserMode
@@ -944,12 +935,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value

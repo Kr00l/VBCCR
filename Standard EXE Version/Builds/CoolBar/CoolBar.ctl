@@ -374,6 +374,7 @@ Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As L
 
 Private Const ICC_COOL_CLASSES As Long = &H400
 Private Const ICC_TAB_CLASSES As Long = &H8
+Private Const DISPID_HWND As Long = -515
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const SWP_NOMOVE As Long = &H2
 Private Const SWP_NOOWNERZORDER As Long = &H200
@@ -577,7 +578,6 @@ Private CoolBarDoubleBufferEraseBkgDC As LongPtr
 Private CoolBarAlignable As Boolean
 Private CoolBarTheme As LongPtr
 Private CoolBarImageListObjectPointer As LongPtr
-Private DispIdMousePointer As Long
 Private DispIdBorderStyle As Long
 Private DispIdImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -613,10 +613,7 @@ Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECL
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     Select Case PropBorderStyle
         Case vbBSNone: DisplayName = vbBSNone & " - None"
         Case vbFixedSingle: DisplayName = vbFixedSingle & " - Fixed Single"
@@ -629,10 +626,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     ReDim StringsOut(0 To (1 + 1)) As String
     ReDim CookiesOut(0 To (1 + 1)) As Long
     StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
@@ -650,10 +644,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     Value = Cookie
     Handled = True
 ElseIf DispId = DispIdImageList Then
@@ -671,7 +662,6 @@ CoolBarToolTipIndex = -1
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
@@ -711,7 +701,6 @@ If CoolBarDesignMode = True Then RedrawWindow UserControl.hWnd, NULL_PTR, NULL_P
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
@@ -1292,12 +1281,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -1827,6 +1816,11 @@ If Not Child Is Nothing Then
         Handle = Child.hWndUserControl
         If Err.Number <> 0 Then Handle = Child.hWnd
         On Error GoTo 0
+        If Handle = NULL_PTR Then
+            On Error Resume Next
+            Handle = CallByDispId(Child.Object, DISPID_HWND, VbGet Or VbMethod)
+            On Error GoTo 0
+        End If
     End If
     Call EvaluateWndChild(Handle)
     If ControlIsValid(Child) = True And Handle <> NULL_PTR Then
@@ -1948,6 +1942,11 @@ If CoolBarHandle <> NULL_PTR Then
                 Handle = Value.hWndUserControl
                 If Err.Number <> 0 Then Handle = Value.hWnd
                 On Error GoTo 0
+                If Handle = NULL_PTR Then
+                    On Error Resume Next
+                    Handle = CallByDispId(Value.Object, DISPID_HWND, VbGet Or VbMethod)
+                    On Error GoTo 0
+                End If
             End If
             Call EvaluateWndChild(Handle)
             If ControlIsValid(Value) = True And Handle <> NULL_PTR Then
