@@ -3874,10 +3874,8 @@ If ToolBarHandle <> NULL_PTR Then
     Dim Length As Long
     Length = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONTEXT, ID, ByVal 0&))
     If Length > 0 Then
-        Dim Buffer As String
-        Buffer = String(Length, vbNullChar) & vbNullChar
-        SendMessage ToolBarHandle, TB_GETBUTTONTEXT, ID, ByVal StrPtr(Buffer)
-        GetButtonText = Left$(Buffer, Length)
+        GetButtonText = String(Length, vbNullChar)
+        SendMessage ToolBarHandle, TB_GETBUTTONTEXT, ID, ByVal StrPtr(GetButtonText)
     End If
 End If
 End Function
