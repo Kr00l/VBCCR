@@ -576,52 +576,6 @@ Else
 End If
 End Sub
 
-Public Sub ComCtlsIPPBSetDisplayStringMousePointer(ByVal MousePointer As Integer, ByRef DisplayName As String)
-Select Case MousePointer
-    Case 0: DisplayName = "0 - Default"
-    Case 1: DisplayName = "1 - Arrow"
-    Case 2: DisplayName = "2 - Cross"
-    Case 3: DisplayName = "3 - I-Beam"
-    Case 4: DisplayName = "4 - Hand"
-    Case 5: DisplayName = "5 - Size"
-    Case 6: DisplayName = "6 - Size NE SW"
-    Case 7: DisplayName = "7 - Size N S"
-    Case 8: DisplayName = "8 - Size NW SE"
-    Case 9: DisplayName = "9 - Size W E"
-    Case 10: DisplayName = "10 - Up Arrow"
-    Case 11: DisplayName = "11 - Hourglass"
-    Case 12: DisplayName = "12 - No Drop"
-    Case 13: DisplayName = "13 - Arrow and Hourglass"
-    Case 14: DisplayName = "14 - Arrow and Question"
-    Case 15: DisplayName = "15 - Size All"
-    Case 16: DisplayName = "16 - Arrow and CD"
-    Case 99: DisplayName = "99 - Custom"
-End Select
-End Sub
-
-Public Sub ComCtlsIPPBSetPredefinedStringsMousePointer(ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-ReDim StringsOut(0 To (17 + 1)) As String
-ReDim CookiesOut(0 To (17 + 1)) As Long
-StringsOut(0) = "0 - Default": CookiesOut(0) = 0
-StringsOut(1) = "1 - Arrow": CookiesOut(1) = 1
-StringsOut(2) = "2 - Cross": CookiesOut(2) = 2
-StringsOut(3) = "3 - I-Beam": CookiesOut(3) = 3
-StringsOut(4) = "4 - Hand": CookiesOut(4) = 4
-StringsOut(5) = "5 - Size": CookiesOut(5) = 5
-StringsOut(6) = "6 - Size NE SW": CookiesOut(6) = 6
-StringsOut(7) = "7 - Size N S": CookiesOut(7) = 7
-StringsOut(8) = "8 - Size NW SE": CookiesOut(8) = 8
-StringsOut(9) = "9 - Size W E": CookiesOut(9) = 9
-StringsOut(10) = "10 - Up Arrow": CookiesOut(10) = 10
-StringsOut(11) = "11 - Hourglass": CookiesOut(11) = 11
-StringsOut(12) = "12 - No Drop": CookiesOut(12) = 12
-StringsOut(13) = "13 - Arrow and Hourglass": CookiesOut(13) = 13
-StringsOut(14) = "14 - Arrow and Question": CookiesOut(14) = 14
-StringsOut(15) = "15 - Size All": CookiesOut(15) = 15
-StringsOut(16) = "16 - Arrow and CD": CookiesOut(16) = 16
-StringsOut(17) = "99 - Custom": CookiesOut(17) = 99
-End Sub
-
 Public Sub ComCtlsIPPBSetPredefinedStringsImageList(ByRef StringsOut() As String, ByRef CookiesOut() As Long, ByRef ControlsEnum As VBRUN.ParentControls, ByRef ImageListArray() As String)
 Dim ControlEnum As Object, PropUBound As Long
 PropUBound = UBound(StringsOut())
