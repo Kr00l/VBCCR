@@ -265,6 +265,7 @@ Begin VB.Form MainForm
       BorderStyle     =   3
       Value           =   44462
       DayState        =   -1  'True
+      UseShortestDayNames=   -1  'True
    End
    Begin ComCtlsDemo.DTPicker DTPicker1 
       Height          =   315
