@@ -286,7 +286,7 @@ Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
 
 Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
 Private ComCtlsPreTranslateMsgHookHandle As LongPtr
-Private ComCtlsPreTranslateMsgHwnd() As LongPtr, ComCtlsPreTranslateMsgCount As Long
+Private ComCtlsPreTranslateMsgHwnd As LongPtr, ComCtlsPreTranslateMsgCount As Long
 
 #End If
 
@@ -1328,7 +1328,6 @@ If nCode >= HC_ACTION And wParam = PM_REMOVE Then
                     Msg.wParam = 0
                     Msg.lParam = 0
                     CopyMemory ByVal lParam, Msg, LenB(Msg)
-                    Exit For
                 End If
             Next i
         End If
@@ -1339,44 +1338,33 @@ End Function
 
 #If ImplementPreTranslateMsg = True Then
 
-#If VBA7 Then
-Public Sub ComCtlsPreTranslateMsgAddHook(ByVal hWnd As LongPtr)
-#Else
-Public Sub ComCtlsPreTranslateMsgAddHook(ByVal hWnd As Long)
-#End If
+Public Sub ComCtlsPreTranslateMsgAddHook()
 If ComCtlsPreTranslateMsgHookHandle = NULL_PTR And ComCtlsPreTranslateMsgCount = 0 Then
     Const WH_GETMESSAGE As Long = 3
     ComCtlsPreTranslateMsgHookHandle = SetWindowsHookEx(WH_GETMESSAGE, AddressOf ComCtlsPreTranslateMsgHookProc, NULL_PTR, App.ThreadID)
-    ReDim ComCtlsPreTranslateMsgHwnd(0) ' As LongPtr
-    ComCtlsPreTranslateMsgHwnd(0) = hWnd
-Else
-    ReDim Preserve ComCtlsPreTranslateMsgHwnd(0 To ComCtlsPreTranslateMsgCount) ' As LongPtr
-    ComCtlsPreTranslateMsgHwnd(ComCtlsPreTranslateMsgCount) = hWnd
 End If
 ComCtlsPreTranslateMsgCount = ComCtlsPreTranslateMsgCount + 1
 End Sub
 
-#If VBA7 Then
-Public Sub ComCtlsPreTranslateMsgReleaseHook(ByVal hWnd As LongPtr)
-#Else
-Public Sub ComCtlsPreTranslateMsgReleaseHook(ByVal hWnd As Long)
-#End If
+Public Sub ComCtlsPreTranslateMsgReleaseHook()
 ComCtlsPreTranslateMsgCount = ComCtlsPreTranslateMsgCount - 1
 If ComCtlsPreTranslateMsgHookHandle <> NULL_PTR And ComCtlsPreTranslateMsgCount = 0 Then
     UnhookWindowsHookEx ComCtlsPreTranslateMsgHookHandle
     ComCtlsPreTranslateMsgHookHandle = NULL_PTR
-    Erase ComCtlsPreTranslateMsgHwnd()
-Else
-    If ComCtlsPreTranslateMsgCount > 0 Then
-        Dim i As Long
-        For i = 0 To ComCtlsPreTranslateMsgCount
-            If ComCtlsPreTranslateMsgHwnd(i) = hWnd And i < ComCtlsPreTranslateMsgCount Then
-                ComCtlsPreTranslateMsgHwnd(i) = ComCtlsPreTranslateMsgHwnd(i + 1)
-            End If
-        Next i
-        ReDim Preserve ComCtlsPreTranslateMsgHwnd(0 To ComCtlsPreTranslateMsgCount - 1) ' As LongPtr
-    End If
+    ComCtlsPreTranslateMsgHwnd = NULL_PTR
 End If
+End Sub
+
+#If VBA7 Then
+Public Sub ComCtlsPreTranslateMsgActivate(ByVal hWnd As LongPtr)
+#Else
+Public Sub ComCtlsPreTranslateMsgActivate(ByVal hWnd As Long)
+#End If
+ComCtlsPreTranslateMsgHwnd = hWnd
+End Sub
+
+Public Sub ComCtlsPreTranslateMsgDeActivate()
+ComCtlsPreTranslateMsgHwnd = NULL_PTR
 End Sub
 
 Private Function ComCtlsPreTranslateMsgHookProc(ByVal nCode As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
@@ -1386,19 +1374,15 @@ If nCode >= HC_ACTION And wParam = PM_REMOVE Then
     Dim Msg As TMSG
     CopyMemory Msg, ByVal lParam, LenB(Msg)
     If Msg.Message >= WM_KEYFIRST And Msg.Message <= WM_KEYLAST Then
-        If ComCtlsPreTranslateMsgCount > 0 Then
-            Dim i As Long
-            For i = 0 To ComCtlsPreTranslateMsgCount - 1
-                If Msg.hWnd = ComCtlsPreTranslateMsgHwnd(i) Then
-                    If SendMessage(Msg.hWnd, UM_PRETRANSLATEMSG, 0, ByVal lParam) <> 0 Then
-                        Msg.Message = WM_NULL
-                        Msg.wParam = 0
-                        Msg.lParam = 0
-                        CopyMemory ByVal lParam, Msg, LenB(Msg)
-                        Exit For
-                    End If
+        If ComCtlsPreTranslateMsgHwnd <> NULL_PTR And ComCtlsPreTranslateMsgCount > 0 Then
+            If Msg.hWnd = ComCtlsPreTranslateMsgHwnd Then
+                If SendMessage(Msg.hWnd, UM_PRETRANSLATEMSG, 0, ByVal lParam) <> 0 Then
+                    Msg.Message = WM_NULL
+                    Msg.wParam = 0
+                    Msg.lParam = 0
+                    CopyMemory ByVal lParam, Msg, LenB(Msg)
                 End If
-            Next i
+            End If
         End If
     End If
 End If
