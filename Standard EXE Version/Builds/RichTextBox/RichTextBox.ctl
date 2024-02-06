@@ -2191,9 +2191,7 @@ If RichTextBoxDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If RichTextBoxUsePreTranslateMsg = True Then
-        If RichTextBoxHandle <> NULL_PTR Then Call ComCtlsPreTranslateMsgAddHook(RichTextBoxHandle)
-    End If
+    If RichTextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
     
     #End If
     
@@ -2246,7 +2244,7 @@ If RichTextBoxDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If RichTextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook(RichTextBoxHandle)
+    If RichTextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
     
     #End If
     
@@ -3978,7 +3976,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If RichTextBoxUsePreTranslateMsg = False Then Call ActivateIPAO(Me)
+        If RichTextBoxUsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
         
         #Else
         
@@ -3990,7 +3988,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If RichTextBoxUsePreTranslateMsg = False Then Call DeActivateIPAO
+        If RichTextBoxUsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
         
         #Else
         

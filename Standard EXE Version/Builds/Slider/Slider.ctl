@@ -1479,9 +1479,7 @@ If SliderDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If SliderUsePreTranslateMsg = True Then
-        If SliderHandle <> NULL_PTR Then Call ComCtlsPreTranslateMsgAddHook(SliderHandle)
-    End If
+    If SliderUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
     
     #End If
     
@@ -1512,7 +1510,7 @@ If SliderDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If SliderUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook(SliderHandle)
+    If SliderUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
     
     #End If
     
@@ -1693,7 +1691,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If SliderUsePreTranslateMsg = False Then Call ActivateIPAO(Me)
+        If SliderUsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
         
         #Else
         
@@ -1705,7 +1703,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If SliderUsePreTranslateMsg = False Then Call DeActivateIPAO
+        If SliderUsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
         
         #Else
         

@@ -1709,9 +1709,7 @@ If TextBoxDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If TextBoxUsePreTranslateMsg = True Then
-        If TextBoxHandle <> NULL_PTR Then Call ComCtlsPreTranslateMsgAddHook(TextBoxHandle)
-    End If
+    If TextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
     
     #End If
     
@@ -1765,7 +1763,7 @@ If TextBoxDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If TextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook(TextBoxHandle)
+    If TextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
     
     #End If
     
@@ -2163,7 +2161,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If TextBoxUsePreTranslateMsg = False Then Call ActivateIPAO(Me)
+        If TextBoxUsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
         
         #Else
         
@@ -2175,7 +2173,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If TextBoxUsePreTranslateMsg = False Then Call DeActivateIPAO
+        If TextBoxUsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
         
         #Else
         
