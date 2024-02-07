@@ -197,10 +197,10 @@ Private Const DT_NOCLIP As Long = &H100
 Private Const DT_RTLREADING As Long = &H20000
 Private Const GCL_STYLE As Long = (-26)
 Private Const CS_DBLCLKS As Long = &H8
-Private Const GWL_EXSTYLE As Long = (-20)
+Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
-Private Const WS_EX_STATICEDGE As Long = &H20000
+Private Const WS_BORDER As Long = &H800000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const GA_ROOT As Long = 2
@@ -220,6 +220,7 @@ Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_GETFONT As Long = &H31
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const CCM_FIRST As Long = &H2000
@@ -245,6 +246,7 @@ Private Const PBS_MARQUEE As Long = &H8
 Private Const PBS_SMOOTHREVERSE As Long = &H10
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
+Implements OLEGuids.IPerPropertyBrowsingVB
 Private ProgressBarHandle As LongPtr
 Private ProgressBarFontHandle As LongPtr
 Private ProgressBarITaskBarList3 As IUnknown
@@ -256,6 +258,7 @@ Private ProgressBarDblClickTime As Long, ProgressBarDblClickTickCount As Double
 Private ProgressBarDblClickCX As Long, ProgressBarDblClickCY As Long
 Private ProgressBarDblClickX As Long, ProgressBarDblClickY As Long
 Private ProgressBarAlignable As Boolean
+Private DispIdBorderStyle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -264,6 +267,7 @@ Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
+Private PropBorderStyle As Integer
 Private PropRange As PBRANGE
 Private PropValue As Long
 Private PropStep As Integer, PropStepAutoReset As Boolean
@@ -287,9 +291,37 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
+Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
+If DispId = DispIdBorderStyle Then
+    Select Case PropBorderStyle
+        Case vbBSNone: DisplayName = vbBSNone & " - None"
+        Case vbFixedSingle: DisplayName = vbFixedSingle & " - Fixed Single"
+    End Select
+    Handled = True
+End If
+End Sub
+
+Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
+If DispId = DispIdBorderStyle Then
+    ReDim StringsOut(0 To (1 + 1)) As String
+    ReDim CookiesOut(0 To (1 + 1)) As Long
+    StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
+    StringsOut(1) = vbFixedSingle & " - Fixed Single": CookiesOut(1) = vbFixedSingle
+    Handled = True
+End If
+End Sub
+
+Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
+If DispId = DispIdBorderStyle Then
+    Value = Cookie
+    Handled = True
+End If
+End Sub
+
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_PROGRESS_CLASS)
+Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ProgressBarDblClickTime = GetDoubleClickTime()
 Const SM_CXDOUBLECLK As Long = 36
 Const SM_CYDOUBLECLK As Long = 37
@@ -304,6 +336,7 @@ Done = True
 End Sub
 
 Private Sub UserControl_InitProperties()
+If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ProgressBarAlignable = False Else ProgressBarAlignable = True
 ProgressBarDesignMode = Not Ambient.UserMode
@@ -316,6 +349,7 @@ PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftLayout = False
 PropRightToLeftMode = CCRightToLeftModeVBAME
 If PropRightToLeft = True Then Me.RightToLeft = True
+PropBorderStyle = vbBSNone
 PropRange.Min = 0
 PropRange.Max = 100
 PropValue = 0
@@ -336,6 +370,7 @@ Call CreateProgressBar
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
+If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then ProgressBarAlignable = False Else ProgressBarAlignable = True
 ProgressBarDesignMode = Not Ambient.UserMode
@@ -352,6 +387,7 @@ PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftLayout = .ReadProperty("RightToLeftLayout", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 If PropRightToLeft = True Then Me.RightToLeft = True
+PropBorderStyle = .ReadProperty("BorderStyle", vbBSNone)
 PropRange.Min = .ReadProperty("Min", 0)
 PropRange.Max = .ReadProperty("Max", 100)
 PropValue = .ReadProperty("Value", 0)
@@ -384,6 +420,7 @@ With PropBag
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftLayout", PropRightToLeftLayout, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
+.WriteProperty "BorderStyle", PropBorderStyle, vbBSNone
 .WriteProperty "Min", PropRange.Min, 0
 .WriteProperty "Max", PropRange.Max, 100
 .WriteProperty "Value", PropValue, 0
@@ -466,6 +503,7 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyProgressBar
 Call ComCtlsReleaseShellMod
 End Sub
@@ -673,20 +711,12 @@ End Property
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
 If ProgressBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
-    Dim dwExStyle As Long, dwExStyleOld As Long
-    dwExStyle = GetWindowLong(hWnd, GWL_EXSTYLE)
-    dwExStyleOld = dwExStyle
     If PropVisualStyles = True Then
         ActivateVisualStyles ProgressBarHandle
-        If (dwExStyle And WS_EX_STATICEDGE) = WS_EX_STATICEDGE Then dwExStyle = dwExStyle And Not WS_EX_STATICEDGE
     Else
         RemoveVisualStyles ProgressBarHandle
-        If Not (dwExStyle And WS_EX_STATICEDGE) = WS_EX_STATICEDGE Then dwExStyle = dwExStyle Or WS_EX_STATICEDGE
     End If
-    If dwExStyle <> dwExStyleOld Then
-        SetWindowLong ProgressBarHandle, GWL_EXSTYLE, dwExStyle
-        Call ComCtlsFrameChanged(ProgressBarHandle)
-    End If
+    If ProgressBarDesignMode = True Then Call ComCtlsFrameChanged(ProgressBarHandle)
     Me.Refresh
 End If
 UserControl.PropertyChanged "VisualStyles"
@@ -814,6 +844,33 @@ Select Case Value
 End Select
 Me.RightToLeft = PropRightToLeft
 UserControl.PropertyChanged "RightToLeftMode"
+End Property
+
+Public Property Get BorderStyle() As Integer
+Attribute BorderStyle.VB_Description = "Returns/sets the border style for an object."
+Attribute BorderStyle.VB_UserMemId = -504
+BorderStyle = PropBorderStyle
+End Property
+
+Public Property Let BorderStyle(ByVal Value As Integer)
+Select Case Value
+    Case vbBSNone, vbFixedSingle
+        PropBorderStyle = Value
+    Case Else
+        Err.Raise 380
+End Select
+If ProgressBarHandle <> NULL_PTR Then
+    Dim dwStyle As Long
+    dwStyle = GetWindowLong(ProgressBarHandle, GWL_STYLE)
+    If PropBorderStyle = vbFixedSingle Then
+        If Not (dwStyle And WS_BORDER) = WS_BORDER Then dwStyle = dwStyle Or WS_BORDER
+    Else
+        If (dwStyle And WS_BORDER) = WS_BORDER Then dwStyle = dwStyle And Not WS_BORDER
+    End If
+    SetWindowLong ProgressBarHandle, GWL_STYLE, dwStyle
+    Call ComCtlsFrameChanged(ProgressBarHandle)
+End If
+UserControl.PropertyChanged "BorderStyle"
 End Property
 
 Public Property Get Min() As Long
@@ -1113,6 +1170,7 @@ If ProgressBarHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
+If PropBorderStyle = vbFixedSingle Then dwStyle = dwStyle Or WS_BORDER
 If PropOrientation = PrbOrientationVertical Then dwStyle = dwStyle Or PBS_VERTICAL
 Select Case PropScrolling
     Case PrbScrollingSmooth
@@ -1379,6 +1437,8 @@ Select Case wMsg
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
+    Case WM_THEMECHANGED
+        Call ComCtlsFrameChanged(hWnd)
     Case WM_PAINT, WM_PRINTCLIENT
         If Not PropText = vbNullString Then
             If wMsg = WM_PAINT Then
