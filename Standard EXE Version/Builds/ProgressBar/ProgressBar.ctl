@@ -716,7 +716,7 @@ If ProgressBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
     Else
         RemoveVisualStyles ProgressBarHandle
     End If
-    If ProgressBarDesignMode = True Then Call ComCtlsFrameChanged(ProgressBarHandle)
+    Call ComCtlsFrameChanged(ProgressBarHandle)
     Me.Refresh
 End If
 UserControl.PropertyChanged "VisualStyles"
