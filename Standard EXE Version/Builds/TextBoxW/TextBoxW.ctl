@@ -428,7 +428,7 @@ Private UCNoSetFocusFwd As Boolean
 #If ImplementPreTranslateMsg = True Then
 
 Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
-Private TextBoxUsePreTranslateMsg As Boolean
+Private UsePreTranslateMsg As Boolean
 
 #End If
 
@@ -523,7 +523,7 @@ Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
 
 #If ImplementPreTranslateMsg = True Then
 
-If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then TextBoxUsePreTranslateMsg = True
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
 
 #Else
 
@@ -829,7 +829,7 @@ Private Sub UserControl_Terminate()
 
 #If ImplementPreTranslateMsg = True Then
 
-If TextBoxUsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 
 #Else
 
@@ -1706,14 +1706,14 @@ If PropNetAddressValidator = True Then Me.NetAddressType = PropNetAddressType
 If TextBoxDesignMode = False Then
     If TextBoxHandle <> NULL_PTR Then Call ComCtlsSetSubclass(TextBoxHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+    If TextBoxHandle <> NULL_PTR Then Call ComCtlsCreateIMC(TextBoxHandle, TextBoxIMCHandle)
     
     #If ImplementPreTranslateMsg = True Then
     
-    If TextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
     
     #End If
     
-    If TextBoxHandle <> NULL_PTR Then Call ComCtlsCreateIMC(TextBoxHandle, TextBoxIMCHandle)
 End If
 End Sub
 
@@ -1763,7 +1763,7 @@ If TextBoxDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If TextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
     
     #End If
     
@@ -2161,7 +2161,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If TextBoxUsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
         
         #Else
         
@@ -2173,7 +2173,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If TextBoxUsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
         
         #Else
         

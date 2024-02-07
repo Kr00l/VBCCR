@@ -888,7 +888,7 @@ Private DispIdBorderStyle As Long
 #If ImplementPreTranslateMsg = True Then
 
 Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
-Private RichTextBoxUsePreTranslateMsg As Boolean
+Private UsePreTranslateMsg As Boolean
 
 #End If
 
@@ -1010,7 +1010,7 @@ Call RtfLoadRichedMod
 
 #If ImplementPreTranslateMsg = True Then
 
-If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then RichTextBoxUsePreTranslateMsg = True
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
 
 #Else
 
@@ -1263,7 +1263,7 @@ Private Sub UserControl_Terminate()
 
 #If ImplementPreTranslateMsg = True Then
 
-If RichTextBoxUsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 
 #Else
 
@@ -2188,14 +2188,14 @@ If RichTextBoxDesignMode = False Then
         Call ComCtlsSetSubclass(RichTextBoxHandle, Me, 1)
     End If
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+    If RichTextBoxHandle <> NULL_PTR Then Call ComCtlsCreateIMC(RichTextBoxHandle, RichTextBoxIMCHandle)
     
     #If ImplementPreTranslateMsg = True Then
     
-    If RichTextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
     
     #End If
     
-    If RichTextBoxHandle <> NULL_PTR Then Call ComCtlsCreateIMC(RichTextBoxHandle, RichTextBoxIMCHandle)
 End If
 End Sub
 
@@ -2244,7 +2244,7 @@ If RichTextBoxDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If RichTextBoxUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
     
     #End If
     
@@ -3976,7 +3976,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If RichTextBoxUsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
         
         #Else
         
@@ -3988,7 +3988,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If RichTextBoxUsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
         
         #Else
         

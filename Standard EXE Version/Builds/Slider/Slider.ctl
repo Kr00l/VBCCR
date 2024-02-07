@@ -341,7 +341,7 @@ Private UCNoSetFocusFwd As Boolean
 #If ImplementPreTranslateMsg = True Then
 
 Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
-Private SliderUsePreTranslateMsg As Boolean
+Private UsePreTranslateMsg As Boolean
 
 #End If
 
@@ -407,7 +407,7 @@ Call ComCtlsInitCC(ICC_BAR_CLASSES)
 
 #If ImplementPreTranslateMsg = True Then
 
-If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then SliderUsePreTranslateMsg = True
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
 
 #Else
 
@@ -593,7 +593,7 @@ Private Sub UserControl_Terminate()
 
 #If ImplementPreTranslateMsg = True Then
 
-If SliderUsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 
 #Else
 
@@ -1479,7 +1479,7 @@ If SliderDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If SliderUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
     
     #End If
     
@@ -1510,7 +1510,7 @@ If SliderDesignMode = False Then
     
     #If ImplementPreTranslateMsg = True Then
     
-    If SliderUsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
     
     #End If
     
@@ -1691,7 +1691,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If SliderUsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
         
         #Else
         
@@ -1703,7 +1703,7 @@ Select Case wMsg
         
         #If ImplementPreTranslateMsg = True Then
         
-        If SliderUsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
         
         #Else
         
