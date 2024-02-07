@@ -200,7 +200,6 @@ Private Const CS_DBLCLKS As Long = &H8
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
-Private Const WS_EX_STATICEDGE As Long = &H20000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const GA_ROOT As Long = 2
@@ -220,6 +219,7 @@ Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_GETFONT As Long = &H31
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const CCM_FIRST As Long = &H2000
@@ -700,20 +700,12 @@ End Property
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
 If ProgressBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
-    Dim dwExStyle As Long, dwExStyleOld As Long
-    dwExStyle = GetWindowLong(hWnd, GWL_EXSTYLE)
-    dwExStyleOld = dwExStyle
     If PropVisualStyles = True Then
         ActivateVisualStyles ProgressBarHandle
-        If (dwExStyle And WS_EX_STATICEDGE) = WS_EX_STATICEDGE Then dwExStyle = dwExStyle And Not WS_EX_STATICEDGE
     Else
         RemoveVisualStyles ProgressBarHandle
-        If Not (dwExStyle And WS_EX_STATICEDGE) = WS_EX_STATICEDGE Then dwExStyle = dwExStyle Or WS_EX_STATICEDGE
     End If
-    If dwExStyle <> dwExStyleOld Then
-        SetWindowLong ProgressBarHandle, GWL_EXSTYLE, dwExStyle
-        Call ComCtlsFrameChanged(ProgressBarHandle)
-    End If
+    If ProgressBarDesignMode = True Then Call ComCtlsFrameChanged(ProgressBarHandle)
     Me.Refresh
 End If
 UserControl.PropertyChanged "VisualStyles"
@@ -1406,6 +1398,8 @@ Select Case wMsg
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
+    Case WM_THEMECHANGED
+        Call ComCtlsFrameChanged(hWnd)
     Case WM_PAINT, WM_PRINTCLIENT
         If Not PropText = vbNullString Then
             If wMsg = WM_PAINT Then
