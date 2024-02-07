@@ -1,5 +1,8 @@
 List of revisions:
 
+07-Feb-2024
+- Included the BorderStyle property in the ProgressBar control.
+
 30-Jan-2024
 - Included the OLEDragDropScrollOrientation property in the ListView control.
 
