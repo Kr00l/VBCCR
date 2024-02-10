@@ -258,6 +258,7 @@ Private ProgressBarDblClickTime As Long, ProgressBarDblClickTickCount As Double
 Private ProgressBarDblClickCX As Long, ProgressBarDblClickCY As Long
 Private ProgressBarDblClickX As Long, ProgressBarDblClickY As Long
 Private ProgressBarAlignable As Boolean
+Private ProgressBarNoThemeFrameChanged As Boolean
 Private DispIdBorderStyle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -711,11 +712,13 @@ End Property
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
 If ProgressBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
+    ProgressBarNoThemeFrameChanged = True
     If PropVisualStyles = True Then
         ActivateVisualStyles ProgressBarHandle
     Else
         RemoveVisualStyles ProgressBarHandle
     End If
+    ProgressBarNoThemeFrameChanged = False
     Call ComCtlsFrameChanged(ProgressBarHandle)
     Me.Refresh
 End If
@@ -1438,7 +1441,7 @@ End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_THEMECHANGED
-        Call ComCtlsFrameChanged(hWnd)
+        If ProgressBarNoThemeFrameChanged = False Then Call ComCtlsFrameChanged(hWnd)
     Case WM_PAINT, WM_PRINTCLIENT
         If Not PropText = vbNullString Then
             If wMsg = WM_PAINT Then
