@@ -284,7 +284,7 @@ Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
 
 #If ImplementPreTranslateMsg = True Then
 
-Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
 Private ComCtlsPreTranslateMsgHookHandle As LongPtr
 Private ComCtlsPreTranslateMsgHwnd As LongPtr, ComCtlsPreTranslateMsgCount As Long
 

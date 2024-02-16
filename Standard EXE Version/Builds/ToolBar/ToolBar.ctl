@@ -493,7 +493,7 @@ Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_UPDATEUISTATE As Long = &H128, UIS_SET As Long = 1, UISF_HIDEACCEL As Long = &H2
 Private Const WM_USER As Long = &H400
-Private Const UM_SETBUTTONCX As Long = (WM_USER + 200)
+Private Const UM_SETBUTTONCX As Long = (WM_USER + 1000)
 Private Const TB_ENABLEBUTTON As Long = (WM_USER + 1)
 Private Const TB_CHECKBUTTON As Long = (WM_USER + 2)
 Private Const TB_PRESSBUTTON As Long = (WM_USER + 3)

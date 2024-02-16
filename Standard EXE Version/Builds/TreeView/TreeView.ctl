@@ -381,8 +381,8 @@ Private Const COLOR_HOTLIGHT As Long = 26
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETVERSION As Long = (CCM_FIRST + 7)
 Private Const WM_USER As Long = &H400
-Private Const UM_CHECKSTATECHANGED As Long = (WM_USER + 100) ' See KB 261289
-Private Const UM_BUTTONDOWN As Long = (WM_USER + 500)
+Private Const UM_CHECKSTATECHANGED As Long = (WM_USER + 1000)
+Private Const UM_BUTTONDOWN As Long = (WM_USER + 1001)
 Private Const TVM_FIRST As Long = &H1100
 Private Const TVM_INSERTITEMA As Long = (TVM_FIRST + 0)
 Private Const TVM_INSERTITEMW As Long = (TVM_FIRST + 50)
@@ -586,7 +586,7 @@ Private DispIdImageList As Long, ImageListArray() As String
 
 #If ImplementPreTranslateMsg = True Then
 
-Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
 Private UsePreTranslateMsg As Boolean
 
 #End If

@@ -234,7 +234,7 @@ Private Const UDS_ARROWKEYS As Long = &H20
 Private Const UDS_NOTHOUSANDS As Long = &H80
 Private Const UDS_HOTTRACK As Long = &H100
 Private Const WM_USER As Long = &H400
-Private Const UM_CHECKVALUE As Long = (WM_USER + 300)
+Private Const UM_CHECKVALUE As Long = (WM_USER + 1000)
 Private Const UDM_SETRANGE As Long = (WM_USER + 101) ' 16 bit
 Private Const UDM_GETRANGE As Long = (WM_USER + 102) ' 16 bit
 Private Const UDM_SETRANGE32 As Long = (WM_USER + 111)
@@ -265,7 +265,7 @@ Private UCNoSetFocusFwd As Boolean
 
 #If ImplementPreTranslateMsg = True Then
 
-Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
 Private UsePreTranslateMsg As Boolean
 
 #End If

@@ -887,7 +887,7 @@ Private DispIdBorderStyle As Long
 
 #If ImplementPreTranslateMsg = True Then
 
-Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 333)
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
 Private UsePreTranslateMsg As Boolean
 
 #End If
