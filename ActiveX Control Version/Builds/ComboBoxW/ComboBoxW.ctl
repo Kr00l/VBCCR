@@ -2131,10 +2131,14 @@ If ComboBoxHandle <> NULL_PTR And ComboBoxDropDownHeightState = False Then
         End If
     End If
     If PropStyle <> CboStyleSimpleCombo Then
-        If ComboBoxListHandle <> NULL_PTR Then
-            Dim WndRect As RECT
-            GetWindowRect ComboBoxListHandle, WndRect
-            SetWindowPos ComboBoxListHandle, NULL_PTR, 0, 0, WndRect.Right - WndRect.Left, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+        If SendMessage(ComboBoxHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
+            If ComboBoxListHandle <> NULL_PTR Then
+                Dim WndRect As RECT
+                GetWindowRect ComboBoxListHandle, WndRect
+                SetWindowPos ComboBoxListHandle, NULL_PTR, 0, 0, WndRect.Right - WndRect.Left, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+            End If
+        Else
+            MoveWindow ComboBoxHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
         End If
         If GetIntegralHeight() = True And ComCtlsSupportLevel() >= 1 Then SendMessage ComboBoxHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
     Else
