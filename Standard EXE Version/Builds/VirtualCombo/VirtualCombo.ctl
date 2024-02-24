@@ -1892,10 +1892,14 @@ If VirtualComboHandle <> NULL_PTR And VirtualComboDropDownHeightState = False Th
     End If
     Height = (ItemHeight * Count)
     If PropStyle <> VcbStyleSimpleCombo Then
-        If VirtualComboListHandle <> NULL_PTR Then
-            Dim WndRect As RECT
-            GetWindowRect VirtualComboListHandle, WndRect
-            SetWindowPos VirtualComboListHandle, NULL_PTR, 0, 0, WndRect.Right - WndRect.Left, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+        If SendMessage(VirtualComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
+            If VirtualComboListHandle <> NULL_PTR Then
+                Dim WndRect As RECT
+                GetWindowRect VirtualComboListHandle, WndRect
+                SetWindowPos VirtualComboListHandle, NULL_PTR, 0, 0, WndRect.Right - WndRect.Left, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+            End If
+        Else
+            MoveWindow VirtualComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
         End If
         If PropIntegralHeight = True And ComCtlsSupportLevel() >= 1 Then SendMessage VirtualComboHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
     Else

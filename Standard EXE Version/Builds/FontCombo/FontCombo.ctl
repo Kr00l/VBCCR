@@ -2143,10 +2143,14 @@ If FontComboHandle <> NULL_PTR Then
     End If
     Height = (ItemHeight * Count)
     If PropStyle <> FtcStyleSimpleCombo Then
-        If FontComboListHandle <> NULL_PTR Then
-            Dim WndRect As RECT
-            GetWindowRect FontComboListHandle, WndRect
-            SetWindowPos FontComboListHandle, NULL_PTR, 0, 0, WndRect.Right - WndRect.Left, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+        If SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
+            If FontComboListHandle <> NULL_PTR Then
+                Dim WndRect As RECT
+                GetWindowRect FontComboListHandle, WndRect
+                SetWindowPos FontComboListHandle, NULL_PTR, 0, 0, WndRect.Right - WndRect.Left, Height + 2, SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_NOACTIVATE
+            End If
+        Else
+            MoveWindow FontComboHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight + Height + 2, 1
         End If
         If PropIntegralHeight = True And ComCtlsSupportLevel() >= 1 Then SendMessage FontComboHandle, CB_SETMINVISIBLE, PropMaxDropDownItems, ByVal 0&
     Else
