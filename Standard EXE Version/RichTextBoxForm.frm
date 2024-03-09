@@ -53,6 +53,7 @@ Begin VB.Form RichTextBoxForm
          _ExtentX        =   3889
          _ExtentY        =   556
          BuddyControl    =   "FontCombo2"
+         Style           =   0
          FontType        =   2
          Text            =   "FontCombo1"
          RecentMax       =   3
