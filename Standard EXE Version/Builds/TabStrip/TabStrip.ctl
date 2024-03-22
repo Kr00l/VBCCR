@@ -36,6 +36,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private TbsPlacementTop, TbsPlacementBottom, TbsPlacementLeft, TbsPlacementRight
 Private TbsStyleTabs, TbsStyleButtons, TbsStyleFlatButtons
@@ -94,6 +97,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type TCITEM
 Mask As Long
@@ -315,6 +326,7 @@ Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_DRAWITEM As Long = &H2B, ODT_TAB As Long = &H65
+Private Const WM_USER As Long = &H400
 Private Const TCS_SCROLLOPPOSITE As Long = &H1
 Private Const TCS_BOTTOM As Long = &H2
 Private Const TCS_RIGHT As Long = &H2
@@ -414,6 +426,14 @@ Private TabStripImageListObjectPointer As LongPtr
 Private TabStripStyleCache As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIdImageList As Long, ImageListArray() As String
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropTabs As TbsTabs
@@ -571,7 +591,17 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_TAB_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfaceControl)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
@@ -809,7 +839,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfaceControl)
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyTabStrip
@@ -1872,6 +1912,13 @@ If TabStripDesignMode = False Then
         Call ComCtlsSetSubclass(TabStripHandle, Me, 1)
         TabStripStyleCache = dwStyle
     End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 ElseIf PropBackColor <> vbButtonFace Then
     If TabStripHandle <> NULL_PTR Then
         If TabStripBackColorBrush = NULL_PTR Then TabStripBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
@@ -1934,6 +1981,15 @@ Private Sub DestroyTabStrip()
 If TabStripHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(TabStripHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If TabStripDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 ShowWindow TabStripHandle, SW_HIDE
 SetParent TabStripHandle, NULL_PTR
 DestroyWindow TabStripHandle
@@ -2147,6 +2203,20 @@ Private Function PropImageListControl() As Object
 If TabStripImageListObjectPointer <> NULL_PTR Then Set PropImageListControl = PtrToObj(TabStripImageListObjectPointer)
 End Function
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -2168,9 +2238,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         If Not (TabStripStyleCache And TCS_FOCUSNEVER) = TCS_FOCUSNEVER Then
             If (TabStripStyleCache And TCS_FOCUSONBUTTONDOWN) = TCS_FOCUSONBUTTONDOWN Then
@@ -2367,6 +2457,15 @@ Select Case wMsg
         End If
     Case WM_STYLECHANGED
         If wParam = GWL_STYLE Then CopyMemory TabStripStyleCache, ByVal UnsignedAdd(lParam, 4), 4
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
