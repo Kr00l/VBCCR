@@ -1,5 +1,8 @@
 List of revisions:
 
+23-Mar-2024
+- Accelerator keys support in a VBA environment. (PreTranslateMsg)
+
 07-Feb-2024
 - Included the BorderStyle property in the ProgressBar control.
 
