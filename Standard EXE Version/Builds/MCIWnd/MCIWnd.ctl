@@ -30,6 +30,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private MciFormatMilliseconds, MciFormatHms, MciFormatMsf, MciFormatFrames, MciFormatSmpte24, MciFormatSmpte25, MciFormatSmpte30, MciFormatSmpte30Drop, MciFormatBytes, MciFormatSamples, MciFormatTmsf
 Private MciModeNotReady, MciModeStop, MciModePlay, MciModeRecord, MciModeSeek, MciModePause, MciModeOpen
@@ -106,6 +109,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
@@ -349,6 +360,14 @@ Private MCIWndIsClick As Boolean
 Private MCIWndMouseOver As Boolean
 Private MCIWndDesignMode As Boolean
 Private UCNoSetFocusFwd As Boolean
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
@@ -404,7 +423,17 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsMCIWndRegisterClass
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 End Sub
 
 Private Sub UserControl_InitProperties()
@@ -538,7 +567,17 @@ End With
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call DestroyMCIWnd
 Call ComCtlsMCIWndReleaseClass
 Call ComCtlsReleaseShellMod
@@ -1133,6 +1172,13 @@ If MCIWndDesignMode = False Then
         Call ComCtlsSetSubclass(MCIWndHandle, Me, 1)
         Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
     End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 Else
     If MCIWndHandle <> NULL_PTR Then
         If MCIWndBackColorBrush = NULL_PTR Then MCIWndBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
@@ -1145,6 +1191,15 @@ Private Sub DestroyMCIWnd()
 If MCIWndHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(MCIWndHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If MCIWndDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 SendMessage MCIWndHandle, WM_CLOSE, 0, ByVal 0& ' MCIWndDestroy
 MCIWndHandle = NULL_PTR
 If MCIWndBackColorBrush <> NULL_PTR Then
@@ -1473,6 +1528,20 @@ Public Property Let Speed(ByVal Value As Long)
 If MCIWndHandle <> NULL_PTR Then SendMessage MCIWndHandle, MCIWNDM_SETSPEED, 0, ByVal Value
 End Property
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -1492,9 +1561,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_ERASEBKGND
         If MCIWndBackColorBrush <> NULL_PTR Then
             Dim RC As RECT
@@ -1609,6 +1698,15 @@ Select Case wMsg
             End With
             Exit Function
         End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg

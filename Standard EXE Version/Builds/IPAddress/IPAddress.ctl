@@ -36,6 +36,7 @@ Private Const PTR_SIZE As Long = 4
 #End If
 
 #Const ImplementThemedBorder = True
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
 
 #If False Then
 Private IpaAutoSelectNone, IpaAutoSelectFirst, IpaAutoSelectSecond, IpaAutoSelectThird, IpaAutoSelectFourth, IpaAutoSelectBlank
@@ -61,6 +62,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type TRACKMOUSEEVENTSTRUCT
 cbSize As Long
@@ -324,6 +333,14 @@ Private IPAddressEditFocusHwnd As LongPtr
 Private IPAddressSelectedItem As Integer
 Private IPAddressMin(1 To 4) As Integer, IPAddressMax(1 To 4) As Integer
 Private UCNoSetFocusFwd As Boolean
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -377,7 +394,17 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 IPAddressPadding.CX = 3 * PixelsPerDIP_X()
 IPAddressPadding.CY = 1 * PixelsPerDIP_Y()
 IPAddressSelectedItem = 1
@@ -540,7 +567,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call DestroyIPAddress
 Call ComCtlsReleaseShellMod
 End Sub
@@ -1129,6 +1166,13 @@ If IPAddressDesignMode = False Then
     If IPAddressEditHandle(2) <> NULL_PTR Then Call ComCtlsSetSubclass(IPAddressEditHandle(2), Me, 2)
     If IPAddressEditHandle(3) <> NULL_PTR Then Call ComCtlsSetSubclass(IPAddressEditHandle(3), Me, 3)
     If IPAddressEditHandle(4) <> NULL_PTR Then Call ComCtlsSetSubclass(IPAddressEditHandle(4), Me, 4)
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 End If
 End Sub
 
@@ -1139,6 +1183,15 @@ Call ComCtlsRemoveSubclass(IPAddressEditHandle(1))
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(2))
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(3))
 Call ComCtlsRemoveSubclass(IPAddressEditHandle(4))
+If IPAddressDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 ShowWindow IPAddressEditHandle(1), SW_HIDE
 ShowWindow IPAddressEditHandle(2), SW_HIDE
 ShowWindow IPAddressEditHandle(3), SW_HIDE
@@ -1366,6 +1419,20 @@ If hWnd <> NULL_PTR Then
     End Select
 End If
 End Function
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
 
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
@@ -1596,9 +1663,29 @@ Dim SelStart As Long, SelEnd As Long
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd And (wParam <> IPAddressEditHandle(1) Or IPAddressEditHandle(1) = NULL_PTR) And (wParam <> IPAddressEditHandle(2) Or IPAddressEditHandle(2) = NULL_PTR) And (wParam <> IPAddressEditHandle(3) Or IPAddressEditHandle(3) = NULL_PTR) And (wParam <> IPAddressEditHandle(4) Or IPAddressEditHandle(4) = NULL_PTR) Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
         CheckMinMaxFromWindow hWnd
     Case WM_LBUTTONDOWN
         If IPAddressEditHandle(1) = NULL_PTR Or IPAddressEditHandle(2) = NULL_PTR Or IPAddressEditHandle(3) = NULL_PTR Or IPAddressEditHandle(4) = NULL_PTR Then
@@ -1816,6 +1903,15 @@ Select Case wMsg
             CopyMemory dwStyleNew, ByVal UnsignedAdd(lParam, 4), 4
             IPAddressRTLReading(dwRefData) = CBool((dwStyleNew And WS_EX_RTLREADING) = WS_EX_RTLREADING)
         End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcEdit = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg

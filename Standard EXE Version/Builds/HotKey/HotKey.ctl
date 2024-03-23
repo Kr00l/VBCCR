@@ -32,6 +32,7 @@ Private Const PTR_SIZE As Long = 4
 #End If
 
 #Const ImplementThemedBorder = True
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
 
 #If False Then
 Private HkeInvalidKeyCombinationNone, HkeInvalidKeyCombinationShift, HkeInvalidKeyCombinationCtrl, HkeInvalidKeyCombinationAlt, HkeInvalidKeyCombinationShiftCtrl, HkeInvalidKeyCombinationShiftAlt, HkeInvalidKeyCombinationCtrlAlt, HkeInvalidKeyCombinationShiftCtrlAlt
@@ -63,6 +64,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
@@ -111,6 +120,7 @@ Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source contro
 Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function GetAncestor Lib "user32" (ByVal hWnd As LongPtr, ByVal gaFlags As Long) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
@@ -140,6 +150,7 @@ Private Declare PtrSafe Function GetKeyboardLayout Lib "user32" (ByVal dwThreadI
 Private Declare PtrSafe Function GetKeyNameText Lib "user32" Alias "GetKeyNameTextW" (ByVal lParam As Long, ByVal lpBuffer As LongPtr, ByVal nSize As Long) As Long
 Private Declare PtrSafe Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualKeyExW" (ByVal wCode As Long, ByVal wMapType As Long, ByVal hKL As LongPtr) As Long
 #Else
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -289,6 +300,14 @@ Private HotKeyDblClickTime As Long, HotKeyDblClickTickCount As Double
 Private HotKeyDblClickCX As Long, HotKeyDblClickCY As Long
 Private HotKeyDblClickX As Long, HotKeyDblClickY As Long
 Private UCNoSetFocusFwd As Boolean
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -335,7 +354,17 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_HOTKEY_CLASS)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 HotKeyDblClickTime = GetDoubleClickTime()
 Const SM_CXDOUBLECLK As Long = 36
 Const SM_CYDOUBLECLK As Long = 37
@@ -438,7 +467,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call DestroyHotKey
 Call ComCtlsReleaseShellMod
 End Sub
@@ -799,6 +838,13 @@ If HotKeyDesignMode = False Then
         Call ComCtlsSetSubclass(HotKeyHandle, Me, 1)
     End If
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 Else
     If HotKeyHandle <> NULL_PTR Then
         If HotKeyBackColorBrush = NULL_PTR Then HotKeyBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
@@ -811,6 +857,15 @@ Private Sub DestroyHotKey()
 If HotKeyHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(HotKeyHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If HotKeyDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 ShowWindow HotKeyHandle, SW_HIDE
 SetParent HotKeyHandle, NULL_PTR
 DestroyWindow HotKeyHandle
@@ -929,6 +984,20 @@ PtInRect = 0
 If X >= lpRect.Left And X < lpRect.Right And Y >= lpRect.Top And Y < lpRect.Bottom Then PtInRect = 1
 End Function
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -948,9 +1017,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = CLng(wParam) And &HFF&
@@ -1125,6 +1214,15 @@ Select Case wMsg
                 HotKeyIsDblClick = False
             End If
         End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
