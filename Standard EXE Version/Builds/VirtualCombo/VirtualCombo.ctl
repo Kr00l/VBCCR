@@ -453,6 +453,7 @@ Private PropDrawMode As VcbDrawModeConstants
 Private PropIMEMode As CCIMEModeConstants
 Private PropScrollTrack As Boolean
 Private PropAutoSelect As Boolean
+Private PropAlwaysFindExact As Boolean
 Private PropListCount As Long
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
@@ -542,6 +543,7 @@ PropDrawMode = VcbDrawModeNormal
 PropIMEMode = CCIMEModeNoControl
 PropScrollTrack = True
 PropAutoSelect = False
+PropAlwaysFindExact = False
 PropListCount = 0
 Call CreateVirtualCombo
 End Sub
@@ -581,6 +583,7 @@ PropDrawMode = .ReadProperty("DrawMode", VcbDrawModeNormal)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
 PropAutoSelect = .ReadProperty("AutoSelect", False)
+PropAlwaysFindExact = .ReadProperty("AlwaysFindExact", False)
 PropListCount = .ReadProperty("ListCount", 0)
 End With
 Call CreateVirtualCombo
@@ -617,6 +620,7 @@ With PropBag
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "ScrollTrack", PropScrollTrack, True
 .WriteProperty "AutoSelect", PropAutoSelect, False
+.WriteProperty "AlwaysFindExact", PropAlwaysFindExact, False
 .WriteProperty "ListCount", PropListCount, 0
 End With
 End Sub
@@ -1449,6 +1453,16 @@ End Property
 Public Property Let AutoSelect(ByVal Value As Boolean)
 PropAutoSelect = Value
 UserControl.PropertyChanged "AutoSelect"
+End Property
+
+Public Property Get AlwaysFindExact() As Boolean
+Attribute AlwaysFindExact.VB_Description = "Returns/sets a value indicating whether to always enforce exact string matches. This also changes the behavior of automatically selecting an item when the user drops down the list of the virtual combo."
+AlwaysFindExact = PropAlwaysFindExact
+End Property
+
+Public Property Let AlwaysFindExact(ByVal Value As Boolean)
+PropAlwaysFindExact = Value
+UserControl.PropertyChanged "AlwaysFindExact"
 End Property
 
 Public Property Get ListCount() As Long
@@ -2510,6 +2524,7 @@ Select Case wMsg
                 End If
         End Select
     Case LB_FINDSTRING, LB_FINDSTRINGEXACT
+        If PropAlwaysFindExact = True Then wMsg = LB_FINDSTRINGEXACT
         Static LastSearchText(0 To 1) As String, LastStartIndex(0 To 1) As Long, LastResult(0 To 1) As Long
         Dim Length As Long
         If lParam <> 0 Then Length = lstrlen(lParam)

@@ -326,6 +326,8 @@ Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
 Private Const LB_ERR As Long = (-1)
 Private Const LB_SETTOPINDEX As Long = &H197
+Private Const LB_FINDSTRING As Long = &H18F
+Private Const LB_FINDSTRINGEXACT As Long = &H1A2
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
 Private Const CB_ADDSTRING As Long = &H143
@@ -442,6 +444,7 @@ Private PropDrawMode As CboDrawModeConstants
 Private PropIMEMode As CCIMEModeConstants
 Private PropScrollTrack As Boolean
 Private PropAutoSelect As Boolean
+Private PropAlwaysFindExact As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -533,6 +536,7 @@ PropDrawMode = CboDrawModeNormal
 PropIMEMode = CCIMEModeNoControl
 PropScrollTrack = True
 PropAutoSelect = False
+PropAlwaysFindExact = False
 Call CreateComboBox
 End Sub
 
@@ -576,6 +580,7 @@ PropDrawMode = .ReadProperty("DrawMode", CboDrawModeNormal)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
 PropAutoSelect = .ReadProperty("AutoSelect", False)
+PropAlwaysFindExact = .ReadProperty("AlwaysFindExact", False)
 End With
 Call CreateComboBox
 End Sub
@@ -616,6 +621,7 @@ With PropBag
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "ScrollTrack", PropScrollTrack, True
 .WriteProperty "AutoSelect", PropAutoSelect, False
+.WriteProperty "AlwaysFindExact", PropAlwaysFindExact, False
 End With
 End Sub
 
@@ -1483,6 +1489,16 @@ End Property
 Public Property Let AutoSelect(ByVal Value As Boolean)
 PropAutoSelect = Value
 UserControl.PropertyChanged "AutoSelect"
+End Property
+
+Public Property Get AlwaysFindExact() As Boolean
+Attribute AlwaysFindExact.VB_Description = "Returns/sets a value indicating whether to always enforce exact string matches. This also changes the behavior of automatically selecting an item when the user drops down the list of the combo box."
+AlwaysFindExact = PropAlwaysFindExact
+End Property
+
+Public Property Let AlwaysFindExact(ByVal Value As Boolean)
+PropAlwaysFindExact = Value
+UserControl.PropertyChanged "AlwaysFindExact"
 End Property
 
 Public Sub AddItem(ByVal Item As String, Optional ByVal Index As Variant)
@@ -2692,6 +2708,8 @@ Select Case wMsg
                     Exit Function
                 End If
         End Select
+    Case LB_FINDSTRING
+        If PropAlwaysFindExact = True Then wMsg = LB_FINDSTRINGEXACT
 End Select
 WindowProcList = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg

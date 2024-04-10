@@ -393,6 +393,8 @@ Private Const EM_SETSEL As Long = &HB1
 Private Const EM_REPLACESEL As Long = &HC2
 Private Const LB_ERR As Long = (-1)
 Private Const LB_SETTOPINDEX As Long = &H197
+Private Const LB_FINDSTRING As Long = &H18F
+Private Const LB_FINDSTRINGEXACT As Long = &H1A2
 Private Const CB_ERR As Long = (-1)
 Private Const CB_LIMITTEXT As Long = &H141
 Private Const CB_ADDSTRING As Long = &H143
@@ -506,6 +508,7 @@ Private PropHorizontalExtent As Long
 Private PropIMEMode As CCIMEModeConstants
 Private PropScrollTrack As Boolean
 Private PropAutoSelect As Boolean
+Private PropAlwaysFindExact As Boolean
 Private PropRecentMax As Integer
 Private PropRecentBackColor As OLE_COLOR
 Private PropRecentForeColor As OLE_COLOR
@@ -646,6 +649,7 @@ PropHorizontalExtent = 0
 PropIMEMode = CCIMEModeNoControl
 PropScrollTrack = True
 PropAutoSelect = True
+PropAlwaysFindExact = False
 PropRecentMax = 0
 PropRecentBackColor = vbInfoBackground
 PropRecentForeColor = vbInfoText
@@ -686,6 +690,7 @@ PropHorizontalExtent = .ReadProperty("HorizontalExtent", 0)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
 PropAutoSelect = .ReadProperty("AutoSelect", True)
+PropAlwaysFindExact = .ReadProperty("AlwaysFindExact", False)
 PropRecentMax = .ReadProperty("RecentMax", 0)
 PropRecentBackColor = .ReadProperty("RecentBackColor", vbInfoBackground)
 PropRecentForeColor = .ReadProperty("RecentForeColor", vbInfoText)
@@ -723,6 +728,7 @@ With PropBag
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "ScrollTrack", PropScrollTrack, True
 .WriteProperty "AutoSelect", PropAutoSelect, True
+.WriteProperty "AlwaysFindExact", PropAlwaysFindExact, False
 .WriteProperty "RecentMax", PropRecentMax, 0
 .WriteProperty "RecentBackColor", PropRecentBackColor, vbInfoBackground
 .WriteProperty "RecentForeColor", PropRecentForeColor, vbInfoText
@@ -1632,6 +1638,16 @@ End Property
 Public Property Let AutoSelect(ByVal Value As Boolean)
 PropAutoSelect = Value
 UserControl.PropertyChanged "AutoSelect"
+End Property
+
+Public Property Get AlwaysFindExact() As Boolean
+Attribute AlwaysFindExact.VB_Description = "Returns/sets a value indicating whether to always enforce exact string matches. This also changes the behavior of automatically selecting an item when the user drops down the list of the font combo."
+AlwaysFindExact = PropAlwaysFindExact
+End Property
+
+Public Property Let AlwaysFindExact(ByVal Value As Boolean)
+PropAlwaysFindExact = Value
+UserControl.PropertyChanged "AlwaysFindExact"
 End Property
 
 Public Property Get RecentMax() As Integer
@@ -2952,6 +2968,8 @@ Select Case wMsg
                     Exit Function
                 End If
         End Select
+    Case LB_FINDSTRING
+        If PropAlwaysFindExact = True Then wMsg = LB_FINDSTRINGEXACT
 End Select
 WindowProcList = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
