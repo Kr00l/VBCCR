@@ -83,6 +83,7 @@ Begin VB.Form MainForm
       Width           =   3855
       _ExtentX        =   6800
       _ExtentY        =   3069
+      Style           =   2
       Text            =   "ComboBoxW1"
    End
    Begin ComCtlsDemo.TextBoxW TextBoxW1 
