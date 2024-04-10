@@ -1,5 +1,9 @@
 List of revisions:
 
+10-Apr-2024
+- Included the AlwaysFindExact property in the ComboBoxW/FontCombo/VirtualCombo control. (LB_FINDSTRING -> LB_FINDSTRINGEXACT)
+  This also changes the behavior of automatically selecting an item when the user drops down the list of the control.
+
 23-Mar-2024
 - Accelerator keys support in a VBA environment. (PreTranslateMsg)
 
