@@ -1,5 +1,10 @@
 List of revisions:
 
+12-Apr-2024
+- Included the Resize event in the FrameW control. (like the VB.Picture control)
+  A control container should have such event to re-arrange it's contained controls.
+  However, the VB.Frame control does not have it.
+
 10-Apr-2024
 - Included the AlwaysFindExact property in the ComboBoxW/FontCombo/VirtualCombo control. (LB_FINDSTRING -> LB_FINDSTRINGEXACT)
   This also changes the behavior of automatically selecting an item when the user drops down the list of the control.
