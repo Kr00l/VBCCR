@@ -55,6 +55,8 @@ Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when the user presses and releases a mouse button and then presses and releases it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event Resize()
+Attribute Resize.VB_Description = "Occurs when a form is first displayed or the size of an object changes."
 Public Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 Attribute MouseDown.VB_Description = "Occurs when the user presses the mouse button while an object has the focus."
 Attribute MouseDown.VB_UserMemId = -605
@@ -402,12 +404,20 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
+Static PrevHeight As Long, PrevWidth As Long
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
+With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call DrawFrame
 InProc = False
+If PrevHeight <> .ScaleHeight Or PrevWidth <> .ScaleWidth Then
+    PrevHeight = .ScaleHeight
+    PrevWidth = .ScaleWidth
+    RaiseEvent Resize
+End If
+End With
 End Sub
 
 Private Sub UserControl_Terminate()
