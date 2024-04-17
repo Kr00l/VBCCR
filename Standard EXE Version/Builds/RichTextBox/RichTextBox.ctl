@@ -4017,7 +4017,7 @@ Else
     Dim MII As MENUITEMINFO, Text As String, i As Long
     MII.cbSize = LenB(MII)
     For i = 1 To 7
-        Text = VBA.Choose(i, "Undo" & vbTab & "Ctrl+Z", "Redo" & vbTab & "Ctrl+Y", "Cut" & vbTab & "Ctrl+X", "Copy" & vbTab & "Ctrl+C", "Paste" & vbTab & "Ctrl+V", "Paste Special" & vbTab & "Ctrl+Alt+V", "Delete" & vbTab & "Del")
+        Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &Special" & vbTab & "Ctrl+Alt+V", "&Delete" & vbTab & "Del")
         MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
         MII.fType = 0
         MII.dwTypeData = StrPtr(Text)
