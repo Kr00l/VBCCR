@@ -9,6 +9,14 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   5625
    ScaleWidth      =   6450
+   Begin VB.CheckBox CheckAutoVerbMenu 
+      Caption         =   "AutoVerbMenu"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   34
+      Top             =   5160
+      Width           =   2160
+   End
    Begin VB.CheckBox CheckUseCrLf 
       Caption         =   "UseCrLf"
       Height          =   285
@@ -346,6 +354,7 @@ If .TextMode <> ComboTextMode.ItemData(ComboTextMode.ListIndex) Then .TextMode =
 .AllowOverType = CBool(CheckAllowOverType.Value = vbChecked)
 .OverTypeMode = CBool(CheckOverTypeMode.Value = vbChecked)
 .UseCrLf = CBool(CheckUseCrLf.Value = vbChecked)
+.AutoVerbMenu = CBool(CheckAutoVerbMenu.Value = vbChecked)
 If Not .FileName = TextFileName.Text Or Not TextFileName.Text = vbNullString Then .FileName = TextFileName.Text
 End With
 Call PropertyPage_SelectionChanged
@@ -398,6 +407,7 @@ CheckSelectionBar.Value = IIf(.SelectionBar = True, vbChecked, vbUnchecked)
 CheckAllowOverType.Value = IIf(.AllowOverType = True, vbChecked, vbUnchecked)
 CheckOverTypeMode.Value = IIf(.OverTypeMode = True, vbChecked, vbUnchecked)
 CheckUseCrLf.Value = IIf(.UseCrLf = True, vbChecked, vbUnchecked)
+CheckAutoVerbMenu.Value = IIf(.AutoVerbMenu = True, vbChecked, vbUnchecked)
 TextFileName.Text = .FileName
 End With
 FreezeChanged = False
@@ -681,6 +691,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckUseCrLf_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckAutoVerbMenu_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
