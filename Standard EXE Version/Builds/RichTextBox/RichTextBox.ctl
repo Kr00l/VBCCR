@@ -272,6 +272,20 @@ wParam As LongPtr
 lParam As LongPtr
 CharRange As RECHARRANGE
 End Type
+Private Type MENUITEMINFO
+cbSize As Long
+fMask As Long
+fType As Long
+fState As Long
+wID As Long
+hSubMenu As LongPtr
+hBmpChecked As LongPtr
+hBmpUnchecked As LongPtr
+dwItemData As LongPtr
+dwTypeData As LongPtr
+cch As Long
+hBmpItem As LongPtr
+End Type
 ' Must be declared at the beginning so that conditional compilation will not bug the events.
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
@@ -418,6 +432,9 @@ Private Declare PtrSafe Function ReleaseCapture Lib "user32" () As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
 Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
+Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
+Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
+Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
@@ -474,6 +491,9 @@ Private Declare Function ReleaseCapture Lib "user32" () As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
 Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare Function CreatePopupMenu Lib "user32" () As Long
+Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
+Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -537,6 +557,16 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const CP_UNICODE As Long = 1200
+'Private Const MIM_BACKGROUND As Long = &H2
+'Private Const MIM_MENUDATA As Long = &H8
+Private Const MIIM_STATE As Long = &H1
+Private Const MIIM_ID As Long = &H2
+Private Const MIIM_STRING As Long = &H40
+'Private Const MIIM_BITMAP As Long = &H80
+Private Const MIIM_FTYPE As Long = &H100
+Private Const MFT_SEPARATOR As Long = &H800
+Private Const MFS_ENABLED As Long = &H0
+Private Const MFS_DISABLED As Long = &H3
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_ACCEPTFILES As Long = &H10
@@ -923,6 +953,7 @@ Private PropIMEMode As CCIMEModeConstants
 Private PropAllowOverType As Boolean
 Private PropOverTypeMode As Boolean
 Private PropUseCrLf As Boolean
+Private PropAutoVerbMenu As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -1059,6 +1090,7 @@ PropUndoLimit = 100
 PropIMEMode = CCIMEModeNoControl
 PropAllowOverType = True
 PropOverTypeMode = False
+PropAutoVerbMenu = False
 Call CreateRichTextBox
 Me.Text = Ambient.DisplayName
 End Sub
@@ -1110,6 +1142,7 @@ PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropAllowOverType = .ReadProperty("AllowOverType", True)
 PropOverTypeMode = .ReadProperty("OverTypeMode", False)
 PropUseCrLf = .ReadProperty("UseCrLf", False)
+PropAutoVerbMenu = .ReadProperty("AutoVerbMenu", False)
 End With
 Call CreateRichTextBox
 If PropTextMode = RtfTextModeRichText Then
@@ -1155,6 +1188,7 @@ With PropBag
 .WriteProperty "AllowOverType", PropAllowOverType, True
 .WriteProperty "OverTypeMode", PropOverTypeMode, False
 .WriteProperty "UseCrLf", PropUseCrLf, False
+.WriteProperty "AutoVerbMenu", PropAutoVerbMenu, False
 Dim Buffer As String
 StreamStringOut Buffer, SF_TEXT Or SF_UNICODE
 .WriteProperty "Text", StrToVar(Buffer), vbNullString
@@ -2122,6 +2156,16 @@ End Property
 Public Property Let UseCrLf(ByVal Value As Boolean)
 PropUseCrLf = Value
 UserControl.PropertyChanged "UseCrLf"
+End Property
+
+Public Property Get AutoVerbMenu() As Boolean
+Attribute AutoVerbMenu.VB_Description = "Returns/sets a value that indicating whether the selected object's verbs will be displayed in a popup menu when the right mouse button is clicked."
+AutoVerbMenu = PropAutoVerbMenu
+End Property
+
+Public Property Let AutoVerbMenu(ByVal Value As Boolean)
+PropAutoVerbMenu = Value
+UserControl.PropertyChanged "AutoVerbMenu"
 End Property
 
 Private Sub CreateRichTextBox()
@@ -3964,9 +4008,58 @@ Friend Sub FIRichEditOleCallback_GetContextMenu(ByVal SelType As Integer, ByVal 
 #Else
 Friend Sub FIRichEditOleCallback_GetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal lpCharRange As Long, ByRef hMenu As Long)
 #End If
-Dim RECR As RECHARRANGE
-CopyMemory RECR, ByVal lpCharRange, LenB(RECR)
-RaiseEvent OLEGetContextMenu(SelType, LpOleObject, RECR.Min, RECR.Max, hMenu)
+If PropAutoVerbMenu = False Then
+    Dim RECR As RECHARRANGE
+    CopyMemory RECR, ByVal lpCharRange, LenB(RECR)
+    RaiseEvent OLEGetContextMenu(SelType, LpOleObject, RECR.Min, RECR.Max, hMenu)
+Else
+    hMenu = CreatePopupMenu()
+    Dim MII As MENUITEMINFO, Text As String, i As Long
+    MII.cbSize = LenB(MII)
+    For i = 1 To 7
+        Text = VBA.Choose(i, "Undo" & vbTab & "Ctrl+Z", "Redo" & vbTab & "Ctrl+Y", "Cut" & vbTab & "Ctrl+X", "Copy" & vbTab & "Ctrl+C", "Paste" & vbTab & "Ctrl+V", "Paste Special" & vbTab & "Ctrl+Alt+V", "Delete" & vbTab & "Del")
+        MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
+        MII.fType = 0
+        MII.dwTypeData = StrPtr(Text)
+        MII.cch = Len(Text)
+        MII.hBmpItem = NULL_PTR
+        Select Case i
+            Case 1
+                If Me.CanUndo = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 2
+                If Me.CanRedo = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 3, 4, 7
+                If (SelType And SEL_TEXT) = SEL_TEXT Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 5, 6
+                If Me.CanPaste = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+        End Select
+        MII.wID = i
+        InsertMenuItem hMenu, 0, 0, MII
+    Next i
+    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
+    MII.fType = MFT_SEPARATOR
+    MII.dwTypeData = 0
+    MII.cch = 0
+    MII.hBmpItem = NULL_PTR
+    MII.wID = i
+    InsertMenuItem hMenu, 2, 1, MII
+End If
 End Sub
 
 Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
@@ -4060,6 +4153,9 @@ Select Case wMsg
         If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If GetShiftStateFromMsg() = (vbCtrlMask + vbAltMask) Then
+                    If KeyCode = vbKeyV Then Me.PasteSpecial CF_UNICODETEXT
+                End If
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
@@ -4070,6 +4166,7 @@ Select Case wMsg
             RichTextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+
         ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
@@ -4309,7 +4406,26 @@ Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long
 Select Case wMsg
     Case WM_COMMAND
         If HiWord(CLng(wParam)) = 0 And lParam = 0 Then ' Alias for menu
-            RaiseEvent OLEContextMenuClick(LoWord(CLng(wParam)))
+            If PropAutoVerbMenu = False Then
+                RaiseEvent OLEContextMenuClick(LoWord(CLng(wParam)))
+            Else
+                Select Case LoWord(CLng(wParam))
+                    Case 1
+                        Me.Undo
+                    Case 2
+                        Me.Redo
+                    Case 3
+                        Me.Cut
+                    Case 4
+                        Me.Copy
+                    Case 5
+                        Me.Paste
+                    Case 6
+                        Me.PasteSpecial CF_UNICODETEXT
+                    Case 7
+                        Me.Clear
+                End Select
+            End If
         ElseIf lParam <> 0 Then
             Select Case HiWord(CLng(wParam))
                 Case EN_CHANGE
