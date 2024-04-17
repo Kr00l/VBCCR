@@ -70,6 +70,7 @@ Begin VB.Form RichTextBoxForm
       HideSelection   =   0   'False
       MultiLine       =   -1  'True
       ScrollBars      =   3
+      AutoVerbMenu    =   -1  'True
       Text            =   "RichTextBoxForm.frx":06C4
       TextRTF         =   "RichTextBoxForm.frx":06FC
    End
@@ -92,35 +93,10 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
-Private Type MENUITEMINFO
-cbSize As Long
-fMask As Long
-fType As Long
-fState As Long
-wID As Long
-hSubMenu As LongPtr
-hBmpChecked As LongPtr
-hBmpUnchecked As LongPtr
-dwItemData As LongPtr
-dwTypeData As LongPtr
-cch As Long
-hBmpItem As LongPtr
-End Type
-Private Const MIIM_STATE As Long = &H1
-Private Const MIIM_ID As Long = &H2
-Private Const MIIM_TYPE As Long = &H10
-Private Const MFT_STRING As Long = &H0
-Private Const MFS_ENABLED As Long = &H0
-Private Const MFS_DISABLED As Long = &H3
-Private Const CF_UNICODETEXT As Long = 13
 #If VBA7 Then
-Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
-Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare PtrSafe Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal LCID As Long, ByVal LCType As Long, ByVal lpLCData As LongPtr, ByVal cchData As Long) As Long
 Private Declare PtrSafe Function SetActiveWindow Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 #Else
-Private Declare Function CreatePopupMenu Lib "user32" () As Long
-Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal Locale As Long, ByVal LCType As Long, ByVal lpLCData As Long, ByVal cchData As Long) As Long
 Private Declare Function SetActiveWindow Lib "user32" (ByVal hWnd As Long) As Long
 #End If
@@ -367,60 +343,4 @@ If (SelType And RtfSelTypeText) <> 0 Or SelType = RtfSelTypeEmpty Then
     End If
     FontComboFreezeClick = False
 End If
-End Sub
-
-#If VBA7 Then
-Private Sub RichTextBox1_OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal SelStart As Long, ByVal SelEnd As Long, hMenu As LongPtr)
-#Else
-Private Sub RichTextBox1_OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, hMenu As Long)
-#End If
-Dim hPopupMenu As LongPtr
-hPopupMenu = CreatePopupMenu()
-If hPopupMenu = NULL_PTR Then Exit Sub
-Dim i As Long
-Dim MII As MENUITEMINFO, Text As String
-For i = 1 To 4
-    MII.cbSize = LenB(MII)
-    MII.fMask = MIIM_TYPE Or MIIM_ID Or MIIM_STATE
-    MII.fType = MFT_STRING
-    Text = VBA.Choose(i, "Cut", "Copy", "Paste", "Paste Special")
-    MII.dwTypeData = StrPtr(Text)
-    MII.cch = Len(Text)
-    If i = 1 Or i = 2 Then
-        If SelType <> 0 Then
-            MII.fState = MFS_ENABLED
-        Else
-            MII.fState = MFS_DISABLED
-        End If
-    ElseIf i = 3 Or i = 4 Then
-        If RichTextBox1.CanPaste = True Then
-            MII.fState = MFS_ENABLED
-        Else
-            MII.fState = MFS_DISABLED
-        End If
-    Else
-        MII.fState = MFS_ENABLED
-    End If
-    MII.wID = i
-    InsertMenuItem hPopupMenu, 0, 0, MII
-Next i
-hMenu = hPopupMenu
-' The client should not destroy the menu as this will be done automatically by the rich text box control.
-End Sub
-
-Private Sub RichTextBox1_OLEContextMenuClick(ByVal ID As Long)
-Select Case ID
-    Case 1
-        RichTextBox1.Cut
-    Case 2
-        RichTextBox1.Copy
-    Case 3
-        RichTextBox1.Paste
-    Case 4
-        If VB.Clipboard.GetFormat(CF_UNICODETEXT) = True Then
-            RichTextBox1.PasteSpecial CF_UNICODETEXT
-        ElseIf VB.Clipboard.GetFormat(vbCFText) = True Then
-            RichTextBox1.PasteSpecial vbCFText
-        End If
-End Select
 End Sub

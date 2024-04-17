@@ -1,5 +1,9 @@
 List of revisions:
 
+17-Apr-2024
+- Included the AutoVerbMenu in the RichTextBox control.
+  Ctrl+Alt+V shortcut does now a paste special.
+
 12-Apr-2024
 - Included the Resize event in the FrameW control. (like the VB.Picture control)
   A control container should have such event to re-arrange it's contained controls.
