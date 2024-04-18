@@ -435,6 +435,7 @@ Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As Lo
 Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
 Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
+Private Declare PtrSafe Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
@@ -494,6 +495,7 @@ Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRe
 Private Declare Function CreatePopupMenu Lib "user32" () As Long
 Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
+Private Declare Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -4014,10 +4016,35 @@ If PropAutoVerbMenu = False Then
     RaiseEvent OLEGetContextMenu(SelType, LpOleObject, RECR.Min, RECR.Max, hMenu)
 Else
     hMenu = CreatePopupMenu()
+    Dim LangID As Integer
+    LangID = GetUserDefaultUILanguage() And &HFF&
     Dim MII As MENUITEMINFO, Text As String, i As Long
     MII.cbSize = LenB(MII)
     For i = 1 To 7
-        Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &Special" & vbTab & "Ctrl+Alt+V", "&Delete" & vbTab & "Del")
+        Select Case LangID
+            'Case &H4 ' Chinese
+            'Case &H5 ' Czech
+            'Case &H6 ' Danish
+            Case &H7 ' German
+                Text = VBA.Choose(i, "&Rückgängig" & vbTab & "Strg+Z", "&Wiederholen" & vbTab & "Strg+Y", "&Ausschneiden" & vbTab & "Strg+X", "&Kopieren" & vbTab & "Strg+C", "&Einfügen" & vbTab & "Strg+V", "Nur &Text einfügen" & vbTab & "Strg+Umschalt+V", "&Löschen" & vbTab & "Entf")
+            'Case &H8 ' Greek
+            Case &H9 ' English
+                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
+            'Case &HA ' Spanish
+            'Case &HB ' Finnish
+            'Case &HC ' French
+            'Case &H10 ' Italian
+            'Case &H11 ' Japanese
+            'Case &H13 ' Dutch
+            'Case &H14 ' Norwegian
+            'Case &H15 ' Polish
+            'Case &H16 ' Portuguese
+            'Case &H18 ' Romanian
+            'Case &H19 ' Russian
+            'Case &H1D ' Swedish
+            Case Else
+                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
+        End Select
         MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
         MII.fType = 0
         MII.dwTypeData = StrPtr(Text)
@@ -4153,8 +4180,8 @@ Select Case wMsg
         If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-                If GetShiftStateFromMsg() = (vbCtrlMask + vbAltMask) Then
-                    If KeyCode = vbKeyV Then Me.PasteSpecial CF_UNICODETEXT
+                If GetShiftStateFromMsg() = (vbCtrlMask + vbShiftMask) Then
+                    If KeyCode = vbKeyV Then Me.PasteSpecial CF_UNICODETEXT: Exit Function
                 End If
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
