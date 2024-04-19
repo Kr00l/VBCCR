@@ -4022,26 +4022,45 @@ Else
     MII.cbSize = LenB(MII)
     For i = 1 To 7
         Select Case LangID
-            'Case &H4 ' Chinese
-            'Case &H5 ' Czech
-            'Case &H6 ' Danish
+            Case &H4 ' Chinese
+                Text = VBA.Choose(i, ChrW(&H64A4&) & ChrW(&H6D88&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H6062&) & ChrW(&H590D&) & "(&R)" & vbTab & "Ctrl+Y", _
+                ChrW(&H526A&) & ChrW(&H5207&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H590D&) & ChrW(&H5236&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H7C98&) & ChrW(&H8D34&) & "(&P)" & vbTab & "Ctrl+V", _
+                ChrW(&H7C98&) & ChrW(&H8D34&) & ChrW(&H7EAF&) & ChrW(&H6587&) & ChrW(&H672C&) & vbTab & "Ctrl+Shift+V", ChrW(&H5220&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
+            Case &H5 ' Czech
+                Text = VBA.Choose(i, "&Zp" & ChrW(&H11B&) & "t" & vbTab & "Ctrl+Z", "Z&novu" & vbTab & "Ctrl+Y", "Vyjmou&t" & vbTab & "Ctrl+X", "&Kopírovat" & vbTab & "Ctrl+C", "&Vložit" & vbTab & "Ctrl+V", "Vložit &jako prostý text" & vbTab & "Ctrl+Shift+V", "&Odstranit" & vbTab & "Del")
+            Case &H6 ' Danish
+                Text = VBA.Choose(i, "&Fortryd" & vbTab & "Ctrl+Z", "&Annuller fortryd" & vbTab & "Ctrl+Y", "&Klip" & vbTab & "Ctrl+X", "K&opier" & vbTab & "Ctrl+C", "Sæt &ind" & vbTab & "Ctrl+V", "Indsæt som almindelig &tekst" & vbTab & "Ctrl+Shift+V", "&Slet" & vbTab & "Del")
             Case &H7 ' German
                 Text = VBA.Choose(i, "&Rückgängig" & vbTab & "Strg+Z", "&Wiederholen" & vbTab & "Strg+Y", "&Ausschneiden" & vbTab & "Strg+X", "&Kopieren" & vbTab & "Strg+C", "&Einfügen" & vbTab & "Strg+V", "Nur &Text einfügen" & vbTab & "Strg+Umschalt+V", "&Löschen" & vbTab & "Entf")
-            'Case &H8 ' Greek
+            Case &H8 ' Greek
+                Text = VBA.Choose(i, "&" & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3AF&) & ChrW(&H3C1&) & ChrW(&H3B5&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+Z", "&" & ChrW(&H391&) & ChrW(&H3BA&) & ChrW(&H3CD&) & ChrW(&H3C1&) & ChrW(&H3C9&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3AF&) & ChrW(&H3C1&) & ChrW(&H3B5&) & ChrW(&H3C3&) & ChrW(&H3B7&) & ChrW(&H3C2&) & vbTab & "Ctrl+Y", _
+                ChrW(&H391&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3BA&) & ChrW(&H3BF&) & "&" & ChrW(&H3C0&) & ChrW(&H3AE&) & vbTab & "Ctrl+X", "&" & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3C4&) & ChrW(&H3B9&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Ctrl+C", "&" & ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+V", _
+                ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H3C9&) & ChrW(&H3C2&) & " " & ChrW(&H3B1&) & ChrW(&H3C0&) & ChrW(&H3BB&) & ChrW(&H3CC&) & " " & ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & vbTab & "Ctrl+Shift+V", "&" & ChrW(&H394&) & ChrW(&H3B9&) & ChrW(&H3B1&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Del")
             Case &H9 ' English
                 Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
-            'Case &HA ' Spanish
+            Case &HA ' Spanish
+                Text = VBA.Choose(i, "&Deshacer" & vbTab & "Ctrl+Z", "&Rehacer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "&Pegar" & vbTab & "Ctrl+V", "Pegar &sólo texto" & vbTab & "Ctrl+Mayús+V", "&Borrar" & vbTab & "Supr")
             'Case &HB ' Finnish
-            'Case &HC ' French
-            'Case &H10 ' Italian
-            'Case &H11 ' Japanese
+            Case &HC ' French
+                Text = VBA.Choose(i, "&Annuler" & vbTab & "Ctrl+Z", "&Rétablir" & vbTab & "Ctrl+Y", "Cou&per" & vbTab & "Ctrl+X", "&Copier" & vbTab & "Ctrl+C", "C&oller" & vbTab & "Ctrl+V", "Coller du &texte uniquement" & vbTab & "Ctrl+Maj+V", "&Supprimer" & vbTab & "Suppr")
+            Case &H10 ' Italian
+                Text = VBA.Choose(i, "Ann&ulla digitazione" & vbTab & "Ctrl+Z", "&Ripristina digitazione" & vbTab & "Ctrl+Y", "Tag&lia" & vbTab & "Ctrl+X", "&Copia" & vbTab & "Ctrl+C", "&Incolla" & vbTab & "Ctrl+V", "Incollare solo &testo" & vbTab & "Ctrl+Maiusc+V", "&Elimina" & vbTab & "Canc")
+            Case &H11 ' Japanese
+                Text = VBA.Choose(i, ChrW(&H5143&) & ChrW(&H306B&) & ChrW(&H623B&) & ChrW(&H3059&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H3084&) & ChrW(&H308A&) & ChrW(&H76F4&) & ChrW(&H3057&) & "(&R)" & vbTab & "Ctrl+Y", _
+                ChrW(&H5207&) & ChrW(&H308A&) & ChrW(&H53D6&) & ChrW(&H308A&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H30B3&) & ChrW(&H30D4&) & ChrW(&H30FC&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & "(&P)" & vbTab & "Ctrl+V", _
+                ChrW(&H30D7&) & ChrW(&H30EC&) & ChrW(&H30FC&) & ChrW(&H30F3&) & " " & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H3057&) & ChrW(&H3066&) & ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & ChrW(&H308B&) & vbTab & "Ctrl+Shift+V", ChrW(&H524A&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
             'Case &H13 ' Dutch
             'Case &H14 ' Norwegian
             'Case &H15 ' Polish
-            'Case &H16 ' Portuguese
+            Case &H16 ' Portuguese
+                Text = VBA.Choose(i, "An&ular" & vbTab & "Ctrl+Z", "&Refazer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "Co&lar" & vbTab & "Ctrl+V", "Colar &somente texto" & vbTab & "Ctrl+Shift+V", "&Eliminar" & vbTab & "Del")
             'Case &H18 ' Romanian
-            'Case &H19 ' Russian
-            'Case &H1D ' Swedish
+            Case &H19 ' Russian
+                Text = VBA.Choose(i, ChrW(&H41E&) & ChrW(&H442&) & ChrW(&H43C&) & ChrW(&H435&) & ChrW(&H43D&) & ChrW(&H430&) & vbTab & "Ctrl+Z", ChrW(&H41F&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H442&) & ChrW(&H43E&) & ChrW(&H440&) & vbTab & "Ctrl+Y", _
+                ChrW(&H412&) & ChrW(&H44B&) & ChrW(&H440&) & ChrW(&H435&) & ChrW(&H437&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+X", ChrW(&H41A&) & ChrW(&H43E&) & ChrW(&H43F&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+C", ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+V", _
+                ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H43A&) & ChrW(&H430&) & " " & ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & vbTab & "Ctrl+Shift+V", ChrW(&H423&) & ChrW(&H434&) & ChrW(&H430&) & ChrW(&H43B&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Del")
+            Case &H1D ' Swedish
+                Text = VBA.Choose(i, "&Ångra" & vbTab & "Ctrl+Z", "&Gör om" & vbTab & "Ctrl+Y", "&Klipp ut" & vbTab & "Ctrl+X", "K&opiera" & vbTab & "Ctrl+C", "K&listra in" & vbTab & "Ctrl+V", "Klistra in som vanlig &text" & vbTab & "Ctrl+Shift+V", "Ra&dera" & vbTab & "Del")
             Case Else
                 Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
         End Select
@@ -4084,6 +4103,7 @@ Else
     MII.dwTypeData = 0
     MII.cch = 0
     MII.hBmpItem = NULL_PTR
+    MII.fState = 0
     MII.wID = i
     InsertMenuItem hMenu, 2, 1, MII
 End If
