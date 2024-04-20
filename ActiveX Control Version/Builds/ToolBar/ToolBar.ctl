@@ -3960,6 +3960,7 @@ If ToolBarHandle <> NULL_PTR Then
                     MII.dwTypeData = 0
                     MII.cch = 0
                     MII.hBmpItem = NULL_PTR
+                    MII.fState = 0
                 End If
                 MII.wID = MenuItem
                 InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
