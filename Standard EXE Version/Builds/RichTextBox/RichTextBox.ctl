@@ -2329,9 +2329,12 @@ Attribute Paste.VB_Description = "Method to copy the current content of the clip
 If RichTextBoxHandle <> NULL_PTR Then SendMessage RichTextBoxHandle, WM_PASTE, 0, ByVal 0&
 End Sub
 
-Public Function CanPaste() As Boolean
+Public Function CanPaste(Optional ByVal wFormat As Long) As Boolean
 Attribute CanPaste.VB_Description = "Determines whether there is any format currently on the clipboard that can be pasted."
-If RichTextBoxHandle <> NULL_PTR Then CanPaste = CBool(SendMessage(RichTextBoxHandle, EM_CANPASTE, 0, ByVal 0&) <> 0)
+If RichTextBoxHandle <> NULL_PTR Then
+    If wFormat = vbCFRTF Then wFormat = RegisterClipboardFormat(StrPtr("Rich Text Format"))
+    CanPaste = CBool(SendMessage(RichTextBoxHandle, EM_CANPASTE, wFormat, ByVal 0&) <> 0)
+End If
 End Function
 
 Public Sub PasteSpecial(ByVal wFormat As Long)
@@ -4054,7 +4057,8 @@ Else
             'Case &H15 ' Polish
             Case &H16 ' Portuguese
                 Text = VBA.Choose(i, "An&ular" & vbTab & "Ctrl+Z", "&Refazer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "Co&lar" & vbTab & "Ctrl+V", "Colar &somente texto" & vbTab & "Ctrl+Shift+V", "&Eliminar" & vbTab & "Del")
-            'Case &H18 ' Romanian
+            Case &H18 ' Romanian
+                Text = VBA.Choose(i, "A&nulare" & vbTab & "Ctrl+Z", "&Revenire" & vbTab & "Ctrl+Y", "Dec&upare" & vbTab & "Ctrl+X", "&Copiere" & vbTab & "Ctrl+C", "&Lipire" & vbTab & "Ctrl+V", "Lipi" & ChrW(&H21B&) & "i ca &text simplu" & vbTab & "Ctrl+Shift+V", ChrW(&H218&) & "ter&gere" & vbTab & "Del")
             Case &H19 ' Russian
                 Text = VBA.Choose(i, ChrW(&H41E&) & ChrW(&H442&) & ChrW(&H43C&) & ChrW(&H435&) & ChrW(&H43D&) & ChrW(&H430&) & vbTab & "Ctrl+Z", ChrW(&H41F&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H442&) & ChrW(&H43E&) & ChrW(&H440&) & vbTab & "Ctrl+Y", _
                 ChrW(&H412&) & ChrW(&H44B&) & ChrW(&H440&) & ChrW(&H435&) & ChrW(&H437&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+X", ChrW(&H41A&) & ChrW(&H43E&) & ChrW(&H43F&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+C", ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+V", _
@@ -4083,13 +4087,19 @@ Else
                     MII.fState = MFS_DISABLED
                 End If
             Case 3, 4, 7
-                If (SelType And SEL_TEXT) = SEL_TEXT Then
+                If (SelType And SEL_TEXT) = SEL_TEXT Or (SelType And SEL_OBJECT) = SEL_OBJECT Then
                     MII.fState = MFS_ENABLED
                 Else
                     MII.fState = MFS_DISABLED
                 End If
-            Case 5, 6
+            Case 5
                 If Me.CanPaste = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 6
+                If Me.CanPaste(CF_UNICODETEXT) = True Then
                     MII.fState = MFS_ENABLED
                 Else
                     MII.fState = MFS_DISABLED
