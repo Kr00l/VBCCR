@@ -4043,7 +4043,8 @@ Else
                 Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
             Case &HA ' Spanish
                 Text = VBA.Choose(i, "&Deshacer" & vbTab & "Ctrl+Z", "&Rehacer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "&Pegar" & vbTab & "Ctrl+V", "Pegar &sólo texto" & vbTab & "Ctrl+Mayús+V", "&Borrar" & vbTab & "Supr")
-            'Case &HB ' Finnish
+            Case &HB ' Finnish
+                Text = VBA.Choose(i, "K&umoa" & vbTab & "Ctrl+Z", "T&ee uudelleen" & vbTab & "Ctrl+Y", "&Leikkaa" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "L&iitä" & vbTab & "Ctrl+V", "Liitä pelkkänä &tekstinä" & vbTab & "Ctrl+Vaihto+V", "&Poista" & vbTab & "Del")
             Case &HC ' French
                 Text = VBA.Choose(i, "&Annuler" & vbTab & "Ctrl+Z", "&Rétablir" & vbTab & "Ctrl+Y", "Cou&per" & vbTab & "Ctrl+X", "&Copier" & vbTab & "Ctrl+C", "C&oller" & vbTab & "Ctrl+V", "Coller du &texte uniquement" & vbTab & "Ctrl+Maj+V", "&Supprimer" & vbTab & "Suppr")
             Case &H10 ' Italian
@@ -4052,9 +4053,8 @@ Else
                 Text = VBA.Choose(i, ChrW(&H5143&) & ChrW(&H306B&) & ChrW(&H623B&) & ChrW(&H3059&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H3084&) & ChrW(&H308A&) & ChrW(&H76F4&) & ChrW(&H3057&) & "(&R)" & vbTab & "Ctrl+Y", _
                 ChrW(&H5207&) & ChrW(&H308A&) & ChrW(&H53D6&) & ChrW(&H308A&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H30B3&) & ChrW(&H30D4&) & ChrW(&H30FC&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & "(&P)" & vbTab & "Ctrl+V", _
                 ChrW(&H30D7&) & ChrW(&H30EC&) & ChrW(&H30FC&) & ChrW(&H30F3&) & " " & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H3057&) & ChrW(&H3066&) & ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & ChrW(&H308B&) & vbTab & "Ctrl+Shift+V", ChrW(&H524A&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
-            'Case &H13 ' Dutch
-            'Case &H14 ' Norwegian
-            'Case &H15 ' Polish
+            Case &H15 ' Polish
+                Text = VBA.Choose(i, "&Cofnij" & vbTab & "Ctrl+Z", "&Ponów" & vbTab & "Ctrl+Y", "Wy&tnij" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "Wk&lej" & vbTab & "Ctrl+V", "Wklej jako zwyk" & ChrW(&H142&) & "y &tekst" & vbTab & "Ctrl+Shift+V", "&Wyczy" & ChrW(&H15B&) & ChrW(&H107&) & vbTab & "Del")
             Case &H16 ' Portuguese
                 Text = VBA.Choose(i, "An&ular" & vbTab & "Ctrl+Z", "&Refazer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "Co&lar" & vbTab & "Ctrl+V", "Colar &somente texto" & vbTab & "Ctrl+Shift+V", "&Eliminar" & vbTab & "Del")
             Case &H18 ' Romanian
