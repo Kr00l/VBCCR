@@ -1,5 +1,12 @@
 List of revisions:
 
+23-Apr-2024
+- Included the Span/UpTo method in the RichTextBox control. (richtx32.ocx compatibility)
+
+20-Apr-2024
+- Included optional wFormat for the CanPaste function.
+- Localized strings for the AutoVerbMenu.
+
 18-Apr-2024
 - Ctrl+Alt+V shortcut changed to Ctrl+Shift+V as this is common for Me.PasteSpecial CF_UNICODETEXT.
   Menu text changed from 'Paste Special' to 'Paste as plain text'.

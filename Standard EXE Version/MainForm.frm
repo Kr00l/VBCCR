@@ -97,7 +97,6 @@ Begin VB.Form MainForm
       OLEDragMode     =   1
       OLEDropMode     =   2
       Text            =   "MainForm.frx":0F98
-      MaxLength       =   20
    End
    Begin ComCtlsDemo.CommandButtonW CommandButtonW1 
       Height          =   375
