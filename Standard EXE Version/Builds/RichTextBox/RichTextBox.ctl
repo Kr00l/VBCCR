@@ -2442,6 +2442,99 @@ If RichTextBoxHandle <> NULL_PTR Then
 End If
 End Function
 
+Public Sub Span(ByVal CharacterSet As String, Optional ByVal Forward As Boolean, Optional ByVal Negate As Boolean)
+Attribute Span.VB_Description = "Selects text in a rich text box control based on a set of specified characters."
+If CharacterSet = vbNullString Then Exit Sub
+If RichTextBoxHandle <> NULL_PTR Then
+    Dim RECR As RECHARRANGE, Found As Boolean, Offset As Long
+    SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
+    Dim RETR As RETEXTRANGE, Buffer(0 To 1) As Integer, Length As Long
+    RETR.lpstrText = VarPtr(Buffer(0))
+    Dim IntArr() As Integer, i As Long
+    ReDim IntArr(1 To Len(CharacterSet)) As Integer
+    CopyMemory ByVal VarPtr(IntArr(1)), ByVal StrPtr(CharacterSet), LenB(CharacterSet)
+    Do
+        Found = False
+        If Forward = True Then
+            RETR.CharRange.Min = RECR.Min + Offset
+            RETR.CharRange.Max = RECR.Min + 1 + Offset
+        Else
+            RETR.CharRange.Min = RECR.Min - 1 - Offset
+            RETR.CharRange.Max = RECR.Min - Offset
+        End If
+        Length = CLng(SendMessage(RichTextBoxHandle, EM_GETTEXTRANGE, 0, ByVal VarPtr(RETR)))
+        If Length > 0 Then
+            For i = 1 To Len(CharacterSet)
+                If Buffer(0) = IntArr(i) Then
+                    Found = True
+                    Exit For
+                End If
+            Next i
+            If Found = Not Negate Then Offset = Offset + 1
+        Else
+            Exit Do
+        End If
+    Loop While Found = Not Negate
+    If Offset > 0 Then
+        If Forward = True Then
+            RECR.Max = RECR.Min + Offset
+        Else
+            RECR.Max = RECR.Min
+            RECR.Min = RECR.Min - Offset
+        End If
+    End If
+    SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
+    Me.ScrollToCaret
+End If
+End Sub
+
+Public Sub UpTo(ByVal CharacterSet As String, Optional ByVal Forward As Boolean, Optional ByVal Negate As Boolean)
+Attribute UpTo.VB_Description = "Moves the insertion point up to, but not including, the first character that is a member of the specified character set in a rich text box control."
+If CharacterSet = vbNullString Then Exit Sub
+If RichTextBoxHandle <> NULL_PTR Then
+    Dim RECR As RECHARRANGE, Found As Boolean, Offset As Long
+    SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
+    Dim RETR As RETEXTRANGE, Buffer(0 To 1) As Integer, Length As Long
+    RETR.lpstrText = VarPtr(Buffer(0))
+    Dim IntArr() As Integer, i As Long
+    ReDim IntArr(1 To Len(CharacterSet)) As Integer
+    CopyMemory ByVal VarPtr(IntArr(1)), ByVal StrPtr(CharacterSet), LenB(CharacterSet)
+    Do
+        Found = False
+        If Forward = True Then
+            RETR.CharRange.Min = RECR.Min + Offset
+            RETR.CharRange.Max = RECR.Min + 1 + Offset
+        Else
+            RETR.CharRange.Min = RECR.Min - 1 - Offset
+            RETR.CharRange.Max = RECR.Min - Offset
+        End If
+        Length = CLng(SendMessage(RichTextBoxHandle, EM_GETTEXTRANGE, 0, ByVal VarPtr(RETR)))
+        If Length > 0 Then
+            For i = 1 To Len(CharacterSet)
+                If Buffer(0) = IntArr(i) Then
+                    Found = True
+                    Exit For
+                End If
+            Next i
+            If Found = Negate Then Offset = Offset + 1
+        Else
+            Exit Do
+        End If
+    Loop While Found = Negate
+    If Offset > 0 Then
+        If Forward = True Then
+            RECR.Max = RECR.Min + Offset
+            RECR.Min = RECR.Max
+        Else
+            RECR.Min = RECR.Min - Offset
+            RECR.Max = RECR.Min
+        End If
+    End If
+    SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
+    Me.ScrollToCaret
+End If
+End Sub
+
 Public Property Get Text() As String
 Attribute Text.VB_Description = "Returns/sets the text contained in an object."
 Attribute Text.VB_ProcData.VB_Invoke_Property = "PPRichTextBoxText"
@@ -3480,7 +3573,7 @@ Attribute ScrollToCaret.VB_Description = "Scrolls the caret into view."
 If RichTextBoxHandle <> NULL_PTR Then
     ' RichEdit bug that EM_SCROLLCARET works only when the control has the focus.
     ' There is a workaround though to temporarily show the selection and hide again.
-    If PropHideSelection = True Then
+    If RichTextBoxFocused = False And PropHideSelection = True Then
         SendMessage RichTextBoxHandle, EM_HIDESELECTION, 0, ByVal 0&
         SendMessage RichTextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
         SendMessage RichTextBoxHandle, EM_HIDESELECTION, 1, ByVal 0&
