@@ -3164,7 +3164,7 @@ Attribute ScrollToCaret.VB_Description = "Scrolls the caret into view."
 If RichTextBoxHandle <> NULL_PTR Then
     ' RichEdit bug that EM_SCROLLCARET works only when the control has the focus.
     ' There is a workaround though to temporarily show the selection and hide again.
-    If PropHideSelection = True Then
+    If RichTextBoxFocused = False And PropHideSelection = True Then
         SendMessage RichTextBoxHandle, EM_HIDESELECTION, 0, ByVal 0&
         SendMessage RichTextBoxHandle, EM_SCROLLCARET, 0, ByVal 0&
         SendMessage RichTextBoxHandle, EM_HIDESELECTION, 1, ByVal 0&
