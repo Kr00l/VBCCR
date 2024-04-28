@@ -2048,7 +2048,7 @@ ClientTop = UserControl.ScaleY(RC.Top, vbPixels, vbContainerPosition)
 End Property
 
 Public Property Get ClientWidth() As Single
-Attribute ClientWidth.VB_Description = "Returns the width of the internal area."
+Attribute ClientWidth.VB_Description = "Returns/sets the width of the internal area."
 Attribute ClientWidth.VB_MemberFlags = "400"
 Dim RC As RECT
 If TabStripHandle <> NULL_PTR Then
@@ -2058,8 +2058,17 @@ End If
 ClientWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize)
 End Property
 
+Public Property Let ClientWidth(ByVal Value As Single)
+Dim RC As RECT
+RC.Right = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 1, ByVal VarPtr(RC)
+With UserControl
+.Extender.Move .Extender.Left, .Extender.Top, .ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize), .Extender.Height
+End With
+End Property
+
 Public Property Get ClientHeight() As Single
-Attribute ClientHeight.VB_Description = "Returns the height of the internal area."
+Attribute ClientHeight.VB_Description = "Returns/sets the height of the internal area."
 Attribute ClientHeight.VB_MemberFlags = "400"
 Dim RC As RECT
 If TabStripHandle <> NULL_PTR Then
@@ -2067,6 +2076,15 @@ If TabStripHandle <> NULL_PTR Then
     SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
 End If
 ClientHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+End Property
+
+Public Property Let ClientHeight(ByVal Value As Single)
+Dim RC As RECT
+RC.Bottom = CLng(UserControl.ScaleY(Value, vbContainerSize, vbPixels))
+If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 1, ByVal VarPtr(RC)
+With UserControl
+.Extender.Move .Extender.Left, .Extender.Top, .Extender.Width, .ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+End With
 End Property
 
 Public Sub DeselectAll()
