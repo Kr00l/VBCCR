@@ -1,5 +1,8 @@
 List of revisions:
 
+28-Apr-2024
+- ClientWidth/ClientHeight property now Let-able in the TabStrip control.
+
 23-Apr-2024
 - Included the Span/UpTo method in the RichTextBox control. (richtx32.ocx compatibility)
 
