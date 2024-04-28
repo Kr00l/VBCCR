@@ -2705,6 +2705,7 @@ If hWnd <> NULL_PTR Then hWndMDIClient = FindWindowEx(hWnd, NULL_PTR, StrPtr("MD
 If hWndMDIClient <> NULL_PTR Then
     Const WM_MDIGETACTIVE As Long = &H229
     GetOwnerWindow = SendMessage(hWndMDIClient, WM_MDIGETACTIVE, 0, ByVal 0&)
+    If GetOwnerWindow = NULL_PTR Then GetOwnerWindow = hWndMDIClient
 Else
     GetOwnerWindow = hWnd
 End If
