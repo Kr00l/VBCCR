@@ -1,5 +1,11 @@
 List of revisions:
 
+01-May-2024
+- Included the hMenu run-time property in the TbrButton object.
+  Returns/sets a handle to a popup menu which will be used as a button dropdown menu.
+  This is useful when a menu with submenus is needed.
+- Included ButtonMenuHandleClick event in the ToolBar control.
+
 28-Apr-2024
 - ClientWidth/ClientHeight property now Let-able in the TabStrip control.
 
