@@ -378,6 +378,7 @@ Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPt
 Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare PtrSafe Function SetMenuInfo Lib "user32" (ByVal hMenu As LongPtr, ByRef MI As MENUINFO) As Long
 Private Declare PtrSafe Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As LongPtr, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As LongPtr, ByRef lpTPMParams As TPMPARAMS) As Long
+Private Declare PtrSafe Function IsMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function GetMenuItemCount Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
@@ -426,6 +427,7 @@ Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare Function SetMenuInfo Lib "user32" (ByVal hMenu As Long, ByRef MI As MENUINFO) As Long
 Private Declare Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As Long, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As Long, ByRef lpTPMParams As TPMPARAMS) As Long
+Private Declare Function IsMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function GetMenuItemCount Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
@@ -3916,108 +3918,98 @@ If ToolBarHandle <> NULL_PTR Then
         SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
         Exit Function
     End If
-    Dim TPMP As TPMPARAMS, P As POINTAPI, Flags As Long
-    TPMP.cbSize = LenB(TPMP)
-    If Button.hMenu <> NULL_PTR Then
-        ToolBarPopupMenuHandle = Button.hMenu
+    Dim hMenu As LongPtr
+    If Button.hMenu = NULL_PTR Then
+        If Button.ButtonMenus.Count > 0 Then hMenu = CreatePopupMenu()
+    Else
+        If IsMenu(Button.hMenu) <> 0 Then hMenu = Button.hMenu
+    End If
+    If hMenu <> NULL_PTR Then
+        ToolBarPopupMenuHandle = hMenu
+        Set ToolBarPopupMenuButton = Button
+        ToolBarPopupMenuKeyboard = Keyboard
+        Dim TPMP As TPMPARAMS, P As POINTAPI, Flags As Long
+        TPMP.cbSize = LenB(TPMP)
         SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
         MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
         P.X = TPMP.RCExclude.Left
         P.Y = TPMP.RCExclude.Bottom
-        If GetMenuItemCount(ToolBarPopupMenuHandle) > 0 Then
-            If PropRightToLeft = False Then
-                Flags = TPM_LEFTALIGN
-            Else
-                If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
-            End If
-            Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
-            Set ToolBarPopupMenuButton = Button
-            ToolBarPopupMenuKeyboard = Keyboard
-            ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+        If PropRightToLeft = False Then
+            Flags = TPM_LEFTALIGN
+        Else
+            If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
         End If
-        ToolBarPopupMenuHandle = NULL_PTR
-        Set ToolBarPopupMenuButton = Nothing
-        ToolBarPopupMenuKeyboard = False
-    ElseIf Button.ButtonMenus.Count > 0 Then
-        Dim Text As String, Count As Long, MenuItem As Long, HasMenuPictureCallback As Boolean
-        ToolBarPopupMenuHandle = CreatePopupMenu()
-        SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
-        MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
-        P.X = TPMP.RCExclude.Left
-        P.Y = TPMP.RCExclude.Bottom
-        Dim MII As MENUITEMINFO
-        MII.cbSize = LenB(MII)
-        For MenuItem = 1 To Button.ButtonMenus.Count
-            With Button.ButtonMenus(MenuItem)
-            If .Visible = True Then
-                If .Separator = False Then
-                    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
-                    MII.fType = 0
-                    Text = .Text
-                    MII.dwTypeData = StrPtr(Text)
-                    MII.cch = Len(Text)
-                    If .Picture Is Nothing Then
-                        MII.hBmpItem = NULL_PTR
-                    ElseIf .Picture.Handle = NULL_PTR Then
-                        MII.hBmpItem = NULL_PTR
-                    Else
-                        ' The menu theme is removed when some menu item has hBmpItem set to HBMMENU_CALLBACK.
-                        ' Use 32-bit pre-multiplied alpha RGB bitmaps for best results.
-                        MII.fMask = MII.fMask Or MIIM_BITMAP
-                        If .Picture.Type = vbPicTypeBitmap Then
-                            MII.hBmpItem = .Picture.Handle
+        Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
+        If Button.hMenu = NULL_PTR Then
+            Dim Text As String, Count As Long, i As Long, HasMenuPictureCallback As Boolean
+            Dim MII As MENUITEMINFO
+            MII.cbSize = LenB(MII)
+            For i = 1 To Button.ButtonMenus.Count
+                With Button.ButtonMenus(i)
+                If .Visible = True Then
+                    If .Separator = False Then
+                        MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
+                        MII.fType = 0
+                        Text = .Text
+                        MII.dwTypeData = StrPtr(Text)
+                        MII.cch = Len(Text)
+                        If .Picture Is Nothing Then
+                            MII.hBmpItem = NULL_PTR
+                        ElseIf .Picture.Handle = NULL_PTR Then
+                            MII.hBmpItem = NULL_PTR
                         Else
-                            MII.hBmpItem = HBMMENU_CALLBACK
-                            HasMenuPictureCallback = True
+                            ' The menu theme is removed when some menu item has hBmpItem set to HBMMENU_CALLBACK.
+                            ' Use 32-bit pre-multiplied alpha RGB bitmaps for best results.
+                            MII.fMask = MII.fMask Or MIIM_BITMAP
+                            If .Picture.Type = vbPicTypeBitmap Then
+                                MII.hBmpItem = .Picture.Handle
+                            Else
+                                MII.hBmpItem = HBMMENU_CALLBACK
+                                HasMenuPictureCallback = True
+                            End If
                         End If
-                    End If
-                    If .Enabled = True Then
-                        MII.fState = MFS_ENABLED
+                        If .Enabled = True Then
+                            MII.fState = MFS_ENABLED
+                        Else
+                            MII.fState = MFS_DISABLED
+                        End If
+                        If .Checked = True Then
+                            MII.fState = MII.fState Or MFS_CHECKED
+                        Else
+                            MII.fState = MII.fState Or MFS_UNCHECKED
+                        End If
                     Else
-                        MII.fState = MFS_DISABLED
+                        MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
+                        MII.fType = MFT_SEPARATOR
+                        MII.dwTypeData = 0
+                        MII.cch = 0
+                        MII.hBmpItem = NULL_PTR
+                        MII.fState = 0
                     End If
-                    If .Checked = True Then
-                        MII.fState = MII.fState Or MFS_CHECKED
-                    Else
-                        MII.fState = MII.fState Or MFS_UNCHECKED
-                    End If
-                Else
-                    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
-                    MII.fType = MFT_SEPARATOR
-                    MII.dwTypeData = 0
-                    MII.cch = 0
-                    MII.hBmpItem = NULL_PTR
-                    MII.fState = 0
+                    MII.wID = i
+                    InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
+                    Count = Count + 1
                 End If
-                MII.wID = MenuItem
-                InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
-                Count = Count + 1
+                End With
+            Next i
+            If Count > 0 Then
+                Dim MI As MENUINFO
+                MI.cbSize = LenB(MI)
+                MI.fMask = MIM_MENUDATA
+                MI.dwMenuData = ObjPtr(Button)
+                If HasMenuPictureCallback = True Then
+                    ' The menu theme is lost due to HBMMENU_CALLBACK.
+                    ' Setting a menu background color fixes a one-pixel overlap between the picture and text.
+                    MI.fMask = MI.fMask Or MIM_BACKGROUND
+                    MI.hBrBack = GetSysColorBrush(COLOR_MENU)
+                End If
+                SetMenuInfo ToolBarPopupMenuHandle, MI
+                ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
             End If
-            End With
-        Next MenuItem
-        If Count > 0 Then
-            Dim MI As MENUINFO
-            MI.cbSize = LenB(MI)
-            MI.fMask = MIM_MENUDATA
-            MI.dwMenuData = ObjPtr(Button)
-            If HasMenuPictureCallback = True Then
-                ' The menu theme is lost due to HBMMENU_CALLBACK.
-                ' Setting a menu background color fixes a one-pixel overlap between the picture and text.
-                MI.fMask = MI.fMask Or MIM_BACKGROUND
-                MI.hBrBack = GetSysColorBrush(COLOR_MENU)
-            End If
-            SetMenuInfo ToolBarPopupMenuHandle, MI
-            If PropRightToLeft = False Then
-                Flags = TPM_LEFTALIGN
-            Else
-                If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
-            End If
-            Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
-            Set ToolBarPopupMenuButton = Button
-            ToolBarPopupMenuKeyboard = Keyboard
-            ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+            DestroyMenu ToolBarPopupMenuHandle
+        Else
+            If GetMenuItemCount(ToolBarPopupMenuHandle) > 0 Then ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
         End If
-        DestroyMenu ToolBarPopupMenuHandle
         ToolBarPopupMenuHandle = NULL_PTR
         Set ToolBarPopupMenuButton = Nothing
         ToolBarPopupMenuKeyboard = False

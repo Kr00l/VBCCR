@@ -32,8 +32,8 @@ Private PropImage As Variant, PropImageIndex As Long
 Private PropToolTipText As String
 Private PropDescription As String
 Private PropForeColor As OLE_COLOR
-Private PropMenuHandle As LongPtr
 Private PropButtonMenus As TbrButtonMenus
+Private PropMenuHandle As LongPtr
 
 Private Function ShadowToolBar() As ToolBar
 ComCtlsObjSetAddRef ShadowToolBar, ShadowObjectPointer
@@ -305,6 +305,15 @@ Public Property Let Height(ByVal Value As Single)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
+Public Property Get ButtonMenus() As TbrButtonMenus
+Attribute ButtonMenus.VB_Description = "Returns a reference to a collection of button menu objects."
+If PropButtonMenus Is Nothing Then
+    Set PropButtonMenus = New TbrButtonMenus
+    PropButtonMenus.FInit ShadowToolBar, PropID
+End If
+Set ButtonMenus = PropButtonMenus
+End Property
+
 #If VBA7 Then
 Public Property Get hMenu() As LongPtr
 Attribute hMenu.VB_Description = "Returns/sets a handle to a popup menu which will be used as a button dropdown menu."
@@ -321,13 +330,4 @@ Public Property Let hMenu(ByVal Value As LongPtr)
 Public Property Let hMenu(ByVal Value As Long)
 #End If
 PropMenuHandle = Value
-End Property
-
-Public Property Get ButtonMenus() As TbrButtonMenus
-Attribute ButtonMenus.VB_Description = "Returns a reference to a collection of button menu objects."
-If PropButtonMenus Is Nothing Then
-    Set PropButtonMenus = New TbrButtonMenus
-    PropButtonMenus.FInit ShadowToolBar, PropID
-End If
-Set ButtonMenus = PropButtonMenus
 End Property
