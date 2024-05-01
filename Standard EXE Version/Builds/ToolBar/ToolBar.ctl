@@ -4200,50 +4200,52 @@ Select Case wMsg
         End If
     Case WM_MEASUREITEM, WM_DRAWITEM
         If ToolBarPopupMenuHandle <> NULL_PTR And Not ToolBarPopupMenuButton Is Nothing Then
-            Dim MenuPicture As IPictureDisp, CX As Long, CY As Long
-            Select Case wMsg
-                Case WM_MEASUREITEM
-                    Dim MIS As MEASUREITEMSTRUCT
-                    CopyMemory MIS, ByVal lParam, LenB(MIS)
-                    If MIS.CtlType = ODT_MENU And MIS.ItemID >= 1 And MIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
-                        Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(MIS.ItemID).Picture
-                        If Not MenuPicture Is Nothing Then
-                            CX = CHimetricToPixel_X(MenuPicture.Width)
-                            CY = CHimetricToPixel_Y(MenuPicture.Height)
-                            MIS.ItemWidth = MIS.ItemWidth + CX
-                            If MIS.ItemHeight < CY Then MIS.ItemHeight = CY
-                            CopyMemory ByVal lParam, MIS, LenB(MIS)
-                            WindowProcControl = 1
-                            Exit Function
-                        End If
-                    End If
-                Case WM_DRAWITEM
-                    Dim DIS As DRAWITEMSTRUCT
-                    CopyMemory DIS, ByVal lParam, LenB(DIS)
-                    If DIS.CtlType = ODT_MENU And DIS.hWndItem = ToolBarPopupMenuHandle And DIS.ItemID >= 1 And DIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
-                        Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(DIS.ItemID).Picture
-                        If Not MenuPicture Is Nothing Then
-                            CX = CHimetricToPixel_X(MenuPicture.Width)
-                            CY = CHimetricToPixel_Y(MenuPicture.Height)
-                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, 1)
-                            Else
-                                If MenuPicture.Type = vbPicTypeIcon Then
-                                    DrawState DIS.hDC, NULL_PTR, NULL_PTR, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_ICON Or DSS_DISABLED
-                                Else
-                                    Dim hImage As LongPtr
-                                    hImage = BitmapHandleFromPicture(MenuPicture, vbWhite)
-                                    ' The DrawState API with DSS_DISABLED will draw white as transparent.
-                                    ' This will ensure GIF bitmaps or metafiles are better drawn.
-                                    DrawState DIS.hDC, NULL_PTR, NULL_PTR, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_BITMAP Or DSS_DISABLED
-                                    DeleteObject hImage
-                                End If
+            If ToolBarPopupMenuButton.hMenu = NULL_PTR Then
+                Dim MenuPicture As IPictureDisp, CX As Long, CY As Long
+                Select Case wMsg
+                    Case WM_MEASUREITEM
+                        Dim MIS As MEASUREITEMSTRUCT
+                        CopyMemory MIS, ByVal lParam, LenB(MIS)
+                        If MIS.CtlType = ODT_MENU And MIS.ItemID >= 1 And MIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
+                            Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(MIS.ItemID).Picture
+                            If Not MenuPicture Is Nothing Then
+                                CX = CHimetricToPixel_X(MenuPicture.Width)
+                                CY = CHimetricToPixel_Y(MenuPicture.Height)
+                                MIS.ItemWidth = MIS.ItemWidth + CX
+                                If MIS.ItemHeight < CY Then MIS.ItemHeight = CY
+                                CopyMemory ByVal lParam, MIS, LenB(MIS)
+                                WindowProcControl = 1
+                                Exit Function
                             End If
-                            WindowProcControl = 1
-                            Exit Function
                         End If
-                    End If
-            End Select
+                    Case WM_DRAWITEM
+                        Dim DIS As DRAWITEMSTRUCT
+                        CopyMemory DIS, ByVal lParam, LenB(DIS)
+                        If DIS.CtlType = ODT_MENU And DIS.hWndItem = ToolBarPopupMenuHandle And DIS.ItemID >= 1 And DIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
+                            Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(DIS.ItemID).Picture
+                            If Not MenuPicture Is Nothing Then
+                                CX = CHimetricToPixel_X(MenuPicture.Width)
+                                CY = CHimetricToPixel_Y(MenuPicture.Height)
+                                If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                    Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, 1)
+                                Else
+                                    If MenuPicture.Type = vbPicTypeIcon Then
+                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_ICON Or DSS_DISABLED
+                                    Else
+                                        Dim hImage As LongPtr
+                                        hImage = BitmapHandleFromPicture(MenuPicture, vbWhite)
+                                        ' The DrawState API with DSS_DISABLED will draw white as transparent.
+                                        ' This will ensure GIF bitmaps or metafiles are better drawn.
+                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_BITMAP Or DSS_DISABLED
+                                        DeleteObject hImage
+                                    End If
+                                End If
+                                WindowProcControl = 1
+                                Exit Function
+                            End If
+                        End If
+                End Select
+            End If
         End If
     Case UM_SETBUTTONCX
         If wParam > 0 And lParam > 0 Then
