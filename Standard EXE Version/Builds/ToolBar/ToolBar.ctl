@@ -302,6 +302,8 @@ Public Event ButtonDropDown(ByVal Button As TbrButton)
 Attribute ButtonDropDown.VB_Description = "Occurs when the user clicks the dropdown arrow on a button with a button style set to dropdown."
 Public Event ButtonMenuClick(ByVal ButtonMenu As TbrButtonMenu)
 Attribute ButtonMenuClick.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
+Public Event ButtonMenuHandleClick(ByVal ID As Long)
+Attribute ButtonMenuHandleClick.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
 Public Event ButtonMouseEnter(ByVal Button As TbrButton)
 Attribute ButtonMouseEnter.VB_Description = "Occurs when the user moves the mouse into a button."
 Public Event ButtonMouseLeave(ByVal Button As TbrButton)
@@ -376,6 +378,7 @@ Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPt
 Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare PtrSafe Function SetMenuInfo Lib "user32" (ByVal hMenu As LongPtr, ByRef MI As MENUINFO) As Long
 Private Declare PtrSafe Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As LongPtr, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As LongPtr, ByRef lpTPMParams As TPMPARAMS) As Long
+Private Declare PtrSafe Function GetMenuItemCount Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
 #Else
@@ -423,6 +426,7 @@ Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare Function SetMenuInfo Lib "user32" (ByVal hMenu As Long, ByRef MI As MENUINFO) As Long
 Private Declare Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As Long, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As Long, ByRef lpTPMParams As TPMPARAMS) As Long
+Private Declare Function GetMenuItemCount Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
 #End If
@@ -3551,7 +3555,11 @@ If ID > 0 Then
                     RaiseEvent ButtonDropDown(Button)
                     Dim MenuItem As Long
                     MenuItem = ShowButtonMenuItems(Button, True)
-                    If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                    If Button.hMenu = NULL_PTR Then
+                        If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                    Else
+                        If MenuItem <> 0 Then RaiseEvent ButtonMenuHandleClick(MenuItem)
+                    End If
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 Else
                     SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
@@ -3908,15 +3916,36 @@ If ToolBarHandle <> NULL_PTR Then
         SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
         Exit Function
     End If
-    If Button.ButtonMenus.Count > 0 Then
-        Dim Text As String, Count As Long, MenuItem As Long, HasMenuPictureCallback As Boolean
-        ToolBarPopupMenuHandle = CreatePopupMenu()
-        Dim TPMP As TPMPARAMS, P As POINTAPI, MII As MENUITEMINFO
-        TPMP.cbSize = LenB(TPMP)
+    Dim TPMP As TPMPARAMS, P As POINTAPI, Flags As Long
+    TPMP.cbSize = LenB(TPMP)
+    If Button.hMenu <> NULL_PTR Then
+        ToolBarPopupMenuHandle = Button.hMenu
         SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
         MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
         P.X = TPMP.RCExclude.Left
         P.Y = TPMP.RCExclude.Bottom
+        If GetMenuItemCount(ToolBarPopupMenuHandle) > 0 Then
+            If PropRightToLeft = False Then
+                Flags = TPM_LEFTALIGN
+            Else
+                If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
+            End If
+            Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
+            Set ToolBarPopupMenuButton = Button
+            ToolBarPopupMenuKeyboard = Keyboard
+            ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+        End If
+        ToolBarPopupMenuHandle = NULL_PTR
+        Set ToolBarPopupMenuButton = Nothing
+        ToolBarPopupMenuKeyboard = False
+    ElseIf Button.ButtonMenus.Count > 0 Then
+        Dim Text As String, Count As Long, MenuItem As Long, HasMenuPictureCallback As Boolean
+        ToolBarPopupMenuHandle = CreatePopupMenu()
+        SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
+        MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
+        P.X = TPMP.RCExclude.Left
+        P.Y = TPMP.RCExclude.Bottom
+        Dim MII As MENUITEMINFO
         MII.cbSize = LenB(MII)
         For MenuItem = 1 To Button.ButtonMenus.Count
             With Button.ButtonMenus(MenuItem)
@@ -3978,7 +4007,6 @@ If ToolBarHandle <> NULL_PTR Then
                 MI.hBrBack = GetSysColorBrush(COLOR_MENU)
             End If
             SetMenuInfo ToolBarPopupMenuHandle, MI
-            Dim Flags As Long
             If PropRightToLeft = False Then
                 Flags = TPM_LEFTALIGN
             Else
@@ -4446,7 +4474,11 @@ Select Case wMsg
                         RaiseEvent ButtonDropDown(Button)
                         Dim MenuItem As Long
                         MenuItem = ShowButtonMenuItems(Button, False)
-                        If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                        If Button.hMenu = NULL_PTR Then
+                            If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                        Else
+                            If MenuItem <> 0 Then RaiseEvent ButtonMenuHandleClick(MenuItem)
+                        End If
                         WindowProcUserControl = TBDDRET_DEFAULT
                     Else
                         WindowProcUserControl = TBDDRET_NODEFAULT

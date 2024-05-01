@@ -32,6 +32,7 @@ Private PropImage As Variant, PropImageIndex As Long
 Private PropToolTipText As String
 Private PropDescription As String
 Private PropForeColor As OLE_COLOR
+Private PropMenuHandle As LongPtr
 Private PropButtonMenus As TbrButtonMenus
 
 Private Function ShadowToolBar() As ToolBar
@@ -40,6 +41,7 @@ End Function
 
 Private Sub Class_Initialize()
 PropForeColor = vbButtonText
+PropMenuHandle = NULL_PTR
 End Sub
 
 Friend Sub FInit(ByVal Object As ToolBar, ByVal Key As String, ByVal Caption As String, ByVal Image As Variant, ByVal ImageIndex As Long)
@@ -301,6 +303,24 @@ End Property
 
 Public Property Let Height(ByVal Value As Single)
 Err.Raise Number:=383, Description:="Property is read-only"
+End Property
+
+#If VBA7 Then
+Public Property Get hMenu() As LongPtr
+Attribute hMenu.VB_Description = "Returns/sets a handle to a popup menu which will be used as a button dropdown menu."
+#Else
+Public Property Get hMenu() As Long
+Attribute hMenu.VB_Description = "Returns/sets a handle to a popup menu which will be used as a button dropdown menu."
+#End If
+hMenu = PropMenuHandle
+End Property
+
+#If VBA7 Then
+Public Property Let hMenu(ByVal Value As LongPtr)
+#Else
+Public Property Let hMenu(ByVal Value As Long)
+#End If
+PropMenuHandle = Value
 End Property
 
 Public Property Get ButtonMenus() As TbrButtonMenus
