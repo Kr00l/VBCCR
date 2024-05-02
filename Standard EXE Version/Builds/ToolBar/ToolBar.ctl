@@ -272,6 +272,9 @@ cButtons As Long
 cbBytesPerRecord As Long
 TBB As TBBUTTON
 End Type
+' Must be declared at the beginning so that conditional compilation will not bug the events.
+Private WithEvents PropFont As StdFont
+Attribute PropFont.VB_VarHelpID = -1
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -282,8 +285,13 @@ Public Event Resize()
 Attribute Resize.VB_Description = "Occurs when a form is first displayed or the size of an object changes."
 Public Event BeginCustomization()
 Attribute BeginCustomization.VB_Description = "Occurs at the begin of a customization."
+#If VBA7 Then
+Public Event InitCustomizationDialog(ByVal hDlg As LongPtr, ByRef HideHelpButton As Boolean)
+Attribute InitCustomizationDialog.VB_Description = "Occurs when the customization dialog has finished initializing."
+#Else
 Public Event InitCustomizationDialog(ByVal hDlg As Long, ByRef HideHelpButton As Boolean)
 Attribute InitCustomizationDialog.VB_Description = "Occurs when the customization dialog has finished initializing."
+#End If
 Public Event CustomizationChange()
 Attribute CustomizationChange.VB_Description = "Occurs whenever the control was customized."
 Public Event ResetCustomizations(ByRef CloseDialog As Boolean)
@@ -302,8 +310,8 @@ Public Event ButtonDropDown(ByVal Button As TbrButton)
 Attribute ButtonDropDown.VB_Description = "Occurs when the user clicks the dropdown arrow on a button with a button style set to dropdown."
 Public Event ButtonMenuClick(ByVal ButtonMenu As TbrButtonMenu)
 Attribute ButtonMenuClick.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
-Public Event ButtonMenuHandleClick(ByVal ID As Long)
-Attribute ButtonMenuHandleClick.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
+Public Event ButtonMenuClick2(ByVal ID As Long)
+Attribute ButtonMenuClick2.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
 Public Event ButtonMouseEnter(ByVal Button As TbrButton)
 Attribute ButtonMouseEnter.VB_Description = "Occurs when the user moves the mouse into a button."
 Public Event ButtonMouseLeave(ByVal Button As TbrButton)
@@ -731,8 +739,6 @@ Private DispIdImageList As Long, ImageListArray() As String, ImageListSize As SI
 Private DispIdDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
 Private DispIdHotImageList As Long, HotImageListArray() As String, HotImageListSize As SIZEAPI
 Private DispIdPressedImageList As Long, PressedImageListArray() As String, PressedImageListSize As SIZEAPI
-Private WithEvents PropFont As StdFont
-Attribute PropFont.VB_VarHelpID = -1
 Private PropButtons As TbrButtons
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -3560,7 +3566,7 @@ If ID > 0 Then
                     If Button.hMenu = NULL_PTR Then
                         If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                     Else
-                        If MenuItem <> 0 Then RaiseEvent ButtonMenuHandleClick(MenuItem)
+                        If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(MenuItem)
                     End If
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 Else
@@ -4471,7 +4477,7 @@ Select Case wMsg
                         If Button.hMenu = NULL_PTR Then
                             If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                         Else
-                            If MenuItem <> 0 Then RaiseEvent ButtonMenuHandleClick(MenuItem)
+                            If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(MenuItem)
                         End If
                         WindowProcUserControl = TBDDRET_DEFAULT
                     Else
@@ -4487,12 +4493,12 @@ Select Case wMsg
                     Call AllocCustomizeButtons
                     RaiseEvent BeginCustomization
                 Case TBN_INITCUSTOMIZE
-                    Dim hDlg32 As Long, HideHelpButton As Boolean
+                    Dim hDlg As LongPtr, HideHelpButton As Boolean
                     ' lParam points to a struct of this kind: (undocumented)
                     ' hdr As NMHDR
                     ' hDlg As LongPtr
-                    CopyMemory hDlg32, ByVal UnsignedAdd(lParam, LenB(NM)), 4
-                    RaiseEvent InitCustomizationDialog(hDlg32, HideHelpButton)
+                    CopyMemory hDlg, ByVal UnsignedAdd(lParam, LenB(NM)), PTR_SIZE
+                    RaiseEvent InitCustomizationDialog(hDlg, HideHelpButton)
                     If HideHelpButton = True Then
                         WindowProcUserControl = TBNRF_HIDEHELP
                     Else
