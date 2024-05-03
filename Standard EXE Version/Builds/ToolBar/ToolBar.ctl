@@ -310,7 +310,7 @@ Public Event ButtonDropDown(ByVal Button As TbrButton)
 Attribute ButtonDropDown.VB_Description = "Occurs when the user clicks the dropdown arrow on a button with a button style set to dropdown."
 Public Event ButtonMenuClick(ByVal ButtonMenu As TbrButtonMenu)
 Attribute ButtonMenuClick.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
-Public Event ButtonMenuClick2(ByVal ID As Long)
+Public Event ButtonMenuClick2(ByVal Button As TbrButton, ByVal ID As Long)
 Attribute ButtonMenuClick2.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
 Public Event ButtonMouseEnter(ByVal Button As TbrButton)
 Attribute ButtonMouseEnter.VB_Description = "Occurs when the user moves the mouse into a button."
@@ -3566,7 +3566,7 @@ If ID > 0 Then
                     If Button.hMenu = NULL_PTR Then
                         If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                     Else
-                        If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(MenuItem)
+                        If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
                     End If
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 Else
@@ -4477,7 +4477,7 @@ Select Case wMsg
                         If Button.hMenu = NULL_PTR Then
                             If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                         Else
-                            If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(MenuItem)
+                            If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
                         End If
                         WindowProcUserControl = TBDDRET_DEFAULT
                     Else
