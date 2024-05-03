@@ -2059,7 +2059,6 @@ ClientWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize
 End Property
 
 Public Property Let ClientWidth(ByVal Value As Single)
-If Value < 0 Then Err.Raise 380
 Dim RC As RECT
 RC.Right = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
 If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 1, ByVal VarPtr(RC)
@@ -2080,7 +2079,6 @@ ClientHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSiz
 End Property
 
 Public Property Let ClientHeight(ByVal Value As Single)
-If Value < 0 Then Err.Raise 380
 Dim RC As RECT
 RC.Bottom = CLng(UserControl.ScaleY(Value, vbContainerSize, vbPixels))
 If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 1, ByVal VarPtr(RC)
