@@ -9,7 +9,7 @@ Begin VB.PropertyPage PPToolBarGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   5625
    ScaleWidth      =   6225
-   Begin VBCCR17.TextBoxW TextMaxTextRows 
+   Begin VBCCR18.TextBoxW TextMaxTextRows 
       Height          =   315
       Left            =   1800
       TabIndex        =   28
@@ -74,7 +74,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Top             =   3000
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextMaxButtonWidth 
+   Begin VBCCR18.TextBoxW TextMaxButtonWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   26
@@ -83,7 +83,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMinButtonWidth 
+   Begin VBCCR18.TextBoxW TextMinButtonWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   24
@@ -172,7 +172,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       Top             =   1560
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextButtonWidth 
+   Begin VBCCR18.TextBoxW TextButtonWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   22
@@ -181,7 +181,7 @@ Begin VB.PropertyPage PPToolBarGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextButtonHeight 
+   Begin VBCCR18.TextBoxW TextButtonHeight 
       Height          =   315
       Left            =   1800
       TabIndex        =   20

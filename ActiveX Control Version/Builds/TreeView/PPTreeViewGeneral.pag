@@ -41,7 +41,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Top             =   840
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextOLEDragExpandTime 
+   Begin VBCCR18.TextBoxW TextOLEDragExpandTime 
       Height          =   315
       Left            =   1800
       TabIndex        =   24
@@ -90,7 +90,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Top             =   2640
       Width           =   1620
    End
-   Begin VBCCR17.TextBoxW TextPathSeparator 
+   Begin VBCCR18.TextBoxW TextPathSeparator 
       Height          =   315
       Left            =   1800
       TabIndex        =   18
@@ -187,7 +187,7 @@ Begin VB.PropertyPage PPTreeViewGeneral
       Top             =   1560
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextIndentation 
+   Begin VBCCR18.TextBoxW TextIndentation 
       Height          =   315
       Left            =   1800
       TabIndex        =   16

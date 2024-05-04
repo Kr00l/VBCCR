@@ -9,30 +9,7 @@ Begin VB.PropertyPage PPUpDownGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3810
    ScaleWidth      =   6075
-   Begin VB.CheckBox CheckMouseTrack 
-      Caption         =   "MouseTrack"
-      Height          =   285
-      Left            =   4200
-      TabIndex        =   19
-      Top             =   840
-      Width           =   1800
-   End
-   Begin VB.ComboBox ComboBuddyProperty 
-      Height          =   315
-      Left            =   1800
-      TabIndex        =   5
-      Top             =   840
-      Width           =   2235
-   End
-   Begin VB.ComboBox ComboNumberStyle 
-      Height          =   315
-      Left            =   1800
-      Style           =   2  'Dropdown List
-      TabIndex        =   17
-      Top             =   3000
-      Width           =   2235
-   End
-   Begin VB.ComboBox ComboBuddyControl 
+   Begin VB.ComboBox ComboMousePointer 
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
@@ -40,11 +17,42 @@ Begin VB.PropertyPage PPUpDownGeneral
       Top             =   480
       Width           =   2235
    End
+   Begin VB.CheckBox CheckMouseTrack 
+      Caption         =   "MouseTrack"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   21
+      Top             =   840
+      Width           =   1800
+   End
+   Begin VB.ComboBox ComboBuddyProperty 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   7
+      Top             =   1200
+      Width           =   2235
+   End
+   Begin VB.ComboBox ComboNumberStyle 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   19
+      Top             =   3360
+      Width           =   2235
+   End
+   Begin VB.ComboBox ComboBuddyControl 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   5
+      Top             =   840
+      Width           =   2235
+   End
    Begin VB.CheckBox CheckSyncBuddy 
       Caption         =   "SyncBuddy"
       Height          =   285
       Left            =   4200
-      TabIndex        =   18
+      TabIndex        =   20
       Top             =   480
       Width           =   1800
    End
@@ -52,15 +60,15 @@ Begin VB.PropertyPage PPUpDownGeneral
       Height          =   315
       Left            =   1800
       Style           =   2  'Dropdown List
-      TabIndex        =   15
-      Top             =   2640
+      TabIndex        =   17
+      Top             =   3000
       Width           =   2235
    End
    Begin VB.CheckBox CheckThousandsSeparator 
       Caption         =   "ThousandsSeparator"
       Height          =   285
       Left            =   4200
-      TabIndex        =   22
+      TabIndex        =   24
       Top             =   1920
       Width           =   1800
    End
@@ -68,20 +76,11 @@ Begin VB.PropertyPage PPUpDownGeneral
       Caption         =   "HotTracking"
       Height          =   285
       Left            =   4200
-      TabIndex        =   21
+      TabIndex        =   23
       Top             =   1560
       Width           =   1800
    End
-   Begin VBCCR17.TextBoxW TextValue 
-      Height          =   315
-      Left            =   1800
-      TabIndex        =   11
-      Top             =   1920
-      Width           =   2235
-      _ExtentX        =   0
-      _ExtentY        =   0
-   End
-   Begin VBCCR17.TextBoxW TextIncrement 
+   Begin VBCCR18.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   13
@@ -90,7 +89,25 @@ Begin VB.PropertyPage PPUpDownGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMax 
+   Begin VBCCR18.TextBoxW TextIncrement 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   15
+      Top             =   2640
+      Width           =   2235
+      _ExtentX        =   0
+      _ExtentY        =   0
+   End
+   Begin VBCCR18.TextBoxW TextMax 
+      Height          =   315
+      Left            =   1800
+      TabIndex        =   11
+      Top             =   1920
+      Width           =   2235
+      _ExtentX        =   0
+      _ExtentY        =   0
+   End
+   Begin VBCCR18.TextBoxW TextMin 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -99,20 +116,11 @@ Begin VB.PropertyPage PPUpDownGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMin 
-      Height          =   315
-      Left            =   1800
-      TabIndex        =   7
-      Top             =   1200
-      Width           =   2235
-      _ExtentX        =   0
-      _ExtentY        =   0
-   End
    Begin VB.CheckBox CheckWrap 
       Caption         =   "Wrap"
       Height          =   285
       Left            =   4200
-      TabIndex        =   20
+      TabIndex        =   22
       Top             =   1200
       Width           =   1800
    End
@@ -132,68 +140,76 @@ Begin VB.PropertyPage PPUpDownGeneral
       Top             =   120
       Width           =   1620
    End
-   Begin VB.Label LabelNumberStyle 
-      Caption         =   "NumberStyle:"
-      Height          =   240
-      Left            =   120
-      TabIndex        =   16
-      Top             =   3000
-      Width           =   1620
-   End
-   Begin VB.Label LabelBuddyControl 
-      Caption         =   "BuddyControl:"
+   Begin VB.Label LabelMousePointer 
+      Caption         =   "MousePointer:"
       Height          =   240
       Left            =   120
       TabIndex        =   2
       Top             =   480
       Width           =   1620
    End
-   Begin VB.Label LabelBuddyProperty 
-      Caption         =   "BuddyProperty:"
+   Begin VB.Label LabelNumberStyle 
+      Caption         =   "NumberStyle:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   18
+      Top             =   3360
+      Width           =   1620
+   End
+   Begin VB.Label LabelBuddyControl 
+      Caption         =   "BuddyControl:"
       Height          =   240
       Left            =   120
       TabIndex        =   4
       Top             =   840
       Width           =   1620
    End
+   Begin VB.Label LabelBuddyProperty 
+      Caption         =   "BuddyProperty:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   6
+      Top             =   1200
+      Width           =   1620
+   End
    Begin VB.Label LabelOrientation 
       Caption         =   "Orientation:"
       Height          =   240
       Left            =   120
-      TabIndex        =   14
-      Top             =   2640
+      TabIndex        =   16
+      Top             =   3000
       Width           =   1620
    End
    Begin VB.Label LabelValue 
       Caption         =   "Value:"
       Height          =   240
       Left            =   120
-      TabIndex        =   10
-      Top             =   1920
+      TabIndex        =   12
+      Top             =   2280
       Width           =   1620
    End
    Begin VB.Label LabelIncrement 
       Caption         =   "Increment:"
       Height          =   240
       Left            =   120
-      TabIndex        =   12
-      Top             =   2280
+      TabIndex        =   14
+      Top             =   2640
       Width           =   1620
    End
    Begin VB.Label LabelMax 
       Caption         =   "Max:"
       Height          =   240
       Left            =   120
-      TabIndex        =   8
-      Top             =   1560
+      TabIndex        =   10
+      Top             =   1920
       Width           =   1620
    End
    Begin VB.Label LabelMin 
       Caption         =   "Min:"
       Height          =   240
       Left            =   120
-      TabIndex        =   6
-      Top             =   1200
+      TabIndex        =   8
+      Top             =   1560
       Width           =   1620
    End
 End
@@ -214,6 +230,7 @@ Private FreezeChanged As Boolean
 
 Private Sub PropertyPage_Initialize()
 Call ComCtlsShowAllUIStates(PropertyPage.hWnd)
+Call ComCtlsPPInitComboMousePointer(ComboMousePointer)
 With ComboBuddyControl
 .AddItem "(None)"
 .ListIndex = 0
@@ -241,6 +258,7 @@ On Error GoTo 0
 With PropertyPage.SelectedControls(0)
 .Enabled = CBool(CheckEnabled.Value = vbChecked)
 .VisualStyles = CBool(CheckVisualStyles.Value = vbChecked)
+.MousePointer = ComboMousePointer.ItemData(ComboMousePointer.ListIndex)
 .BuddyControl = ComboBuddyControl.List(ComboBuddyControl.ListIndex)
 .BuddyProperty = ComboBuddyProperty.Text
 FreezeChanged = True
@@ -266,6 +284,12 @@ FreezeChanged = True
 With PropertyPage.SelectedControls(0)
 CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
 CheckVisualStyles.Value = IIf(.VisualStyles = True, vbChecked, vbUnchecked)
+For i = 0 To ComboMousePointer.ListCount - 1
+    If ComboMousePointer.ItemData(i) = .MousePointer Then
+        ComboMousePointer.ListIndex = i
+        Exit For
+    End If
+Next i
 If BuddyControlEnumerated = False Then
     Const INVOKE_PROPERTYGET As Long = 2, INVOKE_PROPERTYPUT As Long = 4
     Dim TLI As Object, ObjInterface As Object, ObjMember As Object
@@ -359,6 +383,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckVisualStyles_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub ComboMousePointer_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

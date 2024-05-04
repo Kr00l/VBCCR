@@ -9,6 +9,14 @@ Begin VB.PropertyPage PPTabStripGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4875
    ScaleWidth      =   6075
+   Begin VB.CheckBox CheckTransparent 
+      Caption         =   "Transparent"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   32
+      Top             =   3000
+      Width           =   1770
+   End
    Begin VB.ComboBox ComboDrawMode 
       Height          =   315
       Left            =   1800
@@ -57,7 +65,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       Top             =   1200
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextTabMinWidth 
+   Begin VBCCR18.TextBoxW TextTabMinWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   20
@@ -130,7 +138,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       Top             =   1560
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextTabFixedHeight 
+   Begin VBCCR18.TextBoxW TextTabFixedHeight 
       Height          =   315
       Left            =   1800
       TabIndex        =   18
@@ -139,7 +147,7 @@ Begin VB.PropertyPage PPTabStripGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextTabFixedWidth 
+   Begin VBCCR18.TextBoxW TextTabFixedWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   16
@@ -360,6 +368,7 @@ With PropertyPage.SelectedControls(0)
 .Separators = CBool(CheckSeparators.Value = vbChecked)
 .ShowTips = CBool(CheckShowTips.Value = vbChecked)
 .TabScrollWheel = CBool(CheckTabScrollWheel.Value = vbChecked)
+.Transparent = CBool(CheckTransparent.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub
@@ -438,6 +447,7 @@ CheckHotTracking.Value = IIf(.HotTracking = True, vbChecked, vbUnchecked)
 CheckSeparators.Value = IIf(.Separators = True, vbChecked, vbUnchecked)
 CheckShowTips.Value = IIf(.ShowTips = True, vbChecked, vbUnchecked)
 CheckTabScrollWheel.Value = IIf(.TabScrollWheel = True, vbChecked, vbUnchecked)
+CheckTransparent.Value = IIf(.Transparent = True, vbChecked, vbUnchecked)
 End With
 FreezeChanged = False
 End Sub
@@ -654,6 +664,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckTabScrollWheel_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckTransparent_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

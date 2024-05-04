@@ -10,7 +10,7 @@ Begin VB.PropertyPage PPTabStripTabs
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4875
    ScaleWidth      =   5925
-   Begin VBCCR17.TextBoxW TextToolTipText 
+   Begin VBCCR18.TextBoxW TextToolTipText 
       Height          =   315
       Left            =   1200
       TabIndex        =   13
@@ -21,7 +21,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextTag 
+   Begin VBCCR18.TextBoxW TextTag 
       Height          =   315
       Left            =   1200
       TabIndex        =   11
@@ -32,7 +32,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextImage 
+   Begin VBCCR18.TextBoxW TextImage 
       Height          =   315
       Left            =   1200
       TabIndex        =   15
@@ -43,7 +43,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextCaption 
+   Begin VBCCR18.TextBoxW TextCaption 
       Height          =   315
       Left            =   1200
       TabIndex        =   7
@@ -54,7 +54,7 @@ Begin VB.PropertyPage PPTabStripTabs
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextKey 
+   Begin VBCCR18.TextBoxW TextKey 
       Height          =   315
       Left            =   1200
       TabIndex        =   9
@@ -103,7 +103,7 @@ Begin VB.PropertyPage PPTabStripTabs
       Top             =   120
       Width           =   300
    End
-   Begin VBCCR17.TextBoxW TextIndex 
+   Begin VBCCR18.TextBoxW TextIndex 
       Height          =   315
       Left            =   1200
       TabIndex        =   1

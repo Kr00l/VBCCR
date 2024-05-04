@@ -239,7 +239,7 @@ Begin VB.PropertyPage PPToolBarButtons
          Top             =   960
          Width           =   1215
       End
-      Begin VBCCR17.TextBoxW TextButtonMenuTag 
+      Begin VBCCR18.TextBoxW TextButtonMenuTag 
          Height          =   315
          Left            =   4680
          TabIndex        =   49
@@ -250,7 +250,7 @@ Begin VB.PropertyPage PPToolBarButtons
          BackColor       =   -2147483633
          Enabled         =   0   'False
       End
-      Begin VBCCR17.TextBoxW TextButtonMenuKey 
+      Begin VBCCR18.TextBoxW TextButtonMenuKey 
          Height          =   315
          Left            =   2760
          TabIndex        =   47
@@ -261,7 +261,7 @@ Begin VB.PropertyPage PPToolBarButtons
          BackColor       =   -2147483633
          Enabled         =   0   'False
       End
-      Begin VBCCR17.TextBoxW TextButtonMenuText 
+      Begin VBCCR18.TextBoxW TextButtonMenuText 
          Height          =   315
          Left            =   735
          TabIndex        =   45
@@ -272,7 +272,7 @@ Begin VB.PropertyPage PPToolBarButtons
          BackColor       =   -2147483633
          Enabled         =   0   'False
       End
-      Begin VBCCR17.TextBoxW TextButtonMenuIndex 
+      Begin VBCCR18.TextBoxW TextButtonMenuIndex 
          Height          =   315
          Left            =   1200
          TabIndex        =   35
@@ -370,7 +370,7 @@ Begin VB.PropertyPage PPToolBarButtons
       Top             =   1200
       Width           =   1215
    End
-   Begin VBCCR17.TextBoxW TextCustomWidth 
+   Begin VBCCR18.TextBoxW TextCustomWidth 
       Height          =   315
       Left            =   4200
       TabIndex        =   32
@@ -401,7 +401,7 @@ Begin VB.PropertyPage PPToolBarButtons
       Top             =   1560
       Width           =   1815
    End
-   Begin VBCCR17.TextBoxW TextDescription 
+   Begin VBCCR18.TextBoxW TextDescription 
       Height          =   315
       Left            =   1200
       TabIndex        =   19
@@ -412,7 +412,7 @@ Begin VB.PropertyPage PPToolBarButtons
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextToolTipText 
+   Begin VBCCR18.TextBoxW TextToolTipText 
       Height          =   315
       Left            =   1200
       TabIndex        =   17
@@ -423,7 +423,7 @@ Begin VB.PropertyPage PPToolBarButtons
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextTag 
+   Begin VBCCR18.TextBoxW TextTag 
       Height          =   315
       Left            =   1200
       TabIndex        =   11
@@ -434,7 +434,7 @@ Begin VB.PropertyPage PPToolBarButtons
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextImage 
+   Begin VBCCR18.TextBoxW TextImage 
       Height          =   315
       Left            =   1200
       TabIndex        =   15
@@ -445,7 +445,7 @@ Begin VB.PropertyPage PPToolBarButtons
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextCaption 
+   Begin VBCCR18.TextBoxW TextCaption 
       Height          =   315
       Left            =   1200
       TabIndex        =   7
@@ -456,7 +456,7 @@ Begin VB.PropertyPage PPToolBarButtons
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextKey 
+   Begin VBCCR18.TextBoxW TextKey 
       Height          =   315
       Left            =   1200
       TabIndex        =   9
@@ -505,7 +505,7 @@ Begin VB.PropertyPage PPToolBarButtons
       Top             =   120
       Width           =   300
    End
-   Begin VBCCR17.TextBoxW TextIndex 
+   Begin VBCCR18.TextBoxW TextIndex 
       Height          =   315
       Left            =   1200
       TabIndex        =   1

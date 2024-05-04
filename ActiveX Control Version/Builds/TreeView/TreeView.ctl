@@ -37,6 +37,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private TvwStyleTextOnly, TvwStylePictureText, TvwStylePlusMinusText, TvwStylePlusMinusPictureText, TvwStyleTreeLinesText, TvwStyleTreeLinesPictureText, TvwStyleTreeLinesPlusMinusText, TvwStyleTreeLinesPlusMinusPictureText
 Private TvwLineStyleTreeLines, TvwLineStyleRootLines
@@ -94,6 +97,14 @@ End Enum
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type RECT
 Left As Long
@@ -571,8 +582,15 @@ Private TreeViewClickSelectedCount As Long
 Private TreeViewClickShift As Integer
 Private TreeViewAnchorItem As LongPtr
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
 Private DispIdImageList As Long, ImageListArray() As String
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropNodes As TvwNodes
@@ -652,20 +670,14 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
 End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     On Error GoTo 0
@@ -677,10 +689,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
@@ -689,13 +698,22 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_TREEVIEW_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then TreeViewAlignable = False Else TreeViewAlignable = True
@@ -754,7 +772,6 @@ End If
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then TreeViewAlignable = False Else TreeViewAlignable = True
@@ -1004,7 +1021,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyTreeView
 Call ComCtlsReleaseShellMod
@@ -1345,12 +1372,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -2961,6 +2988,13 @@ If TreeViewDesignMode = False Then
         Call ComCtlsSetSubclass(TreeViewHandle, Me, 1)
         Call ComCtlsCreateIMC(TreeViewHandle, TreeViewIMCHandle)
     End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 End If
 End Sub
 
@@ -2969,6 +3003,15 @@ If TreeViewHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(TreeViewHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
 Call ComCtlsDestroyIMC(TreeViewHandle, TreeViewIMCHandle)
+If TreeViewDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 Dim hImageList As LongPtr
 hImageList = SendMessage(TreeViewHandle, TVM_GETIMAGELIST, TVSIL_STATE, ByVal 0&)
 If hImageList <> NULL_PTR Then ImageList_Destroy hImageList
@@ -3210,6 +3253,19 @@ If TreeViewHandle <> NULL_PTR Then
     If PropRedraw = True Then SendMessage TreeViewHandle, WM_SETREDRAW, 1, ByVal 0&
 End If
 End Sub
+
+Public Property Get IncrementalSearchString() As String
+Attribute IncrementalSearchString.VB_Description = "Returns the incremental search string, or an empty string if the tree view is not in incremental search mode."
+Attribute IncrementalSearchString.VB_MemberFlags = "400"
+If TreeViewHandle <> NULL_PTR Then
+    Dim Length As Long
+    Length = CLng(SendMessage(TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal 0&))
+    If Length > 0 Then
+        IncrementalSearchString = String(Length, vbNullChar)
+        SendMessage TreeViewHandle, TVM_GETISEARCHSTRING, 0, ByVal StrPtr(IncrementalSearchString)
+    End If
+End If
+End Property
 
 Private Sub SetVisualStylesToolTip()
 If TreeViewHandle <> NULL_PTR Then
@@ -3531,6 +3587,21 @@ Private Function PropImageListControl() As Object
 If TreeViewImageListObjectPointer <> NULL_PTR Then Set PropImageListControl = PtrToObj(TreeViewImageListObjectPointer)
 End Function
 
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -3554,9 +3625,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
         PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
@@ -3654,6 +3745,15 @@ Select Case wMsg
         TreeViewButtonDown = LoWord(CLng(wParam))
         TreeViewIsClick = True
         Exit Function
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -3713,9 +3813,29 @@ End Function
 Private Function WindowProcLabelEdit(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_SETFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_KEYDOWN, WM_KEYUP
         TreeViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
     Case WM_CHAR

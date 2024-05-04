@@ -36,6 +36,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private TbsPlacementTop, TbsPlacementBottom, TbsPlacementLeft, TbsPlacementRight
 Private TbsStyleTabs, TbsStyleButtons, TbsStyleFlatButtons
@@ -94,6 +97,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type TCITEM
 Mask As Long
@@ -198,6 +209,7 @@ Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr,
 Private Declare PtrSafe Function MoveWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetParent Lib "user32" (ByVal hWndChild As LongPtr, ByVal hWndNewParent As LongPtr) As LongPtr
+Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
@@ -214,6 +226,7 @@ Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, By
 Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
 Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
 Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
+Private Declare PtrSafe Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As LongPtr
 Private Declare PtrSafe Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As LongPtr
 Private Declare PtrSafe Function CombineRgn Lib "gdi32" (ByVal hRgnDest As LongPtr, ByVal hRgnSrc1 As LongPtr, ByVal hRgnSrc2 As LongPtr, ByVal nCombineMode As Long) As Long
@@ -236,6 +249,7 @@ Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmd
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
+Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
@@ -252,6 +266,7 @@ Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect 
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
+Private Declare Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As Long) As Long
 Private Declare Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function CombineRgn Lib "gdi32" (ByVal hRgnDest As Long, ByVal hRgnSrc1 As Long, ByVal hRgnSrc2 As Long, ByVal nCombineMode As Long) As Long
@@ -311,6 +326,7 @@ Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_DRAWITEM As Long = &H2B, ODT_TAB As Long = &H65
+Private Const WM_USER As Long = &H400
 Private Const TCS_SCROLLOPPOSITE As Long = &H1
 Private Const TCS_BOTTOM As Long = &H2
 Private Const TCS_RIGHT As Long = &H2
@@ -401,6 +417,7 @@ Private TabStripHandle As LongPtr, TabStripToolTipHandle As LongPtr
 Private TabStripAcceleratorHandle As LongPtr
 Private TabStripFontHandle As LongPtr
 Private TabStripBackColorBrush As LongPtr
+Private TabStripTransparentBrush As LongPtr
 Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
 Private TabStripDesignMode As Boolean
@@ -408,8 +425,15 @@ Private TabStripDoubleBufferEraseBkgDC As LongPtr
 Private TabStripImageListObjectPointer As LongPtr
 Private TabStripStyleCache As Long
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
 Private DispIdImageList As Long, ImageListArray() As String
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropTabs As TbsTabs
@@ -436,6 +460,7 @@ Private PropShowTips As Boolean
 Private PropDrawMode As TbsDrawModeConstants
 Private PropTabScrollWheel As Boolean
 Private PropDoubleBuffer As Boolean
+Private PropTransparent As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -538,20 +563,14 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
 End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     On Error GoTo 0
@@ -563,10 +582,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
@@ -575,14 +591,23 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_TAB_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfaceControl)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 TabStripDesignMode = Not Ambient.UserMode
@@ -613,12 +638,12 @@ PropShowTips = False
 PropDrawMode = TbsDrawModeNormal
 PropTabScrollWheel = True
 PropDoubleBuffer = True
+PropTransparent = False
 Call CreateTabStrip
 Me.Tabs.Add
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 On Error Resume Next
 TabStripDesignMode = Not Ambient.UserMode
@@ -653,6 +678,7 @@ PropShowTips = .ReadProperty("ShowTips", False)
 PropDrawMode = .ReadProperty("DrawMode", TbsDrawModeNormal)
 PropTabScrollWheel = .ReadProperty("TabScrollWheel", True)
 PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
+PropTransparent = .ReadProperty("Transparent", False)
 End With
 With New PropertyBag
 On Error Resume Next
@@ -727,6 +753,7 @@ With PropBag
 .WriteProperty "DrawMode", PropDrawMode, TbsDrawModeNormal
 .WriteProperty "TabScrollWheel", PropTabScrollWheel, True
 .WriteProperty "DoubleBuffer", PropDoubleBuffer, True
+.WriteProperty "Transparent", PropTransparent, False
 End With
 Dim Count As Long
 Count = Me.Tabs.Count
@@ -795,13 +822,34 @@ If InProc = True Then Exit Sub
 InProc = True
 With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
-If TabStripHandle <> NULL_PTR Then MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+If TabStripHandle <> NULL_PTR Then
+    If PropTransparent = True Then
+        MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+        If TabStripTransparentBrush <> NULL_PTR Then
+            DeleteObject TabStripTransparentBrush
+            TabStripTransparentBrush = NULL_PTR
+        End If
+        RedrawWindow TabStripHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+    Else
+        MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    End If
+End If
 End With
 InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfaceControl)
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyTabStrip
@@ -1061,12 +1109,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -1570,6 +1618,17 @@ PropDoubleBuffer = Value
 UserControl.PropertyChanged "DoubleBuffer"
 End Property
 
+Public Property Get Transparent() As Boolean
+Attribute Transparent.VB_Description = "Returns/sets a value indicating if the background is a replica of the underlying background to simulate transparency."
+Transparent = PropTransparent
+End Property
+
+Public Property Let Transparent(ByVal Value As Boolean)
+PropTransparent = Value
+Me.Refresh
+UserControl.PropertyChanged "Transparent"
+End Property
+
 Public Property Get Tabs() As TbsTabs
 Attribute Tabs.VB_Description = "Returns a reference to a collection of the tab objects."
 If PropTabs Is Nothing Then
@@ -1853,6 +1912,13 @@ If TabStripDesignMode = False Then
         Call ComCtlsSetSubclass(TabStripHandle, Me, 1)
         TabStripStyleCache = dwStyle
     End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 ElseIf PropBackColor <> vbButtonFace Then
     If TabStripHandle <> NULL_PTR Then
         If TabStripBackColorBrush = NULL_PTR Then TabStripBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
@@ -1915,6 +1981,15 @@ Private Sub DestroyTabStrip()
 If TabStripHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(TabStripHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If TabStripDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 ShowWindow TabStripHandle, SW_HIDE
 SetParent TabStripHandle, NULL_PTR
 DestroyWindow TabStripHandle
@@ -1932,12 +2007,20 @@ If TabStripBackColorBrush <> NULL_PTR Then
     DeleteObject TabStripBackColorBrush
     TabStripBackColorBrush = NULL_PTR
 End If
+If TabStripTransparentBrush <> NULL_PTR Then
+    DeleteObject TabStripTransparentBrush
+    TabStripTransparentBrush = NULL_PTR
+End If
 TabStripStyleCache = 0
 End Sub
 
 Public Sub Refresh()
 Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
+If TabStripTransparentBrush <> NULL_PTR Then
+    DeleteObject TabStripTransparentBrush
+    TabStripTransparentBrush = NULL_PTR
+End If
 UserControl.Refresh
 RedrawWindow UserControl.hWnd, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
@@ -1965,7 +2048,7 @@ ClientTop = UserControl.ScaleY(RC.Top, vbPixels, vbContainerPosition)
 End Property
 
 Public Property Get ClientWidth() As Single
-Attribute ClientWidth.VB_Description = "Returns the width of the internal area."
+Attribute ClientWidth.VB_Description = "Returns/sets the width of the internal area."
 Attribute ClientWidth.VB_MemberFlags = "400"
 Dim RC As RECT
 If TabStripHandle <> NULL_PTR Then
@@ -1975,8 +2058,17 @@ End If
 ClientWidth = UserControl.ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize)
 End Property
 
+Public Property Let ClientWidth(ByVal Value As Single)
+Dim RC As RECT
+RC.Right = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 1, ByVal VarPtr(RC)
+With UserControl
+.Extender.Move .Extender.Left, .Extender.Top, .ScaleX((RC.Right - RC.Left), vbPixels, vbContainerSize), .Extender.Height
+End With
+End Property
+
 Public Property Get ClientHeight() As Single
-Attribute ClientHeight.VB_Description = "Returns the height of the internal area."
+Attribute ClientHeight.VB_Description = "Returns/sets the height of the internal area."
 Attribute ClientHeight.VB_MemberFlags = "400"
 Dim RC As RECT
 If TabStripHandle <> NULL_PTR Then
@@ -1984,6 +2076,15 @@ If TabStripHandle <> NULL_PTR Then
     SendMessage TabStripHandle, TCM_ADJUSTRECT, 0, ByVal VarPtr(RC)
 End If
 ClientHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+End Property
+
+Public Property Let ClientHeight(ByVal Value As Single)
+Dim RC As RECT
+RC.Bottom = CLng(UserControl.ScaleY(Value, vbContainerSize, vbPixels))
+If TabStripHandle <> NULL_PTR Then SendMessage TabStripHandle, TCM_ADJUSTRECT, 1, ByVal VarPtr(RC)
+With UserControl
+.Extender.Move .Extender.Left, .Extender.Top, .Extender.Width, .ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+End With
 End Property
 
 Public Sub DeselectAll()
@@ -2064,6 +2165,32 @@ If TabStripHandle <> NULL_PTR Then
 End If
 End Function
 
+Private Function CreateTransparentBrush(ByVal hDC As LongPtr) As LongPtr
+Dim hDCBmp As LongPtr
+Dim hBmp As LongPtr, hBmpOld As LongPtr
+With UserControl
+hDCBmp = CreateCompatibleDC(hDC)
+If hDCBmp <> NULL_PTR Then
+    hBmp = CreateCompatibleBitmap(hDC, .ScaleWidth, .ScaleHeight)
+    If hBmp <> NULL_PTR Then
+        hBmpOld = SelectObject(hDCBmp, hBmp)
+        Dim WndRect As RECT, P As POINTAPI
+        GetWindowRect .hWnd, WndRect
+        MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
+        P.X = WndRect.Left
+        P.Y = WndRect.Top
+        SetViewportOrgEx hDCBmp, -P.X, -P.Y, P
+        SendMessage GetParent(.hWnd), WM_PAINT, hDCBmp, ByVal 0&
+        SetViewportOrgEx hDCBmp, P.X, P.Y, P
+        CreateTransparentBrush = CreatePatternBrush(hBmp)
+        SelectObject hDCBmp, hBmpOld
+        DeleteObject hBmp
+    End If
+    DeleteDC hDCBmp
+End If
+End With
+End Function
+
 Private Sub SetVisualStylesUpDown()
 If TabStripHandle <> NULL_PTR Then
     Dim UpDownHandle As LongPtr
@@ -2094,6 +2221,20 @@ Private Function PropImageListControl() As Object
 If TabStripImageListObjectPointer <> NULL_PTR Then Set PropImageListControl = PtrToObj(TabStripImageListObjectPointer)
 End Function
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -2115,9 +2256,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         If Not (TabStripStyleCache And TCS_FOCUSNEVER) = TCS_FOCUSNEVER Then
             If (TabStripStyleCache And TCS_FOCUSONBUTTONDOWN) = TCS_FOCUSONBUTTONDOWN Then
@@ -2149,7 +2310,10 @@ Select Case wMsg
             Dim ClientRect1 As RECT
             GetClientRect hWnd, ClientRect1
             FillRect wParam, ClientRect1, GetSysColorBrush(COLOR_BTNFACE)
-            If TabStripBackColorBrush <> NULL_PTR Then
+            If PropTransparent = True Then
+                If TabStripTransparentBrush = NULL_PTR Then TabStripTransparentBrush = CreateTransparentBrush(wParam)
+            End If
+            If TabStripBackColorBrush <> NULL_PTR Or TabStripTransparentBrush <> NULL_PTR Then
                 Dim Count As Long, i As Long, RC As RECT
                 Count = CLng(SendMessage(hWnd, TCM_GETITEMCOUNT, 0, ByVal 0&))
                 Dim hRgn As LongPtr, hRgnTab As LongPtr, hRgnFill As LongPtr
@@ -2191,7 +2355,11 @@ Select Case wMsg
                 Next i
                 hRgnFill = CreateRectRgn(ClientRect1.Left, ClientRect1.Top, ClientRect1.Right, ClientRect1.Bottom)
                 CombineRgn hRgnFill, hRgnFill, hRgn, RGN_DIFF
-                FillRgn wParam, hRgnFill, TabStripBackColorBrush
+                If TabStripTransparentBrush = NULL_PTR Then
+                    FillRgn wParam, hRgnFill, TabStripBackColorBrush
+                Else
+                    FillRgn wParam, hRgnFill, TabStripTransparentBrush
+                End If
                 DeleteObject hRgnFill
                 DeleteObject hRgn
             End If
@@ -2307,6 +2475,15 @@ Select Case wMsg
         End If
     Case WM_STYLECHANGED
         If wParam = GWL_STYLE Then CopyMemory TabStripStyleCache, ByVal UnsignedAdd(lParam, 4), 4
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -2394,12 +2571,21 @@ Select Case wMsg
             End Select
         End If
     Case WM_PRINTCLIENT
-        If TabStripHandle <> NULL_PTR And TabStripBackColorBrush <> NULL_PTR Then
-            Dim RC As RECT
-            GetClientRect TabStripHandle, RC
-            FillRect wParam, RC, TabStripBackColorBrush
-            WindowProcUserControl = 0
-            Exit Function
+        If TabStripHandle <> NULL_PTR Then
+            If PropTransparent = True Then
+                If TabStripTransparentBrush = NULL_PTR Then TabStripTransparentBrush = CreateTransparentBrush(wParam)
+            End If
+            If TabStripBackColorBrush <> NULL_PTR Or TabStripTransparentBrush <> NULL_PTR Then
+                Dim RC As RECT
+                GetClientRect TabStripHandle, RC
+                If TabStripTransparentBrush = NULL_PTR Then
+                    FillRect wParam, RC, TabStripBackColorBrush
+                Else
+                    FillRect wParam, RC, TabStripTransparentBrush
+                End If
+                WindowProcUserControl = 0
+                Exit Function
+            End If
         End If
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT

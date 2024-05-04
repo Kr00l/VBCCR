@@ -272,16 +272,26 @@ cButtons As Long
 cbBytesPerRecord As Long
 TBB As TBBUTTON
 End Type
+' Must be declared at the beginning so that conditional compilation will not bug the events.
+Private WithEvents PropFont As StdFont
+Attribute PropFont.VB_VarHelpID = -1
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when you press and release a mouse button and then press and release it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event Resize()
+Attribute Resize.VB_Description = "Occurs when a form is first displayed or the size of an object changes."
 Public Event BeginCustomization()
 Attribute BeginCustomization.VB_Description = "Occurs at the begin of a customization."
+#If VBA7 Then
+Public Event InitCustomizationDialog(ByVal hDlg As LongPtr, ByRef HideHelpButton As Boolean)
+Attribute InitCustomizationDialog.VB_Description = "Occurs when the customization dialog has finished initializing."
+#Else
 Public Event InitCustomizationDialog(ByVal hDlg As Long, ByRef HideHelpButton As Boolean)
 Attribute InitCustomizationDialog.VB_Description = "Occurs when the customization dialog has finished initializing."
+#End If
 Public Event CustomizationChange()
 Attribute CustomizationChange.VB_Description = "Occurs whenever the control was customized."
 Public Event ResetCustomizations(ByRef CloseDialog As Boolean)
@@ -300,6 +310,8 @@ Public Event ButtonDropDown(ByVal Button As TbrButton)
 Attribute ButtonDropDown.VB_Description = "Occurs when the user clicks the dropdown arrow on a button with a button style set to dropdown."
 Public Event ButtonMenuClick(ByVal ButtonMenu As TbrButtonMenu)
 Attribute ButtonMenuClick.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
+Public Event ButtonMenuClick2(ByVal Button As TbrButton, ByVal ID As Long)
+Attribute ButtonMenuClick2.VB_Description = "Occurs when the user selects an item from a button dropdown menu."
 Public Event ButtonMouseEnter(ByVal Button As TbrButton)
 Attribute ButtonMouseEnter.VB_Description = "Occurs when the user moves the mouse into a button."
 Public Event ButtonMouseLeave(ByVal Button As TbrButton)
@@ -374,6 +386,8 @@ Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPt
 Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare PtrSafe Function SetMenuInfo Lib "user32" (ByVal hMenu As LongPtr, ByRef MI As MENUINFO) As Long
 Private Declare PtrSafe Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As LongPtr, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As LongPtr, ByRef lpTPMParams As TPMPARAMS) As Long
+Private Declare PtrSafe Function IsMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
+Private Declare PtrSafe Function GetMenuItemCount Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
 #Else
@@ -421,6 +435,8 @@ Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare Function SetMenuInfo Lib "user32" (ByVal hMenu As Long, ByRef MI As MENUINFO) As Long
 Private Declare Function TrackPopupMenuEx Lib "user32" (ByVal hMenu As Long, ByVal uFlags As Long, ByVal X As Long, ByVal Y As Long, ByVal hWnd As Long, ByRef lpTPMParams As TPMPARAMS) As Long
+Private Declare Function IsMenu Lib "user32" (ByVal hMenu As Long) As Long
+Private Declare Function GetMenuItemCount Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
 #End If
@@ -719,13 +735,10 @@ Private ToolBarDisabledImageListObjectPointer As LongPtr
 Private ToolBarHotImageListObjectPointer As LongPtr
 Private ToolBarPressedImageListObjectPointer As LongPtr
 Private ToolBarPopupMenuHandle As LongPtr, ToolBarPopupMenuButton As TbrButton, ToolBarPopupMenuKeyboard As Boolean
-Private DispIdMousePointer As Long
 Private DispIdImageList As Long, ImageListArray() As String, ImageListSize As SIZEAPI
 Private DispIdDisabledImageList As Long, DisabledImageListArray() As String, DisabledImageListSize As SIZEAPI
 Private DispIdHotImageList As Long, HotImageListArray() As String, HotImageListSize As SIZEAPI
 Private DispIdPressedImageList As Long, PressedImageListArray() As String, PressedImageListSize As SIZEAPI
-Private WithEvents PropFont As StdFont
-Attribute PropFont.VB_VarHelpID = -1
 Private PropButtons As TbrButtons
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -768,10 +781,7 @@ Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECL
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     DisplayName = PropImageListName
     Handled = True
 ElseIf DispId = DispIdDisabledImageList Then
@@ -787,10 +797,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdImageList Or DispId = DispIdDisabledImageList Or DispId = DispIdHotImageList Or DispId = DispIdPressedImageList Then
+If DispId = DispIdImageList Or DispId = DispIdDisabledImageList Or DispId = DispIdHotImageList Or DispId = DispIdPressedImageList Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, ImageListArray())
     DisabledImageListArray() = ImageListArray()
@@ -805,10 +812,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdImageList Then
+If DispId = DispIdImageList Then
     If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdDisabledImageList Then
@@ -834,7 +838,6 @@ ReDim PressedImageListArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 If DispIdDisabledImageList = 0 Then DispIdDisabledImageList = GetDispId(Me, "DisabledImageList")
 If DispIdHotImageList = 0 Then DispIdHotImageList = GetDispId(Me, "HotImageList")
@@ -881,7 +884,6 @@ Call CreateToolBar
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdImageList = 0 Then DispIdImageList = GetDispId(Me, "ImageList")
 If DispIdDisabledImageList = 0 Then DispIdDisabledImageList = GetDispId(Me, "DisabledImageList")
 If DispIdHotImageList = 0 Then DispIdHotImageList = GetDispId(Me, "HotImageList")
@@ -1148,6 +1150,7 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
+Static PrevHeight As Long, PrevWidth As Long
 Static InProc As Boolean
 If InProc = True Or ToolBarResizeFrozen = True Then Exit Sub
 InProc = True
@@ -1245,8 +1248,15 @@ End If
 End With
 InProc = False
 If Count > 0 And PropWrappable = True Then
-    If Rows <> SendMessage(ToolBarHandle, TB_GETROWS, 0, ByVal 0&) Then Call UserControl_Resize
+    If Rows <> SendMessage(ToolBarHandle, TB_GETROWS, 0, ByVal 0&) Then Call UserControl_Resize: Exit Sub
 End If
+With UserControl
+If PrevHeight <> .ScaleHeight Or PrevWidth <> .ScaleWidth Then
+    PrevHeight = .ScaleHeight
+    PrevWidth = .ScaleWidth
+    RaiseEvent Resize
+End If
+End With
 End Sub
 
 Private Sub UserControl_Show()
@@ -1529,12 +1539,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -3553,7 +3563,11 @@ If ID > 0 Then
                     RaiseEvent ButtonDropDown(Button)
                     Dim MenuItem As Long
                     MenuItem = ShowButtonMenuItems(Button, True)
-                    If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                    If Button.hMenu = NULL_PTR Then
+                        If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                    Else
+                        If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
+                    End If
                     SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 Else
                     SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
@@ -3910,88 +3924,98 @@ If ToolBarHandle <> NULL_PTR Then
         SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
         Exit Function
     End If
-    If Button.ButtonMenus.Count > 0 Then
-        Dim Text As String, Count As Long, MenuItem As Long, HasMenuPictureCallback As Boolean
-        ToolBarPopupMenuHandle = CreatePopupMenu()
-        Dim TPMP As TPMPARAMS, P As POINTAPI, MII As MENUITEMINFO
+    Dim hMenu As LongPtr
+    If Button.hMenu = NULL_PTR Then
+        If Button.ButtonMenus.Count > 0 Then hMenu = CreatePopupMenu()
+    Else
+        If IsMenu(Button.hMenu) <> 0 Then hMenu = Button.hMenu
+    End If
+    If hMenu <> NULL_PTR Then
+        ToolBarPopupMenuHandle = hMenu
+        Set ToolBarPopupMenuButton = Button
+        ToolBarPopupMenuKeyboard = Keyboard
+        Dim TPMP As TPMPARAMS, P As POINTAPI, Flags As Long
         TPMP.cbSize = LenB(TPMP)
         SendMessage ToolBarHandle, TB_GETRECT, Button.ID, ByVal VarPtr(TPMP.RCExclude)
         MapWindowPoints ToolBarHandle, HWND_DESKTOP, TPMP.RCExclude, 2
         P.X = TPMP.RCExclude.Left
         P.Y = TPMP.RCExclude.Bottom
-        MII.cbSize = LenB(MII)
-        For MenuItem = 1 To Button.ButtonMenus.Count
-            With Button.ButtonMenus(MenuItem)
-            If .Visible = True Then
-                If .Separator = False Then
-                    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
-                    MII.fType = 0
-                    Text = .Text
-                    MII.dwTypeData = StrPtr(Text)
-                    MII.cch = Len(Text)
-                    If .Picture Is Nothing Then
-                        MII.hBmpItem = NULL_PTR
-                    ElseIf .Picture.Handle = NULL_PTR Then
-                        MII.hBmpItem = NULL_PTR
-                    Else
-                        ' The menu theme is removed when some menu item has hBmpItem set to HBMMENU_CALLBACK.
-                        ' Use 32-bit pre-multiplied alpha RGB bitmaps for best results.
-                        MII.fMask = MII.fMask Or MIIM_BITMAP
-                        If .Picture.Type = vbPicTypeBitmap Then
-                            MII.hBmpItem = .Picture.Handle
-                        Else
-                            MII.hBmpItem = HBMMENU_CALLBACK
-                            HasMenuPictureCallback = True
-                        End If
-                    End If
-                    If .Enabled = True Then
-                        MII.fState = MFS_ENABLED
-                    Else
-                        MII.fState = MFS_DISABLED
-                    End If
-                    If .Checked = True Then
-                        MII.fState = MII.fState Or MFS_CHECKED
-                    Else
-                        MII.fState = MII.fState Or MFS_UNCHECKED
-                    End If
-                Else
-                    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
-                    MII.fType = MFT_SEPARATOR
-                    MII.dwTypeData = 0
-                    MII.cch = 0
-                    MII.hBmpItem = NULL_PTR
-                    MII.fState = 0
-                End If
-                MII.wID = MenuItem
-                InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
-                Count = Count + 1
-            End If
-            End With
-        Next MenuItem
-        If Count > 0 Then
-            Dim MI As MENUINFO
-            MI.cbSize = LenB(MI)
-            MI.fMask = MIM_MENUDATA
-            MI.dwMenuData = ObjPtr(Button)
-            If HasMenuPictureCallback = True Then
-                ' The menu theme is lost due to HBMMENU_CALLBACK.
-                ' Setting a menu background color fixes a one-pixel overlap between the picture and text.
-                MI.fMask = MI.fMask Or MIM_BACKGROUND
-                MI.hBrBack = GetSysColorBrush(COLOR_MENU)
-            End If
-            SetMenuInfo ToolBarPopupMenuHandle, MI
-            Dim Flags As Long
-            If PropRightToLeft = False Then
-                Flags = TPM_LEFTALIGN
-            Else
-                If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
-            End If
-            Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
-            Set ToolBarPopupMenuButton = Button
-            ToolBarPopupMenuKeyboard = Keyboard
-            ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+        If PropRightToLeft = False Then
+            Flags = TPM_LEFTALIGN
+        Else
+            If PropRightToLeftLayout = True Then Flags = TPM_RIGHTALIGN Else Flags = TPM_LEFTALIGN Or TPM_LAYOUTRTL
         End If
-        DestroyMenu ToolBarPopupMenuHandle
+        Flags = Flags Or TPM_TOPALIGN Or TPM_LEFTBUTTON Or TPM_VERTICAL Or TPM_RETURNCMD
+        If Button.hMenu = NULL_PTR Then
+            Dim Text As String, Count As Long, i As Long, HasMenuPictureCallback As Boolean
+            Dim MII As MENUITEMINFO
+            MII.cbSize = LenB(MII)
+            For i = 1 To Button.ButtonMenus.Count
+                With Button.ButtonMenus(i)
+                If .Visible = True Then
+                    If .Separator = False Then
+                        MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
+                        MII.fType = 0
+                        Text = .Text
+                        MII.dwTypeData = StrPtr(Text)
+                        MII.cch = Len(Text)
+                        If .Picture Is Nothing Then
+                            MII.hBmpItem = NULL_PTR
+                        ElseIf .Picture.Handle = NULL_PTR Then
+                            MII.hBmpItem = NULL_PTR
+                        Else
+                            ' The menu theme is removed when some menu item has hBmpItem set to HBMMENU_CALLBACK.
+                            ' Use 32-bit pre-multiplied alpha RGB bitmaps for best results.
+                            MII.fMask = MII.fMask Or MIIM_BITMAP
+                            If .Picture.Type = vbPicTypeBitmap Then
+                                MII.hBmpItem = .Picture.Handle
+                            Else
+                                MII.hBmpItem = HBMMENU_CALLBACK
+                                HasMenuPictureCallback = True
+                            End If
+                        End If
+                        If .Enabled = True Then
+                            MII.fState = MFS_ENABLED
+                        Else
+                            MII.fState = MFS_DISABLED
+                        End If
+                        If .Checked = True Then
+                            MII.fState = MII.fState Or MFS_CHECKED
+                        Else
+                            MII.fState = MII.fState Or MFS_UNCHECKED
+                        End If
+                    Else
+                        MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
+                        MII.fType = MFT_SEPARATOR
+                        MII.dwTypeData = 0
+                        MII.cch = 0
+                        MII.hBmpItem = NULL_PTR
+                        MII.fState = 0
+                    End If
+                    MII.wID = i
+                    InsertMenuItem ToolBarPopupMenuHandle, 0, 0, MII
+                    Count = Count + 1
+                End If
+                End With
+            Next i
+            If Count > 0 Then
+                Dim MI As MENUINFO
+                MI.cbSize = LenB(MI)
+                MI.fMask = MIM_MENUDATA
+                MI.dwMenuData = ObjPtr(Button)
+                If HasMenuPictureCallback = True Then
+                    ' The menu theme is lost due to HBMMENU_CALLBACK.
+                    ' Setting a menu background color fixes a one-pixel overlap between the picture and text.
+                    MI.fMask = MI.fMask Or MIM_BACKGROUND
+                    MI.hBrBack = GetSysColorBrush(COLOR_MENU)
+                End If
+                SetMenuInfo ToolBarPopupMenuHandle, MI
+                ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+            End If
+            DestroyMenu ToolBarPopupMenuHandle
+        Else
+            If GetMenuItemCount(ToolBarPopupMenuHandle) > 0 Then ShowButtonMenuItems = TrackPopupMenuEx(ToolBarPopupMenuHandle, Flags, P.X, P.Y, ToolBarHandle, TPMP)
+        End If
         ToolBarPopupMenuHandle = NULL_PTR
         Set ToolBarPopupMenuButton = Nothing
         ToolBarPopupMenuKeyboard = False
@@ -4182,50 +4206,52 @@ Select Case wMsg
         End If
     Case WM_MEASUREITEM, WM_DRAWITEM
         If ToolBarPopupMenuHandle <> NULL_PTR And Not ToolBarPopupMenuButton Is Nothing Then
-            Dim MenuPicture As IPictureDisp, CX As Long, CY As Long
-            Select Case wMsg
-                Case WM_MEASUREITEM
-                    Dim MIS As MEASUREITEMSTRUCT
-                    CopyMemory MIS, ByVal lParam, LenB(MIS)
-                    If MIS.CtlType = ODT_MENU And MIS.ItemID >= 1 And MIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
-                        Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(MIS.ItemID).Picture
-                        If Not MenuPicture Is Nothing Then
-                            CX = CHimetricToPixel_X(MenuPicture.Width)
-                            CY = CHimetricToPixel_Y(MenuPicture.Height)
-                            MIS.ItemWidth = MIS.ItemWidth + CX
-                            If MIS.ItemHeight < CY Then MIS.ItemHeight = CY
-                            CopyMemory ByVal lParam, MIS, LenB(MIS)
-                            WindowProcControl = 1
-                            Exit Function
-                        End If
-                    End If
-                Case WM_DRAWITEM
-                    Dim DIS As DRAWITEMSTRUCT
-                    CopyMemory DIS, ByVal lParam, LenB(DIS)
-                    If DIS.CtlType = ODT_MENU And DIS.hWndItem = ToolBarPopupMenuHandle And DIS.ItemID >= 1 And DIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
-                        Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(DIS.ItemID).Picture
-                        If Not MenuPicture Is Nothing Then
-                            CX = CHimetricToPixel_X(MenuPicture.Width)
-                            CY = CHimetricToPixel_Y(MenuPicture.Height)
-                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, 1)
-                            Else
-                                If MenuPicture.Type = vbPicTypeIcon Then
-                                    DrawState DIS.hDC, NULL_PTR, NULL_PTR, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_ICON Or DSS_DISABLED
-                                Else
-                                    Dim hImage As LongPtr
-                                    hImage = BitmapHandleFromPicture(MenuPicture, vbWhite)
-                                    ' The DrawState API with DSS_DISABLED will draw white as transparent.
-                                    ' This will ensure GIF bitmaps or metafiles are better drawn.
-                                    DrawState DIS.hDC, NULL_PTR, NULL_PTR, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_BITMAP Or DSS_DISABLED
-                                    DeleteObject hImage
-                                End If
+            If ToolBarPopupMenuButton.hMenu = NULL_PTR Then
+                Dim MenuPicture As IPictureDisp, CX As Long, CY As Long
+                Select Case wMsg
+                    Case WM_MEASUREITEM
+                        Dim MIS As MEASUREITEMSTRUCT
+                        CopyMemory MIS, ByVal lParam, LenB(MIS)
+                        If MIS.CtlType = ODT_MENU And MIS.ItemID >= 1 And MIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
+                            Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(MIS.ItemID).Picture
+                            If Not MenuPicture Is Nothing Then
+                                CX = CHimetricToPixel_X(MenuPicture.Width)
+                                CY = CHimetricToPixel_Y(MenuPicture.Height)
+                                MIS.ItemWidth = MIS.ItemWidth + CX
+                                If MIS.ItemHeight < CY Then MIS.ItemHeight = CY
+                                CopyMemory ByVal lParam, MIS, LenB(MIS)
+                                WindowProcControl = 1
+                                Exit Function
                             End If
-                            WindowProcControl = 1
-                            Exit Function
                         End If
-                    End If
-            End Select
+                    Case WM_DRAWITEM
+                        Dim DIS As DRAWITEMSTRUCT
+                        CopyMemory DIS, ByVal lParam, LenB(DIS)
+                        If DIS.CtlType = ODT_MENU And DIS.hWndItem = ToolBarPopupMenuHandle And DIS.ItemID >= 1 And DIS.ItemID <= ToolBarPopupMenuButton.ButtonMenus.Count Then
+                            Set MenuPicture = ToolBarPopupMenuButton.ButtonMenus(DIS.ItemID).Picture
+                            If Not MenuPicture Is Nothing Then
+                                CX = CHimetricToPixel_X(MenuPicture.Width)
+                                CY = CHimetricToPixel_Y(MenuPicture.Height)
+                                If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                    Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, 1)
+                                Else
+                                    If MenuPicture.Type = vbPicTypeIcon Then
+                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_ICON Or DSS_DISABLED
+                                    Else
+                                        Dim hImage As LongPtr
+                                        hImage = BitmapHandleFromPicture(MenuPicture, vbWhite)
+                                        ' The DrawState API with DSS_DISABLED will draw white as transparent.
+                                        ' This will ensure GIF bitmaps or metafiles are better drawn.
+                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_BITMAP Or DSS_DISABLED
+                                        DeleteObject hImage
+                                    End If
+                                End If
+                                WindowProcControl = 1
+                                Exit Function
+                            End If
+                        End If
+                End Select
+            End If
         End If
     Case UM_SETBUTTONCX
         If wParam > 0 And lParam > 0 Then
@@ -4448,7 +4474,11 @@ Select Case wMsg
                         RaiseEvent ButtonDropDown(Button)
                         Dim MenuItem As Long
                         MenuItem = ShowButtonMenuItems(Button, False)
-                        If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                        If Button.hMenu = NULL_PTR Then
+                            If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
+                        Else
+                            If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
+                        End If
                         WindowProcUserControl = TBDDRET_DEFAULT
                     Else
                         WindowProcUserControl = TBDDRET_NODEFAULT
@@ -4463,12 +4493,12 @@ Select Case wMsg
                     Call AllocCustomizeButtons
                     RaiseEvent BeginCustomization
                 Case TBN_INITCUSTOMIZE
-                    Dim hDlg32 As Long, HideHelpButton As Boolean
+                    Dim hDlg As LongPtr, HideHelpButton As Boolean
                     ' lParam points to a struct of this kind: (undocumented)
                     ' hdr As NMHDR
                     ' hDlg As LongPtr
-                    CopyMemory hDlg32, ByVal UnsignedAdd(lParam, LenB(NM)), 4
-                    RaiseEvent InitCustomizationDialog(hDlg32, HideHelpButton)
+                    CopyMemory hDlg, ByVal UnsignedAdd(lParam, LenB(NM)), PTR_SIZE
+                    RaiseEvent InitCustomizationDialog(hDlg, HideHelpButton)
                     If HideHelpButton = True Then
                         WindowProcUserControl = TBNRF_HIDEHELP
                     Else

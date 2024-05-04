@@ -33,6 +33,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private TxtCharacterCasingNormal, TxtCharacterCasingUpper, TxtCharacterCasingLower
 Private TxtIconNone, TxtIconInfo, TxtIconWarning, TxtIconError
@@ -94,6 +97,14 @@ Private Type POINTAPI
 X As Long
 Y As Long
 End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
+End Type
 Private Type EDITBALLOONTIP
 cbStruct As Long
 pszTitle As LongPtr
@@ -142,6 +153,8 @@ Public Event Change()
 Attribute Change.VB_Description = "Occurs when the contents of a control have changed."
 Public Event MaxText()
 Attribute MaxText.VB_Description = "Occurs when the current text insertion has exceeded the maximum number of characters that can be entered in a control."
+Public Event DropFiles(ByRef FileList As Variant, ByVal X As Single, ByVal Y As Single)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event Scroll()
 Attribute Scroll.VB_Description = "Occurs when you reposition the scroll box on a control."
 Public Event ContextMenu(ByRef Handled As Boolean, ByVal X As Single, ByVal Y As Single)
@@ -186,6 +199,8 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As LongPtr, ByVal fAccept As Long)
+Private Declare PtrSafe Sub DragFinish Lib "shell32" (ByVal hDrop As LongPtr)
 Private Declare PtrSafe Function InitNetworkAddressControl Lib "shell32" () As Long
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
@@ -205,7 +220,7 @@ Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
-Private Declare PtrSafe Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
+Private Declare PtrSafe Function GetMessagePos Lib "user32" () As Long
 Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function ClientToScreen Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function GetScrollPos Lib "user32" (ByVal hWnd As LongPtr, ByVal nBar As Long) As Long
@@ -220,8 +235,12 @@ Private Declare PtrSafe Function DestroyCaret Lib "user32" () As Long
 Private Declare PtrSafe Function DragDetect Lib "user32" (ByVal hWnd As LongPtr, ByVal XY As Currency) As Long
 Private Declare PtrSafe Function ReleaseCapture Lib "user32" () As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
+Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
+Private Declare Sub DragFinish Lib "shell32" (ByVal hDrop As Long)
 Private Declare Function InitNetworkAddressControl Lib "shell32" () As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -241,7 +260,7 @@ Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lp
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
-Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
+Private Declare Function GetMessagePos Lib "user32" () As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetScrollPos Lib "user32" (ByVal hWnd As Long, ByVal nBar As Long) As Long
@@ -256,6 +275,8 @@ Private Declare Function DestroyCaret Lib "user32" () As Long
 Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal XY As Currency) As Long
 Private Declare Function ReleaseCapture Lib "user32" () As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
+Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
 #End If
 Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -264,6 +285,7 @@ Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_EX_ACCEPTFILES As Long = &H10
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
@@ -297,6 +319,7 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DROPFILES As Long = &H233
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_CONTEXTMENU As Long = &H7B
@@ -387,7 +410,6 @@ Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceActiveObjectVB
 Implements OLEGuids.IOleControlVB
-Implements OLEGuids.IPerPropertyBrowsingVB
 Private TextBoxHandle As LongPtr
 Private TextBoxFontHandle As LongPtr
 Private TextBoxIMCHandle As LongPtr
@@ -402,10 +424,18 @@ Private TextBoxNetAddressString As String
 Private TextBoxNetAddressPortNumber As Integer
 Private TextBoxNetAddressPrefixLength As Byte
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
+Private PropAllowDropFiles As Boolean
 Private PropOLEDragMode As VBRUN.OLEDragConstants
 Private PropOLEDragDropScroll As Boolean
 Private PropOLEDropMode As VBRUN.OLEDropConstants
@@ -425,6 +455,7 @@ Private PropMultiLine As Boolean
 Private PropMaxLength As Long
 Private PropScrollBars As VBRUN.ScrollBarConstants
 Private PropCueBanner As String
+Private PropCueBannerAlways As Boolean
 Private PropCharacterCasing As TxtCharacterCasingConstants
 Private PropWantReturn As Boolean
 Private PropIMEMode As CCIMEModeConstants
@@ -486,42 +517,30 @@ Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Lon
 #End If
 End Sub
 
-Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-End If
-End Sub
-
-Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-End If
-End Sub
-
-Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-End If
-End Sub
-
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_STANDARD_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfaceControl)
-Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 On Error Resume Next
 TextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
+PropAllowDropFiles = False
 PropOLEDragMode = vbOLEDragManual
 PropOLEDragDropScroll = True
 Me.OLEDropMode = vbOLEDropNone
@@ -542,6 +561,7 @@ PropMultiLine = False
 PropMaxLength = 0
 PropScrollBars = vbSBNone
 PropCueBanner = vbNullString
+PropCueBannerAlways = False
 PropCharacterCasing = TxtCharacterCasingNormal
 PropWantReturn = False
 PropIMEMode = CCIMEModeNoControl
@@ -553,7 +573,6 @@ Call CreateTextBox
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 On Error Resume Next
 TextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
@@ -563,6 +582,7 @@ PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.BackColor = .ReadProperty("BackColor", vbWindowBackground)
 Me.ForeColor = .ReadProperty("ForeColor", vbWindowText)
 Me.Enabled = .ReadProperty("Enabled", True)
+PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
 PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -590,6 +610,7 @@ PropMultiLine = .ReadProperty("MultiLine", False)
 PropMaxLength = .ReadProperty("MaxLength", 0)
 PropScrollBars = .ReadProperty("ScrollBars", vbSBNone)
 PropCueBanner = .ReadProperty("CueBanner", vbNullString) ' Unicode not necessary
+PropCueBannerAlways = .ReadProperty("CueBannerAlways", False)
 PropCharacterCasing = .ReadProperty("CharacterCasing", TxtCharacterCasingNormal)
 PropWantReturn = .ReadProperty("WantReturn", False)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
@@ -608,6 +629,7 @@ With PropBag
 .WriteProperty "BackColor", Me.BackColor, vbWindowBackground
 .WriteProperty "ForeColor", Me.ForeColor, vbWindowText
 .WriteProperty "Enabled", Me.Enabled, True
+.WriteProperty "AllowDropFiles", PropAllowDropFiles, False
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -628,6 +650,7 @@ With PropBag
 .WriteProperty "MaxLength", PropMaxLength, 0
 .WriteProperty "ScrollBars", PropScrollBars, vbSBNone
 .WriteProperty "CueBanner", PropCueBanner, vbNullString ' Unicode not necessary
+.WriteProperty "CueBannerAlways", PropCueBannerAlways, False
 .WriteProperty "CharacterCasing", PropCharacterCasing, TxtCharacterCasingNormal
 .WriteProperty "WantReturn", PropWantReturn, False
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
@@ -803,9 +826,18 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfaceControl)
-Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyTextBox
 Call ComCtlsReleaseShellMod
 End Sub
@@ -1057,6 +1089,21 @@ If TextBoxHandle <> NULL_PTR Then EnableWindow TextBoxHandle, IIf(Value = True, 
 UserControl.PropertyChanged "Enabled"
 End Property
 
+Public Property Get AllowDropFiles() As Boolean
+Attribute AllowDropFiles.VB_Description = "Returns/sets a value that determines whether drag-drop files are allowed or not. Only applicable when there is no OLE drop target available."
+If TextBoxHandle <> NULL_PTR Then
+    AllowDropFiles = CBool((GetWindowLong(TextBoxHandle, GWL_EXSTYLE) And WS_EX_ACCEPTFILES) <> 0)
+Else
+    AllowDropFiles = PropAllowDropFiles
+End If
+End Property
+
+Public Property Let AllowDropFiles(ByVal Value As Boolean)
+PropAllowDropFiles = Value
+If TextBoxHandle <> NULL_PTR Then DragAcceptFiles TextBoxHandle, IIf(PropAllowDropFiles = True, 1, 0)
+UserControl.PropertyChanged "AllowDropFiles"
+End Property
+
 Public Property Get OLEDragMode() As VBRUN.OLEDragConstants
 Attribute OLEDragMode.VB_Description = "Returns/Sets whether this object can act as an OLE drop target."
 OLEDragMode = PropOLEDragMode
@@ -1098,12 +1145,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -1422,8 +1469,19 @@ End Property
 
 Public Property Let CueBanner(ByVal Value As String)
 PropCueBanner = Value
-If TextBoxHandle <> NULL_PTR And PropMultiLine = False And ComCtlsSupportLevel() >= 1 Then SendMessage TextBoxHandle, EM_SETCUEBANNER, 0, ByVal StrPtr(PropCueBanner)
+If TextBoxHandle <> NULL_PTR And PropMultiLine = False And ComCtlsSupportLevel() >= 1 Then SendMessage TextBoxHandle, EM_SETCUEBANNER, IIf(PropCueBannerAlways = True, 1, 0), ByVal StrPtr(PropCueBanner)
 UserControl.PropertyChanged "CueBanner"
+End Property
+
+Public Property Get CueBannerAlways() As Boolean
+Attribute CueBannerAlways.VB_Description = "Returns/sets a value indicating if the cue banner is displayed even when the text box has focus. Only applicable if the multi line property is set to false. Requires comctl32.dll version 6.0 or higher."
+CueBannerAlways = PropCueBannerAlways
+End Property
+
+Public Property Let CueBannerAlways(ByVal Value As Boolean)
+PropCueBannerAlways = Value
+If TextBoxHandle <> NULL_PTR And PropMultiLine = False And ComCtlsSupportLevel() >= 1 Then SendMessage TextBoxHandle, EM_SETCUEBANNER, IIf(PropCueBannerAlways = True, 1, 0), ByVal StrPtr(PropCueBanner)
+UserControl.PropertyChanged "CueBannerAlways"
 End Property
 
 Public Property Get CharacterCasing() As TxtCharacterCasingConstants
@@ -1595,6 +1653,7 @@ Private Sub CreateTextBox()
 If TextBoxHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
+If PropAllowDropFiles = True Then dwExStyle = dwExStyle Or WS_EX_ACCEPTFILES
 If PropRightToLeft = True Then dwExStyle = WS_EX_RTLREADING Or WS_EX_LEFTSCROLLBAR
 Call ComCtlsInitBorderStyle(dwStyle, dwExStyle, PropBorderStyle)
 Select Case PropAlignment
@@ -1648,6 +1707,13 @@ If TextBoxDesignMode = False Then
     If TextBoxHandle <> NULL_PTR Then Call ComCtlsSetSubclass(TextBoxHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
     If TextBoxHandle <> NULL_PTR Then Call ComCtlsCreateIMC(TextBoxHandle, TextBoxIMCHandle)
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 End If
 End Sub
 
@@ -1693,6 +1759,15 @@ Private Sub DestroyTextBox()
 If TextBoxHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(TextBoxHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If TextBoxDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 Call ComCtlsDestroyIMC(TextBoxHandle, TextBoxIMCHandle)
 ShowWindow TextBoxHandle, SW_HIDE
 SetParent TextBoxHandle, NULL_PTR
@@ -1741,8 +1816,8 @@ Attribute CanUndo.VB_Description = "Determines whether there are any actions in 
 If TextBoxHandle <> NULL_PTR Then CanUndo = CBool(SendMessage(TextBoxHandle, EM_CANUNDO, 0, ByVal 0&) <> 0)
 End Function
 
-Public Sub ResetUndoFlag()
-Attribute ResetUndoFlag.VB_Description = "Resets the undo flag."
+Public Sub ResetUndoQueue()
+Attribute ResetUndoQueue.VB_Description = "Resets the undo queue."
 If TextBoxHandle <> NULL_PTR Then SendMessage TextBoxHandle, EM_EMPTYUNDOBUFFER, 0, ByVal 0&
 End Sub
 
@@ -2043,6 +2118,29 @@ Attribute NetAddressPrefixLength.VB_MemberFlags = "400"
 NetAddressPrefixLength = TextBoxNetAddressPrefixLength
 End Property
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then
+        PreTranslateMsg = 1
+    ElseIf PropWantReturn = True Then
+        If Msg.Message = WM_KEYDOWN Or Msg.Message = WM_KEYUP Then
+            If (CLng(Msg.wParam) And &HFF&) = vbKeyReturn Then
+                SendMessage Msg.hWnd, Msg.Message, Msg.wParam, ByVal Msg.lParam
+                PreTranslateMsg = 1
+            End If
+        End If
+    End If
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -2060,16 +2158,38 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_SETCURSOR
         If LoWord(CLng(lParam)) = HTCLIENT Then
             If PropOLEDragMode = vbOLEDragAutomatic Then
-                Dim P1 As POINTAPI
+                Dim Pos As Long, P1 As POINTAPI
                 Dim CharPos As Long, CaretPos As Long
                 Dim SelStart As Long, SelEnd As Long
-                GetCursorPos P1
+                Pos = GetMessagePos()
+                P1.X = Get_X_lParam(Pos)
+                P1.Y = Get_Y_lParam(Pos)
                 ScreenToClient TextBoxHandle, P1
                 CharPos = CIntToUInt(LoWord(CLng(SendMessage(TextBoxHandle, EM_CHARFROMPOS, 0, ByVal MakeDWord(P1.X, P1.Y)))))
                 CaretPos = CLng(SendMessage(TextBoxHandle, EM_POSFROMCHAR, CharPos, ByVal 0&))
@@ -2191,20 +2311,39 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    Case WM_DROPFILES
+        If wParam <> NULL_PTR Then
+            Dim FileCount As Long
+            FileCount = DragQueryFile(wParam, -1, NULL_PTR, 0)
+            If FileCount > 0 Then
+                Dim FileList() As String, iFile As Long, FileBuffer As String, P4 As POINTAPI
+                ReDim FileList(0 To (FileCount - 1)) As String
+                For iFile = 0 To (FileCount - 1)
+                    FileBuffer = String(DragQueryFile(wParam, iFile, NULL_PTR, 0), vbNullChar)
+                    DragQueryFile wParam, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
+                    FileList(iFile) = FileBuffer
+                Next iFile
+                DragQueryPoint wParam, P4
+                RaiseEvent DropFiles(FileList(), UserControl.ScaleX(P4.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P4.Y, vbPixels, vbContainerPosition))
+            End If
+            DragFinish wParam
+        End If
+        WindowProcControl = 0
+        Exit Function
     Case WM_VSCROLL, WM_HSCROLL
         ' The notification codes EN_HSCROLL and EN_VSCROLL are not sent when clicking the scroll bar thumb itself.
         If LoWord(CLng(wParam)) = SB_THUMBTRACK Then RaiseEvent Scroll
     Case WM_CONTEXTMENU
         If wParam = TextBoxHandle Then
-            Dim P4 As POINTAPI, Handled As Boolean
-            P4.X = Get_X_lParam(lParam)
-            P4.Y = Get_Y_lParam(lParam)
-            If P4.X = -1 And P4.Y = -1 Then
+            Dim P5 As POINTAPI, Handled As Boolean
+            P5.X = Get_X_lParam(lParam)
+            P5.Y = Get_Y_lParam(lParam)
+            If P5.X = -1 And P5.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient TextBoxHandle, P4
-                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P4.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P4.Y, vbPixels, vbContainerPosition))
+                ScreenToClient TextBoxHandle, P5
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P5.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P5.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
         End If
@@ -2249,6 +2388,15 @@ Select Case wMsg
                 End If
             End If
         End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
