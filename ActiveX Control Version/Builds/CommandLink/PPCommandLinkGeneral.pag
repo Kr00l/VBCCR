@@ -17,7 +17,7 @@ Begin VB.PropertyPage PPCommandLinkGeneral
       Top             =   480
       Width           =   1770
    End
-   Begin VBCCR17.TextBoxW TextHint 
+   Begin VBCCR18.TextBoxW TextHint 
       Height          =   675
       Left            =   1800
       TabIndex        =   9
@@ -28,7 +28,7 @@ Begin VB.PropertyPage PPCommandLinkGeneral
       MultiLine       =   -1  'True
       ScrollBars      =   2
    End
-   Begin VBCCR17.TextBoxW TextCaption 
+   Begin VBCCR18.TextBoxW TextCaption 
       Height          =   675
       Left            =   1800
       TabIndex        =   7

@@ -65,7 +65,7 @@ Begin VB.PropertyPage PPDTPickerGeneral
       Top             =   2280
       Width           =   2610
    End
-   Begin VBCCR17.TextBoxW TextMaxDate 
+   Begin VBCCR18.TextBoxW TextMaxDate 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -74,7 +74,7 @@ Begin VB.PropertyPage PPDTPickerGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMinDate 
+   Begin VBCCR18.TextBoxW TextMinDate 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -83,7 +83,7 @@ Begin VB.PropertyPage PPDTPickerGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextValue 
+   Begin VBCCR18.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -124,7 +124,7 @@ Begin VB.PropertyPage PPDTPickerGeneral
       Top             =   840
       Width           =   2610
    End
-   Begin VBCCR17.TextBoxW TextCustomFormat 
+   Begin VBCCR18.TextBoxW TextCustomFormat 
       Height          =   315
       Left            =   1800
       TabIndex        =   13

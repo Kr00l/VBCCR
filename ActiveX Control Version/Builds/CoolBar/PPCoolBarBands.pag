@@ -10,7 +10,7 @@ Begin VB.PropertyPage PPCoolBarBands
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4875
    ScaleWidth      =   6225
-   Begin VBCCR17.TextBoxW TextToolTipText 
+   Begin VBCCR18.TextBoxW TextToolTipText 
       Height          =   315
       Left            =   1200
       TabIndex        =   29
@@ -49,7 +49,7 @@ Begin VB.PropertyPage PPCoolBarBands
       Top             =   4080
       Width           =   1815
    End
-   Begin VBCCR17.TextBoxW TextIdealWidth 
+   Begin VBCCR18.TextBoxW TextIdealWidth 
       Height          =   315
       Left            =   1200
       TabIndex        =   25
@@ -190,7 +190,7 @@ Begin VB.PropertyPage PPCoolBarBands
          Width           =   975
       End
    End
-   Begin VBCCR17.TextBoxW TextMinHeight 
+   Begin VBCCR18.TextBoxW TextMinHeight 
       Height          =   315
       Left            =   1200
       TabIndex        =   23
@@ -201,7 +201,7 @@ Begin VB.PropertyPage PPCoolBarBands
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextMinWidth 
+   Begin VBCCR18.TextBoxW TextMinWidth 
       Height          =   315
       Left            =   1200
       TabIndex        =   21
@@ -212,7 +212,7 @@ Begin VB.PropertyPage PPCoolBarBands
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextCX 
+   Begin VBCCR18.TextBoxW TextCX 
       Height          =   315
       Left            =   1200
       TabIndex        =   19
@@ -279,7 +279,7 @@ Begin VB.PropertyPage PPCoolBarBands
       Top             =   1920
       Width           =   1815
    End
-   Begin VBCCR17.TextBoxW TextTag 
+   Begin VBCCR18.TextBoxW TextTag 
       Height          =   315
       Left            =   1200
       TabIndex        =   13
@@ -290,7 +290,7 @@ Begin VB.PropertyPage PPCoolBarBands
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextImage 
+   Begin VBCCR18.TextBoxW TextImage 
       Height          =   315
       Left            =   1200
       TabIndex        =   17
@@ -301,7 +301,7 @@ Begin VB.PropertyPage PPCoolBarBands
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextCaption 
+   Begin VBCCR18.TextBoxW TextCaption 
       Height          =   315
       Left            =   1200
       TabIndex        =   9
@@ -312,7 +312,7 @@ Begin VB.PropertyPage PPCoolBarBands
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextKey 
+   Begin VBCCR18.TextBoxW TextKey 
       Height          =   315
       Left            =   1200
       TabIndex        =   11
@@ -361,7 +361,7 @@ Begin VB.PropertyPage PPCoolBarBands
       Top             =   120
       Width           =   300
    End
-   Begin VBCCR17.TextBoxW TextIndex 
+   Begin VBCCR18.TextBoxW TextIndex 
       Height          =   315
       Left            =   1200
       TabIndex        =   1
