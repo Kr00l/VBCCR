@@ -12,6 +12,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 Private Type TINITCOMMONCONTROLSEX
 dwSize As Long
 dwICC As Long
@@ -193,6 +196,14 @@ Private MCIWndRefCount As Long
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private ComCtlsPreTranslateMsgHookHandle As LongPtr
+Private ComCtlsPreTranslateMsgHwnd As LongPtr, ComCtlsPreTranslateMsgCount As Long
+
+#End If
 
 Public Sub ComCtlsLoadShellMod()
 If ShellModHandle = NULL_PTR And ShellModCount = 0 Then ShellModHandle = LoadLibrary(StrPtr("shell32.dll"))
@@ -480,52 +491,6 @@ Else
 End If
 End Sub
 
-Public Sub ComCtlsIPPBSetDisplayStringMousePointer(ByVal MousePointer As Integer, ByRef DisplayName As String)
-Select Case MousePointer
-    Case 0: DisplayName = "0 - Default"
-    Case 1: DisplayName = "1 - Arrow"
-    Case 2: DisplayName = "2 - Cross"
-    Case 3: DisplayName = "3 - I-Beam"
-    Case 4: DisplayName = "4 - Hand"
-    Case 5: DisplayName = "5 - Size"
-    Case 6: DisplayName = "6 - Size NE SW"
-    Case 7: DisplayName = "7 - Size N S"
-    Case 8: DisplayName = "8 - Size NW SE"
-    Case 9: DisplayName = "9 - Size W E"
-    Case 10: DisplayName = "10 - Up Arrow"
-    Case 11: DisplayName = "11 - Hourglass"
-    Case 12: DisplayName = "12 - No Drop"
-    Case 13: DisplayName = "13 - Arrow and Hourglass"
-    Case 14: DisplayName = "14 - Arrow and Question"
-    Case 15: DisplayName = "15 - Size All"
-    Case 16: DisplayName = "16 - Arrow and CD"
-    Case 99: DisplayName = "99 - Custom"
-End Select
-End Sub
-
-Public Sub ComCtlsIPPBSetPredefinedStringsMousePointer(ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-ReDim StringsOut(0 To (17 + 1)) As String
-ReDim CookiesOut(0 To (17 + 1)) As Long
-StringsOut(0) = "0 - Default": CookiesOut(0) = 0
-StringsOut(1) = "1 - Arrow": CookiesOut(1) = 1
-StringsOut(2) = "2 - Cross": CookiesOut(2) = 2
-StringsOut(3) = "3 - I-Beam": CookiesOut(3) = 3
-StringsOut(4) = "4 - Hand": CookiesOut(4) = 4
-StringsOut(5) = "5 - Size": CookiesOut(5) = 5
-StringsOut(6) = "6 - Size NE SW": CookiesOut(6) = 6
-StringsOut(7) = "7 - Size N S": CookiesOut(7) = 7
-StringsOut(8) = "8 - Size NW SE": CookiesOut(8) = 8
-StringsOut(9) = "9 - Size W E": CookiesOut(9) = 9
-StringsOut(10) = "10 - Up Arrow": CookiesOut(10) = 10
-StringsOut(11) = "11 - Hourglass": CookiesOut(11) = 11
-StringsOut(12) = "12 - No Drop": CookiesOut(12) = 12
-StringsOut(13) = "13 - Arrow and Hourglass": CookiesOut(13) = 13
-StringsOut(14) = "14 - Arrow and Question": CookiesOut(14) = 14
-StringsOut(15) = "15 - Size All": CookiesOut(15) = 15
-StringsOut(16) = "16 - Arrow and CD": CookiesOut(16) = 16
-StringsOut(17) = "99 - Custom": CookiesOut(17) = 99
-End Sub
-
 Public Sub ComCtlsIPPBSetPredefinedStringsImageList(ByRef StringsOut() As String, ByRef CookiesOut() As Long, ByRef ControlsEnum As VBRUN.ParentControls, ByRef ImageListArray() As String)
 Dim ControlEnum As Object, PropUBound As Long
 PropUBound = UBound(StringsOut())
@@ -552,42 +517,42 @@ End Sub
 
 Public Sub ComCtlsPPInitComboMousePointer(ByVal ComboBox As Object)
 With ComboBox
-.AddItem "0 - Default"
-.ItemData(.NewIndex) = 0
-.AddItem "1 - Arrow"
-.ItemData(.NewIndex) = 1
-.AddItem "2 - Cross"
-.ItemData(.NewIndex) = 2
-.AddItem "3 - I-Beam"
-.ItemData(.NewIndex) = 3
-.AddItem "4 - Hand"
-.ItemData(.NewIndex) = 4
-.AddItem "5 - Size"
-.ItemData(.NewIndex) = 5
-.AddItem "6 - Size NE SW"
-.ItemData(.NewIndex) = 6
-.AddItem "7 - Size N S"
-.ItemData(.NewIndex) = 7
-.AddItem "8 - Size NW SE"
-.ItemData(.NewIndex) = 8
-.AddItem "9 - Size W E"
-.ItemData(.NewIndex) = 9
-.AddItem "10 - Up Arrow"
-.ItemData(.NewIndex) = 10
-.AddItem "11 - Hourglass"
-.ItemData(.NewIndex) = 11
-.AddItem "12 - No Drop"
-.ItemData(.NewIndex) = 12
-.AddItem "13 - Arrow and Hourglass"
-.ItemData(.NewIndex) = 13
-.AddItem "14 - Arrow and Question"
-.ItemData(.NewIndex) = 14
-.AddItem "15 - Size All"
-.ItemData(.NewIndex) = 15
-.AddItem "16 - Arrow and CD"
-.ItemData(.NewIndex) = 16
-.AddItem "99 - Custom"
-.ItemData(.NewIndex) = 99
+.AddItem CCMousePointerDefault & " - Default"
+.ItemData(.NewIndex) = CCMousePointerDefault
+.AddItem CCMousePointerArrow & " - Arrow"
+.ItemData(.NewIndex) = CCMousePointerArrow
+.AddItem CCMousePointerCrosshair & " - Cross"
+.ItemData(.NewIndex) = CCMousePointerCrosshair
+.AddItem CCMousePointerIbeam & " - I-Beam"
+.ItemData(.NewIndex) = CCMousePointerIbeam
+.AddItem CCMousePointerHand & " - Hand"
+.ItemData(.NewIndex) = CCMousePointerHand
+.AddItem CCMousePointerSizePointer & " - Size"
+.ItemData(.NewIndex) = CCMousePointerSizePointer
+.AddItem CCMousePointerSizeNESW & " - Size NE SW"
+.ItemData(.NewIndex) = CCMousePointerSizeNESW
+.AddItem CCMousePointerSizeNS & " - Size N S"
+.ItemData(.NewIndex) = CCMousePointerSizeNS
+.AddItem CCMousePointerSizeNWSE & " - Size NW SE"
+.ItemData(.NewIndex) = CCMousePointerSizeNWSE
+.AddItem CCMousePointerSizeWE & " - Size W E"
+.ItemData(.NewIndex) = CCMousePointerSizeWE
+.AddItem CCMousePointerUpArrow & " - Up Arrow"
+.ItemData(.NewIndex) = CCMousePointerUpArrow
+.AddItem CCMousePointerHourglass & " - Hourglass"
+.ItemData(.NewIndex) = CCMousePointerHourglass
+.AddItem CCMousePointerNoDrop & " - No Drop"
+.ItemData(.NewIndex) = CCMousePointerNoDrop
+.AddItem CCMousePointerArrowHourglass & " - Arrow and Hourglass"
+.ItemData(.NewIndex) = CCMousePointerArrowHourglass
+.AddItem CCMousePointerArrowQuestion & " - Arrow and Question"
+.ItemData(.NewIndex) = CCMousePointerArrowQuestion
+.AddItem CCMousePointerSizeAll & " - Size All"
+.ItemData(.NewIndex) = CCMousePointerSizeAll
+.AddItem CCMousePointerArrowCD & " - Arrow and CD"
+.ItemData(.NewIndex) = CCMousePointerArrowCD
+.AddItem CCMousePointerCustom & " - Custom"
+.ItemData(.NewIndex) = CCMousePointerCustom
 End With
 End Sub
 
@@ -1286,3 +1251,58 @@ If nCode >= HC_ACTION And wParam = PM_REMOVE Then
 End If
 ComCtlsCdlFRHookProc = CallNextHookEx(CdlFRHookHandle, nCode, wParam, lParam)
 End Function
+
+#If ImplementPreTranslateMsg = True Then
+
+Public Sub ComCtlsPreTranslateMsgAddHook()
+If ComCtlsPreTranslateMsgHookHandle = NULL_PTR And ComCtlsPreTranslateMsgCount = 0 Then
+    Const WH_GETMESSAGE As Long = 3
+    ComCtlsPreTranslateMsgHookHandle = SetWindowsHookEx(WH_GETMESSAGE, AddressOf ComCtlsPreTranslateMsgHookProc, NULL_PTR, App.ThreadID)
+End If
+ComCtlsPreTranslateMsgCount = ComCtlsPreTranslateMsgCount + 1
+End Sub
+
+Public Sub ComCtlsPreTranslateMsgReleaseHook()
+ComCtlsPreTranslateMsgCount = ComCtlsPreTranslateMsgCount - 1
+If ComCtlsPreTranslateMsgHookHandle <> NULL_PTR And ComCtlsPreTranslateMsgCount = 0 Then
+    UnhookWindowsHookEx ComCtlsPreTranslateMsgHookHandle
+    ComCtlsPreTranslateMsgHookHandle = NULL_PTR
+    ComCtlsPreTranslateMsgHwnd = NULL_PTR
+End If
+End Sub
+
+#If VBA7 Then
+Public Sub ComCtlsPreTranslateMsgActivate(ByVal hWnd As LongPtr)
+#Else
+Public Sub ComCtlsPreTranslateMsgActivate(ByVal hWnd As Long)
+#End If
+ComCtlsPreTranslateMsgHwnd = hWnd
+End Sub
+
+Public Sub ComCtlsPreTranslateMsgDeActivate()
+ComCtlsPreTranslateMsgHwnd = NULL_PTR
+End Sub
+
+Private Function ComCtlsPreTranslateMsgHookProc(ByVal nCode As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Const HC_ACTION As Long = 0, PM_REMOVE As Long = &H1
+Const WM_KEYFIRST As Long = &H100, WM_KEYLAST As Long = &H108, WM_NULL As Long = &H0
+If nCode >= HC_ACTION And wParam = PM_REMOVE Then
+    Dim Msg As TMSG
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    If Msg.Message >= WM_KEYFIRST And Msg.Message <= WM_KEYLAST Then
+        If ComCtlsPreTranslateMsgHwnd <> NULL_PTR And ComCtlsPreTranslateMsgCount > 0 Then
+            If Msg.hWnd = ComCtlsPreTranslateMsgHwnd Then
+                If SendMessage(Msg.hWnd, UM_PRETRANSLATEMSG, 0, ByVal lParam) <> 0 Then
+                    Msg.Message = WM_NULL
+                    Msg.wParam = 0
+                    Msg.lParam = 0
+                    CopyMemory ByVal lParam, Msg, LenB(Msg)
+                End If
+            End If
+        End If
+    End If
+End If
+ComCtlsPreTranslateMsgHookProc = CallNextHookEx(ComCtlsPreTranslateMsgHookHandle, nCode, wParam, lParam)
+End Function
+
+#End If

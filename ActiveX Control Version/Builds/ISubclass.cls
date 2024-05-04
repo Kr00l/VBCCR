@@ -14,6 +14,7 @@ Attribute VB_Exposed = True
 Option Explicit
 #If False Then
 Private OLEDropModeNone, OLEDropModeManual
+Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerCustom
 Private CCAppearanceFlat, CCAppearance3D
 Private CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
 Private CCBackStyleTransparent, CCBackStyleOpaque
@@ -21,10 +22,31 @@ Private CCLeftRightAlignmentLeft, CCLeftRightAlignmentRight
 Private CCVerticalAlignmentTop, CCVerticalAlignmentCenter, CCVerticalAlignmentBottom
 Private CCIMEModeNoControl, CCIMEModeOn, CCIMEModeOff, CCIMEModeDisable, CCIMEModeHiragana, CCIMEModeKatakana, CCIMEModeKatakanaHalf, CCIMEModeAlphaFull, CCIMEModeAlpha, CCIMEModeHangulFull, CCIMEModeHangul
 Private CCRightToLeftModeNoControl, CCRightToLeftModeVBAME, CCRightToLeftModeSystemLocale, CCRightToLeftModeUserLocale, CCRightToLeftModeOSLanguage
+Private CCScrollOrientationHorizontal, CCScrollOrientationVertical, CCScrollOrientationBoth
 #End If
 Public Enum OLEDropModeConstants
 OLEDropModeNone = vbOLEDropNone
 OLEDropModeManual = vbOLEDropManual
+End Enum
+Public Enum CCMousePointerConstants
+CCMousePointerDefault = 0
+CCMousePointerArrow = 1
+CCMousePointerCrosshair = 2
+CCMousePointerIbeam = 3
+CCMousePointerHand = 4
+CCMousePointerSizePointer = 5
+CCMousePointerSizeNESW = 6
+CCMousePointerSizeNS = 7
+CCMousePointerSizeNWSE = 8
+CCMousePointerSizeWE = 9
+CCMousePointerUpArrow = 10
+CCMousePointerHourglass = 11
+CCMousePointerNoDrop = 12
+CCMousePointerArrowHourglass = 13
+CCMousePointerArrowQuestion = 14
+CCMousePointerSizeAll = 15
+CCMousePointerArrowCD = 16
+CCMousePointerCustom = 99
 End Enum
 Public Enum CCAppearanceConstants
 CCAppearanceFlat = 0
@@ -69,6 +91,11 @@ CCRightToLeftModeVBAME = 1
 CCRightToLeftModeSystemLocale = 2
 CCRightToLeftModeUserLocale = 3
 CCRightToLeftModeOSLanguage = 4
+End Enum
+Public Enum CCScrollOrientationConstants
+CCScrollOrientationHorizontal = 0
+CCScrollOrientationVertical = 1
+CCScrollOrientationBoth = 2
 End Enum
 
 #If VBA7 Then
