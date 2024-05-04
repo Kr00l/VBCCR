@@ -65,7 +65,7 @@ Begin VB.PropertyPage PPImageListGeneral
       Top             =   120
       Width           =   975
    End
-   Begin VBCCR17.TextBoxW TextImageWidth 
+   Begin VBCCR18.TextBoxW TextImageWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -74,7 +74,7 @@ Begin VB.PropertyPage PPImageListGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextImageHeight 
+   Begin VBCCR18.TextBoxW TextImageHeight 
       Height          =   315
       Left            =   1800
       TabIndex        =   5

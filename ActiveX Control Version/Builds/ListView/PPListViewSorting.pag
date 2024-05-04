@@ -24,7 +24,7 @@ Begin VB.PropertyPage PPListViewSorting
          Top             =   360
          Width           =   1620
       End
-      Begin VBCCR17.TextBoxW TextSortKey 
+      Begin VBCCR18.TextBoxW TextSortKey 
          Height          =   315
          Left            =   1920
          TabIndex        =   3

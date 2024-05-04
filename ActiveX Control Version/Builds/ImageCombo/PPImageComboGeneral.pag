@@ -41,7 +41,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Top             =   3000
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextMaxLength 
+   Begin VBCCR18.TextBoxW TextMaxLength 
       Height          =   315
       Left            =   1800
       TabIndex        =   16
@@ -50,7 +50,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMaxDropDownItems 
+   Begin VBCCR18.TextBoxW TextMaxDropDownItems 
       Height          =   315
       Left            =   1800
       TabIndex        =   14
@@ -99,7 +99,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Top             =   1200
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextIndentation 
+   Begin VBCCR18.TextBoxW TextIndentation 
       Height          =   315
       Left            =   1800
       TabIndex        =   12
@@ -108,7 +108,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextText 
+   Begin VBCCR18.TextBoxW TextText 
       Height          =   315
       Left            =   1800
       TabIndex        =   10

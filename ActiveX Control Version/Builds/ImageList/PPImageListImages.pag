@@ -71,7 +71,7 @@ Begin VB.PropertyPage PPImageListImages
       TabIndex        =   0
       Top             =   120
       Width           =   5655
-      Begin VBCCR17.TextBoxW TextTag 
+      Begin VBCCR18.TextBoxW TextTag 
          Height          =   315
          Left            =   2520
          TabIndex        =   6
@@ -83,7 +83,7 @@ Begin VB.PropertyPage PPImageListImages
          Enabled         =   0   'False
          MaxLength       =   20
       End
-      Begin VBCCR17.TextBoxW TextIndex 
+      Begin VBCCR18.TextBoxW TextIndex 
          Height          =   315
          Left            =   720
          TabIndex        =   2
@@ -95,7 +95,7 @@ Begin VB.PropertyPage PPImageListImages
          Enabled         =   0   'False
          Locked          =   -1  'True
       End
-      Begin VBCCR17.TextBoxW TextKey 
+      Begin VBCCR18.TextBoxW TextKey 
          Height          =   315
          Left            =   2520
          TabIndex        =   4

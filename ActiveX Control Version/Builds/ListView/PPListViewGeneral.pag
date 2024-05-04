@@ -25,7 +25,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   5520
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextVirtualItemCount 
+   Begin VBCCR18.TextBoxW TextVirtualItemCount 
       Height          =   315
       Left            =   1800
       TabIndex        =   30
@@ -90,7 +90,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   6480
       Width           =   2160
    End
-   Begin VBCCR17.TextBoxW TextGroupSubsetCount 
+   Begin VBCCR18.TextBoxW TextGroupSubsetCount 
       Height          =   315
       Left            =   1800
       TabIndex        =   26
@@ -147,7 +147,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   5760
       Width           =   2160
    End
-   Begin VBCCR17.TextBoxW TextTileViewLines 
+   Begin VBCCR18.TextBoxW TextTileViewLines 
       Height          =   315
       Left            =   1800
       TabIndex        =   24
@@ -228,7 +228,7 @@ Begin VB.PropertyPage PPListViewGeneral
       Top             =   120
       Width           =   1620
    End
-   Begin VBCCR17.TextBoxW TextHoverSelectionTime 
+   Begin VBCCR18.TextBoxW TextHoverSelectionTime 
       Height          =   315
       Left            =   1800
       TabIndex        =   18

@@ -36,6 +36,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private LvwViewIcon, LvwViewSmallIcon, LvwViewList, LvwViewReport, LvwViewTile
 Private LvwArrangeNone, LvwArrangeAutoLeft, LvwArrangeAutoTop, LvwArrangeLeft, LvwArrangeTop
@@ -147,6 +150,14 @@ End Enum
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type RECT
 Left As Long
@@ -436,12 +447,17 @@ Private Type HDTEXTFILTER
 pszText As LongPtr
 cchTextMax As Long
 End Type
+' Must be declared at the beginning so that conditional compilation will not bug the events.
+Private WithEvents PropFont As StdFont
+Attribute PropFont.VB_VarHelpID = -1
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when the user presses and releases a mouse button and then presses and releases it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event DropFiles(ByRef FileList As Variant, ByVal X As Single, ByVal Y As Single)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event BeforeScroll(ByVal DeltaX As Single, ByVal DeltaY As Single)
 Attribute BeforeScroll.VB_Description = "Occurs when the control is about to be scrolled. Requires comctl32.dll version 6.0 or higher."
 Public Event AfterScroll(ByVal DeltaX As Single, ByVal DeltaY As Single)
@@ -498,8 +514,13 @@ Public Event ColumnFilterChanged(ByVal ColumnHeader As LvwColumnHeader)
 Attribute ColumnFilterChanged.VB_Description = "Occurs when a filter of a column header has been changed."
 Public Event ColumnFilterButtonClick(ByVal ColumnHeader As LvwColumnHeader, ByRef RaiseFilterChanged As Boolean, ByVal ButtonLeft As Long, ByVal ButtonTop As Long, ByVal ButtonRight As Long, ByVal ButtonBottom As Long)
 Attribute ColumnFilterButtonClick.VB_Description = "Occurs when a filter button of a column header is clicked."
+#If VBA7 Then
+Public Event BeforeFilterEdit(ByVal ColumnHeader As LvwColumnHeader, ByVal hWndFilterEdit As LongPtr)
+Attribute BeforeFilterEdit.VB_Description = "Occurs when a user attempts to edit the filter of the corresponding column header."
+#Else
 Public Event BeforeFilterEdit(ByVal ColumnHeader As LvwColumnHeader, ByVal hWndFilterEdit As Long)
 Attribute BeforeFilterEdit.VB_Description = "Occurs when a user attempts to edit the filter of the corresponding column header."
+#End If
 Public Event AfterFilterEdit(ByVal ColumnHeader As LvwColumnHeader)
 Attribute AfterFilterEdit.VB_Description = "Occurs after a user edits the filter of the corresponding column header."
 Public Event GetEmptyMarkup(ByRef Text As String, ByRef Center As Boolean)
@@ -552,6 +573,8 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As LongPtr, ByVal fAccept As Long)
+Private Declare PtrSafe Sub DragFinish Lib "shell32" (ByVal hDrop As LongPtr)
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function lstrcmp Lib "kernel32" Alias "lstrcmpW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As Long
 Private Declare PtrSafe Function lstrcmpi Lib "kernel32" Alias "lstrcmpiW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As Long
@@ -588,8 +611,12 @@ Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
+Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
+Private Declare Sub DragFinish Lib "shell32" (ByVal hDrop As Long)
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrcmp Lib "kernel32" Alias "lstrcmpW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function lstrcmpi Lib "kernel32" Alias "lstrcmpiW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
@@ -626,6 +653,8 @@ Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hW
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
+Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
 #End If
 Private Const ICC_LISTVIEW_CLASSES As Long = &H1
 Private Const ICC_TAB_CLASSES As Long = &H8
@@ -644,6 +673,7 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_POPUP As Long = &H80000000
 Private Const WS_EX_TOOLWINDOW As Long = &H80
 Private Const WS_EX_TOPMOST As Long = &H8
+Private Const WS_EX_ACCEPTFILES As Long = &H10
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
@@ -680,6 +710,7 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SIZE As Long = &H5
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_DROPFILES As Long = &H233
 Private Const WM_SETREDRAW As Long = &HB
 Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const COLOR_HOTLIGHT As Long = 26
@@ -1144,23 +1175,28 @@ Private ListViewSmallIconsObjectPointer As LongPtr
 Private ListViewColumnHeaderIconsObjectPointer As LongPtr
 Private ListViewGroupIconsObjectPointer As LongPtr
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
-Private DispIdHotMousePointer As Long
-Private DispIdHeaderMousePointer As Long
 Private DispIdIcons As Long, IconsArray() As String
 Private DispIdSmallIcons As Long, SmallIconsArray() As String
 Private DispIdColumnHeaderIcons As Long, ColumnHeaderIconsArray() As String
 Private DispIdGroupIcons As Long, GroupIconsArray() As String
-Private WithEvents PropFont As StdFont
-Attribute PropFont.VB_VarHelpID = -1
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private PropListItems As LvwListItems
 Private PropColumnHeaders As LvwColumnHeaders
 Private PropGroups As LvwGroups
 Private PropWorkAreas As LvwWorkAreas
 Private PropVisualStyles As Boolean
 Private PropVisualTheme As LvwVisualThemeConstants
+Private PropAllowDropFiles As Boolean
 Private PropOLEDragMode As VBRUN.OLEDragConstants
 Private PropOLEDragDropScroll As Boolean
+Private PropOLEDragDropScrollOrientation As CCScrollOrientationConstants
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropHotMousePointer As Integer, PropHotMouseIcon As IPictureDisp
 Private PropHeaderMousePointer As Integer, PropHeaderMouseIcon As IPictureDisp
@@ -1261,16 +1297,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdHotMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropHotMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdHeaderMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropHeaderMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdIcons Then
+If DispId = DispIdIcons Then
     DisplayName = PropIconsName
     Handled = True
 ElseIf DispId = DispIdSmallIcons Then
@@ -1286,10 +1313,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Or DispId = DispIdHotMousePointer Or DispId = DispIdHeaderMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdIcons Or DispId = DispIdSmallIcons Or DispId = DispIdColumnHeaderIcons Or DispId = DispIdGroupIcons Then
+If DispId = DispIdIcons Or DispId = DispIdSmallIcons Or DispId = DispIdColumnHeaderIcons Or DispId = DispIdGroupIcons Then
     On Error GoTo CATCH_EXCEPTION
     Call ComCtlsIPPBSetPredefinedStringsImageList(StringsOut(), CookiesOut(), UserControl.ParentControls, IconsArray())
     SmallIconsArray() = IconsArray()
@@ -1304,10 +1328,7 @@ Handled = False
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Or DispId = DispIdHotMousePointer Or DispId = DispIdHeaderMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdIcons Then
+If DispId = DispIdIcons Then
     If Cookie < UBound(IconsArray()) Then Value = IconsArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdSmallIcons Then
@@ -1325,7 +1346,17 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_LISTVIEW_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ListViewHotLightColor = CLR_DEFAULT
 ListViewHotTrackItem = -1
@@ -1338,9 +1369,6 @@ ReDim GroupIconsArray(0) As String
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
-If DispIdHotMousePointer = 0 Then DispIdHotMousePointer = GetDispId(Me, "HotMousePointer")
-If DispIdHeaderMousePointer = 0 Then DispIdHeaderMousePointer = GetDispId(Me, "HeaderMousePointer")
 If DispIdIcons = 0 Then DispIdIcons = GetDispId(Me, "Icons")
 If DispIdSmallIcons = 0 Then DispIdSmallIcons = GetDispId(Me, "SmallIcons")
 If DispIdColumnHeaderIcons = 0 Then DispIdColumnHeaderIcons = GetDispId(Me, "ColumnHeaderIcons")
@@ -1351,8 +1379,10 @@ On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
 PropVisualTheme = LvwVisualThemeStandard
+PropAllowDropFiles = False
 PropOLEDragMode = vbOLEDragManual
 PropOLEDragDropScroll = True
+PropOLEDragDropScrollOrientation = CCScrollOrientationBoth
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropHotMousePointer = 0: Set PropHotMouseIcon = Nothing
@@ -1431,9 +1461,6 @@ End If
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
-If DispIdHotMousePointer = 0 Then DispIdHotMousePointer = GetDispId(Me, "HotMousePointer")
-If DispIdHeaderMousePointer = 0 Then DispIdHeaderMousePointer = GetDispId(Me, "HeaderMousePointer")
 If DispIdIcons = 0 Then DispIdIcons = GetDispId(Me, "Icons")
 If DispIdSmallIcons = 0 Then DispIdSmallIcons = GetDispId(Me, "SmallIcons")
 If DispIdColumnHeaderIcons = 0 Then DispIdColumnHeaderIcons = GetDispId(Me, "ColumnHeaderIcons")
@@ -1446,8 +1473,10 @@ Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 PropVisualTheme = .ReadProperty("VisualTheme", LvwVisualThemeStandard)
 Me.Enabled = .ReadProperty("Enabled", True)
+PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
 PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
+PropOLEDragDropScrollOrientation = .ReadProperty("OLEDragDropScrollOrientation", CCScrollOrientationBoth)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
@@ -1537,8 +1566,10 @@ With PropBag
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "VisualTheme", PropVisualTheme, LvwVisualThemeStandard
 .WriteProperty "Enabled", Me.Enabled, True
+.WriteProperty "AllowDropFiles", PropAllowDropFiles, False
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
+.WriteProperty "OLEDragDropScrollOrientation", PropOLEDragDropScrollOrientation, CCScrollOrientationBoth
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
@@ -1641,28 +1672,32 @@ If ListViewHandle <> NULL_PTR Then
             Dim dwStyle As Long, dwExStyle As Long
             dwStyle = GetWindowLong(ListViewHandle, GWL_STYLE)
             dwExStyle = GetWindowLong(ListViewHandle, GWL_EXSTYLE)
-            If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
-                Dim CX1 As Long, CX2 As Long
-                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                    If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
-                        CX1 = GetSystemMetrics(SM_CXVSCROLL)
-                    Else
-                        CX2 = GetSystemMetrics(SM_CXVSCROLL)
+            If PropOLEDragDropScrollOrientation = CCScrollOrientationHorizontal Or PropOLEDragDropScrollOrientation = CCScrollOrientationBoth Then
+                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
+                    Dim CX1 As Long, CX2 As Long
+                    If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                        If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
+                            CX1 = GetSystemMetrics(SM_CXVSCROLL)
+                        Else
+                            CX2 = GetSystemMetrics(SM_CXVSCROLL)
+                        End If
+                    End If
+                    If X < ((16 * PixelsPerDIP_X()) + CX1) Then
+                        SendMessage ListViewHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
+                    ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
+                        SendMessage ListViewHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
                     End If
                 End If
-                If X < ((16 * PixelsPerDIP_X()) + CX1) Then
-                    SendMessage ListViewHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
-                ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
-                    SendMessage ListViewHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
-                End If
             End If
-            If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
-                Dim CY1 As Long, CY2 As Long
-                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
-                If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
-                    SendMessage ListViewHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
-                ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
-                    SendMessage ListViewHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
+            If PropOLEDragDropScrollOrientation = CCScrollOrientationVertical Or PropOLEDragDropScrollOrientation = CCScrollOrientationBoth Then
+                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                    Dim CY1 As Long, CY2 As Long
+                    If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
+                    If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
+                        SendMessage ListViewHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
+                    ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
+                        SendMessage ListViewHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
+                    End If
                 End If
             End If
         End If
@@ -1741,7 +1776,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyListView
 Call ComCtlsReleaseShellMod
@@ -2077,6 +2122,21 @@ If ListViewHandle <> NULL_PTR Then EnableWindow ListViewHandle, IIf(Value = True
 UserControl.PropertyChanged "Enabled"
 End Property
 
+Public Property Get AllowDropFiles() As Boolean
+Attribute AllowDropFiles.VB_Description = "Returns/sets a value that determines whether drag-drop files are allowed or not. Only applicable when there is no OLE drop target available."
+If ListViewHandle <> NULL_PTR Then
+    AllowDropFiles = CBool((GetWindowLong(ListViewHandle, GWL_EXSTYLE) And WS_EX_ACCEPTFILES) <> 0)
+Else
+    AllowDropFiles = PropAllowDropFiles
+End If
+End Property
+
+Public Property Let AllowDropFiles(ByVal Value As Boolean)
+PropAllowDropFiles = Value
+If ListViewHandle <> NULL_PTR Then DragAcceptFiles ListViewHandle, IIf(PropAllowDropFiles = True, 1, 0)
+UserControl.PropertyChanged "AllowDropFiles"
+End Property
+
 Public Property Get OLEDragMode() As VBRUN.OLEDragConstants
 Attribute OLEDragMode.VB_Description = "Returns/Sets whether this control can act as an OLE drag/drop source, and whether this process is started automatically or under programmatic control."
 OLEDragMode = PropOLEDragMode
@@ -2102,6 +2162,21 @@ PropOLEDragDropScroll = Value
 UserControl.PropertyChanged "OLEDragDropScroll"
 End Property
 
+Public Property Get OLEDragDropScrollOrientation() As CCScrollOrientationConstants
+Attribute OLEDragDropScrollOrientation.VB_Description = "Returns/Sets the scroll orientation for an OLE drag/drop scroll."
+OLEDragDropScrollOrientation = PropOLEDragDropScrollOrientation
+End Property
+
+Public Property Let OLEDragDropScrollOrientation(ByVal Value As CCScrollOrientationConstants)
+Select Case Value
+    Case CCScrollOrientationHorizontal, CCScrollOrientationVertical, CCScrollOrientationBoth
+        PropOLEDragDropScrollOrientation = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "OLEDragDropScrollOrientation"
+End Property
+
 Public Property Get OLEDropMode() As OLEDropModeConstants
 Attribute OLEDropMode.VB_Description = "Returns/Sets whether this object can act as an OLE drop target."
 OLEDropMode = UserControl.OLEDropMode
@@ -2117,12 +2192,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -2161,12 +2236,12 @@ If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
-Public Property Get HotMousePointer() As Integer
+Public Property Get HotMousePointer() As CCMousePointerConstants
 Attribute HotMousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over an item while hot tracking is enabled."
 HotMousePointer = PropHotMousePointer
 End Property
 
-Public Property Let HotMousePointer(ByVal Value As Integer)
+Public Property Let HotMousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropHotMousePointer = Value
@@ -2223,12 +2298,12 @@ If ListViewDesignMode = False Then Call RefreshMousePointer
 UserControl.PropertyChanged "HotMouseIcon"
 End Property
 
-Public Property Get HeaderMousePointer() As Integer
+Public Property Get HeaderMousePointer() As CCMousePointerConstants
 Attribute HeaderMousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over the column headers."
 HeaderMousePointer = PropHeaderMousePointer
 End Property
 
-Public Property Let HeaderMousePointer(ByVal Value As Integer)
+Public Property Let HeaderMousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropHeaderMousePointer = Value
@@ -5720,6 +5795,7 @@ Private Sub CreateListView()
 If ListViewHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE Or LVS_SHAREIMAGELISTS
+If PropAllowDropFiles = True Then dwExStyle = dwExStyle Or WS_EX_ACCEPTFILES
 If PropRightToLeft = True Then
     If PropRightToLeftLayout = True Then
         dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
@@ -5840,6 +5916,13 @@ If ListViewDesignMode = False Then
         Call ComCtlsSetSubclass(ListViewHandle, Me, 1)
         Call ComCtlsCreateIMC(ListViewHandle, ListViewIMCHandle)
     End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 End If
 End Sub
 
@@ -5876,6 +5959,15 @@ If ListViewHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(ListViewHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
 Call ComCtlsDestroyIMC(ListViewHandle, ListViewIMCHandle)
+If ListViewDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 Call DestroyHeaderToolTip
 ShowWindow ListViewHandle, SW_HIDE
 SetParent ListViewHandle, NULL_PTR
@@ -6880,6 +6972,19 @@ If ListViewHandle <> NULL_PTR Then
 End If
 End Sub
 
+Public Property Get IncrementalSearchString() As String
+Attribute IncrementalSearchString.VB_Description = "Returns the incremental search string, or an empty string if the list view is not in incremental search mode."
+Attribute IncrementalSearchString.VB_MemberFlags = "400"
+If ListViewHandle <> NULL_PTR Then
+    Dim Length As Long
+    Length = CLng(SendMessage(ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal 0&))
+    If Length > 0 Then
+        IncrementalSearchString = String(Length, vbNullChar)
+        SendMessage ListViewHandle, LVM_GETISEARCHSTRING, 0, ByVal StrPtr(IncrementalSearchString)
+    End If
+End If
+End Property
+
 Private Sub SetVisualStylesHeader()
 If ListViewHandle <> NULL_PTR Then
     If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader
@@ -7284,7 +7389,7 @@ End If
 End Sub
 
 Private Function GetFilterEditIndex(ByVal hWndFilterEdit As LongPtr) As Long
-If ListViewHandle = NULL_PTR Or hWndFilterEdit = 0 Then Exit Function
+If ListViewHandle = NULL_PTR Or hWndFilterEdit = NULL_PTR Then Exit Function
 ' If comctl32.dll version is 6.1 or higher then HDN_BEGINFILTEREDIT and HDN_ENDFILTEREDIT will be sent.
 ' Thus we return zero in order to not raise the events 'BeforeFilterEdit' and 'AfterFilterEdit' twice.
 If ComCtlsSupportLevel() >= 2 Then Exit Function
@@ -7339,6 +7444,20 @@ PtInRect = 0
 If X >= lpRect.Left And X < lpRect.Right And Y >= lpRect.Top And Y < lpRect.Bottom Then PtInRect = 1
 End Function
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -7386,9 +7505,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
         PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, GetShiftStateFromParam(wParam)), ByVal lParam
@@ -7412,6 +7551,25 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_DROPFILES
+        If wParam <> NULL_PTR Then
+            Dim FileCount As Long
+            FileCount = DragQueryFile(wParam, -1, NULL_PTR, 0)
+            If FileCount > 0 Then
+                Dim FileList() As String, iFile As Long, FileBuffer As String, P As POINTAPI
+                ReDim FileList(0 To (FileCount - 1)) As String
+                For iFile = 0 To (FileCount - 1)
+                    FileBuffer = String(DragQueryFile(wParam, iFile, NULL_PTR, 0), vbNullChar)
+                    DragQueryFile wParam, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
+                    FileList(iFile) = FileBuffer
+                Next iFile
+                DragQueryPoint wParam, P
+                RaiseEvent DropFiles(FileList(), UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+            End If
+            DragFinish wParam
+        End If
+        WindowProcControl = 0
+        Exit Function
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = CLng(wParam) And &HFF&
@@ -7576,15 +7734,7 @@ Select Case wMsg
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
                     NMHDR.iItem = CLng(SendMessage(NMHDR.hdr.hWndFrom, HDM_GETFOCUSEDITEM, 0, ByVal 0&))
-                    If NMHDR.iItem > -1 Then
-                        #If Win64 Then
-                        Dim hWnd32 As Long
-                        CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(ListViewFilterEditHandle), 4
-                        RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), hWnd32)
-                        #Else
-                        RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
-                        #End If
-                    End If
+                    If NMHDR.iItem > -1 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
                 Case HDN_ENDFILTEREDIT
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
@@ -7689,6 +7839,15 @@ Select Case wMsg
         ListViewButtonDown = LoWord(CLng(wParam))
         ListViewIsClick = True
         Exit Function
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -7748,9 +7907,29 @@ End Function
 Private Function WindowProcLabelEdit(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_SETFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_KEYDOWN, WM_KEYUP
         ListViewCharCodeCache = ComCtlsPeekCharCode(hWnd)
     Case WM_CHAR
@@ -7800,9 +7979,29 @@ End Function
 Private Function WindowProcHeader(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_SETFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         Dim HDHTI1 As HDHITTESTINFO
         With HDHTI1
@@ -7895,15 +8094,7 @@ Select Case wMsg
                     Call ComCtlsSetSubclass(lParam, Me, 3)
                     Call ActivateIPAO(Me)
                 End If
-                If ListViewFilterEditIndex > 0 Then
-                    #If Win64 Then
-                    Dim hWnd32 As Long
-                    CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(ListViewFilterEditHandle), 4
-                    RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), hWnd32)
-                    #Else
-                    RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
-                    #End If
-                End If
+                If ListViewFilterEditIndex > 0 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
             Case EN_KILLFOCUS
                 ' When the user types ESC or RETURN the filter edit window sends EN_KILLFOCUS.
                 ' In all other cases the filter edit window sends WM_KILLFOCUS.
