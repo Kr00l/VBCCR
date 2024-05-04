@@ -97,7 +97,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       Top             =   1200
       Width           =   1800
    End
-   Begin VBCCR17.TextBoxW TextValue 
+   Begin VBCCR18.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   10
@@ -106,7 +106,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextIncrement 
+   Begin VBCCR18.TextBoxW TextIncrement 
       Height          =   315
       Left            =   1800
       TabIndex        =   12
@@ -115,7 +115,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMax 
+   Begin VBCCR18.TextBoxW TextMax 
       Height          =   315
       Left            =   1800
       TabIndex        =   8
@@ -124,7 +124,7 @@ Begin VB.PropertyPage PPSpinBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMin 
+   Begin VBCCR18.TextBoxW TextMin 
       Height          =   315
       Left            =   1800
       TabIndex        =   6

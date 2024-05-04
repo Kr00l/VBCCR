@@ -25,7 +25,7 @@ Begin VB.PropertyPage PPPagerGeneral
       Top             =   840
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextButtonSize 
+   Begin VBCCR18.TextBoxW TextButtonSize 
       Height          =   315
       Left            =   1800
       TabIndex        =   10
@@ -34,7 +34,7 @@ Begin VB.PropertyPage PPPagerGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextBorderWidth 
+   Begin VBCCR18.TextBoxW TextBorderWidth 
       Height          =   315
       Left            =   1800
       TabIndex        =   8

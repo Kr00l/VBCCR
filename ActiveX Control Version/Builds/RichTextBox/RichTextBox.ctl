@@ -35,11 +35,12 @@ Private Const PTR_SIZE As Long = 4
 #End If
 
 #Const ImplementThemedBorder = True
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
 
 #If False Then
 Private RtfLoadSaveFormatRTF, RtfLoadSaveFormatText, RtfLoadSaveFormatUnicodeText
 Private RtfFindOptionWholeWord, RtfFindOptionMatchCase, RtfFindOptionNoHighlight, RtfFindOptionReverse
-Private RtfActionTypeUnknown, RtfActionTypeTyping, RtfActionTypeDelete, RtfActionTypeOLEDragDrop, RtfActionTypeCut, RtfActionTypePaste, RtfActionTypeAutoTable
+Private RtfActionTypeUnknown, RtfActionTypeTyping, RtfActionTypeDelete, RtfActionTypeDragDrop, RtfActionTypeCut, RtfActionTypePaste, RtfActionTypeAutoTable
 Private RtfSelAlignmentLeft, RtfSelAlignmentRight, RtfSelAlignmentCenter, RtfSelAlignmentJustified
 Private RtfSelTypeEmpty, RtfSelTypeText, RtfSelTypeObject, RtfSelTypeMultiChar, RtfSelTypeMultiObject
 Private RtfTextModeRichText, RtfTextModePlainText
@@ -68,7 +69,7 @@ Public Enum RtfActionTypeConstants
 RtfActionTypeUnknown = UID_UNKNOWN
 RtfActionTypeTyping = UID_TYPING
 RtfActionTypeDelete = UID_DELETE
-RtfActionTypeOLEDragDrop = UID_DRAGDROP
+RtfActionTypeDragDrop = UID_DRAGDROP
 RtfActionTypeCut = UID_CUT
 RtfActionTypePaste = UID_PASTE
 RtfActionTypeAutoTable = UID_AUTOTABLE
@@ -108,6 +109,14 @@ End Type
 Private Type POINTAPI
 X As Long
 Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
 End Type
 Private Type DOCINFO
 cbSize As Long
@@ -250,12 +259,32 @@ wParam As LongPtr
 lParam As LongPtr
 CharRange As RECHARRANGE
 End Type
+Private Type NMENDROPFILES
+hdr As NMHDR
+hDrop As LongPtr
+CharPos As Long
+fProtected As Long
+End Type
 Private Type NMENPROTECTED
 hdr As NMHDR
 wMsg As Long
 wParam As LongPtr
 lParam As LongPtr
 CharRange As RECHARRANGE
+End Type
+Private Type MENUITEMINFO
+cbSize As Long
+fMask As Long
+fType As Long
+fState As Long
+wID As Long
+hSubMenu As LongPtr
+hBmpChecked As LongPtr
+hBmpUnchecked As LongPtr
+dwItemData As LongPtr
+dwTypeData As LongPtr
+cch As Long
+hBmpItem As LongPtr
 End Type
 ' Must be declared at the beginning so that conditional compilation will not bug the events.
 Private WithEvents PropFont As StdFont
@@ -279,6 +308,8 @@ Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, wh
 Public Event LinkEvent(ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal LinkStart As Long, ByVal LinkEnd As Long)
 Attribute LinkEvent.VB_Description = "Occurs on various reasons, for example, when the user clicks the mouse or when the mouse pointer is over text that has a link format."
 #End If
+Public Event DropFiles(ByRef FileList As Variant, ByVal X As Single, ByVal Y As Single, ByVal CharPos As Long, ByVal Protected As Boolean, ByRef Cancel As Boolean)
+Attribute DropFiles.VB_Description = "Occurs when the user drops files on the control. Only applicable when there is no OLE drop target available and the allow drop files property is set to true."
 Public Event ModifyProtected(ByRef Allow As Boolean, ByVal SelStart As Long, ByVal SelEnd As Long)
 Attribute ModifyProtected.VB_Description = "Occurs when the user attempts to edit protected text."
 Public Event Scroll()
@@ -311,30 +342,43 @@ Public Event MouseEnter()
 Attribute MouseEnter.VB_Description = "Occurs when the user moves the mouse into the control."
 Public Event MouseLeave()
 Attribute MouseLeave.VB_Description = "Occurs when the user moves the mouse out of the control."
-Public Event OLECompleteDrag()
-Attribute OLECompleteDrag.VB_Description = "Occurs at the OLE drag/drop source control after a drag/drop has been completed or canceled."
+Public Event OLEDragDropDone()
+Attribute OLEDragDropDone.VB_Description = "Occurs at the OLE drag/drop source control after a drag/drop has been completed or canceled by the rich text box control."
 Public Event OLEGetDropEffect(ByRef Effect As Long, ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
-Attribute OLEGetDropEffect.VB_Description = "Occurs during an OLE drag/drop operation to specify the effect of which indicates what the result of the drop operation would be."
-Public Event OLEStartDrag(ByRef AllowedEffects As Long)
-Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated."
+Attribute OLEGetDropEffect.VB_Description = "Occurs during an OLE drag/drop operation by the rich text box control to specify the effect of which indicates what the result of the drop operation would be."
+Public Event OLEGetDragEffect(ByRef AllowedEffects As Long)
+Attribute OLEGetDragEffect.VB_Description = "Occurs when an OLE drag/drop operation is initiated by the rich text box control."
 #If VBA7 Then
 Public Event OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As LongPtr, ByVal SelStart As Long, ByVal SelEnd As Long, ByRef hMenu As LongPtr)
-Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu to use on a right-click. The rich text box control destroys the popup menu when it is finished."
+Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu for the rich text box control to use on a right-click. The rich text box control destroys the popup menu when it is finished."
 #Else
 Public Event OLEGetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal SelStart As Long, ByVal SelEnd As Long, ByRef hMenu As Long)
-Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu to use on a right-click. The rich text box control destroys the popup menu when it is finished."
+Attribute OLEGetContextMenu.VB_Description = "This is a request to provide a popup menu for the rich text box control to use on a right-click. The rich text box control destroys the popup menu when it is finished."
 #End If
 Public Event OLEContextMenuClick(ByVal ID As Long)
-Attribute OLEContextMenuClick.VB_Description = "Occurs when the user selects an item from a popup menu that was provided in the OLEGetContextMenu event."
+Attribute OLEContextMenuClick.VB_Description = "Occurs when the user selects an item from a popup menu that was provided to the rich text box control in the OLEGetContextMenu event."
 #If VBA7 Then
 Public Event OLEDeleteObject(ByVal LpOleObject As LongPtr)
-Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted. The OLE object is not necessarily being released."
+Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted in the rich text box control. The OLE object is not necessarily being released."
 #Else
 Public Event OLEDeleteObject(ByVal LpOleObject As Long)
-Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted. The OLE object is not necessarily being released."
+Attribute OLEDeleteObject.VB_Description = "Occurs when an OLE object is about to be deleted in the rich text box control. The OLE object is not necessarily being released."
 #End If
+Public Event OLECompleteDrag(Effect As Long)
+Attribute OLECompleteDrag.VB_Description = "Occurs at the OLE drag/drop source control after a manual or automatic drag/drop has been completed or canceled."
+Public Event OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Attribute OLEDragDrop.VB_Description = "Occurs when data is dropped onto the control via an OLE drag/drop operation, and OLEDropMode is set to manual."
+Public Event OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+Attribute OLEDragOver.VB_Description = "Occurs when the mouse is moved over the control during an OLE drag/drop operation, if its OLEDropMode property is set to manual."
+Public Event OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+Attribute OLEGiveFeedback.VB_Description = "Occurs at the source control of an OLE drag/drop operation when the mouse cursor needs to be changed."
+Public Event OLESetData(Data As DataObject, DataFormat As Integer)
+Attribute OLESetData.VB_Description = "Occurs at the OLE drag/drop source control when the drop target requests data that was not provided to the DataObject during the OLEDragStart event."
+Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As LongPtr, ByVal fAccept As Long)
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
@@ -351,10 +395,12 @@ Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock As LongPtr) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
+Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetMessagePos Lib "user32" () As Long
 Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
+Private Declare PtrSafe Function ClientToScreen Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
 Private Declare PtrSafe Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As LongPtr, ByRef pCLSID As Any) As Long
@@ -381,8 +427,18 @@ Private Declare PtrSafe Function SHCreateFileDataObject Lib "shell32" Alias "#74
 Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
+Private Declare PtrSafe Function DragDetect Lib "user32" (ByVal hWnd As LongPtr, ByVal XY As Currency) As Long
+Private Declare PtrSafe Function ReleaseCapture Lib "user32" () As Long
+Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As LongPtr, ByVal iFile As Long, ByVal lpszFile As LongPtr, ByVal cch As Long) As Long
+Private Declare PtrSafe Function DragQueryPoint Lib "shell32" (ByVal hDrop As LongPtr, ByRef lpPoint As POINTAPI) As Long
+Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
+Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
+Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
+Private Declare PtrSafe Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -399,10 +455,12 @@ Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hW
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
+Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
@@ -429,6 +487,15 @@ Private Declare Function SHCreateFileDataObject Lib "shell32" Alias "#740" (ByVa
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As Long) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As Any) As Long
+Private Declare Function DragDetect Lib "user32" (ByVal hWnd As Long, ByVal XY As Currency) As Long
+Private Declare Function ReleaseCapture Lib "user32" () As Long
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function DragQueryFile Lib "shell32" Alias "DragQueryFileW" (ByVal hDrop As Long, ByVal iFile As Long, ByVal lpszFile As Long, ByVal cch As Long) As Long
+Private Declare Function DragQueryPoint Lib "shell32" (ByVal hDrop As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare Function CreatePopupMenu Lib "user32" () As Long
+Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
+Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
+Private Declare Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -462,7 +529,6 @@ Private Declare PtrSafe Function GetDCEx Lib "user32" (ByVal hWnd As LongPtr, By
 Private Declare PtrSafe Function ExcludeClipRect Lib "gdi32" (ByVal hDC As LongPtr, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
 Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, ByRef lpRect As RECT, ByVal hBrush As LongPtr) As Long
-Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #Else
 Private Declare Function OpenThemeData Lib "uxtheme" (ByVal hWnd As Long, ByVal lpszClassList As Long) As Long
 Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As Long
@@ -475,7 +541,6 @@ Private Declare Function GetDCEx Lib "user32" (ByVal hWnd As Long, ByVal hRgnCli
 Private Declare Function ExcludeClipRect Lib "gdi32" (ByVal hDC As Long, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
-Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #End If
 
 #End If
@@ -494,13 +559,28 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const CP_UNICODE As Long = 1200
+'Private Const MIM_BACKGROUND As Long = &H2
+'Private Const MIM_MENUDATA As Long = &H8
+Private Const MIIM_STATE As Long = &H1
+Private Const MIIM_ID As Long = &H2
+Private Const MIIM_STRING As Long = &H40
+'Private Const MIIM_BITMAP As Long = &H80
+Private Const MIIM_FTYPE As Long = &H100
+Private Const MFT_SEPARATOR As Long = &H800
+Private Const MFS_ENABLED As Long = &H0
+Private Const MFS_DISABLED As Long = &H3
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_EX_ACCEPTFILES As Long = &H10
 Private Const WS_EX_CLIENTEDGE As Long = &H200
 Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000, WS_EX_LEFTSCROLLBAR As Long = &H4000
 Private Const WS_HSCROLL As Long = &H100000
 Private Const WS_VSCROLL As Long = &H200000
-Private Const SB_THUMBTRACK As Long = 5
+Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
+Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
+Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
+Private Const SM_CXVSCROLL As Long = 2
+Private Const SM_CYHSCROLL As Long = 3
 Private Const SW_HIDE As Long = &H0
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
@@ -528,6 +608,7 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DROPFILES As Long = &H233
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_CONTEXTMENU As Long = &H7B
@@ -627,7 +708,7 @@ Private Const ENM_SCROLL As Long = &H4
 Private Const ENM_KEYEVENTS As Long = &H10000
 Private Const ENM_MOUSEEVENTS As Long = &H20000
 Private Const ENM_SELCHANGE As Long = &H80000
-Private Const ENM_DROPFILES As Long = &H100000 ' Not applicable if an IRichEditOleCallback is set.
+Private Const ENM_DROPFILES As Long = &H100000 ' Only applicable if ES_NOOLEDRAGDROP is set.
 Private Const ENM_PROTECTED As Long = &H200000
 Private Const ENM_CORRECTTEXT As Long = &H400000
 Private Const ENM_SCROLLEVENTS As Long = &H8
@@ -640,7 +721,7 @@ Private Const EN_MAXTEXT As Long = &H501
 Private Const EN_HSCROLL As Long = &H601
 Private Const EN_VSCROLL As Long = &H602
 Private Const EN_SELCHANGE As Long = &H702
-Private Const EN_DROPFILES As Long = &H703 ' Not applicable if an IRichEditOleCallback is set.
+Private Const EN_DROPFILES As Long = &H703 ' Only applicable if ES_NOOLEDRAGDROP is set.
 Private Const EN_PROTECTED As Long = &H704
 Private Const EN_SAVECLIPBOARD As Long = &H708
 Private Const EN_LINK As Long = &H70B
@@ -825,6 +906,7 @@ Private RichTextBoxHandle As LongPtr
 Private RichTextBoxFontHandle As LongPtr
 Private RichTextBoxIMCHandle As LongPtr
 Private RichTextBoxCharCodeCache As Long
+Private RichTextBoxAutoDragInSel As Boolean, RichTextBoxAutoDragIsActive As Boolean
 Private RichTextBoxIsClick As Boolean
 Private RichTextBoxMouseOver(0 To 1) As Boolean
 Private RichTextBoxDesignMode As Boolean
@@ -833,10 +915,21 @@ Private RichTextBoxIsOleCallback As Boolean
 Private RichTextBoxEnabledVisualStyles As Boolean
 Private RichTextBoxSHCreateDataObject As Integer
 Private UCNoSetFocusFwd As Boolean
-Private DispIdMousePointer As Long
 Private DispIdBorderStyle As Long
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private PropVisualStyles As Boolean
-Private PropOLEDragDrop As Boolean
+Private PropAllowDropFiles As Boolean
+Private PropOLEDragDropRTF As Boolean
+Private PropOLEDragMode As VBRUN.OLEDragConstants
+Private PropOLEDragDropScroll As Boolean
+Private PropOLEDropMode As VBRUN.OLEDropConstants
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
@@ -862,6 +955,7 @@ Private PropIMEMode As CCIMEModeConstants
 Private PropAllowOverType As Boolean
 Private PropOverTypeMode As Boolean
 Private PropUseCrLf As Boolean
+Private PropAutoVerbMenu As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -917,10 +1011,7 @@ Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Lon
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     Select Case PropBorderStyle
         Case vbBSNone: DisplayName = vbBSNone & " - None"
         Case vbFixedSingle: DisplayName = vbFixedSingle & " - Fixed Single"
@@ -930,10 +1021,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     ReDim StringsOut(0 To (1 + 1)) As String
     ReDim CookiesOut(0 To (1 + 1)) As Long
     StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
@@ -943,10 +1031,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Then
-    Value = Cookie
-    Handled = True
-ElseIf DispId = DispIdBorderStyle Then
+If DispId = DispIdBorderStyle Then
     Value = Cookie
     Handled = True
 End If
@@ -955,20 +1040,33 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call RtfLoadRichedMod
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfaceControl)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 PropVisualStyles = True
-PropOLEDragDrop = True
+PropAllowDropFiles = False
+PropOLEDragDropRTF = True
+PropOLEDragMode = vbOLEDragManual
+PropOLEDragDropScroll = True
+Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
@@ -994,12 +1092,12 @@ PropUndoLimit = 100
 PropIMEMode = CCIMEModeNoControl
 PropAllowOverType = True
 PropOverTypeMode = False
+PropAutoVerbMenu = False
 Call CreateRichTextBox
 Me.Text = Ambient.DisplayName
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdBorderStyle = 0 Then DispIdBorderStyle = GetDispId(Me, "BorderStyle")
 On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
@@ -1008,7 +1106,11 @@ With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
-PropOLEDragDrop = .ReadProperty("OLEDragDrop", True)
+PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
+PropOLEDragDropRTF = .ReadProperty("OLEDragDropRTF", True)
+PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
+PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
+Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
@@ -1042,6 +1144,7 @@ PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropAllowOverType = .ReadProperty("AllowOverType", True)
 PropOverTypeMode = .ReadProperty("OverTypeMode", False)
 PropUseCrLf = .ReadProperty("UseCrLf", False)
+PropAutoVerbMenu = .ReadProperty("AutoVerbMenu", False)
 End With
 Call CreateRichTextBox
 If PropTextMode = RtfTextModeRichText Then
@@ -1056,7 +1159,11 @@ With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
-.WriteProperty "OLEDragDrop", PropOLEDragDrop, True
+.WriteProperty "AllowDropFiles", PropAllowDropFiles, False
+.WriteProperty "OLEDragDropRTF", PropOLEDragDropRTF, True
+.WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
+.WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
+.WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
@@ -1083,6 +1190,7 @@ With PropBag
 .WriteProperty "AllowOverType", PropAllowOverType, True
 .WriteProperty "OverTypeMode", PropOverTypeMode, False
 .WriteProperty "UseCrLf", PropUseCrLf, False
+.WriteProperty "AutoVerbMenu", PropAutoVerbMenu, False
 Dim Buffer As String
 StreamStringOut Buffer, SF_TEXT Or SF_UNICODE
 .WriteProperty "Text", StrToVar(Buffer), vbNullString
@@ -1090,6 +1198,90 @@ Buffer = vbNullString
 StreamStringOut Buffer, SF_RTF
 .WriteProperty "TextRTF", StrToVar(Buffer), vbNullString
 End With
+End Sub
+
+Private Sub UserControl_OLECompleteDrag(Effect As Long)
+If PropOLEDragMode = vbOLEDragAutomatic And RichTextBoxAutoDragIsActive = True And Effect = vbDropEffectMove Then
+    If RichTextBoxHandle <> NULL_PTR Then SendMessage RichTextBoxHandle, WM_CLEAR, 0, ByVal 0&
+End If
+RaiseEvent OLECompleteDrag(Effect)
+RichTextBoxAutoDragIsActive = False
+End Sub
+
+Private Sub UserControl_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If RichTextBoxHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, RichTextBoxHandle, P, 1
+RaiseEvent OLEDragDrop(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+End Sub
+
+Private Sub UserControl_OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+Dim P As POINTAPI
+P.X = X
+P.Y = Y
+If RichTextBoxHandle <> NULL_PTR Then MapWindowPoints UserControl.hWnd, RichTextBoxHandle, P, 1
+RaiseEvent OLEDragOver(Data, Effect, Button, Shift, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition), State)
+If RichTextBoxHandle <> NULL_PTR Then
+    If State = vbOver And Not Effect = vbDropEffectNone Then
+        If PropOLEDragDropScroll = True And (X >= 0 And X <= UserControl.ScaleWidth) And (Y >= 0 And Y <= UserControl.ScaleHeight) Then
+            Dim dwStyle As Long, dwExStyle As Long
+            dwStyle = GetWindowLong(RichTextBoxHandle, GWL_STYLE)
+            dwExStyle = GetWindowLong(RichTextBoxHandle, GWL_EXSTYLE)
+            If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then
+                Dim CX1 As Long, CX2 As Long
+                If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                    If (dwExStyle And WS_EX_LEFTSCROLLBAR) = WS_EX_LEFTSCROLLBAR Then
+                        CX1 = GetSystemMetrics(SM_CXVSCROLL)
+                    Else
+                        CX2 = GetSystemMetrics(SM_CXVSCROLL)
+                    End If
+                End If
+                If X < ((16 * PixelsPerDIP_X()) + CX1) Then
+                    SendMessage RichTextBoxHandle, WM_HSCROLL, SB_LINELEFT, ByVal 0&
+                ElseIf (UserControl.ScaleWidth - X) < ((16 * PixelsPerDIP_X()) + CX2) Then
+                    SendMessage RichTextBoxHandle, WM_HSCROLL, SB_LINERIGHT, ByVal 0&
+                End If
+            End If
+            If (dwStyle And WS_VSCROLL) = WS_VSCROLL Then
+                Dim CY1 As Long, CY2 As Long
+                If (dwStyle And WS_HSCROLL) = WS_HSCROLL Then CY2 = GetSystemMetrics(SM_CYHSCROLL)
+                If Y < ((16 * PixelsPerDIP_Y()) + CY1) Then
+                    SendMessage RichTextBoxHandle, WM_VSCROLL, SB_LINEUP, ByVal 0&
+                ElseIf (UserControl.ScaleHeight - Y) < ((16 * PixelsPerDIP_Y()) + CY2) Then
+                    SendMessage RichTextBoxHandle, WM_VSCROLL, SB_LINEDOWN, ByVal 0&
+                End If
+            End If
+        End If
+    End If
+End If
+End Sub
+
+Private Sub UserControl_OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+RaiseEvent OLEGiveFeedback(Effect, DefaultCursors)
+End Sub
+
+Private Sub UserControl_OLESetData(Data As DataObject, DataFormat As Integer)
+RaiseEvent OLESetData(Data, DataFormat)
+End Sub
+
+Private Sub UserControl_OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+If PropOLEDragMode = vbOLEDragAutomatic Then
+    Dim Text As String
+    Text = Me.SelText
+    Data.SetData StrToVar(Text & vbNullChar), CF_UNICODETEXT
+    Data.SetData Text, vbCFText
+    Data.SetData Me.SelRTF, vbCFRTF
+    AllowedEffects = vbDropEffectCopy Or vbDropEffectMove
+    RichTextBoxAutoDragIsActive = True
+End If
+RaiseEvent OLEStartDrag(Data, AllowedEffects)
+If AllowedEffects = vbDropEffectNone Then RichTextBoxAutoDragIsActive = False
+End Sub
+
+Public Sub OLEDrag()
+Attribute OLEDrag.VB_Description = "Starts an OLE drag/drop event with the given control as the source."
+UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
@@ -1104,7 +1296,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfaceControl)
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyRichTextBox
@@ -1336,23 +1538,107 @@ If RichTextBoxHandle <> NULL_PTR Then EnableWindow RichTextBoxHandle, IIf(Value 
 UserControl.PropertyChanged "Enabled"
 End Property
 
-Public Property Get OLEDragDrop() As Boolean
-Attribute OLEDragDrop.VB_Description = "Returns/Sets whether this object can act as an OLE drag source and drop target."
-OLEDragDrop = PropOLEDragDrop
+Public Property Get AllowDropFiles() As Boolean
+Attribute AllowDropFiles.VB_Description = "Returns/sets a value that determines whether drag-drop files are allowed or not. Only applicable when there is no OLE drop target available."
+If RichTextBoxHandle <> NULL_PTR Then
+    AllowDropFiles = CBool((GetWindowLong(RichTextBoxHandle, GWL_EXSTYLE) And WS_EX_ACCEPTFILES) <> 0)
+Else
+    AllowDropFiles = PropAllowDropFiles
+End If
 End Property
 
-Public Property Let OLEDragDrop(ByVal Value As Boolean)
-PropOLEDragDrop = Value
+Public Property Let AllowDropFiles(ByVal Value As Boolean)
+PropAllowDropFiles = Value
+If RichTextBoxHandle <> NULL_PTR Then DragAcceptFiles RichTextBoxHandle, IIf(PropAllowDropFiles = True, 1, 0)
+UserControl.PropertyChanged "AllowDropFiles"
+End Property
+
+Public Property Get OLEDragDropRTF() As Boolean
+Attribute OLEDragDropRTF.VB_Description = "Returns/Sets whether the rich text box control can act as an OLE drag source and drop target."
+OLEDragDropRTF = PropOLEDragDropRTF
+End Property
+
+Public Property Let OLEDragDropRTF(ByVal Value As Boolean)
+PropOLEDragDropRTF = Value
+If PropOLEDragDropRTF = True Then
+    PropOLEDragMode = vbOLEDragManual
+    PropOLEDragDropScroll = True
+    Me.OLEDropMode = OLEDropModeNone
+End If
 If RichTextBoxHandle <> NULL_PTR Then Call ReCreateRichTextBox
-UserControl.PropertyChanged "OLEDragDrop"
+UserControl.PropertyChanged "OLEDragDropRTF"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get OLEDragMode() As VBRUN.OLEDragConstants
+Attribute OLEDragMode.VB_Description = "Returns/Sets whether this object can act as an OLE drop target."
+OLEDragMode = PropOLEDragMode
+End Property
+
+Public Property Let OLEDragMode(ByVal Value As VBRUN.OLEDragConstants)
+If PropOLEDragDropRTF = True And Value = vbOLEDragAutomatic Then
+    If RichTextBoxDesignMode = True Then
+        MsgBox "OLEDragMode must be 0 - Manual when OLEDragDropRTF is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="OLEDragMode must be 0 - Manual when OLEDragDropRTF is True"
+    End If
+End If
+Select Case Value
+    Case vbOLEDragManual, vbOLEDragAutomatic
+        PropOLEDragMode = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "OLEDragMode"
+End Property
+
+Public Property Get OLEDragDropScroll() As Boolean
+Attribute OLEDragDropScroll.VB_Description = "Returns/Sets whether this object will scroll during an OLE drag/drop operation."
+OLEDragDropScroll = PropOLEDragDropScroll
+End Property
+
+Public Property Let OLEDragDropScroll(ByVal Value As Boolean)
+If PropOLEDragDropRTF = True And Value = False Then
+    If RichTextBoxDesignMode = True Then
+        MsgBox "OLEDragDropScroll must be True when OLEDragDropRTF is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="OLEDragDropScroll must be True when OLEDragDropRTF is True"
+    End If
+End If
+PropOLEDragDropScroll = Value
+UserControl.PropertyChanged "OLEDragDropScroll"
+End Property
+
+Public Property Get OLEDropMode() As OLEDropModeConstants
+Attribute OLEDropMode.VB_Description = "Returns/Sets whether this object can act as an OLE drop target."
+OLEDropMode = UserControl.OLEDropMode
+End Property
+
+Public Property Let OLEDropMode(ByVal Value As OLEDropModeConstants)
+If PropOLEDragDropRTF = True And Value = OLEDropModeManual Then
+    If RichTextBoxDesignMode = True Then
+        MsgBox "OLEDropMode must be 0 - None when OLEDragDropRTF is True", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="OLEDropMode must be 0 - None when OLEDragDropRTF is True"
+    End If
+End If
+Select Case Value
+    Case OLEDropModeNone, OLEDropModeManual
+        UserControl.OLEDropMode = Value
+    Case Else
+        Err.Raise 380
+End Select
+UserControl.PropertyChanged "OLEDropMode"
+End Property
+
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -1874,11 +2160,22 @@ PropUseCrLf = Value
 UserControl.PropertyChanged "UseCrLf"
 End Property
 
+Public Property Get AutoVerbMenu() As Boolean
+Attribute AutoVerbMenu.VB_Description = "Returns/sets a value that indicating whether the selected object's verbs will be displayed in a popup menu when the right mouse button is clicked."
+AutoVerbMenu = PropAutoVerbMenu
+End Property
+
+Public Property Let AutoVerbMenu(ByVal Value As Boolean)
+PropAutoVerbMenu = Value
+UserControl.PropertyChanged "AutoVerbMenu"
+End Property
+
 Private Sub CreateRichTextBox()
 If RichTextBoxHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
-If PropOLEDragDrop = False Then dwStyle = dwStyle Or ES_NOOLEDRAGDROP
+If PropAllowDropFiles = True Then dwExStyle = dwExStyle Or WS_EX_ACCEPTFILES
+If PropOLEDragDropRTF = False Then dwStyle = dwStyle Or ES_NOOLEDRAGDROP
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING Or WS_EX_RIGHT Or WS_EX_LEFTSCROLLBAR
 If PropBorderStyle = vbFixedSingle Then
     dwStyle = dwStyle Or ES_SUNKEN
@@ -1928,7 +2225,7 @@ Me.AutoURLDetect = PropAutoURLDetect
 If PropUndoLimit <> 100 Then Me.UndoLimit = PropUndoLimit
 If RichTextBoxDesignMode = False Then
     If RichTextBoxHandle <> NULL_PTR Then
-        SendMessage RichTextBoxHandle, EM_SETEVENTMASK, 0, ByVal ENM_CHANGE Or ENM_SCROLL Or ENM_SELCHANGE Or ENM_DRAGDROPDONE Or ENM_LINK Or ENM_PROTECTED
+        SendMessage RichTextBoxHandle, EM_SETEVENTMASK, 0, ByVal ENM_CHANGE Or ENM_SCROLL Or ENM_SELCHANGE Or ENM_DRAGDROPDONE Or ENM_LINK Or ENM_DROPFILES Or ENM_PROTECTED
         SendMessage RichTextBoxHandle, EM_SETEDITSTYLE, SES_BEEPONMAXTEXT, ByVal SES_BEEPONMAXTEXT
         If PropAllowOverType = True And PropOverTypeMode = True Then
             SendMessage RichTextBoxHandle, WM_KEYDOWN, vbKeyInsert, ByVal 0&
@@ -1938,6 +2235,13 @@ If RichTextBoxDesignMode = False Then
     End If
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
     If RichTextBoxHandle <> NULL_PTR Then Call ComCtlsCreateIMC(RichTextBoxHandle, RichTextBoxIMCHandle)
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 End If
 End Sub
 
@@ -1982,6 +2286,15 @@ Private Sub DestroyRichTextBox()
 If RichTextBoxHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(RichTextBoxHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If RichTextBoxDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 Call ComCtlsDestroyIMC(RichTextBoxHandle, RichTextBoxIMCHandle)
 If RichTextBoxIsOleCallback = True Then RichTextBoxIsOleCallback = Not CBool(SendMessage(RichTextBoxHandle, EM_SETOLECALLBACK, 0, ByVal 0&) <> 0)
 ShowWindow RichTextBoxHandle, SW_HIDE
@@ -2016,9 +2329,12 @@ Attribute Paste.VB_Description = "Method to copy the current content of the clip
 If RichTextBoxHandle <> NULL_PTR Then SendMessage RichTextBoxHandle, WM_PASTE, 0, ByVal 0&
 End Sub
 
-Public Function CanPaste() As Boolean
+Public Function CanPaste(Optional ByVal wFormat As Long) As Boolean
 Attribute CanPaste.VB_Description = "Determines whether there is any format currently on the clipboard that can be pasted."
-If RichTextBoxHandle <> NULL_PTR Then CanPaste = CBool(SendMessage(RichTextBoxHandle, EM_CANPASTE, 0, ByVal 0&) <> 0)
+If RichTextBoxHandle <> NULL_PTR Then
+    If wFormat = vbCFRTF Then wFormat = RegisterClipboardFormat(StrPtr("Rich Text Format"))
+    CanPaste = CBool(SendMessage(RichTextBoxHandle, EM_CANPASTE, wFormat, ByVal 0&) <> 0)
+End If
 End Function
 
 Public Sub PasteSpecial(ByVal wFormat As Long)
@@ -2125,6 +2441,99 @@ If RichTextBoxHandle <> NULL_PTR Then
     End With
 End If
 End Function
+
+Public Sub Span(ByVal CharacterSet As String, Optional ByVal Forward As Boolean, Optional ByVal Negate As Boolean)
+Attribute Span.VB_Description = "Selects text in a rich text box control based on a set of specified characters."
+If CharacterSet = vbNullString Then Exit Sub
+If RichTextBoxHandle <> NULL_PTR Then
+    Dim RECR As RECHARRANGE, Found As Boolean, Offset As Long
+    SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
+    Dim RETR As RETEXTRANGE, Buffer(0 To 1) As Integer, Length As Long
+    RETR.lpstrText = VarPtr(Buffer(0))
+    Dim IntArr() As Integer, i As Long
+    ReDim IntArr(1 To Len(CharacterSet)) As Integer
+    CopyMemory ByVal VarPtr(IntArr(1)), ByVal StrPtr(CharacterSet), LenB(CharacterSet)
+    Do
+        Found = False
+        If Forward = True Then
+            RETR.CharRange.Min = RECR.Min + Offset
+            RETR.CharRange.Max = RECR.Min + 1 + Offset
+        Else
+            RETR.CharRange.Min = RECR.Min - 1 - Offset
+            RETR.CharRange.Max = RECR.Min - Offset
+        End If
+        Length = CLng(SendMessage(RichTextBoxHandle, EM_GETTEXTRANGE, 0, ByVal VarPtr(RETR)))
+        If Length > 0 Then
+            For i = 1 To Len(CharacterSet)
+                If Buffer(0) = IntArr(i) Then
+                    Found = True
+                    Exit For
+                End If
+            Next i
+            If Found = Not Negate Then Offset = Offset + 1
+        Else
+            Exit Do
+        End If
+    Loop While Found = Not Negate
+    If Offset > 0 Then
+        If Forward = True Then
+            RECR.Max = RECR.Min + Offset
+        Else
+            RECR.Max = RECR.Min
+            RECR.Min = RECR.Min - Offset
+        End If
+    End If
+    SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
+    Me.ScrollToCaret
+End If
+End Sub
+
+Public Sub UpTo(ByVal CharacterSet As String, Optional ByVal Forward As Boolean, Optional ByVal Negate As Boolean)
+Attribute UpTo.VB_Description = "Moves the insertion point up to, but not including, the first character that is a member of the specified character set in a rich text box control."
+If CharacterSet = vbNullString Then Exit Sub
+If RichTextBoxHandle <> NULL_PTR Then
+    Dim RECR As RECHARRANGE, Found As Boolean, Offset As Long
+    SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
+    Dim RETR As RETEXTRANGE, Buffer(0 To 1) As Integer, Length As Long
+    RETR.lpstrText = VarPtr(Buffer(0))
+    Dim IntArr() As Integer, i As Long
+    ReDim IntArr(1 To Len(CharacterSet)) As Integer
+    CopyMemory ByVal VarPtr(IntArr(1)), ByVal StrPtr(CharacterSet), LenB(CharacterSet)
+    Do
+        Found = False
+        If Forward = True Then
+            RETR.CharRange.Min = RECR.Min + Offset
+            RETR.CharRange.Max = RECR.Min + 1 + Offset
+        Else
+            RETR.CharRange.Min = RECR.Min - 1 - Offset
+            RETR.CharRange.Max = RECR.Min - Offset
+        End If
+        Length = CLng(SendMessage(RichTextBoxHandle, EM_GETTEXTRANGE, 0, ByVal VarPtr(RETR)))
+        If Length > 0 Then
+            For i = 1 To Len(CharacterSet)
+                If Buffer(0) = IntArr(i) Then
+                    Found = True
+                    Exit For
+                End If
+            Next i
+            If Found = Negate Then Offset = Offset + 1
+        Else
+            Exit Do
+        End If
+    Loop While Found = Negate
+    If Offset > 0 Then
+        If Forward = True Then
+            RECR.Max = RECR.Min + Offset
+            RECR.Min = RECR.Max
+        Else
+            RECR.Min = RECR.Min - Offset
+            RECR.Max = RECR.Min
+        End If
+    End If
+    SendMessage RichTextBoxHandle, EM_EXSETSEL, 0, ByVal VarPtr(RECR)
+    Me.ScrollToCaret
+End If
+End Sub
 
 Public Property Get Text() As String
 Attribute Text.VB_Description = "Returns/sets the text contained in an object."
@@ -3631,6 +4040,29 @@ If RichTextBoxHandle <> NULL_PTR And hDC <> NULL_PTR Then
 End If
 End Sub
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then
+        PreTranslateMsg = 1
+    ElseIf PropWantReturn = True Then
+        If Msg.Message = WM_KEYDOWN Or Msg.Message = WM_KEYUP Then
+            If (CLng(Msg.wParam) And &HFF&) = vbKeyReturn Then
+                SendMessage Msg.hWnd, Msg.Message, Msg.wParam, ByVal Msg.lParam
+                PreTranslateMsg = 1
+            End If
+        End If
+    End If
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -3658,7 +4090,7 @@ End Sub
 
 Friend Sub FIRichEditOleCallback_GetDragDropEffect(ByVal Drag As Boolean, ByVal KeyState As Long, ByRef dwEffect As Long)
 If Drag = True Then
-    RaiseEvent OLEStartDrag(dwEffect) ' AllowedEffects
+    RaiseEvent OLEGetDragEffect(dwEffect) ' AllowedEffects
 Else
     Dim Pos As Long, P As POINTAPI
     Pos = GetMessagePos()
@@ -3674,20 +4106,161 @@ Friend Sub FIRichEditOleCallback_GetContextMenu(ByVal SelType As Integer, ByVal 
 #Else
 Friend Sub FIRichEditOleCallback_GetContextMenu(ByVal SelType As Integer, ByVal LpOleObject As Long, ByVal lpCharRange As Long, ByRef hMenu As Long)
 #End If
-Dim RECR As RECHARRANGE
-CopyMemory RECR, ByVal lpCharRange, LenB(RECR)
-RaiseEvent OLEGetContextMenu(SelType, LpOleObject, RECR.Min, RECR.Max, hMenu)
+If PropAutoVerbMenu = False Then
+    Dim RECR As RECHARRANGE
+    CopyMemory RECR, ByVal lpCharRange, LenB(RECR)
+    RaiseEvent OLEGetContextMenu(SelType, LpOleObject, RECR.Min, RECR.Max, hMenu)
+Else
+    hMenu = CreatePopupMenu()
+    Dim LangID As Integer
+    LangID = GetUserDefaultUILanguage() And &HFF&
+    Dim MII As MENUITEMINFO, Text As String, i As Long
+    MII.cbSize = LenB(MII)
+    For i = 1 To 7
+        Select Case LangID
+            Case &H4 ' Chinese
+                Text = VBA.Choose(i, ChrW(&H64A4&) & ChrW(&H6D88&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H6062&) & ChrW(&H590D&) & "(&R)" & vbTab & "Ctrl+Y", _
+                ChrW(&H526A&) & ChrW(&H5207&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H590D&) & ChrW(&H5236&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H7C98&) & ChrW(&H8D34&) & "(&P)" & vbTab & "Ctrl+V", _
+                ChrW(&H7C98&) & ChrW(&H8D34&) & ChrW(&H7EAF&) & ChrW(&H6587&) & ChrW(&H672C&) & vbTab & "Ctrl+Shift+V", ChrW(&H5220&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
+            Case &H5 ' Czech
+                Text = VBA.Choose(i, "&Zp" & ChrW(&H11B&) & "t" & vbTab & "Ctrl+Z", "Z&novu" & vbTab & "Ctrl+Y", "Vyjmou&t" & vbTab & "Ctrl+X", "&Kop" & ChrW(&HED&) & "rovat" & vbTab & "Ctrl+C", "&Vlo" & ChrW(&H17E&) & "it" & vbTab & "Ctrl+V", "Vlo" & ChrW(&H17E&) & "it &jako prost" & ChrW(&HFD&) & " text" & vbTab & "Ctrl+Shift+V", "&Odstranit" & vbTab & "Del")
+            Case &H6 ' Danish
+                Text = VBA.Choose(i, "&Fortryd" & vbTab & "Ctrl+Z", "&Annuller fortryd" & vbTab & "Ctrl+Y", "&Klip" & vbTab & "Ctrl+X", "K&opier" & vbTab & "Ctrl+C", "Sæt &ind" & vbTab & "Ctrl+V", "Inds" & ChrW(&HE6&) & "t som almindelig &tekst" & vbTab & "Ctrl+Shift+V", "&Slet" & vbTab & "Del")
+            Case &H7 ' German
+                Text = VBA.Choose(i, "&R" & ChrW(&HFC&) & "ckg" & ChrW(&HE4&) & "ngig" & vbTab & "Strg+Z", "&Wiederholen" & vbTab & "Strg+Y", "&Ausschneiden" & vbTab & "Strg+X", "&Kopieren" & vbTab & "Strg+C", "&Einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+V", "Nur &Text einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+Umschalt+V", "&L" & ChrW(&HF6&) & "schen" & vbTab & "Entf")
+            Case &H8 ' Greek
+                Text = VBA.Choose(i, "&" & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3AF&) & ChrW(&H3C1&) & ChrW(&H3B5&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+Z", "&" & ChrW(&H391&) & ChrW(&H3BA&) & ChrW(&H3CD&) & ChrW(&H3C1&) & ChrW(&H3C9&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3AF&) & ChrW(&H3C1&) & ChrW(&H3B5&) & ChrW(&H3C3&) & ChrW(&H3B7&) & ChrW(&H3C2&) & vbTab & "Ctrl+Y", _
+                ChrW(&H391&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3BA&) & ChrW(&H3BF&) & "&" & ChrW(&H3C0&) & ChrW(&H3AE&) & vbTab & "Ctrl+X", "&" & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3C4&) & ChrW(&H3B9&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Ctrl+C", "&" & ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+V", _
+                ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H3C9&) & ChrW(&H3C2&) & " " & ChrW(&H3B1&) & ChrW(&H3C0&) & ChrW(&H3BB&) & ChrW(&H3CC&) & " " & ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & vbTab & "Ctrl+Shift+V", "&" & ChrW(&H394&) & ChrW(&H3B9&) & ChrW(&H3B1&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Del")
+            Case &H9 ' English
+                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
+            Case &HA ' Spanish
+                Text = VBA.Choose(i, "&Deshacer" & vbTab & "Ctrl+Z", "&Rehacer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "&Pegar" & vbTab & "Ctrl+V", "Pegar &s" & ChrW(&HF3&) & "lo texto" & vbTab & "Ctrl+May" & ChrW(&HFA&) & "s+V", "&Borrar" & vbTab & "Supr")
+            Case &HB ' Finnish
+                Text = VBA.Choose(i, "K&umoa" & vbTab & "Ctrl+Z", "T&ee uudelleen" & vbTab & "Ctrl+Y", "&Leikkaa" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "L&iit" & ChrW(&HE4&) & vbTab & "Ctrl+V", "Liit" & ChrW(&HE4&) & " pelkk" & ChrW(&HE4&) & "n" & ChrW(&HE4&) & " &tekstin" & ChrW(&HE4&) & vbTab & "Ctrl+Vaihto+V", "&Poista" & vbTab & "Del")
+            Case &HC ' French
+                Text = VBA.Choose(i, "&Annuler" & vbTab & "Ctrl+Z", "&R" & ChrW(&HE9&) & "tablir" & vbTab & "Ctrl+Y", "Cou&per" & vbTab & "Ctrl+X", "&Copier" & vbTab & "Ctrl+C", "C&oller" & vbTab & "Ctrl+V", "Coller du &texte uniquement" & vbTab & "Ctrl+Maj+V", "&Supprimer" & vbTab & "Suppr")
+            Case &H10 ' Italian
+                Text = VBA.Choose(i, "Ann&ulla digitazione" & vbTab & "Ctrl+Z", "&Ripristina digitazione" & vbTab & "Ctrl+Y", "Tag&lia" & vbTab & "Ctrl+X", "&Copia" & vbTab & "Ctrl+C", "&Incolla" & vbTab & "Ctrl+V", "Incollare solo &testo" & vbTab & "Ctrl+Maiusc+V", "&Elimina" & vbTab & "Canc")
+            Case &H11 ' Japanese
+                Text = VBA.Choose(i, ChrW(&H5143&) & ChrW(&H306B&) & ChrW(&H623B&) & ChrW(&H3059&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H3084&) & ChrW(&H308A&) & ChrW(&H76F4&) & ChrW(&H3057&) & "(&R)" & vbTab & "Ctrl+Y", _
+                ChrW(&H5207&) & ChrW(&H308A&) & ChrW(&H53D6&) & ChrW(&H308A&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H30B3&) & ChrW(&H30D4&) & ChrW(&H30FC&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & "(&P)" & vbTab & "Ctrl+V", _
+                ChrW(&H30D7&) & ChrW(&H30EC&) & ChrW(&H30FC&) & ChrW(&H30F3&) & " " & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H3057&) & ChrW(&H3066&) & ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & ChrW(&H308B&) & vbTab & "Ctrl+Shift+V", ChrW(&H524A&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
+            Case &H15 ' Polish
+                Text = VBA.Choose(i, "&Cofnij" & vbTab & "Ctrl+Z", "&Pon" & ChrW(&HF3&) & "w" & vbTab & "Ctrl+Y", "Wy&tnij" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "Wk&lej" & vbTab & "Ctrl+V", "Wklej jako zwyk" & ChrW(&H142&) & "y &tekst" & vbTab & "Ctrl+Shift+V", "&Wyczy" & ChrW(&H15B&) & ChrW(&H107&) & vbTab & "Del")
+            Case &H16 ' Portuguese
+                Text = VBA.Choose(i, "An&ular" & vbTab & "Ctrl+Z", "&Refazer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "Co&lar" & vbTab & "Ctrl+V", "Colar &somente texto" & vbTab & "Ctrl+Shift+V", "&Eliminar" & vbTab & "Del")
+            Case &H18 ' Romanian
+                Text = VBA.Choose(i, "A&nulare" & vbTab & "Ctrl+Z", "&Revenire" & vbTab & "Ctrl+Y", "Dec&upare" & vbTab & "Ctrl+X", "&Copiere" & vbTab & "Ctrl+C", "&Lipire" & vbTab & "Ctrl+V", "Lipi" & ChrW(&H21B&) & "i ca &text simplu" & vbTab & "Ctrl+Shift+V", ChrW(&H218&) & "ter&gere" & vbTab & "Del")
+            Case &H19 ' Russian
+                Text = VBA.Choose(i, ChrW(&H41E&) & ChrW(&H442&) & ChrW(&H43C&) & ChrW(&H435&) & ChrW(&H43D&) & ChrW(&H430&) & vbTab & "Ctrl+Z", ChrW(&H41F&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H442&) & ChrW(&H43E&) & ChrW(&H440&) & vbTab & "Ctrl+Y", _
+                ChrW(&H412&) & ChrW(&H44B&) & ChrW(&H440&) & ChrW(&H435&) & ChrW(&H437&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+X", ChrW(&H41A&) & ChrW(&H43E&) & ChrW(&H43F&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+C", ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+V", _
+                ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H43A&) & ChrW(&H430&) & " " & ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & vbTab & "Ctrl+Shift+V", ChrW(&H423&) & ChrW(&H434&) & ChrW(&H430&) & ChrW(&H43B&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Del")
+            Case &H1D ' Swedish
+                Text = VBA.Choose(i, "&" & ChrW(&HC5&) & "ngra" & vbTab & "Ctrl+Z", "&G" & ChrW(&HF6&) & "r om" & vbTab & "Ctrl+Y", "&Klipp ut" & vbTab & "Ctrl+X", "K&opiera" & vbTab & "Ctrl+C", "K&listra in" & vbTab & "Ctrl+V", "Klistra in som vanlig &text" & vbTab & "Ctrl+Shift+V", "Ra&dera" & vbTab & "Del")
+            Case Else
+                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
+        End Select
+        MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
+        MII.fType = 0
+        MII.dwTypeData = StrPtr(Text)
+        MII.cch = Len(Text)
+        MII.hBmpItem = NULL_PTR
+        Select Case i
+            Case 1
+                If Me.CanUndo = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 2
+                If Me.CanRedo = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 3, 4, 7
+                If (SelType And SEL_TEXT) = SEL_TEXT Or (SelType And SEL_OBJECT) = SEL_OBJECT Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 5
+                If Me.CanPaste = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+            Case 6
+                If Me.CanPaste(CF_UNICODETEXT) = True Then
+                    MII.fState = MFS_ENABLED
+                Else
+                    MII.fState = MFS_DISABLED
+                End If
+        End Select
+        MII.wID = i
+        InsertMenuItem hMenu, 0, 0, MII
+    Next i
+    MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_FTYPE
+    MII.fType = MFT_SEPARATOR
+    MII.dwTypeData = 0
+    MII.cch = 0
+    MII.hBmpItem = NULL_PTR
+    MII.fState = 0
+    MII.wID = i
+    InsertMenuItem hMenu, 2, 1, MII
+End If
 End Sub
 
 Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_SETCURSOR
         If LoWord(CLng(lParam)) = HTCLIENT Then
+            If PropOLEDragMode = vbOLEDragAutomatic Then
+                Dim Pos As Long, P1 As POINTAPI
+                Dim CharPos As Long, CaretPos As Long
+                Dim RECR As RECHARRANGE
+                Pos = GetMessagePos()
+                P1.X = Get_X_lParam(Pos)
+                P1.Y = Get_Y_lParam(Pos)
+                ScreenToClient RichTextBoxHandle, P1
+                CharPos = CLng(SendMessage(RichTextBoxHandle, EM_CHARFROMPOS, 0, ByVal VarPtr(P1)))
+                CaretPos = CLng(SendMessage(RichTextBoxHandle, EM_POSFROMCHAR, CharPos, ByVal 0&))
+                SendMessage RichTextBoxHandle, EM_EXGETSEL, 0, ByVal VarPtr(RECR)
+                RichTextBoxAutoDragInSel = CBool(CharPos >= RECR.Min And CharPos <= RECR.Max And CaretPos > -1 And (RECR.Max - RECR.Min) > 0)
+                If RichTextBoxAutoDragInSel = True Then
+                    SetCursor LoadCursor(NULL_PTR, MousePointerID(vbArrow))
+                    WindowProcControl = 1
+                    Exit Function
+                End If
+            Else
+                RichTextBoxAutoDragInSel = False
+            End If
             If MousePointerID(PropMousePointer) <> 0 Then
                 SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
                 WindowProcControl = 1
@@ -3701,13 +4274,38 @@ Select Case wMsg
             End If
         End If
     Case WM_LBUTTONDOWN
-        If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        If PropOLEDragMode = vbOLEDragAutomatic And RichTextBoxAutoDragInSel = True Then
+            If GetFocus() <> hWnd Then SetFocusAPI UserControl.hWnd ' UCNoSetFocusFwd not applicable
+            Dim P2 As POINTAPI, P3 As POINTAPI, XY As Currency
+            P2.X = Get_X_lParam(lParam)
+            P2.Y = Get_Y_lParam(lParam)
+            P3.X = P2.X
+            P3.Y = P2.Y
+            ClientToScreen RichTextBoxHandle, P3
+            CopyMemory ByVal VarPtr(XY), ByVal VarPtr(P3), 8
+            RaiseEvent MouseDown(vbLeftButton, GetShiftStateFromParam(wParam), UserControl.ScaleX(P2.X, vbPixels, vbTwips), UserControl.ScaleY(P2.Y, vbPixels, vbTwips))
+            If DragDetect(RichTextBoxHandle, XY) <> 0 Then
+                RichTextBoxIsClick = False
+                Me.OLEDrag
+                WindowProcControl = 0
+            Else
+                WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                ReleaseCapture
+                RaiseEvent MouseUp(vbLeftButton, GetShiftStateFromParam(wParam), UserControl.ScaleX(P2.X, vbPixels, vbTwips), UserControl.ScaleY(P2.Y, vbPixels, vbTwips))
+            End If
+            Exit Function
+        Else
+            If GetFocus() <> hWnd Then UCNoSetFocusFwd = True: SetFocusAPI UserControl.hWnd: UCNoSetFocusFwd = False
+        End If
     Case WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
         Dim KeyCode As Integer
         KeyCode = CLng(wParam) And &HFF&
         If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+                If GetShiftStateFromMsg() = (vbCtrlMask + vbShiftMask) Then
+                    If KeyCode = vbKeyV Then Me.PasteSpecial CF_UNICODETEXT: Exit Function
+                End If
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
@@ -3718,6 +4316,7 @@ Select Case wMsg
             RichTextBoxCharCodeCache = ComCtlsPeekCharCode(hWnd)
         ElseIf wMsg = WM_SYSKEYDOWN Then
             RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
+
         ElseIf wMsg = WM_SYSKEYUP Then
             RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
         End If
@@ -3763,15 +4362,15 @@ Select Case wMsg
         If LoWord(CLng(wParam)) = SB_THUMBTRACK Then RaiseEvent Scroll
     Case WM_CONTEXTMENU
         If wParam = RichTextBoxHandle Then
-            Dim P As POINTAPI, Handled As Boolean
-            P.X = Get_X_lParam(lParam)
-            P.Y = Get_Y_lParam(lParam)
-            If P.X = -1 And P.Y = -1 Then
+            Dim P4 As POINTAPI, Handled As Boolean
+            P4.X = Get_X_lParam(lParam)
+            P4.Y = Get_Y_lParam(lParam)
+            If P4.X = -1 And P4.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(Handled, -1, -1)
             Else
-                ScreenToClient RichTextBoxHandle, P
-                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+                ScreenToClient RichTextBoxHandle, P4
+                RaiseEvent ContextMenu(Handled, UserControl.ScaleX(P4.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P4.Y, vbPixels, vbContainerPosition))
             End If
             If Handled = True Then Exit Function
         End If
@@ -3858,6 +4457,14 @@ Select Case wMsg
                 Exit Function
             End If
         End If
+    
+    #End If
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
     
     #End If
     
@@ -3949,7 +4556,26 @@ Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long
 Select Case wMsg
     Case WM_COMMAND
         If HiWord(CLng(wParam)) = 0 And lParam = 0 Then ' Alias for menu
-            RaiseEvent OLEContextMenuClick(LoWord(CLng(wParam)))
+            If PropAutoVerbMenu = False Then
+                RaiseEvent OLEContextMenuClick(LoWord(CLng(wParam)))
+            Else
+                Select Case LoWord(CLng(wParam))
+                    Case 1
+                        Me.Undo
+                    Case 2
+                        Me.Redo
+                    Case 3
+                        Me.Cut
+                    Case 4
+                        Me.Copy
+                    Case 5
+                        Me.Paste
+                    Case 6
+                        Me.PasteSpecial CF_UNICODETEXT
+                    Case 7
+                        Me.Clear
+                End Select
+            End If
         ElseIf lParam <> 0 Then
             Select Case HiWord(CLng(wParam))
                 Case EN_CHANGE
@@ -3978,13 +4604,40 @@ Select Case wMsg
                     RaiseEvent SelChange(.SelType, .CharRange.Min, .CharRange.Max)
                     End With
                 Case EN_DRAGDROPDONE
-                    RaiseEvent OLECompleteDrag
+                    RaiseEvent OLEDragDropDone
                 Case EN_LINK
                     Dim NMENL As NMENLINK
                     CopyMemory NMENL, ByVal lParam, LenB(NMENL)
                     With NMENL
                     RaiseEvent LinkEvent(.wMsg, .wParam, .lParam, .CharRange.Min, .CharRange.Max)
                     End With
+                Case EN_DROPFILES
+                    Dim NMENDF As NMENDROPFILES, Cancel As Boolean
+                    CopyMemory NMENDF, ByVal lParam, LenB(NMENDF)
+                    With NMENDF
+                    If .hDrop <> NULL_PTR Then
+                        Dim FileCount As Long
+                        FileCount = DragQueryFile(.hDrop, -1, NULL_PTR, 0)
+                        If FileCount > 0 Then
+                            Dim FileList() As String, iFile As Long, FileBuffer As String, P As POINTAPI
+                            ReDim FileList(0 To (FileCount - 1)) As String
+                            For iFile = 0 To (FileCount - 1)
+                                FileBuffer = String(DragQueryFile(.hDrop, iFile, NULL_PTR, 0), vbNullChar)
+                                DragQueryFile .hDrop, iFile, StrPtr(FileBuffer), Len(FileBuffer) + 1
+                                FileList(iFile) = FileBuffer
+                            Next iFile
+                            DragQueryPoint .hDrop, P
+                            RaiseEvent DropFiles(FileList(), UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition), .CharPos, CBool(.fProtected <> 0), Cancel)
+                        End If
+                        ' The DragFinish API is not needed as the rich edit control will release the memory allocated.
+                    End If
+                    End With
+                    If Cancel = True Then
+                        WindowProcUserControl = 1
+                    Else
+                        WindowProcUserControl = 0
+                    End If
+                    Exit Function
                 Case EN_PROTECTED
                     Dim NMENP As NMENPROTECTED
                     CopyMemory NMENP, ByVal lParam, LenB(NMENP)

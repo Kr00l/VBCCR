@@ -31,6 +31,9 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+
+#Const ImplementPreTranslateMsg = (VBCCR_OCX <> 0)
+
 #If False Then
 Private MvwViewMonth, MvwViewYear, MvwViewDecade, MvwViewCentury
 Private MvwHitResultNoWhere, MvwHitResultCalendarBack, MvwHitResultCalendarControl, MvwHitResultCalendarDate, MvwHitResultCalendarDateNext, MvwHitResultCalendarDatePrev, MvwHitResultCalendarDay, MvwHitResultCalendarWeekNum, MvwHitResultTitleBack, MvwHitResultTitleBtnNext, MvwHitResultTitleBtnPrev, MvwHitResultTitleMonth, MvwHitResultTitleYear, MvwHitResultTodayLink
@@ -67,6 +70,18 @@ Top As Long
 Right As Long
 Bottom As Long
 End Type
+Private Type POINTAPI
+X As Long
+Y As Long
+End Type
+Private Type TMSG
+hWnd As LongPtr
+Message As Long
+wParam As LongPtr
+lParam As LongPtr
+Time As Long
+PT As POINTAPI
+End Type
 Private Type SYSTEMTIME
 wYear As Integer
 wMonth As Integer
@@ -100,10 +115,6 @@ Private Type NMVIEWCHANGE
 hdr As NMHDR
 dwOldView As MvwViewConstants
 dwNewView As MvwViewConstants
-End Type
-Private Type POINTAPI
-X As Long
-Y As Long
 End Type
 Private Type MCHITTESTINFO
 cbSize As Long
@@ -329,8 +340,15 @@ Private MonthViewMouseOver As Boolean
 Private MonthViewDesignMode As Boolean
 Private MonthViewSelectDate As Date
 Private MonthViewSelChangeStartDate As Date, MonthViewSelChangeEndDate As Date
-Private DispIdMousePointer As Long
 Private DispIdStartOfWeek As Long
+
+#If ImplementPreTranslateMsg = True Then
+
+Private Const UM_PRETRANSLATEMSG As Long = (WM_USER + 1100)
+Private UsePreTranslateMsg As Boolean
+
+#End If
+
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
@@ -393,10 +411,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetDisplayString(ByRef Handled As Boolean, ByVal DispId As Long, ByRef DisplayName As String)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetDisplayStringMousePointer(PropMousePointer, DisplayName)
-    Handled = True
-ElseIf DispId = DispIdStartOfWeek Then
+If DispId = DispIdStartOfWeek Then
     Select Case PropStartOfWeek
         Case 0: DisplayName = "0 - System"
         Case 1: DisplayName = "1 - Monday"
@@ -412,10 +427,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
-If DispId = DispIdMousePointer Then
-    Call ComCtlsIPPBSetPredefinedStringsMousePointer(StringsOut(), CookiesOut())
-    Handled = True
-ElseIf DispId = DispIdStartOfWeek Then
+If DispId = DispIdStartOfWeek Then
     ReDim StringsOut(0 To (7 + 1)) As String
     ReDim CookiesOut(0 To (7 + 1)) As Long
     StringsOut(0) = "0 - System": CookiesOut(0) = 0
@@ -431,7 +443,7 @@ End If
 End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
-If DispId = DispIdMousePointer Or DispId = DispIdStartOfWeek Then
+If DispId = DispIdStartOfWeek Then
     Value = Cookie
     Handled = True
 End If
@@ -440,12 +452,21 @@ End Sub
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 Call ComCtlsInitCC(ICC_DATE_CLASSES)
+
+#If ImplementPreTranslateMsg = True Then
+
+If SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject) = False Then UsePreTranslateMsg = True
+
+#Else
+
 Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 End Sub
 
 Private Sub UserControl_InitProperties()
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdStartOfWeek = 0 Then DispIdStartOfWeek = GetDispId(Me, "StartOfWeek")
 On Error Resume Next
 MonthViewDesignMode = Not Ambient.UserMode
@@ -484,7 +505,6 @@ Call CreateMonthView
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
-If DispIdMousePointer = 0 Then DispIdMousePointer = GetDispId(Me, "MousePointer")
 If DispIdStartOfWeek = 0 Then DispIdStartOfWeek = GetDispId(Me, "StartOfWeek")
 On Error Resume Next
 MonthViewDesignMode = Not Ambient.UserMode
@@ -633,7 +653,17 @@ InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
+
+#If ImplementPreTranslateMsg = True Then
+
+If UsePreTranslateMsg = False Then Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#Else
+
 Call RemoveVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
+
+#End If
+
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call DestroyMonthView
 Call ComCtlsReleaseShellMod
@@ -883,12 +913,12 @@ End Select
 UserControl.PropertyChanged "OLEDropMode"
 End Property
 
-Public Property Get MousePointer() As Integer
+Public Property Get MousePointer() As CCMousePointerConstants
 Attribute MousePointer.VB_Description = "Returns/sets the type of mouse pointer displayed when over part of an object."
 MousePointer = PropMousePointer
 End Property
 
-Public Property Let MousePointer(ByVal Value As Integer)
+Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
     Case 0 To 16, 99
         PropMousePointer = Value
@@ -1650,6 +1680,13 @@ Me.MaxSelCount = PropMaxSelCount
 Me.View = PropView
 If MonthViewDesignMode = False Then
     If MonthViewHandle <> NULL_PTR Then Call ComCtlsSetSubclass(MonthViewHandle, Me, 1)
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgAddHook
+    
+    #End If
+    
 End If
 End Sub
 
@@ -1682,6 +1719,15 @@ Private Sub DestroyMonthView()
 If MonthViewHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(MonthViewHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If MonthViewDesignMode = False Then
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    If UsePreTranslateMsg = True Then Call ComCtlsPreTranslateMsgReleaseHook
+    
+    #End If
+    
+End If
 ShowWindow MonthViewHandle, SW_HIDE
 SetParent MonthViewHandle, NULL_PTR
 DestroyWindow MonthViewHandle
@@ -2029,6 +2075,20 @@ If MonthViewHandle <> NULL_PTR Then
 End If
 End Sub
 
+#If ImplementPreTranslateMsg = True Then
+
+Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
+PreTranslateMsg = 0
+If lParam <> NULL_PTR Then
+    Dim Msg As TMSG, Handled As Boolean, RetVal As Long
+    CopyMemory Msg, ByVal lParam, LenB(Msg)
+    IOleInPlaceActiveObjectVB_TranslateAccelerator Handled, RetVal, Msg.hWnd, Msg.Message, Msg.wParam, Msg.lParam, GetShiftStateFromMsg()
+    If Handled = True Then PreTranslateMsg = 1
+End If
+End Function
+
+#End If
+
 #If VBA7 Then
 Private Function ISubclass_Message(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
 #Else
@@ -2046,9 +2106,29 @@ Private Function WindowProcControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, By
 Select Case wMsg
     Case WM_SETFOCUS
         If wParam <> UserControl.hWnd Then SetFocusAPI UserControl.hWnd: Exit Function
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call ActivateIPAO(Me) Else Call ComCtlsPreTranslateMsgActivate(hWnd)
+        
+        #Else
+        
         Call ActivateIPAO(Me)
+        
+        #End If
+        
     Case WM_KILLFOCUS
+        
+        #If ImplementPreTranslateMsg = True Then
+        
+        If UsePreTranslateMsg = False Then Call DeActivateIPAO Else Call ComCtlsPreTranslateMsgDeActivate
+        
+        #Else
+        
         Call DeActivateIPAO
+        
+        #End If
+        
     Case WM_LBUTTONDOWN
         If GetFocus() <> hWnd Then SetFocusAPI UserControl.hWnd ' UCNoSetFocusFwd not applicable
     Case WM_SETCURSOR
@@ -2167,6 +2247,15 @@ Select Case wMsg
             SendMessage MonthViewHandle, MCM_SETDAYSTATE, ArraySize, ByVal VarPtr(DayState(1))
         End If
         Exit Function
+    
+    #If ImplementPreTranslateMsg = True Then
+    
+    Case UM_PRETRANSLATEMSG
+        WindowProcControl = PreTranslateMsg(lParam)
+        Exit Function
+    
+    #End If
+    
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg

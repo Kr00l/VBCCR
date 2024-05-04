@@ -39,7 +39,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3360
       Width           =   1215
    End
-   Begin VBCCR17.TextBoxW TextToolTipText 
+   Begin VBCCR18.TextBoxW TextToolTipText 
       Height          =   315
       Left            =   1200
       TabIndex        =   9
@@ -141,7 +141,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3030
       Width           =   1215
    End
-   Begin VBCCR17.TextBoxW TextActualWidth 
+   Begin VBCCR18.TextBoxW TextActualWidth 
       Height          =   315
       Left            =   4080
       TabIndex        =   29
@@ -152,7 +152,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       BackColor       =   -2147483633
       Locked          =   -1  'True
    End
-   Begin VBCCR17.TextBoxW TextMinWidth 
+   Begin VBCCR18.TextBoxW TextMinWidth 
       Height          =   315
       Left            =   4080
       TabIndex        =   27
@@ -203,7 +203,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3000
       Width           =   1575
    End
-   Begin VBCCR17.TextBoxW TextTag 
+   Begin VBCCR18.TextBoxW TextTag 
       Height          =   315
       Left            =   1200
       TabIndex        =   13
@@ -214,7 +214,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextText 
+   Begin VBCCR18.TextBoxW TextText 
       Height          =   315
       Left            =   1200
       TabIndex        =   7
@@ -225,7 +225,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       BackColor       =   -2147483633
       Enabled         =   0   'False
    End
-   Begin VBCCR17.TextBoxW TextKey 
+   Begin VBCCR18.TextBoxW TextKey 
       Height          =   315
       Left            =   1200
       TabIndex        =   11
@@ -274,7 +274,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   120
       Width           =   300
    End
-   Begin VBCCR17.TextBoxW TextIndex 
+   Begin VBCCR18.TextBoxW TextIndex 
       Height          =   315
       Left            =   1200
       TabIndex        =   1

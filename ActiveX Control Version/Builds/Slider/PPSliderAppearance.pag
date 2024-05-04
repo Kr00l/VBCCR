@@ -58,7 +58,7 @@ Begin VB.PropertyPage PPSliderAppearance
       Top             =   1560
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextTickFrequency 
+   Begin VBCCR18.TextBoxW TextTickFrequency 
       Height          =   315
       Left            =   1800
       TabIndex        =   7

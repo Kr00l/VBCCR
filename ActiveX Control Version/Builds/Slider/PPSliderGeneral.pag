@@ -17,7 +17,7 @@ Begin VB.PropertyPage PPSliderGeneral
       Top             =   1560
       Width           =   1620
    End
-   Begin VBCCR17.TextBoxW TextSelLength 
+   Begin VBCCR18.TextBoxW TextSelLength 
       Height          =   315
       Left            =   4320
       TabIndex        =   14
@@ -26,7 +26,7 @@ Begin VB.PropertyPage PPSliderGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextSelStart 
+   Begin VBCCR18.TextBoxW TextSelStart 
       Height          =   315
       Left            =   4320
       TabIndex        =   12
@@ -35,7 +35,7 @@ Begin VB.PropertyPage PPSliderGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextLargeChange 
+   Begin VBCCR18.TextBoxW TextLargeChange 
       Height          =   315
       Left            =   1440
       TabIndex        =   9
@@ -44,7 +44,7 @@ Begin VB.PropertyPage PPSliderGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextSmallChange 
+   Begin VBCCR18.TextBoxW TextSmallChange 
       Height          =   315
       Left            =   1440
       TabIndex        =   7
@@ -53,7 +53,7 @@ Begin VB.PropertyPage PPSliderGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMax 
+   Begin VBCCR18.TextBoxW TextMax 
       Height          =   315
       Left            =   1440
       TabIndex        =   5
@@ -62,7 +62,7 @@ Begin VB.PropertyPage PPSliderGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMin 
+   Begin VBCCR18.TextBoxW TextMin 
       Height          =   315
       Left            =   1440
       TabIndex        =   3

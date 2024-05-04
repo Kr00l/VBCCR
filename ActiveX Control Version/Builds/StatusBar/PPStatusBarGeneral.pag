@@ -49,7 +49,7 @@ Begin VB.PropertyPage PPStatusBarGeneral
       Top             =   840
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextSimpleText 
+   Begin VBCCR18.TextBoxW TextSimpleText 
       Height          =   315
       Left            =   1800
       TabIndex        =   8

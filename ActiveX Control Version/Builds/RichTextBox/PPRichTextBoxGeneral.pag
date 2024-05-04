@@ -9,6 +9,14 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   5625
    ScaleWidth      =   6450
+   Begin VB.CheckBox CheckAutoVerbMenu 
+      Caption         =   "AutoVerbMenu"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   34
+      Top             =   5160
+      Width           =   2160
+   End
    Begin VB.CheckBox CheckUseCrLf 
       Caption         =   "UseCrLf"
       Height          =   285
@@ -49,7 +57,7 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       Top             =   3360
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextUndoLimit 
+   Begin VBCCR18.TextBoxW TextUndoLimit 
       Height          =   315
       Left            =   1800
       TabIndex        =   19
@@ -66,7 +74,7 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       Top             =   2640
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextBulletIndent 
+   Begin VBCCR18.TextBoxW TextBulletIndent 
       Height          =   315
       Left            =   1800
       TabIndex        =   15
@@ -83,7 +91,7 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       Top             =   1920
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextMaxLength 
+   Begin VBCCR18.TextBoxW TextMaxLength 
       Height          =   315
       Left            =   1800
       TabIndex        =   11
@@ -92,7 +100,7 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextPasswordChar 
+   Begin VBCCR18.TextBoxW TextPasswordChar 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -165,8 +173,8 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       Top             =   120
       Width           =   1620
    End
-   Begin VB.CheckBox CheckOLEDragDrop 
-      Caption         =   "OLEDragDrop"
+   Begin VB.CheckBox CheckOLEDragDropRTF 
+      Caption         =   "OLEDragDropRTF"
       Height          =   285
       Left            =   4200
       TabIndex        =   23
@@ -189,7 +197,7 @@ Begin VB.PropertyPage PPRichTextBoxGeneral
       Top             =   480
       Width           =   330
    End
-   Begin VBCCR17.TextBoxW TextFileName 
+   Begin VBCCR18.TextBoxW TextFileName 
       Height          =   315
       Left            =   1800
       TabIndex        =   4
@@ -345,7 +353,7 @@ If .TextMode <> ComboTextMode.ItemData(ComboTextMode.ListIndex) Then .TextMode =
 .UndoLimit = CLng(TextUndoLimit.Text)
 .IMEMode = ComboIMEMode.ItemData(ComboIMEMode.ListIndex)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
-.OLEDragDrop = CBool(CheckOLEDragDrop.Value = vbChecked)
+.OLEDragDropRTF = CBool(CheckOLEDragDropRTF.Value = vbChecked)
 .HideSelection = CBool(CheckHideSelection.Value = vbChecked)
 .UseSystemPasswordChar = CBool(CheckUseSystemPasswordChar.Value = vbChecked)
 .MultiLine = CBool(CheckMultiLine.Value = vbChecked)
@@ -356,6 +364,7 @@ If .TextMode <> ComboTextMode.ItemData(ComboTextMode.ListIndex) Then .TextMode =
 .AllowOverType = CBool(CheckAllowOverType.Value = vbChecked)
 .OverTypeMode = CBool(CheckOverTypeMode.Value = vbChecked)
 .UseCrLf = CBool(CheckUseCrLf.Value = vbChecked)
+.AutoVerbMenu = CBool(CheckAutoVerbMenu.Value = vbChecked)
 If Not .FileName = TextFileName.Text Or Not TextFileName.Text = vbNullString Then .FileName = TextFileName.Text
 End With
 Call PropertyPage_SelectionChanged
@@ -397,7 +406,7 @@ For i = 0 To ComboIMEMode.ListCount - 1
     End If
 Next i
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
-CheckOLEDragDrop.Value = IIf(.OLEDragDrop = True, vbChecked, vbUnchecked)
+CheckOLEDragDropRTF.Value = IIf(.OLEDragDropRTF = True, vbChecked, vbUnchecked)
 CheckHideSelection.Value = IIf(.HideSelection = True, vbChecked, vbUnchecked)
 CheckUseSystemPasswordChar.Value = IIf(.UseSystemPasswordChar = True, vbChecked, vbUnchecked)
 CheckMultiLine.Value = IIf(.MultiLine = True, vbChecked, vbUnchecked)
@@ -408,6 +417,7 @@ CheckSelectionBar.Value = IIf(.SelectionBar = True, vbChecked, vbUnchecked)
 CheckAllowOverType.Value = IIf(.AllowOverType = True, vbChecked, vbUnchecked)
 CheckOverTypeMode.Value = IIf(.OverTypeMode = True, vbChecked, vbUnchecked)
 CheckUseCrLf.Value = IIf(.UseCrLf = True, vbChecked, vbUnchecked)
+CheckAutoVerbMenu.Value = IIf(.AutoVerbMenu = True, vbChecked, vbUnchecked)
 TextFileName.Text = .FileName
 End With
 FreezeChanged = False
@@ -640,7 +650,7 @@ If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
 
-Private Sub CheckOLEDragDrop_Click()
+Private Sub CheckOLEDragDropRTF_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
@@ -691,6 +701,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckUseCrLf_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckAutoVerbMenu_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

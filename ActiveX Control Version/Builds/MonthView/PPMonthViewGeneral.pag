@@ -33,7 +33,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       Top             =   1920
       Width           =   1920
    End
-   Begin VBCCR17.TextBoxW TextMonthRows 
+   Begin VBCCR18.TextBoxW TextMonthRows 
       Height          =   315
       Left            =   1800
       TabIndex        =   17
@@ -42,7 +42,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMonthColumns 
+   Begin VBCCR18.TextBoxW TextMonthColumns 
       Height          =   315
       Left            =   1800
       TabIndex        =   15
@@ -51,7 +51,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMaxSelCount 
+   Begin VBCCR18.TextBoxW TextMaxSelCount 
       Height          =   315
       Left            =   1800
       TabIndex        =   13
@@ -68,7 +68,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       Top             =   3360
       Width           =   2235
    End
-   Begin VBCCR17.TextBoxW TextMaxDate 
+   Begin VBCCR18.TextBoxW TextMaxDate 
       Height          =   315
       Left            =   1800
       TabIndex        =   9
@@ -77,7 +77,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextMinDate 
+   Begin VBCCR18.TextBoxW TextMinDate 
       Height          =   315
       Left            =   1800
       TabIndex        =   7
@@ -86,7 +86,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       _ExtentX        =   0
       _ExtentY        =   0
    End
-   Begin VBCCR17.TextBoxW TextValue 
+   Begin VBCCR18.TextBoxW TextValue 
       Height          =   315
       Left            =   1800
       TabIndex        =   5
@@ -127,7 +127,7 @@ Begin VB.PropertyPage PPMonthViewGeneral
       Top             =   840
       Width           =   1920
    End
-   Begin VBCCR17.TextBoxW TextScrollRate 
+   Begin VBCCR18.TextBoxW TextScrollRate 
       Height          =   315
       Left            =   1800
       TabIndex        =   11
