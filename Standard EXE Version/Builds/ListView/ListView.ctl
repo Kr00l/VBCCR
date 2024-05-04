@@ -447,6 +447,9 @@ Private Type HDTEXTFILTER
 pszText As LongPtr
 cchTextMax As Long
 End Type
+' Must be declared at the beginning so that conditional compilation will not bug the events.
+Private WithEvents PropFont As StdFont
+Attribute PropFont.VB_VarHelpID = -1
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -511,8 +514,13 @@ Public Event ColumnFilterChanged(ByVal ColumnHeader As LvwColumnHeader)
 Attribute ColumnFilterChanged.VB_Description = "Occurs when a filter of a column header has been changed."
 Public Event ColumnFilterButtonClick(ByVal ColumnHeader As LvwColumnHeader, ByRef RaiseFilterChanged As Boolean, ByVal ButtonLeft As Long, ByVal ButtonTop As Long, ByVal ButtonRight As Long, ByVal ButtonBottom As Long)
 Attribute ColumnFilterButtonClick.VB_Description = "Occurs when a filter button of a column header is clicked."
+#If VBA7 Then
+Public Event BeforeFilterEdit(ByVal ColumnHeader As LvwColumnHeader, ByVal hWndFilterEdit As LongPtr)
+Attribute BeforeFilterEdit.VB_Description = "Occurs when a user attempts to edit the filter of the corresponding column header."
+#Else
 Public Event BeforeFilterEdit(ByVal ColumnHeader As LvwColumnHeader, ByVal hWndFilterEdit As Long)
 Attribute BeforeFilterEdit.VB_Description = "Occurs when a user attempts to edit the filter of the corresponding column header."
+#End If
 Public Event AfterFilterEdit(ByVal ColumnHeader As LvwColumnHeader)
 Attribute AfterFilterEdit.VB_Description = "Occurs after a user edits the filter of the corresponding column header."
 Public Event GetEmptyMarkup(ByRef Text As String, ByRef Center As Boolean)
@@ -1179,8 +1187,6 @@ Private UsePreTranslateMsg As Boolean
 
 #End If
 
-Private WithEvents PropFont As StdFont
-Attribute PropFont.VB_VarHelpID = -1
 Private PropListItems As LvwListItems
 Private PropColumnHeaders As LvwColumnHeaders
 Private PropGroups As LvwGroups
@@ -7383,7 +7389,7 @@ End If
 End Sub
 
 Private Function GetFilterEditIndex(ByVal hWndFilterEdit As LongPtr) As Long
-If ListViewHandle = NULL_PTR Or hWndFilterEdit = 0 Then Exit Function
+If ListViewHandle = NULL_PTR Or hWndFilterEdit = NULL_PTR Then Exit Function
 ' If comctl32.dll version is 6.1 or higher then HDN_BEGINFILTEREDIT and HDN_ENDFILTEREDIT will be sent.
 ' Thus we return zero in order to not raise the events 'BeforeFilterEdit' and 'AfterFilterEdit' twice.
 If ComCtlsSupportLevel() >= 2 Then Exit Function
@@ -7728,15 +7734,7 @@ Select Case wMsg
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
                     NMHDR.iItem = CLng(SendMessage(NMHDR.hdr.hWndFrom, HDM_GETFOCUSEDITEM, 0, ByVal 0&))
-                    If NMHDR.iItem > -1 Then
-                        #If Win64 Then
-                        Dim hWnd32 As Long
-                        CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(ListViewFilterEditHandle), 4
-                        RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), hWnd32)
-                        #Else
-                        RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
-                        #End If
-                    End If
+                    If NMHDR.iItem > -1 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
                 Case HDN_ENDFILTEREDIT
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
@@ -8096,15 +8094,7 @@ Select Case wMsg
                     Call ComCtlsSetSubclass(lParam, Me, 3)
                     Call ActivateIPAO(Me)
                 End If
-                If ListViewFilterEditIndex > 0 Then
-                    #If Win64 Then
-                    Dim hWnd32 As Long
-                    CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(ListViewFilterEditHandle), 4
-                    RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), hWnd32)
-                    #Else
-                    RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
-                    #End If
-                End If
+                If ListViewFilterEditIndex > 0 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
             Case EN_KILLFOCUS
                 ' When the user types ESC or RETURN the filter edit window sends EN_KILLFOCUS.
                 ' In all other cases the filter edit window sends WM_KILLFOCUS.

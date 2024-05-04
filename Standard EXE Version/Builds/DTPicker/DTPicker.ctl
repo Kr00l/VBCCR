@@ -124,6 +124,11 @@ pszUserString As LongPtr
 ST As SYSTEMTIME
 dwFlags As Long
 End Type
+' Must be declared at the beginning so that conditional compilation will not bug the events.
+Private WithEvents PropFont As StdFont
+Attribute PropFont.VB_VarHelpID = -1
+Private WithEvents PropCalendarFont As StdFont
+Attribute PropCalendarFont.VB_VarHelpID = -1
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -145,8 +150,13 @@ Public Event FormatString(ByVal CallbackField As String, ByRef FormattedString A
 Attribute FormatString.VB_Description = "Occurs when the control is requesting text to be displayed in a callback field."
 Public Event FormatSize(ByVal CallbackField As String, ByRef Size As Integer)
 Attribute FormatSize.VB_Description = "Occurs when the control needs to know the maximum allowable size of a callback field."
+#If VBA7 Then
+Public Event BeforeUserInput(ByVal hWndEdit As LongPtr)
+Attribute BeforeUserInput.VB_Description = "Occurs when a user attempts to input a string."
+#Else
 Public Event BeforeUserInput(ByVal hWndEdit As Long)
 Attribute BeforeUserInput.VB_Description = "Occurs when a user attempts to input a string."
+#End If
 Public Event ParseUserInput(ByVal Text As String, ByRef ParseDate As Variant)
 Attribute ParseUserInput.VB_Description = "Occurs when the user input is finished. It is necessary to parse the input string and take action if necessary."
 Public Event AfterUserInput()
@@ -370,12 +380,8 @@ Private DTPickerDesignMode As Boolean
 Private DTPickerIsValueInvalid As Boolean
 Private DTPickerEditHandle As LongPtr
 Private DTPickerEditSubclassed As Boolean
-Private WithEvents PropFont As StdFont
-Attribute PropFont.VB_VarHelpID = -1
 Private DTPickerDroppedDown As Boolean
 Private DTPickerCalendarFontHandle As LongPtr
-Private WithEvents PropCalendarFont As StdFont
-Attribute PropCalendarFont.VB_VarHelpID = -1
 Private UCNoSetFocusFwd As Boolean
 Private DispIdStartOfWeek As Long
 
@@ -2037,13 +2043,7 @@ Select Case wMsg
                     
                     DTPickerEditHandle = lParam
                     DTPickerEditSubclassed = True
-                    #If Win64 Then
-                    Dim hWnd32 As Long
-                    CopyMemory ByVal VarPtr(hWnd32), ByVal VarPtr(DTPickerEditHandle), 4
-                    RaiseEvent BeforeUserInput(hWnd32)
-                    #Else
                     RaiseEvent BeforeUserInput(DTPickerEditHandle)
-                    #End If
                 End If
             Case EN_KILLFOCUS
                 ' Unlike the filter edit window in the list view control this here is sent in all cases.
