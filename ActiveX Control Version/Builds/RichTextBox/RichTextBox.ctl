@@ -223,6 +223,35 @@ tymed As Long
 Data As LongPtr
 lpUnkForRelease As LongPtr
 End Type
+Private Type TOLEUIPASTEENTRY
+pFormatEtc As FORMATETC
+lpszFormatName As LongPtr
+lpszResultText As LongPtr
+dwFlags As Long
+dwScratchSpace As Long
+End Type
+Private Type TOLEUIPASTESPECIAL
+cbSize As Long
+dwFlags As Long
+hWndOwner As LongPtr
+lpszCaption As LongPtr
+lpfnHook As LongPtr
+lCustData As LongPtr
+hInstance As LongPtr
+lpszTemplate As LongPtr
+hResource As LongPtr
+lpSrcDataObj As LongPtr
+lpArrPasteEntries As LongPtr
+cPasteEntries As Long
+lpArrLinkTypes As LongPtr
+cLinkTypes As Long
+cCLSIDExclude As Long
+lpCLSIDExclude As LongPtr
+nSelectedIndex As Long
+fLink As Long
+hMetaPict As LongPtr
+Size As SIZEAPI
+End Type
 Private Type REOBJECT
 cbStruct As Long
 CharPos As Long
@@ -436,6 +465,7 @@ Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
 Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare PtrSafe Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
+Private Declare PtrSafe Function OleUIPasteSpecial Lib "oledlg" Alias "OleUIPasteSpecialW" (ByRef pOleUIPasteSpecial As TOLEUIPASTESPECIAL) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Sub DragAcceptFiles Lib "shell32" (ByVal hWnd As Long, ByVal fAccept As Long)
@@ -496,6 +526,7 @@ Private Declare Function CreatePopupMenu Lib "user32" () As Long
 Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
 Private Declare Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
+Private Declare Function OleUIPasteSpecial Lib "oledlg" Alias "OleUIPasteSpecialW" (ByRef pOleUIPasteSpecial As TOLEUIPASTESPECIAL) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -559,12 +590,9 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
 Private Const CP_UNICODE As Long = 1200
-'Private Const MIM_BACKGROUND As Long = &H2
-'Private Const MIM_MENUDATA As Long = &H8
 Private Const MIIM_STATE As Long = &H1
 Private Const MIIM_ID As Long = &H2
 Private Const MIIM_STRING As Long = &H40
-'Private Const MIIM_BITMAP As Long = &H80
 Private Const MIIM_FTYPE As Long = &H100
 Private Const MFT_SEPARATOR As Long = &H800
 Private Const MFS_ENABLED As Long = &H0
@@ -874,9 +902,16 @@ Private Const REO_LINK As Long = &H80000000
 Private Const S_OK As Long = &H0
 Private Const OLERENDER_DRAW As Long = 1
 Private Const DVASPECT_CONTENT As Long = 1
+Private Const TYMED_HGLOBAL As Long = 1
 Private Const TYMED_GDI As Long = 16
 Private Const TYMED_MFPICT As Long = 32
 Private Const TYMED_ENHMF As Long = 64
+Private Const PSF_SELECTPASTE As Long = &H2
+Private Const PSF_DISABLEDISPLAYASICON As Long = &H10
+Private Const OLEUIPASTE_PASTEONLY As Long = 0
+Private Const OLEUI_FALSE As Long = 0
+Private Const OLEUI_OK As Long = 1
+Private Const OLEUI_CANCEL As Long = 2
 Private Const FILE_FLAG_SEQUENTIAL_SCAN As Long = &H8000000
 #If VBA7 Then
 Private Const INVALID_HANDLE_VALUE As LongPtr = (-1)
@@ -2342,6 +2377,14 @@ Attribute PasteSpecial.VB_Description = "Pastes a specific clipboard format in a
 If RichTextBoxHandle <> NULL_PTR Then
     If wFormat = vbCFRTF Then wFormat = RegisterClipboardFormat(StrPtr("Rich Text Format"))
     SendMessage RichTextBoxHandle, EM_PASTESPECIAL, wFormat, ByVal 0&
+End If
+End Sub
+
+Public Sub PasteSpecialDlg()
+Attribute PasteSpecialDlg.VB_Description = "Displays the Paste Special dialog box."
+If RichTextBoxHandle <> NULL_PTR Then
+    Dim wFormat As Long
+    If ShowPasteSpecialDlg(wFormat) = True Then SendMessage RichTextBoxHandle, EM_PASTESPECIAL, wFormat, ByVal 0&
 End If
 End Sub
 
@@ -4040,6 +4083,213 @@ If RichTextBoxHandle <> NULL_PTR And hDC <> NULL_PTR Then
 End If
 End Sub
 
+Private Function ShowPasteSpecialDlg(ByRef wFormat As Long) As Boolean
+Dim pOleUIPasteSpecial As TOLEUIPASTESPECIAL, pOleUIPasteEntry(0 To 2) As TOLEUIPASTEENTRY, RetVal As Long
+Dim LangID As Integer, szFormat(0 To 2) As String, szResult(0 To 2) As String
+LangID = GetUserDefaultUILanguage() And &HFF&
+Select Case LangID
+    Case &H4 ' Chinese
+        szFormat(0) = ChrW(&H683C&) & ChrW(&H5F0F&) & ChrW(&H5316&) & ChrW(&H6587&) & ChrW(&H672C&) & " (RTF)"
+        szFormat(1) = ChrW(&H65E0&) & ChrW(&H683C&) & ChrW(&H5F0F&) & ChrW(&H6587&) & ChrW(&H672C&)
+        szFormat(2) = ChrW(&H65E0&) & ChrW(&H683C&) & ChrW(&H5F0F&) & " Unicode " & ChrW(&H6587&) & ChrW(&H672C&)
+        szResult(0) = ChrW(&H5E26&) & ChrW(&H6709&) & ChrW(&H5B57&) & ChrW(&H4F53&) & ChrW(&H548C&) & ChrW(&H8868&) & ChrW(&H683C&) & ChrW(&H683C&) & ChrW(&H5F0F&) & ChrW(&H7684&) & ChrW(&H6587&) & ChrW(&H672C&)
+        szResult(1) = ChrW(&H6CA1&) & ChrW(&H6709&) & ChrW(&H4EFB&) & ChrW(&H4F55&) & ChrW(&H683C&) & ChrW(&H5F0F&) & ChrW(&H7684&) & ChrW(&H6587&) & ChrW(&H672C&)
+        szResult(2) = szResult(1)
+    Case &H5 ' Czech
+        szFormat(0) = "Form" & ChrW(&HE1&) & "tovan" & ChrW(&HFD&) & " text (RTF)"
+        szFormat(1) = "Neform" & ChrW(&HE1&) & "tovan" & ChrW(&HFD&) & " text"
+        szFormat(2) = "Neform" & ChrW(&HE1&) & "tovan" & ChrW(&HFD&) & " text Unicode"
+        szResult(0) = "text s fontem a form" & ChrW(&HE1&) & "tov" & ChrW(&HE1&) & "n" & ChrW(&HED&) & "m tabulek"
+        szResult(1) = "text bez jak" & ChrW(&HE9&) & "hokoli form" & ChrW(&HE1&) & "tov" & ChrW(&HE1&) & "n" & ChrW(&HED&)
+        szResult(2) = szResult(1)
+    Case &H6 ' Danish
+        szFormat(0) = "Formateret tekst (RTF)"
+        szFormat(1) = "Uformateret tekst"
+        szFormat(2) = "Uformateret Unicode-tekst"
+        szResult(0) = "tekst med skrifttype og tabelformatering"
+        szResult(1) = "tekst uden formatering"
+        szResult(2) = szResult(1)
+    Case &H7 ' German
+        szFormat(0) = "Formatierter Text (RTF)"
+        szFormat(1) = "Unformatierter Text"
+        szFormat(2) = "Unformatierter Unicode-Text"
+        szResult(0) = "Text mit Zeichen- und Tabellenformat"
+        szResult(1) = "Text ohne Formatierung"
+        szResult(2) = szResult(1)
+    Case &H8 ' Greek
+        szFormat(0) = ChrW(&H39C&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3B9&) & ChrW(&H3B7&) & ChrW(&H3BC&) & ChrW(&H3AD&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & _
+        ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " (RTF)"
+        szFormat(1) = ChrW(&H39C&) & ChrW(&H3B7&) & " " & ChrW(&H3BC&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3B9&) & ChrW(&H3B7&) & ChrW(&H3BC&) & ChrW(&H3AD&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & _
+        ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&)
+        szFormat(2) = ChrW(&H39A&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " Unicode " & ChrW(&H3C7&) & ChrW(&H3C9&) & ChrW(&H3C1&) & ChrW(&H3AF&) & ChrW(&H3C2&) & _
+        " " & ChrW(&H3BC&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3AF&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&)
+        szResult(0) = ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & ChrW(&H3BC&) & ChrW(&H3B5&) & " " & _
+        ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3BC&) & ChrW(&H3BC&) & ChrW(&H3B1&) & ChrW(&H3C4&) & ChrW(&H3BF&) & ChrW(&H3C3&) & ChrW(&H3B5&) & ChrW(&H3B9&) & ChrW(&H3C1&) & ChrW(&H3AC&) & " " & ChrW(&H3BA&) & ChrW(&H3B1&) & ChrW(&H3B9&) & " " & _
+        ChrW(&H3BC&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3AF&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H3C0&) & ChrW(&H3AF&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3BA&) & ChrW(&H3B1&)
+        szResult(1) = ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & _
+        ChrW(&H3C7&) & ChrW(&H3C9&) & ChrW(&H3C1&) & ChrW(&H3AF&) & ChrW(&H3C2&) & " " & ChrW(&H3BA&) & ChrW(&H3B1&) & ChrW(&H3BC&) & ChrW(&H3AF&) & ChrW(&H3B1&) & " " & ChrW(&H3BC&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3AF&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&)
+        szResult(2) = szResult(1)
+    Case &H9 ' English
+        szFormat(0) = "Formatted Text (RTF)"
+        szFormat(1) = "Unformatted Text"
+        szFormat(2) = "Unformatted Unicode Text"
+        szResult(0) = "text with font and table formatting"
+        szResult(1) = "text without any formatting"
+        szResult(2) = szResult(1)
+    Case &HA ' Spanish
+        szFormat(0) = "Texto formateado (RTF)"
+        szFormat(1) = "Texto sin formato"
+        szFormat(2) = "Texto Unicode sin formato"
+        szResult(0) = "texto con formato de fuente y tabla"
+        szResult(1) = "texto sin ning" & ChrW(&HFA&) & "n formato"
+        szResult(2) = szResult(1)
+    Case &HB ' Finnish
+        szFormat(0) = "Muotoiltu teksti (RTF)"
+        szFormat(1) = "Muotoilematon teksti"
+        szFormat(2) = "Muotoilematon Unicode-teksti"
+        szResult(0) = "teksti fontilla ja taulukon muotoilulla"
+        szResult(1) = "teksti" & ChrW(&HE4&) & " ilman muotoilua"
+        szResult(2) = szResult(1)
+    Case &HC ' French
+        szFormat(0) = "Texte format" & ChrW(&HE9&) & " (RTF)"
+        szFormat(1) = "Texte non format" & ChrW(&HE9&)
+        szFormat(2) = "Texte Unicode non format" & ChrW(&HE9&)
+        szResult(0) = "texte avec mise en forme de la police et du tableau"
+        szResult(1) = "texte sans aucune mise en forme"
+        szResult(2) = szResult(1)
+    Case &H10 ' Italian
+        szFormat(0) = "Testo formattato (RTF)"
+        szFormat(1) = "Testo non formattato"
+        szFormat(2) = "Testo Unicode non formattato"
+        szResult(0) = "testo con carattere e formattazione della tabella"
+        szResult(1) = "testo senza alcuna formattazione"
+        szResult(2) = szResult(1)
+    Case &H11 ' Japanese
+        szFormat(0) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30FC&) & ChrW(&H30DE&) & ChrW(&H30C3&) & ChrW(&H30C8&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H305F&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & " (RTF)"
+        szFormat(1) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30FC&) & ChrW(&H30DE&) & ChrW(&H30C3&) & ChrW(&H30C8&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H3066&) & ChrW(&H3044&) & ChrW(&H306A&) & ChrW(&H3044&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
+        szFormat(2) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30FC&) & ChrW(&H30DE&) & ChrW(&H30C3&) & ChrW(&H30C8&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H3066&) & ChrW(&H3044&) & ChrW(&H306A&) & ChrW(&H3044&) & "Unicode" & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
+        szResult(0) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30F3&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H8868&) & ChrW(&H306E&) & ChrW(&H66F8&) & ChrW(&H5F0F&) & ChrW(&H8A2D&) & ChrW(&H5B9A&) & ChrW(&H3092&) & ChrW(&H542B&) & ChrW(&H3080&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
+        szResult(1) = ChrW(&H66F8&) & ChrW(&H5F0F&) & ChrW(&H8A2D&) & ChrW(&H5B9A&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H3066&) & ChrW(&H3044&) & ChrW(&H306A&) & ChrW(&H3044&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
+        szResult(2) = szResult(1)
+    Case &H15 ' Polish
+        szFormat(0) = "Sformatowany tekst (RTF)"
+        szFormat(1) = "Niesformatowany tekst"
+        szFormat(2) = "Niesformatowany tekst Unicode"
+        szResult(0) = "tekst z czcionka i formatowaniem tabeli"
+        szResult(1) = "tekst bez " & ChrW(&H17C&) & "adnego formatowania"
+        szResult(2) = szResult(1)
+    Case &H16 ' Portuguese
+        szFormat(0) = "Texto formatado (RTF)"
+        szFormat(1) = "Texto n" & ChrW(&HE3&) & "o formatado"
+        szFormat(2) = "Texto Unicode n" & ChrW(&HE3&) & "o formatado"
+        szResult(0) = "texto com fonte e formata" & ChrW(&HE7&) & ChrW(&HE3&) & "o de tabela"
+        szResult(1) = "texto sem qualquer formata" & ChrW(&HE7&) & ChrW(&HE3&) & "o"
+        szResult(2) = szResult(1)
+    Case &H18 ' Romanian
+        szFormat(0) = "Text formatat (RTF)"
+        szFormat(1) = "Text neformatat"
+        szFormat(2) = "Text Unicode neformatat"
+        szResult(0) = "text cu font " & ChrW(&H219&) & "i formatare tabel"
+        szResult(1) = "text f" & ChrW(&H103&) & "r" & ChrW(&H103&) & " nicio formatare"
+        szResult(2) = szResult(1)
+    Case &H19 ' Russian
+        szFormat(0) = ChrW(&H424&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H43D&) & ChrW(&H44B&) & ChrW(&H439&) & " " & _
+        ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " (RTF)"
+        szFormat(1) = ChrW(&H41D&) & ChrW(&H435&) & ChrW(&H444&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H43D&) & ChrW(&H44B&) & ChrW(&H439&) & " " & _
+        ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&)
+        szFormat(2) = ChrW(&H41D&) & ChrW(&H435&) & ChrW(&H444&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H43D&) & ChrW(&H44B&) & ChrW(&H439&) & " " & _
+        ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " Unicode"
+        szResult(0) = ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " " & ChrW(&H441&) & ChrW(&H43E&) & " " & _
+        ChrW(&H448&) & ChrW(&H440&) & ChrW(&H438&) & ChrW(&H444&) & ChrW(&H442&) & ChrW(&H43E&) & ChrW(&H43C&) & " " & ChrW(&H438&) & " " & _
+        ChrW(&H444&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H438&) & ChrW(&H435&) & ChrW(&H43C&) & " " & _
+        ChrW(&H442&) & ChrW(&H430&) & ChrW(&H431&) & ChrW(&H43B&) & ChrW(&H438&) & ChrW(&H446&) & ChrW(&H44B&)
+        szResult(1) = ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " " & ChrW(&H431&) & ChrW(&H435&) & ChrW(&H437&) & " " & _
+        ChrW(&H444&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H438&) & ChrW(&H44F&)
+        szResult(2) = szResult(1)
+    Case &H1D ' Swedish
+        szFormat(0) = "Formaterad text (RTF)"
+        szFormat(1) = "Oformaterad text"
+        szFormat(2) = "Oformaterad Unicode-text"
+        szResult(0) = "text med teckensnitt och tabellformatering"
+        szResult(1) = "text utan n" & ChrW(&HE5&) & "gon formatering"
+        szResult(2) = szResult(1)
+    Case Else
+        szFormat(0) = "Formatted Text (RTF)"
+        szFormat(1) = "Unformatted Text"
+        szFormat(2) = "Unformatted Unicode Text"
+        szResult(0) = "text with font and table formatting"
+        szResult(1) = "text without any formatting"
+        szResult(2) = szResult(1)
+End Select
+With pOleUIPasteEntry(0)
+With .pFormatEtc
+.CFFormat = RegisterClipboardFormat(StrPtr("Rich Text Format"))
+.ptd = NULL_PTR
+.dwAspect = DVASPECT_CONTENT
+.lIndex = -1
+.tymed = TYMED_HGLOBAL
+End With
+.lpszFormatName = StrPtr(szFormat(0))
+.lpszResultText = StrPtr(szResult(0))
+.dwFlags = OLEUIPASTE_PASTEONLY
+.dwScratchSpace = 0
+End With
+With pOleUIPasteEntry(1)
+With .pFormatEtc
+.CFFormat = vbCFText
+.ptd = NULL_PTR
+.dwAspect = DVASPECT_CONTENT
+.lIndex = -1
+.tymed = TYMED_HGLOBAL
+End With
+.lpszFormatName = StrPtr(szFormat(1))
+.lpszResultText = StrPtr(szResult(1))
+.dwFlags = OLEUIPASTE_PASTEONLY
+.dwScratchSpace = 0
+End With
+With pOleUIPasteEntry(2)
+With .pFormatEtc
+.CFFormat = CF_UNICODETEXT
+.ptd = NULL_PTR
+.dwAspect = DVASPECT_CONTENT
+.lIndex = -1
+.tymed = TYMED_HGLOBAL
+End With
+.lpszFormatName = StrPtr(szFormat(2))
+.lpszResultText = StrPtr(szResult(2))
+.dwFlags = OLEUIPASTE_PASTEONLY
+.dwScratchSpace = 0
+End With
+With pOleUIPasteSpecial
+.cbSize = LenB(pOleUIPasteSpecial)
+.dwFlags = PSF_SELECTPASTE Or PSF_DISABLEDISPLAYASICON
+.hWndOwner = UserControl.hWnd
+.lpszCaption = NULL_PTR
+.lpfnHook = NULL_PTR
+.lCustData = 0
+.hInstance = NULL_PTR
+.lpszTemplate = NULL_PTR
+.hResource = NULL_PTR
+.lpSrcDataObj = NULL_PTR
+.lpArrPasteEntries = VarPtr(pOleUIPasteEntry(0))
+.cPasteEntries = 3
+.lpArrLinkTypes = NULL_PTR
+.cLinkTypes = 0
+.cCLSIDExclude = 0
+.lpCLSIDExclude = NULL_PTR
+End With
+RetVal = OleUIPasteSpecial(pOleUIPasteSpecial)
+If pOleUIPasteSpecial.lpSrcDataObj <> NULL_PTR Then
+    Dim pDataObject As OLEGuids.IDataObject
+    CopyMemory ByVal VarPtr(pDataObject), ByVal VarPtr(pOleUIPasteSpecial.lpSrcDataObj), PTR_SIZE
+    Set pDataObject = Nothing
+End If
+If RetVal = OLEUI_OK Then
+    wFormat = pOleUIPasteEntry(pOleUIPasteSpecial.nSelectedIndex).pFormatEtc.CFFormat
+    ShowPasteSpecialDlg = True
+End If
+End Function
+
 #If ImplementPreTranslateMsg = True Then
 
 Private Function PreTranslateMsg(ByVal lParam As LongPtr) As LongPtr
@@ -4116,50 +4366,54 @@ Else
     LangID = GetUserDefaultUILanguage() And &HFF&
     Dim MII As MENUITEMINFO, Text As String, i As Long
     MII.cbSize = LenB(MII)
-    For i = 1 To 7
+    For i = 1 To 8
         Select Case LangID
             Case &H4 ' Chinese
                 Text = VBA.Choose(i, ChrW(&H64A4&) & ChrW(&H6D88&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H6062&) & ChrW(&H590D&) & "(&R)" & vbTab & "Ctrl+Y", _
                 ChrW(&H526A&) & ChrW(&H5207&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H590D&) & ChrW(&H5236&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H7C98&) & ChrW(&H8D34&) & "(&P)" & vbTab & "Ctrl+V", _
-                ChrW(&H7C98&) & ChrW(&H8D34&) & ChrW(&H7EAF&) & ChrW(&H6587&) & ChrW(&H672C&) & vbTab & "Ctrl+Shift+V", ChrW(&H5220&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
+                ChrW(&H7C98&) & ChrW(&H8D34&) & ChrW(&H7EAF&) & ChrW(&H6587&) & ChrW(&H672C&) & vbTab & "Ctrl+Shift+V", _
+                ChrW(&H9009&) & ChrW(&H62E9&) & ChrW(&H6027&) & ChrW(&H7C98&) & ChrW(&H8D34&) & vbTab & "Ctrl+Alt+V", ChrW(&H5220&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
             Case &H5 ' Czech
-                Text = VBA.Choose(i, "&Zp" & ChrW(&H11B&) & "t" & vbTab & "Ctrl+Z", "Z&novu" & vbTab & "Ctrl+Y", "Vyjmou&t" & vbTab & "Ctrl+X", "&Kop" & ChrW(&HED&) & "rovat" & vbTab & "Ctrl+C", "&Vlo" & ChrW(&H17E&) & "it" & vbTab & "Ctrl+V", "Vlo" & ChrW(&H17E&) & "it &jako prost" & ChrW(&HFD&) & " text" & vbTab & "Ctrl+Shift+V", "&Odstranit" & vbTab & "Del")
+                Text = VBA.Choose(i, "&Zp" & ChrW(&H11B&) & "t" & vbTab & "Ctrl+Z", "Z&novu" & vbTab & "Ctrl+Y", "Vyjmou&t" & vbTab & "Ctrl+X", "&Kop" & ChrW(&HED&) & "rovat" & vbTab & "Ctrl+C", "&Vlo" & ChrW(&H17E&) & "it" & vbTab & "Ctrl+V", "Vlo" & ChrW(&H17E&) & "it &jako prost" & ChrW(&HFD&) & " text" & vbTab & "Ctrl+Shift+V", "Vlo" & ChrW(&H17E&) & "it jinak" & vbTab & "Ctrl+Alt+V", "&Odstranit" & vbTab & "Del")
             Case &H6 ' Danish
-                Text = VBA.Choose(i, "&Fortryd" & vbTab & "Ctrl+Z", "&Annuller fortryd" & vbTab & "Ctrl+Y", "&Klip" & vbTab & "Ctrl+X", "K&opier" & vbTab & "Ctrl+C", "Sæt &ind" & vbTab & "Ctrl+V", "Inds" & ChrW(&HE6&) & "t som almindelig &tekst" & vbTab & "Ctrl+Shift+V", "&Slet" & vbTab & "Del")
+                Text = VBA.Choose(i, "&Fortryd" & vbTab & "Ctrl+Z", "&Annuller fortryd" & vbTab & "Ctrl+Y", "&Klip" & vbTab & "Ctrl+X", "K&opier" & vbTab & "Ctrl+C", "Sæt &ind" & vbTab & "Ctrl+V", "Inds" & ChrW(&HE6&) & "t som almindelig &tekst" & vbTab & "Ctrl+Shift+V", "Inds" & ChrW(&HE6&) & "t speciel" & vbTab & "Ctrl+Alt+V", "&Slet" & vbTab & "Del")
             Case &H7 ' German
-                Text = VBA.Choose(i, "&R" & ChrW(&HFC&) & "ckg" & ChrW(&HE4&) & "ngig" & vbTab & "Strg+Z", "&Wiederholen" & vbTab & "Strg+Y", "&Ausschneiden" & vbTab & "Strg+X", "&Kopieren" & vbTab & "Strg+C", "&Einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+V", "Nur &Text einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+Umschalt+V", "&L" & ChrW(&HF6&) & "schen" & vbTab & "Entf")
+                Text = VBA.Choose(i, "&R" & ChrW(&HFC&) & "ckg" & ChrW(&HE4&) & "ngig" & vbTab & "Strg+Z", "&Wiederholen" & vbTab & "Strg+Y", "&Ausschneiden" & vbTab & "Strg+X", "&Kopieren" & vbTab & "Strg+C", "&Einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+V", "Nur &Text einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+Umschalt+V", "&Inhalte einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+Alt+V", "&L" & ChrW(&HF6&) & "schen" & vbTab & "Entf")
             Case &H8 ' Greek
                 Text = VBA.Choose(i, "&" & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3AF&) & ChrW(&H3C1&) & ChrW(&H3B5&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+Z", "&" & ChrW(&H391&) & ChrW(&H3BA&) & ChrW(&H3CD&) & ChrW(&H3C1&) & ChrW(&H3C9&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3AF&) & ChrW(&H3C1&) & ChrW(&H3B5&) & ChrW(&H3C3&) & ChrW(&H3B7&) & ChrW(&H3C2&) & vbTab & "Ctrl+Y", _
                 ChrW(&H391&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3BA&) & ChrW(&H3BF&) & "&" & ChrW(&H3C0&) & ChrW(&H3AE&) & vbTab & "Ctrl+X", "&" & ChrW(&H391&) & ChrW(&H3BD&) & ChrW(&H3C4&) & ChrW(&H3B9&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Ctrl+C", "&" & ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+V", _
-                ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H3C9&) & ChrW(&H3C2&) & " " & ChrW(&H3B1&) & ChrW(&H3C0&) & ChrW(&H3BB&) & ChrW(&H3CC&) & " " & ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & vbTab & "Ctrl+Shift+V", "&" & ChrW(&H394&) & ChrW(&H3B9&) & ChrW(&H3B1&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Del")
+                ChrW(&H395&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H3C9&) & ChrW(&H3C2&) & " " & ChrW(&H3B1&) & ChrW(&H3C0&) & ChrW(&H3BB&) & ChrW(&H3CC&) & " " & ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & vbTab & "Ctrl+Shift+V", _
+                ChrW(&H395&) & ChrW(&H3B9&) & ChrW(&H3B4&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3AE&) & " " & ChrW(&H3B5&) & ChrW(&H3C0&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BB&) & ChrW(&H3BB&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & vbTab & "Ctrl+Alt+V", "&" & ChrW(&H394&) & ChrW(&H3B9&) & ChrW(&H3B1&) & ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3C6&) & ChrW(&H3AE&) & vbTab & "Del")
             Case &H9 ' English
-                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
+                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "Paste &Special" & vbTab & "Ctrl+Alt+V", "&Delete" & vbTab & "Del")
             Case &HA ' Spanish
-                Text = VBA.Choose(i, "&Deshacer" & vbTab & "Ctrl+Z", "&Rehacer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "&Pegar" & vbTab & "Ctrl+V", "Pegar &s" & ChrW(&HF3&) & "lo texto" & vbTab & "Ctrl+May" & ChrW(&HFA&) & "s+V", "&Borrar" & vbTab & "Supr")
+                Text = VBA.Choose(i, "&Deshacer" & vbTab & "Ctrl+Z", "&Rehacer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "&Pegar" & vbTab & "Ctrl+V", "Pegar &s" & ChrW(&HF3&) & "lo texto" & vbTab & "Ctrl+May" & ChrW(&HFA&) & "s+V", "Pegado &especial" & vbTab & "Ctrl+Alt+V", "&Borrar" & vbTab & "Supr")
             Case &HB ' Finnish
-                Text = VBA.Choose(i, "K&umoa" & vbTab & "Ctrl+Z", "T&ee uudelleen" & vbTab & "Ctrl+Y", "&Leikkaa" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "L&iit" & ChrW(&HE4&) & vbTab & "Ctrl+V", "Liit" & ChrW(&HE4&) & " pelkk" & ChrW(&HE4&) & "n" & ChrW(&HE4&) & " &tekstin" & ChrW(&HE4&) & vbTab & "Ctrl+Vaihto+V", "&Poista" & vbTab & "Del")
+                Text = VBA.Choose(i, "K&umoa" & vbTab & "Ctrl+Z", "T&ee uudelleen" & vbTab & "Ctrl+Y", "&Leikkaa" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "L&iit" & ChrW(&HE4&) & vbTab & "Ctrl+V", "Liit" & ChrW(&HE4&) & " pelkk" & ChrW(&HE4&) & "n" & ChrW(&HE4&) & " &tekstin" & ChrW(&HE4&) & vbTab & "Ctrl+Vaihto+V", "Liit" & ChrW(&HE4&) & " m" & ChrW(&HE4&) & ChrW(&HE4&) & "r" & ChrW(&HE4&) & "ten" & vbTab & "Ctrl+Alt+V", "&Poista" & vbTab & "Del")
             Case &HC ' French
-                Text = VBA.Choose(i, "&Annuler" & vbTab & "Ctrl+Z", "&R" & ChrW(&HE9&) & "tablir" & vbTab & "Ctrl+Y", "Cou&per" & vbTab & "Ctrl+X", "&Copier" & vbTab & "Ctrl+C", "C&oller" & vbTab & "Ctrl+V", "Coller du &texte uniquement" & vbTab & "Ctrl+Maj+V", "&Supprimer" & vbTab & "Suppr")
+                Text = VBA.Choose(i, "&Annuler" & vbTab & "Ctrl+Z", "&R" & ChrW(&HE9&) & "tablir" & vbTab & "Ctrl+Y", "Cou&per" & vbTab & "Ctrl+X", "&Copier" & vbTab & "Ctrl+C", "C&oller" & vbTab & "Ctrl+V", "Coller du &texte uniquement" & vbTab & "Ctrl+Maj+V", "Collage sp" & ChrW(&HE9&) & "cial" & vbTab & "Ctrl+Alt+V", "&Supprimer" & vbTab & "Suppr")
             Case &H10 ' Italian
-                Text = VBA.Choose(i, "Ann&ulla digitazione" & vbTab & "Ctrl+Z", "&Ripristina digitazione" & vbTab & "Ctrl+Y", "Tag&lia" & vbTab & "Ctrl+X", "&Copia" & vbTab & "Ctrl+C", "&Incolla" & vbTab & "Ctrl+V", "Incollare solo &testo" & vbTab & "Ctrl+Maiusc+V", "&Elimina" & vbTab & "Canc")
+                Text = VBA.Choose(i, "Ann&ulla digitazione" & vbTab & "Ctrl+Z", "&Ripristina digitazione" & vbTab & "Ctrl+Y", "Tag&lia" & vbTab & "Ctrl+X", "&Copia" & vbTab & "Ctrl+C", "&Incolla" & vbTab & "Ctrl+V", "Incollare solo &testo" & vbTab & "Ctrl+Maiusc+V", "Incolla &speciale" & vbTab & "Ctrl+Alt+V", "&Elimina" & vbTab & "Canc")
             Case &H11 ' Japanese
                 Text = VBA.Choose(i, ChrW(&H5143&) & ChrW(&H306B&) & ChrW(&H623B&) & ChrW(&H3059&) & "(&U)" & vbTab & "Ctrl+Z", ChrW(&H3084&) & ChrW(&H308A&) & ChrW(&H76F4&) & ChrW(&H3057&) & "(&R)" & vbTab & "Ctrl+Y", _
                 ChrW(&H5207&) & ChrW(&H308A&) & ChrW(&H53D6&) & ChrW(&H308A&) & "(&T)" & vbTab & "Ctrl+X", ChrW(&H30B3&) & ChrW(&H30D4&) & ChrW(&H30FC&) & "(&C)" & vbTab & "Ctrl+C", ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & "(&P)" & vbTab & "Ctrl+V", _
-                ChrW(&H30D7&) & ChrW(&H30EC&) & ChrW(&H30FC&) & ChrW(&H30F3&) & " " & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H3057&) & ChrW(&H3066&) & ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & ChrW(&H308B&) & vbTab & "Ctrl+Shift+V", ChrW(&H524A&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
+                ChrW(&H30D7&) & ChrW(&H30EC&) & ChrW(&H30FC&) & ChrW(&H30F3&) & " " & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H3057&) & ChrW(&H3066&) & ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & ChrW(&H308B&) & vbTab & "Ctrl+Shift+V", _
+                ChrW(&H5F62&) & ChrW(&H5F0F&) & ChrW(&H3092&) & ChrW(&H9078&) & ChrW(&H629E&) & ChrW(&H3057&) & ChrW(&H3066&) & ChrW(&H8CBC&) & ChrW(&H308A&) & ChrW(&H4ED8&) & ChrW(&H3051&) & vbTab & "Ctrl+Alt+V", ChrW(&H524A&) & ChrW(&H9664&) & "(&D)" & vbTab & "Del")
             Case &H15 ' Polish
-                Text = VBA.Choose(i, "&Cofnij" & vbTab & "Ctrl+Z", "&Pon" & ChrW(&HF3&) & "w" & vbTab & "Ctrl+Y", "Wy&tnij" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "Wk&lej" & vbTab & "Ctrl+V", "Wklej jako zwyk" & ChrW(&H142&) & "y &tekst" & vbTab & "Ctrl+Shift+V", "&Wyczy" & ChrW(&H15B&) & ChrW(&H107&) & vbTab & "Del")
+                Text = VBA.Choose(i, "&Cofnij" & vbTab & "Ctrl+Z", "&Pon" & ChrW(&HF3&) & "w" & vbTab & "Ctrl+Y", "Wy&tnij" & vbTab & "Ctrl+X", "&Kopioi" & vbTab & "Ctrl+C", "Wk&lej" & vbTab & "Ctrl+V", "Wklej jako zwyk" & ChrW(&H142&) & "y &tekst" & vbTab & "Ctrl+Shift+V", "Wklejanie &specjalne" & vbTab & "Ctrl+Alt+V", "&Wyczy" & ChrW(&H15B&) & ChrW(&H107&) & vbTab & "Del")
             Case &H16 ' Portuguese
-                Text = VBA.Choose(i, "An&ular" & vbTab & "Ctrl+Z", "&Refazer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "Co&lar" & vbTab & "Ctrl+V", "Colar &somente texto" & vbTab & "Ctrl+Shift+V", "&Eliminar" & vbTab & "Del")
+                Text = VBA.Choose(i, "An&ular" & vbTab & "Ctrl+Z", "&Refazer" & vbTab & "Ctrl+Y", "Cor&tar" & vbTab & "Ctrl+X", "&Copiar" & vbTab & "Ctrl+C", "Co&lar" & vbTab & "Ctrl+V", "Colar &somente texto" & vbTab & "Ctrl+Shift+V", "Colar Especial" & vbTab & "Ctrl+Alt+V", "&Eliminar" & vbTab & "Del")
             Case &H18 ' Romanian
-                Text = VBA.Choose(i, "A&nulare" & vbTab & "Ctrl+Z", "&Revenire" & vbTab & "Ctrl+Y", "Dec&upare" & vbTab & "Ctrl+X", "&Copiere" & vbTab & "Ctrl+C", "&Lipire" & vbTab & "Ctrl+V", "Lipi" & ChrW(&H21B&) & "i ca &text simplu" & vbTab & "Ctrl+Shift+V", ChrW(&H218&) & "ter&gere" & vbTab & "Del")
+                Text = VBA.Choose(i, "A&nulare" & vbTab & "Ctrl+Z", "&Revenire" & vbTab & "Ctrl+Y", "Dec&upare" & vbTab & "Ctrl+X", "&Copiere" & vbTab & "Ctrl+C", "&Lipire" & vbTab & "Ctrl+V", "Lipi" & ChrW(&H21B&) & "i ca &text simplu" & vbTab & "Ctrl+Shift+V", "Lipire &special" & ChrW(&H103&) & vbTab & "Ctrl+Alt+V", ChrW(&H218&) & "ter&gere" & vbTab & "Del")
             Case &H19 ' Russian
                 Text = VBA.Choose(i, ChrW(&H41E&) & ChrW(&H442&) & ChrW(&H43C&) & ChrW(&H435&) & ChrW(&H43D&) & ChrW(&H430&) & vbTab & "Ctrl+Z", ChrW(&H41F&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H442&) & ChrW(&H43E&) & ChrW(&H440&) & vbTab & "Ctrl+Y", _
                 ChrW(&H412&) & ChrW(&H44B&) & ChrW(&H440&) & ChrW(&H435&) & ChrW(&H437&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+X", ChrW(&H41A&) & ChrW(&H43E&) & ChrW(&H43F&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+C", ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Ctrl+V", _
-                ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H43A&) & ChrW(&H430&) & " " & ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & vbTab & "Ctrl+Shift+V", ChrW(&H423&) & ChrW(&H434&) & ChrW(&H430&) & ChrW(&H43B&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Del")
+                ChrW(&H412&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H43A&) & ChrW(&H430&) & " " & ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & vbTab & "Ctrl+Shift+V", _
+                ChrW(&H421&) & ChrW(&H43F&) & ChrW(&H435&) & ChrW(&H446&) & ChrW(&H438&) & ChrW(&H430&) & ChrW(&H43B&) & ChrW(&H44C&) & ChrW(&H43D&) & ChrW(&H430&) & ChrW(&H44F&) & " " & ChrW(&H432&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H430&) & ChrW(&H432&) & ChrW(&H43A&) & ChrW(&H430&) & vbTab & "Ctrl+Alt+V", ChrW(&H423&) & ChrW(&H434&) & ChrW(&H430&) & ChrW(&H43B&) & ChrW(&H438&) & ChrW(&H442&) & ChrW(&H44C&) & vbTab & "Del")
             Case &H1D ' Swedish
-                Text = VBA.Choose(i, "&" & ChrW(&HC5&) & "ngra" & vbTab & "Ctrl+Z", "&G" & ChrW(&HF6&) & "r om" & vbTab & "Ctrl+Y", "&Klipp ut" & vbTab & "Ctrl+X", "K&opiera" & vbTab & "Ctrl+C", "K&listra in" & vbTab & "Ctrl+V", "Klistra in som vanlig &text" & vbTab & "Ctrl+Shift+V", "Ra&dera" & vbTab & "Del")
+                Text = VBA.Choose(i, "&" & ChrW(&HC5&) & "ngra" & vbTab & "Ctrl+Z", "&G" & ChrW(&HF6&) & "r om" & vbTab & "Ctrl+Y", "&Klipp ut" & vbTab & "Ctrl+X", "K&opiera" & vbTab & "Ctrl+C", "K&listra in" & vbTab & "Ctrl+V", "Klistra in som vanlig &text" & vbTab & "Ctrl+Shift+V", "Klistra in &special" & vbTab & "Ctrl+Alt+V", "Ra&dera" & vbTab & "Del")
             Case Else
-                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "&Delete" & vbTab & "Del")
+                Text = VBA.Choose(i, "&Undo" & vbTab & "Ctrl+Z", "&Redo" & vbTab & "Ctrl+Y", "Cu&t" & vbTab & "Ctrl+X", "&Copy" & vbTab & "Ctrl+C", "&Paste" & vbTab & "Ctrl+V", "Paste &as plain text" & vbTab & "Ctrl+Shift+V", "Paste &Special" & vbTab & "Ctrl+Alt+V", "&Delete" & vbTab & "Del")
         End Select
         MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
         MII.fType = 0
@@ -4179,13 +4433,13 @@ Else
                 Else
                     MII.fState = MFS_DISABLED
                 End If
-            Case 3, 4, 7
+            Case 3, 4, 8
                 If (SelType And SEL_TEXT) = SEL_TEXT Or (SelType And SEL_OBJECT) = SEL_OBJECT Then
                     MII.fState = MFS_ENABLED
                 Else
                     MII.fState = MFS_DISABLED
                 End If
-            Case 5
+            Case 5, 7
                 If Me.CanPaste = True Then
                     MII.fState = MFS_ENABLED
                 Else
@@ -4303,9 +4557,12 @@ Select Case wMsg
         If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
             If wMsg = WM_KEYDOWN Then
                 RaiseEvent KeyDown(KeyCode, GetShiftStateFromMsg())
-                If GetShiftStateFromMsg() = (vbCtrlMask + vbShiftMask) Then
-                    If KeyCode = vbKeyV Then Me.PasteSpecial CF_UNICODETEXT: Exit Function
-                End If
+                Select Case GetShiftStateFromMsg()
+                    Case (vbCtrlMask + vbShiftMask)
+                        If KeyCode = vbKeyV Then Me.PasteSpecial CF_UNICODETEXT: Exit Function
+                    Case (vbCtrlMask + vbAltMask)
+                        If KeyCode = vbKeyV Then Me.PasteSpecialDlg: Exit Function
+                End Select
             ElseIf wMsg = WM_KEYUP Then
                 RaiseEvent KeyUp(KeyCode, GetShiftStateFromMsg())
             End If
@@ -4573,6 +4830,8 @@ Select Case wMsg
                     Case 6
                         Me.PasteSpecial CF_UNICODETEXT
                     Case 7
+                        Me.PasteSpecialDlg
+                    Case 8
                         Me.Clear
                 End Select
             End If
