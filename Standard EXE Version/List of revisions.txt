@@ -1,10 +1,15 @@
 List of revisions:
 
+05-May-2024
+- Included the PasteSpecialDlg method in the RichTextBox control.
+  Ctrl+Alt+V shortcut now invokes the paste special dialog box.
+  The AutoVerbMenu is added with a paste special menu entry.
+
 01-May-2024
 - Included the hMenu run-time property in the TbrButton object.
   Returns/sets a handle to a popup menu which will be used as a button dropdown menu.
   This is useful when a menu with submenus is needed.
-- Included ButtonMenuHandleClick event in the ToolBar control.
+- Included ButtonMenuClick2 event in the ToolBar control.
 
 28-Apr-2024
 - ClientWidth/ClientHeight property now Let-able in the TabStrip control.
