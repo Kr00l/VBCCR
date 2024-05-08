@@ -903,6 +903,7 @@ Private Const S_OK As Long = &H0
 Private Const OLERENDER_DRAW As Long = 1
 Private Const DVASPECT_CONTENT As Long = 1
 Private Const TYMED_HGLOBAL As Long = 1
+Private Const TYMED_FILE As Long = 2
 Private Const TYMED_GDI As Long = 16
 Private Const TYMED_MFPICT As Long = 32
 Private Const TYMED_ENHMF As Long = 64
@@ -4085,8 +4086,8 @@ End Sub
 
 Private Function ShowPasteSpecialDlg(ByRef wFormat As Long) As Boolean
 If RichTextBoxHandle = NULL_PTR Then Exit Function
-Dim pOleUIPasteSpecial As TOLEUIPASTESPECIAL, pOleUIPasteEntry(0 To 4) As TOLEUIPASTEENTRY, RetVal As Long
-Dim LangID As Integer, szFormat(0 To 4) As String, szResult(0 To 4) As String
+Dim pOleUIPasteSpecial As TOLEUIPASTESPECIAL, pOleUIPasteEntry(0 To 6) As TOLEUIPASTEENTRY, RetVal As Long
+Dim LangID As Integer, szFormat(0 To 6) As String, szResult(0 To 6) As String
 LangID = GetUserDefaultUILanguage() And &HFF&
 Select Case LangID
     Case &H4 ' Chinese
@@ -4095,44 +4096,60 @@ Select Case LangID
         szFormat(2) = ChrW(&H65E0&) & ChrW(&H683C&) & ChrW(&H5F0F&) & " Unicode " & ChrW(&H6587&) & ChrW(&H672C&)
         szFormat(3) = ChrW(&H56FE&) & ChrW(&H7247&) & " (WMF)"
         szFormat(4) = ChrW(&H56FE&) & ChrW(&H7247&) & " (DIB)"
+        szFormat(5) = ChrW(&H56FE&) & ChrW(&H7247&) & " (EMF)"
+        szFormat(6) = ChrW(&H6587&) & ChrW(&H4EF6&)
         szResult(0) = ChrW(&H5E26&) & ChrW(&H6709&) & ChrW(&H5B57&) & ChrW(&H4F53&) & ChrW(&H548C&) & ChrW(&H8868&) & ChrW(&H683C&) & ChrW(&H683C&) & ChrW(&H5F0F&) & ChrW(&H7684&) & ChrW(&H6587&) & ChrW(&H672C&)
         szResult(1) = ChrW(&H6CA1&) & ChrW(&H6709&) & ChrW(&H4EFB&) & ChrW(&H4F55&) & ChrW(&H683C&) & ChrW(&H5F0F&) & ChrW(&H7684&) & ChrW(&H6587&) & ChrW(&H672C&)
         szResult(2) = szResult(1)
         szResult(3) = ChrW(&H7167&) & ChrW(&H7247&)
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = ChrW(&H5D4C&) & ChrW(&H5165&) & ChrW(&H6587&) & ChrW(&H4EF6&)
     Case &H5 ' Czech
         szFormat(0) = "Form" & ChrW(&HE1&) & "tovan" & ChrW(&HFD&) & " text (RTF)"
         szFormat(1) = "Neform" & ChrW(&HE1&) & "tovan" & ChrW(&HFD&) & " text"
         szFormat(2) = "Neform" & ChrW(&HE1&) & "tovan" & ChrW(&HFD&) & " text Unicode"
         szFormat(3) = "Obr" & ChrW(&HE1&) & "zek (WMF)"
         szFormat(4) = "Obr" & ChrW(&HE1&) & "zek (DIB)"
+        szFormat(5) = "Obr" & ChrW(&HE1&) & "zek (EMF)"
+        szFormat(6) = "Soubor"
         szResult(0) = "text s fontem a form" & ChrW(&HE1&) & "tov" & ChrW(&HE1&) & "n" & ChrW(&HED&) & "m tabulek"
         szResult(1) = "text bez jak" & ChrW(&HE9&) & "hokoli form" & ChrW(&HE1&) & "tov" & ChrW(&HE1&) & "n" & ChrW(&HED&)
         szResult(2) = szResult(1)
         szResult(3) = "obr" & ChrW(&HE1&) & "zek"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "vlo" & ChrW(&H17E&) & "en" & ChrW(&HFD&) & " soubor"
     Case &H6 ' Danish
         szFormat(0) = "Formateret tekst (RTF)"
         szFormat(1) = "Uformateret tekst"
         szFormat(2) = "Uformateret Unicode-tekst"
         szFormat(3) = "Billede (WMF)"
         szFormat(4) = "Billede (DIB)"
+        szFormat(5) = "Billede (EMF)"
+        szFormat(6) = "Fil"
         szResult(0) = "tekst med skrifttype og tabelformatering"
         szResult(1) = "tekst uden formatering"
         szResult(2) = szResult(1)
         szResult(3) = "et billede"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "indlejret fil"
     Case &H7 ' German
         szFormat(0) = "Formatierter Text (RTF)"
         szFormat(1) = "Unformatierter Text"
         szFormat(2) = "Unformatierter Unicode-Text"
         szFormat(3) = "Bild (WMF)"
         szFormat(4) = "Bild (DIB)"
+        szFormat(5) = "Bild (EMF)"
+        szFormat(6) = "Datei"
         szResult(0) = "Text mit Zeichen- und Tabellenformat"
         szResult(1) = "Text ohne Formatierung"
         szResult(2) = szResult(1)
         szResult(3) = "ein Bild"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "eingebettete Datei"
     Case &H8 ' Greek
         szFormat(0) = ChrW(&H39C&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3B9&) & ChrW(&H3B7&) & ChrW(&H3BC&) & ChrW(&H3AD&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & _
         ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " (RTF)"
@@ -4142,6 +4159,8 @@ Select Case LangID
         " " & ChrW(&H3BC&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3AF&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&)
         szFormat(3) = ChrW(&H395&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BD&) & ChrW(&H3B1&) & " (WMF)"
         szFormat(4) = ChrW(&H395&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BD&) & ChrW(&H3B1&) & " (DIB)"
+        szFormat(5) = ChrW(&H395&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BD&) & ChrW(&H3B1&) & " (EMF)"
+        szFormat(6) = ChrW(&H391&) & ChrW(&H3C1&) & ChrW(&H3C7&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BF&)
         szResult(0) = ChrW(&H3BA&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BC&) & ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & ChrW(&H3BC&) & ChrW(&H3B5&) & " " & _
         ChrW(&H3B3&) & ChrW(&H3C1&) & ChrW(&H3B1&) & ChrW(&H3BC&) & ChrW(&H3BC&) & ChrW(&H3B1&) & ChrW(&H3C4&) & ChrW(&H3BF&) & ChrW(&H3C3&) & ChrW(&H3B5&) & ChrW(&H3B9&) & ChrW(&H3C1&) & ChrW(&H3AC&) & " " & ChrW(&H3BA&) & ChrW(&H3B1&) & ChrW(&H3B9&) & " " & _
         ChrW(&H3BC&) & ChrW(&H3BF&) & ChrW(&H3C1&) & ChrW(&H3C6&) & ChrW(&H3BF&) & ChrW(&H3C0&) & ChrW(&H3BF&) & ChrW(&H3AF&) & ChrW(&H3B7&) & ChrW(&H3C3&) & ChrW(&H3B7&) & " " & ChrW(&H3C0&) & ChrW(&H3AF&) & ChrW(&H3BD&) & ChrW(&H3B1&) & ChrW(&H3BA&) & ChrW(&H3B1&)
@@ -4150,105 +4169,143 @@ Select Case LangID
         szResult(2) = szResult(1)
         szResult(3) = ChrW(&H3BC&) & ChrW(&H3B9&) & ChrW(&H3B1&) & " " & ChrW(&H3B5&) & ChrW(&H3B9&) & ChrW(&H3BA&) & ChrW(&H3CC&) & ChrW(&H3BD&) & ChrW(&H3B1&)
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = ChrW(&H3B5&) & ChrW(&H3BD&) & ChrW(&H3C3&) & ChrW(&H3C9&) & ChrW(&H3BC&) & ChrW(&H3B1&) & ChrW(&H3C4&) & ChrW(&H3C9&) & ChrW(&H3BC&) & ChrW(&H3AD&) & ChrW(&H3BD&) & ChrW(&H3BF&) & " " & ChrW(&H3B1&) & ChrW(&H3C1&) & ChrW(&H3C7&) & ChrW(&H3B5&) & ChrW(&H3AF&) & ChrW(&H3BF&)
     Case &H9 ' English
         szFormat(0) = "Formatted Text (RTF)"
         szFormat(1) = "Unformatted Text"
         szFormat(2) = "Unformatted Unicode Text"
         szFormat(3) = "Picture (WMF)"
         szFormat(4) = "Picture (DIB)"
+        szFormat(5) = "Picture (EMF)"
+        szFormat(6) = "File"
         szResult(0) = "text with font and table formatting"
         szResult(1) = "text without any formatting"
         szResult(2) = szResult(1)
         szResult(3) = "a picture"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "embedded file"
     Case &HA ' Spanish
         szFormat(0) = "Texto formateado (RTF)"
         szFormat(1) = "Texto sin formato"
         szFormat(2) = "Texto Unicode sin formato"
         szFormat(3) = "Imagen (WMF)"
         szFormat(4) = "Imagen (DIB)"
+        szFormat(5) = "Imagen (EMF)"
+        szFormat(6) = "Archivo"
         szResult(0) = "texto con formato de fuente y tabla"
         szResult(1) = "texto sin ning" & ChrW(&HFA&) & "n formato"
         szResult(2) = szResult(1)
         szResult(3) = "una foto"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "archivo incrustado"
     Case &HB ' Finnish
         szFormat(0) = "Muotoiltu teksti (RTF)"
         szFormat(1) = "Muotoilematon teksti"
         szFormat(2) = "Muotoilematon Unicode-teksti"
         szFormat(3) = "Kuva (WMF)"
         szFormat(4) = "Kuva (DIB)"
+        szFormat(5) = "Kuva (EMF)"
+        szFormat(6) = "Tiedosto"
         szResult(0) = "teksti fontilla ja taulukon muotoilulla"
         szResult(1) = "teksti" & ChrW(&HE4&) & " ilman muotoilua"
         szResult(2) = szResult(1)
         szResult(3) = "kuva"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "upotettu tiedosto"
     Case &HC ' French
         szFormat(0) = "Texte format" & ChrW(&HE9&) & " (RTF)"
         szFormat(1) = "Texte non format" & ChrW(&HE9&)
         szFormat(2) = "Texte Unicode non format" & ChrW(&HE9&)
         szFormat(3) = "Image (WMF)"
         szFormat(4) = "Image (DIB)"
+        szFormat(5) = "Image (EMF)"
+        szFormat(6) = "Fichier"
         szResult(0) = "texte avec mise en forme de la police et du tableau"
         szResult(1) = "texte sans aucune mise en forme"
         szResult(2) = szResult(1)
         szResult(3) = "une image"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "fichier int" & ChrW(&HE9&) & "gr" & ChrW(&HE9&)
     Case &H10 ' Italian
         szFormat(0) = "Testo formattato (RTF)"
         szFormat(1) = "Testo non formattato"
         szFormat(2) = "Testo Unicode non formattato"
         szFormat(3) = "Immagine (WMF)"
         szFormat(4) = "Immagine (DIB)"
+        szFormat(5) = "Immagine (EMF)"
+        szFormat(6) = "File"
         szResult(0) = "testo con carattere e formattazione della tabella"
         szResult(1) = "testo senza alcuna formattazione"
         szResult(2) = szResult(1)
         szResult(3) = "una foto"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "file incorporato"
     Case &H11 ' Japanese
         szFormat(0) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30FC&) & ChrW(&H30DE&) & ChrW(&H30C3&) & ChrW(&H30C8&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H305F&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&) & " (RTF)"
         szFormat(1) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30FC&) & ChrW(&H30DE&) & ChrW(&H30C3&) & ChrW(&H30C8&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H3066&) & ChrW(&H3044&) & ChrW(&H306A&) & ChrW(&H3044&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
         szFormat(2) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30FC&) & ChrW(&H30DE&) & ChrW(&H30C3&) & ChrW(&H30C8&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H3066&) & ChrW(&H3044&) & ChrW(&H306A&) & ChrW(&H3044&) & "Unicode" & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
         szFormat(3) = ChrW(&H5199&) & ChrW(&H771F&) & " (WMF)"
         szFormat(4) = ChrW(&H5199&) & ChrW(&H771F&) & " (DIB)"
+        szFormat(5) = ChrW(&H5199&) & ChrW(&H771F&) & " (EMF)"
+        szFormat(6) = ChrW(&H30D5&) & ChrW(&H30A1&) & ChrW(&H30A4&) & ChrW(&H30EB&)
         szResult(0) = ChrW(&H30D5&) & ChrW(&H30A9&) & ChrW(&H30F3&) & ChrW(&H30C8&) & ChrW(&H3068&) & ChrW(&H8868&) & ChrW(&H306E&) & ChrW(&H66F8&) & ChrW(&H5F0F&) & ChrW(&H8A2D&) & ChrW(&H5B9A&) & ChrW(&H3092&) & ChrW(&H542B&) & ChrW(&H3080&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
         szResult(1) = ChrW(&H66F8&) & ChrW(&H5F0F&) & ChrW(&H8A2D&) & ChrW(&H5B9A&) & ChrW(&H3055&) & ChrW(&H308C&) & ChrW(&H3066&) & ChrW(&H3044&) & ChrW(&H306A&) & ChrW(&H3044&) & ChrW(&H30C6&) & ChrW(&H30AD&) & ChrW(&H30B9&) & ChrW(&H30C8&)
         szResult(2) = szResult(1)
         szResult(3) = ChrW(&H7D75&)
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = ChrW(&H57CB&) & ChrW(&H3081&) & ChrW(&H8FBC&) & ChrW(&H307F&) & ChrW(&H30D5&) & ChrW(&H30A1&) & ChrW(&H30A4&) & ChrW(&H30EB&)
     Case &H15 ' Polish
         szFormat(0) = "Sformatowany tekst (RTF)"
         szFormat(1) = "Niesformatowany tekst"
         szFormat(2) = "Niesformatowany tekst Unicode"
         szFormat(3) = "Obrazek (WMF)"
         szFormat(4) = "Obrazek (DIB)"
+        szFormat(5) = "Obrazek (EMF)"
+        szFormat(6) = "Plik"
         szResult(0) = "tekst z czcionka i formatowaniem tabeli"
         szResult(1) = "tekst bez " & ChrW(&H17C&) & "adnego formatowania"
         szResult(2) = szResult(1)
         szResult(3) = "obrazek"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "osadzony plik"
     Case &H16 ' Portuguese
         szFormat(0) = "Texto formatado (RTF)"
         szFormat(1) = "Texto n" & ChrW(&HE3&) & "o formatado"
         szFormat(2) = "Texto Unicode n" & ChrW(&HE3&) & "o formatado"
         szFormat(3) = "Foto (WMF)"
         szFormat(4) = "Foto (DIB)"
+        szFormat(5) = "Foto (EMF)"
+        szFormat(6) = "Arquivo"
         szResult(0) = "texto com fonte e formata" & ChrW(&HE7&) & ChrW(&HE3&) & "o de tabela"
         szResult(1) = "texto sem qualquer formata" & ChrW(&HE7&) & ChrW(&HE3&) & "o"
         szResult(2) = szResult(1)
         szResult(3) = "uma foto"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "arquivo incorporado"
     Case &H18 ' Romanian
         szFormat(0) = "Text formatat (RTF)"
         szFormat(1) = "Text neformatat"
         szFormat(2) = "Text Unicode neformatat"
         szFormat(3) = "Imagine (WMF)"
         szFormat(4) = "Imagine (DIB)"
+        szFormat(5) = "Imagine (EMF)"
+        szFormat(6) = "Fi" & ChrW(&H15F&) & "ier"
         szResult(0) = "text cu font " & ChrW(&H219&) & "i formatare tabel"
         szResult(1) = "text f" & ChrW(&H103&) & "r" & ChrW(&H103&) & " nicio formatare"
         szResult(2) = szResult(1)
         szResult(3) = "o imagine"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "fi" & ChrW(&H219&) & "ier " & ChrW(&HEE&) & "ncorporat"
     Case &H19 ' Russian
         szFormat(0) = ChrW(&H424&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H43D&) & ChrW(&H44B&) & ChrW(&H439&) & " " & _
         ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " (RTF)"
@@ -4258,6 +4315,8 @@ Select Case LangID
         ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " Unicode"
         szFormat(3) = ChrW(&H41A&) & ChrW(&H430&) & ChrW(&H440&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H43D&) & ChrW(&H430&) & " (WMF)"
         szFormat(4) = ChrW(&H41A&) & ChrW(&H430&) & ChrW(&H440&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H43D&) & ChrW(&H430&) & " (DIB)"
+        szFormat(5) = ChrW(&H41A&) & ChrW(&H430&) & ChrW(&H440&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H43D&) & ChrW(&H430&) & " (EMF)"
+        szFormat(6) = ChrW(&H424&) & ChrW(&H430&) & ChrW(&H439&) & ChrW(&H43B&)
         szResult(0) = ChrW(&H442&) & ChrW(&H435&) & ChrW(&H43A&) & ChrW(&H441&) & ChrW(&H442&) & " " & ChrW(&H441&) & ChrW(&H43E&) & " " & _
         ChrW(&H448&) & ChrW(&H440&) & ChrW(&H438&) & ChrW(&H444&) & ChrW(&H442&) & ChrW(&H43E&) & ChrW(&H43C&) & " " & ChrW(&H438&) & " " & _
         ChrW(&H444&) & ChrW(&H43E&) & ChrW(&H440&) & ChrW(&H43C&) & ChrW(&H430&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H432&) & ChrW(&H430&) & ChrW(&H43D&) & ChrW(&H438&) & ChrW(&H435&) & ChrW(&H43C&) & " " & _
@@ -4267,28 +4326,38 @@ Select Case LangID
         szResult(2) = szResult(1)
         szResult(3) = ChrW(&H43A&) & ChrW(&H430&) & ChrW(&H440&) & ChrW(&H442&) & ChrW(&H438&) & ChrW(&H43D&) & ChrW(&H43A&) & ChrW(&H430&)
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = ChrW(&H432&) & ChrW(&H441&) & ChrW(&H442&) & ChrW(&H440&) & ChrW(&H43E&) & ChrW(&H435&) & ChrW(&H43D&) & ChrW(&H43D&) & ChrW(&H44B&) & ChrW(&H439&) & " " & ChrW(&H444&) & ChrW(&H430&) & ChrW(&H439&) & ChrW(&H43B&)
     Case &H1D ' Swedish
         szFormat(0) = "Formaterad text (RTF)"
         szFormat(1) = "Oformaterad text"
         szFormat(2) = "Oformaterad Unicode-text"
         szFormat(3) = "Bild (WMF)"
         szFormat(4) = "Bild (DIB)"
+        szFormat(5) = "Bild (EMF)"
+        szFormat(6) = "Fil"
         szResult(0) = "text med teckensnitt och tabellformatering"
         szResult(1) = "text utan n" & ChrW(&HE5&) & "gon formatering"
         szResult(2) = szResult(1)
         szResult(3) = "en bild"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "inb" & ChrW(&HE4&) & "ddad fil"
     Case Else
         szFormat(0) = "Formatted Text (RTF)"
         szFormat(1) = "Unformatted Text"
         szFormat(2) = "Unformatted Unicode Text"
         szFormat(3) = "Picture (WMF)"
         szFormat(4) = "Picture (DIB)"
+        szFormat(5) = "Picture (EMF)"
+        szFormat(6) = "File"
         szResult(0) = "text with font and table formatting"
         szResult(1) = "text without any formatting"
         szResult(2) = szResult(1)
         szResult(3) = "a picture"
         szResult(4) = szResult(3)
+        szResult(5) = szResult(3)
+        szResult(6) = "embedded file"
 End Select
 With pOleUIPasteEntry(0)
 With .pFormatEtc
@@ -4352,6 +4421,32 @@ With .pFormatEtc
 End With
 .lpszFormatName = StrPtr(szFormat(4))
 .lpszResultText = StrPtr(szResult(4))
+.dwFlags = OLEUIPASTE_PASTEONLY
+.dwScratchSpace = 0
+End With
+With pOleUIPasteEntry(5)
+With .pFormatEtc
+.CFFormat = vbCFEMetafile
+.ptd = NULL_PTR
+.dwAspect = DVASPECT_CONTENT
+.lIndex = -1
+.tymed = TYMED_ENHMF
+End With
+.lpszFormatName = StrPtr(szFormat(5))
+.lpszResultText = StrPtr(szResult(5))
+.dwFlags = OLEUIPASTE_PASTEONLY
+.dwScratchSpace = 0
+End With
+With pOleUIPasteEntry(6)
+With .pFormatEtc
+.CFFormat = RegisterClipboardFormat(StrPtr("FileNameW"))
+.ptd = NULL_PTR
+.dwAspect = DVASPECT_CONTENT
+.lIndex = -1
+.tymed = TYMED_FILE
+End With
+.lpszFormatName = StrPtr(szFormat(6))
+.lpszResultText = StrPtr(szResult(6))
 .dwFlags = OLEUIPASTE_PASTEONLY
 .dwScratchSpace = 0
 End With
