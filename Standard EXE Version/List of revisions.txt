@@ -1,5 +1,8 @@
 List of revisions:
 
+08-May-2024
+- Support for WMF/DIB/EMF and FileNameW clipboards in the PasteSpecialDlg method in the RichTextBox control.
+
 05-May-2024
 - Included the PasteSpecialDlg method in the RichTextBox control.
   Ctrl+Alt+V shortcut now invokes the paste special dialog box.

@@ -71,8 +71,7 @@ Begin VB.Form RichTextBoxForm
       MultiLine       =   -1  'True
       ScrollBars      =   3
       AutoVerbMenu    =   -1  'True
-      Text            =   "RichTextBoxForm.frx":06C4
-      TextRTF         =   "RichTextBoxForm.frx":06FC
+      TextRTF         =   "RichTextBoxForm.frx":06C4
    End
 End
 Attribute VB_Name = "RichTextBoxForm"
