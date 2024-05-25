@@ -282,8 +282,7 @@ Private CommandLinkCharCodeCache As Long
 Private CommandLinkMouseOver As Boolean
 Private CommandLinkDesignMode As Boolean
 Private CommandLinkDisplayAsDefault As Boolean
-Private CommandLinkImageListHandle As LongPtr
-Private CommandLinkImageListObjectPointer As LongPtr
+Private CommandLinkImageListObjectPointer As LongPtr, CommandLinkImageListHandle As LongPtr
 Private UCNoSetFocusFwd As Boolean
 Private DispIdImageList As Long, ImageListArray() As String
 
@@ -1017,11 +1016,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state."
 If CommandLinkDesignMode = False Then
-    If PropImageListInit = False And CommandLinkImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If CommandLinkImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And CommandLinkImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = CommandLinkImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1057,6 +1060,7 @@ If CommandLinkHandle <> NULL_PTR Then
             If Success = True Then
                 Call SetImageList(Handle)
                 CommandLinkImageListObjectPointer = ObjPtr(Value)
+                CommandLinkImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1071,7 +1075,10 @@ If CommandLinkHandle <> NULL_PTR Then
                         Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
                         If Success = True Then
                             Call SetImageList(Handle)
-                            If CommandLinkDesignMode = False Then CommandLinkImageListObjectPointer = ObjPtr(ControlEnum)
+                            If CommandLinkDesignMode = False Then
+                                CommandLinkImageListObjectPointer = ObjPtr(ControlEnum)
+                                CommandLinkImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf CommandLinkDesignMode = True Then
@@ -1083,12 +1090,22 @@ If CommandLinkHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                Call SetImageList(Handle)
+                CommandLinkImageListObjectPointer = NULL_PTR
+                CommandLinkImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
         CommandLinkImageListObjectPointer = NULL_PTR
+        CommandLinkImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         Call SetImageList(BCCL_NOGLYPH)
@@ -1149,10 +1166,15 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
+Dim BTNIML As BUTTON_IMAGELIST
+If CommandLinkHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
+    SendMessage CommandLinkHandle, BCM_GETIMAGELIST, 0, ByVal VarPtr(BTNIML)
+    If BTNIML.hImageList = BCCL_NOGLYPH Then BTNIML.hImageList = NULL_PTR
+End If
 Dim dwStyle As Long
 If Value Is Nothing Then
     Set PropPicture = Nothing
-    If CommandLinkHandle <> NULL_PTR And CommandLinkImageListHandle = NULL_PTR Then
+    If CommandLinkHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
         dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
         If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
         If (dwStyle And BS_BITMAP) = BS_BITMAP Then dwStyle = dwStyle And Not BS_BITMAP
@@ -1165,7 +1187,7 @@ Else
     Set UserControl.Picture = Value
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
-    If CommandLinkHandle <> NULL_PTR And CommandLinkImageListHandle = NULL_PTR Then
+    If CommandLinkHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
         dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
         If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
         If (dwStyle And BS_BITMAP) = BS_BITMAP Then dwStyle = dwStyle And Not BS_BITMAP
@@ -1265,7 +1287,6 @@ If CommandLinkTransparentBrush <> NULL_PTR Then
     DeleteObject CommandLinkTransparentBrush
     CommandLinkTransparentBrush = NULL_PTR
 End If
-CommandLinkImageListHandle = NULL_PTR
 End Sub
 
 Public Sub Refresh()
@@ -1353,8 +1374,6 @@ If CommandLinkHandle <> NULL_PTR Then
     With BTNIML
     .hImageList = hImageList
     If .hImageList = NULL_PTR Then .hImageList = BCCL_NOGLYPH
-    CommandLinkImageListHandle = hImageList
-    If CommandLinkImageListHandle = BCCL_NOGLYPH Then CommandLinkImageListHandle = NULL_PTR
     If .hImageList <> BCCL_NOGLYPH Then
         Dim dwStyle As Long
         dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
