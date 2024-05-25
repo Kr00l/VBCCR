@@ -1,5 +1,10 @@
 List of revisions:
 
+25-May-2024
+- Improved the ImageList (Variant) property on each control to accept a handle value. (hImageList)
+  This can be convenient to apply a system image list for example.
+  To note is that a key (string) image index will then fail in this case of course.
+
 08-May-2024
 - Support for WMF/DIB/EMF/BMP and FileNameW clipboards in the PasteSpecialDlg method in the RichTextBox control.
 
