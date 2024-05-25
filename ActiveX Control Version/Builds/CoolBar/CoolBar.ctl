@@ -577,7 +577,7 @@ Private CoolBarToolTipIndex As Long
 Private CoolBarDoubleBufferEraseBkgDC As LongPtr
 Private CoolBarAlignable As Boolean
 Private CoolBarTheme As LongPtr
-Private CoolBarImageListObjectPointer As LongPtr
+Private CoolBarImageListObjectPointer As LongPtr, CoolBarImageListHandle As LongPtr
 Private DispIdBorderStyle As Long
 Private DispIdImageList As Long, ImageListArray() As String
 Private WithEvents PropFont As StdFont
@@ -1411,11 +1411,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If CoolBarDesignMode = False Then
-    If PropImageListInit = False And CoolBarImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If CoolBarImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And CoolBarImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = CoolBarImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1447,6 +1451,7 @@ If CoolBarHandle <> NULL_PTR Then
                 RBI.hImageList = Handle
                 SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
                 CoolBarImageListObjectPointer = ObjPtr(Value)
+                CoolBarImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1462,7 +1467,10 @@ If CoolBarHandle <> NULL_PTR Then
                         If Success = True Then
                             RBI.hImageList = Handle
                             SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
-                            If CoolBarDesignMode = False Then CoolBarImageListObjectPointer = ObjPtr(ControlEnum)
+                            If CoolBarDesignMode = False Then
+                                CoolBarImageListObjectPointer = ObjPtr(ControlEnum)
+                                CoolBarImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf CoolBarDesignMode = True Then
@@ -1474,6 +1482,16 @@ If CoolBarHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                RBI.hImageList = Handle
+                SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
+                CoolBarImageListObjectPointer = NULL_PTR
+                CoolBarImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
@@ -1484,6 +1502,7 @@ If CoolBarHandle <> NULL_PTR Then
             SendMessage CoolBarHandle, RB_SETBARINFO, 0, ByVal VarPtr(RBI)
         End If
         CoolBarImageListObjectPointer = NULL_PTR
+        CoolBarImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         SendMessage CoolBarHandle, RB_GETBARINFO, 0, ByVal VarPtr(RBI)

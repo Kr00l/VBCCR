@@ -411,8 +411,7 @@ Private CheckBoxFontHandle As LongPtr
 Private CheckBoxCharCodeCache As Long
 Private CheckBoxMouseOver(0 To 1) As Boolean
 Private CheckBoxDesignMode As Boolean
-Private CheckBoxImageListHandle As LongPtr
-Private CheckBoxImageListObjectPointer As LongPtr
+Private CheckBoxImageListObjectPointer As LongPtr, CheckBoxImageListHandle As LongPtr
 Private CheckBoxEnabledVisualStyles As Boolean
 Private CheckBoxPictureRenderFlag As Integer
 Private UCNoSetFocusFwd As Boolean
@@ -1187,11 +1186,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state. Requires comctl32.dll version 6.0 or higher."
 If CheckBoxDesignMode = False Then
-    If PropImageListInit = False And CheckBoxImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If CheckBoxImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And CheckBoxImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = CheckBoxImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1227,6 +1230,7 @@ If CheckBoxHandle <> NULL_PTR Then
             If Success = True Then
                 Call SetImageList(Handle)
                 CheckBoxImageListObjectPointer = ObjPtr(Value)
+                CheckBoxImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1241,7 +1245,10 @@ If CheckBoxHandle <> NULL_PTR Then
                         Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
                         If Success = True Then
                             Call SetImageList(Handle)
-                            If CheckBoxDesignMode = False Then CheckBoxImageListObjectPointer = ObjPtr(ControlEnum)
+                            If CheckBoxDesignMode = False Then
+                                CheckBoxImageListObjectPointer = ObjPtr(ControlEnum)
+                                CheckBoxImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf CheckBoxDesignMode = True Then
@@ -1253,12 +1260,22 @@ If CheckBoxHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                Call SetImageList(Handle)
+                CheckBoxImageListObjectPointer = NULL_PTR
+                CheckBoxImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
         CheckBoxImageListObjectPointer = NULL_PTR
+        CheckBoxImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         Call SetImageList(BCCL_NOGLYPH)
@@ -1474,10 +1491,15 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
+Dim BTNIML As BUTTON_IMAGELIST
+If CheckBoxHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
+    SendMessage CheckBoxHandle, BCM_GETIMAGELIST, 0, ByVal VarPtr(BTNIML)
+    If BTNIML.hImageList = BCCL_NOGLYPH Then BTNIML.hImageList = NULL_PTR
+End If
 Dim dwStyle As Long
 If Value Is Nothing Then
     Set PropPicture = Nothing
-    If CheckBoxHandle <> NULL_PTR And CheckBoxImageListHandle = NULL_PTR Then
+    If CheckBoxHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
         dwStyle = GetWindowLong(CheckBoxHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1492,7 +1514,7 @@ Else
     Set UserControl.Picture = Value
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
-    If CheckBoxHandle <> NULL_PTR And CheckBoxImageListHandle = NULL_PTR Then
+    If CheckBoxHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
         dwStyle = GetWindowLong(CheckBoxHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1808,7 +1830,6 @@ If CheckBoxOwnerDrawCheckedBrush <> NULL_PTR Then
     DeleteObject CheckBoxOwnerDrawCheckedBrush
     CheckBoxOwnerDrawCheckedBrush = NULL_PTR
 End If
-CheckBoxImageListHandle = NULL_PTR
 End Sub
 
 Public Sub Refresh()
@@ -1852,8 +1873,6 @@ If CheckBoxHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
     With BTNIML
     .hImageList = hImageList
     If .hImageList = NULL_PTR Then .hImageList = BCCL_NOGLYPH
-    CheckBoxImageListHandle = hImageList
-    If CheckBoxImageListHandle = BCCL_NOGLYPH Then CheckBoxImageListHandle = NULL_PTR
     If .hImageList <> BCCL_NOGLYPH Then
         Dim dwStyle As Long
         dwStyle = GetWindowLong(CheckBoxHandle, GWL_STYLE)

@@ -456,9 +456,8 @@ Private CommandButtonCharCodeCache As Long
 Private CommandButtonMouseOver(0 To 1) As Boolean
 Private CommandButtonDesignMode As Boolean
 Private CommandButtonDisplayAsDefault As Boolean
-Private CommandButtonImageListHandle As LongPtr
 Private CommandButtonImageListGlyphHandle As LongPtr, CommandButtonDefaultImageListGlyphHandle As LongPtr
-Private CommandButtonImageListObjectPointer As LongPtr
+Private CommandButtonImageListObjectPointer As LongPtr, CommandButtonImageListHandle As LongPtr
 Private CommandButtonEnabledVisualStyles As Boolean
 Private CommandButtonPictureRenderFlag As Integer
 Private UCNoSetFocusFwd As Boolean
@@ -1278,11 +1277,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used. The image list should contain either a single image to be used for all states or individual images for each state. Requires comctl32.dll version 6.0 or higher."
 If CommandButtonDesignMode = False Then
-    If PropImageListInit = False And CommandButtonImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If CommandButtonImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And CommandButtonImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = CommandButtonImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1318,6 +1321,7 @@ If CommandButtonHandle <> NULL_PTR Then
             If Success = True Then
                 Call SetImageList(Handle)
                 CommandButtonImageListObjectPointer = ObjPtr(Value)
+                CommandButtonImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1332,7 +1336,10 @@ If CommandButtonHandle <> NULL_PTR Then
                         Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
                         If Success = True Then
                             Call SetImageList(Handle)
-                            If CommandButtonDesignMode = False Then CommandButtonImageListObjectPointer = ObjPtr(ControlEnum)
+                            If CommandButtonDesignMode = False Then
+                                CommandButtonImageListObjectPointer = ObjPtr(ControlEnum)
+                                CommandButtonImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf CommandButtonDesignMode = True Then
@@ -1344,12 +1351,22 @@ If CommandButtonHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                Call SetImageList(Handle)
+                CommandButtonImageListObjectPointer = NULL_PTR
+                CommandButtonImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
         CommandButtonImageListObjectPointer = NULL_PTR
+        CommandButtonImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         Call SetImageList(BCCL_NOGLYPH)
@@ -1504,10 +1521,15 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
+Dim BTNIML As BUTTON_IMAGELIST
+If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
+    SendMessage CommandButtonHandle, BCM_GETIMAGELIST, 0, ByVal VarPtr(BTNIML)
+    If BTNIML.hImageList = BCCL_NOGLYPH Then BTNIML.hImageList = NULL_PTR
+End If
 Dim dwStyle As Long
 If Value Is Nothing Then
     Set PropPicture = Nothing
-    If CommandButtonHandle <> NULL_PTR And CommandButtonImageListHandle = NULL_PTR Then
+    If CommandButtonHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
         dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1522,7 +1544,7 @@ Else
     Set UserControl.Picture = Value
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
-    If CommandButtonHandle <> NULL_PTR And CommandButtonImageListHandle = NULL_PTR Then
+    If CommandButtonHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
         dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1956,7 +1978,6 @@ If CommandButtonTransparentBrush <> NULL_PTR Then
     DeleteObject CommandButtonTransparentBrush
     CommandButtonTransparentBrush = NULL_PTR
 End If
-CommandButtonImageListHandle = NULL_PTR
 If CommandButtonImageListGlyphHandle <> NULL_PTR Then
     ImageList_Destroy CommandButtonImageListGlyphHandle
     CommandButtonImageListGlyphHandle = NULL_PTR
@@ -2063,8 +2084,6 @@ If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
     With BTNIML
     .hImageList = hImageList
     If .hImageList = NULL_PTR Then .hImageList = BCCL_NOGLYPH
-    CommandButtonImageListHandle = hImageList
-    If CommandButtonImageListHandle = BCCL_NOGLYPH Then CommandButtonImageListHandle = NULL_PTR
     If .hImageList <> BCCL_NOGLYPH Then
         Dim dwStyle As Long
         dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
