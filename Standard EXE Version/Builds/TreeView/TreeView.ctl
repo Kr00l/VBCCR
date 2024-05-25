@@ -573,7 +573,7 @@ Private TreeViewDragItemBuffer As LongPtr, TreeViewDragItem As LongPtr
 Private TreeViewInsertMarkItem As LongPtr, TreeViewInsertMarkAfter As Boolean
 Private TreeViewExpandItem As LongPtr, TreeViewPrevExpandItem As LongPtr, TreeViewTickCount As Double
 Private TreeViewSampleMode As Boolean
-Private TreeViewImageListObjectPointer As LongPtr
+Private TreeViewImageListObjectPointer As LongPtr, TreeViewImageListHandle As LongPtr
 Private TreeViewAlignable As Boolean
 Private TreeViewFocused As Boolean
 Private TreeViewSelectedCount As Long
@@ -1486,11 +1486,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If TreeViewDesignMode = False Then
-    If PropImageListInit = False And TreeViewImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If TreeViewImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And TreeViewImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = TreeViewImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1523,6 +1527,7 @@ If TreeViewHandle <> NULL_PTR Then
                         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
                 End Select
                 TreeViewImageListObjectPointer = ObjPtr(Value)
+                TreeViewImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1542,7 +1547,10 @@ If TreeViewHandle <> NULL_PTR Then
                                 Case Else
                                     SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
                             End Select
-                            If TreeViewDesignMode = False Then TreeViewImageListObjectPointer = ObjPtr(ControlEnum)
+                            If TreeViewDesignMode = False Then
+                                TreeViewImageListObjectPointer = ObjPtr(ControlEnum)
+                                TreeViewImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf TreeViewDesignMode = True Then
@@ -1554,12 +1562,27 @@ If TreeViewHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                Select Case PropStyle
+                    Case TvwStylePictureText, TvwStylePlusMinusPictureText, TvwStyleTreeLinesPictureText, TvwStyleTreeLinesPlusMinusPictureText
+                        SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal Handle
+                    Case Else
+                        SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
+                End Select
+                TreeViewImageListObjectPointer = NULL_PTR
+                TreeViewImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
     If Success = False Then
         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
         TreeViewImageListObjectPointer = NULL_PTR
+        TreeViewImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&

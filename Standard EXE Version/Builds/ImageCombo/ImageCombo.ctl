@@ -408,7 +408,7 @@ Private ImageComboMouseOver(0 To 2) As Boolean
 Private ImageComboDesignMode As Boolean
 Private ImageComboTopIndex As Long
 Private ImageComboDragIndexBuffer As Long, ImageComboDragIndex As Long
-Private ImageComboImageListObjectPointer As LongPtr
+Private ImageComboImageListObjectPointer As LongPtr, ImageComboImageListHandle As LongPtr
 Private UCNoSetFocusFwd As Boolean
 Private DispIdImageList As Long, ImageListArray() As String
 
@@ -1159,11 +1159,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If ImageComboDesignMode = False Then
-    If PropImageListInit = False And ImageComboImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If ImageComboImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And ImageComboImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = ImageComboImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1191,6 +1195,7 @@ If ImageComboHandle <> NULL_PTR Then
             If Success = True Then
                 SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
                 ImageComboImageListObjectPointer = ObjPtr(Value)
+                ImageComboImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1205,7 +1210,10 @@ If ImageComboHandle <> NULL_PTR Then
                         Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
                         If Success = True Then
                             SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
-                            If ImageComboDesignMode = False Then ImageComboImageListObjectPointer = ObjPtr(ControlEnum)
+                            If ImageComboDesignMode = False Then
+                                ImageComboImageListObjectPointer = ObjPtr(ControlEnum)
+                                ImageComboImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf ImageComboDesignMode = True Then
@@ -1217,12 +1225,22 @@ If ImageComboHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal Handle
+                ImageComboImageListObjectPointer = NULL_PTR
+                ImageComboImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
     If Success = False Then
         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal 0&
         ImageComboImageListObjectPointer = NULL_PTR
+        ImageComboImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         SendMessage ImageComboHandle, CBEM_SETIMAGELIST, 0, ByVal 0&
