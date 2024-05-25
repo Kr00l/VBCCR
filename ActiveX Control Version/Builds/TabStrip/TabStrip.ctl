@@ -422,7 +422,7 @@ Private TabStripCharCodeCache As Long
 Private TabStripMouseOver As Boolean
 Private TabStripDesignMode As Boolean
 Private TabStripDoubleBufferEraseBkgDC As LongPtr
-Private TabStripImageListObjectPointer As LongPtr
+Private TabStripImageListObjectPointer As LongPtr, TabStripImageListHandle As LongPtr
 Private TabStripStyleCache As Long
 Private UCNoSetFocusFwd As Boolean
 Private DispIdImageList As Long, ImageListArray() As String
@@ -1241,11 +1241,15 @@ End Property
 Public Property Get ImageList() As Variant
 Attribute ImageList.VB_Description = "Returns/sets the image list control to be used."
 If TabStripDesignMode = False Then
-    If PropImageListInit = False And TabStripImageListObjectPointer = NULL_PTR Then
-        If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-        PropImageListInit = True
+    If TabStripImageListHandle = NULL_PTR Then
+        If PropImageListInit = False And TabStripImageListObjectPointer = NULL_PTR Then
+            If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+            PropImageListInit = True
+        End If
+        Set ImageList = PropImageListControl
+    Else
+        ImageList = TabStripImageListHandle
     End If
-    Set ImageList = PropImageListControl
 Else
     ImageList = PropImageListName
 End If
@@ -1273,6 +1277,7 @@ If TabStripHandle <> NULL_PTR Then
             If Success = True Then
                 SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal Handle
                 TabStripImageListObjectPointer = ObjPtr(Value)
+                TabStripImageListHandle = NULL_PTR
                 PropImageListName = ProperControlName(Value)
             End If
         Case vbString
@@ -1287,7 +1292,10 @@ If TabStripHandle <> NULL_PTR Then
                         Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
                         If Success = True Then
                             SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal Handle
-                            If TabStripDesignMode = False Then TabStripImageListObjectPointer = ObjPtr(ControlEnum)
+                            If TabStripDesignMode = False Then
+                                TabStripImageListObjectPointer = ObjPtr(ControlEnum)
+                                TabStripImageListHandle = NULL_PTR
+                            End If
                             PropImageListName = Value
                             Exit For
                         ElseIf TabStripDesignMode = True Then
@@ -1299,12 +1307,22 @@ If TabStripHandle <> NULL_PTR Then
                 End If
             Next ControlEnum
             On Error GoTo 0
+        Case vbLong, &H14 ' vbLongLong
+            Handle = Value
+            Success = CBool(Handle <> NULL_PTR)
+            If Success = True Then
+                SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal Handle
+                TabStripImageListObjectPointer = NULL_PTR
+                TabStripImageListHandle = Handle
+                PropImageListName = "(None)"
+            End If
         Case Else
             Err.Raise 13
     End Select
     If Success = False Then
         SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal 0&
         TabStripImageListObjectPointer = NULL_PTR
+        TabStripImageListHandle = NULL_PTR
         PropImageListName = "(None)"
     ElseIf Handle = NULL_PTR Then
         SendMessage TabStripHandle, TCM_SETIMAGELIST, 0, ByVal 0&
