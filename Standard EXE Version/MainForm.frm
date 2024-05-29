@@ -40,6 +40,7 @@ Begin VB.Form MainForm
          _ExtentX        =   6403
          _ExtentY        =   582
          OLEDragMode     =   1
+         ImageList       =   "ImageList1"
          Style           =   2
          Text            =   "MainForm.frx":0A47
       End

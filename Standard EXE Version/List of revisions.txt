@@ -1,5 +1,8 @@
 List of revisions:
 
+29-May-2024
+- Bugfix that setting SelectedItem to Nothing will not fire Click event, if index changed, in the ImageCombo control.
+
 25-May-2024
 - Improved the ImageList (Variant) property on each control to accept a handle value. (hImageList)
   This can be convenient to apply a system image list for example.
