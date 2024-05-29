@@ -1969,7 +1969,11 @@ If ImageComboHandle <> NULL_PTR Then
     If Not Value Is Nothing Then
         Value.Selected = True
     Else
-        SendMessage ImageComboHandle, CB_SETCURSEL, -1, ByVal 0&
+        If Not SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&) = CB_ERR Then
+            SendMessage ImageComboHandle, CB_SETCURSEL, -1, ByVal 0&
+            SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
+            RaiseEvent Click
+        End If
     End If
 End If
 End Property
