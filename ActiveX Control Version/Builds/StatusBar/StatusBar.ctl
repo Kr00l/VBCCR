@@ -1763,7 +1763,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
             RC.Left = RC.Left + PictureWidth + (IIf(PictureWidth > 0, 5, 1) * PixelsPerDIP_X())
         Case SbrPanelAlignmentCenter
             RC.Right = RC.Right - (1 * PixelsPerDIP_X())
-            RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - PictureWidth - (IIf(PictureWidth > 0, 4, 0) * PixelsPerDIP_X()))) / 2)
+            RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - PictureWidth - (IIf(PictureWidth > 0, 4, 0) * PixelsPerDIP_X()))) \ 2)
         Case SbrPanelAlignmentRight
             RC.Right = RC.Right - (1 * PixelsPerDIP_X())
             RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX)
@@ -1843,7 +1843,7 @@ If StatusBarHandle <> NULL_PTR Then
             Next i
             If CountSpring > 0 Then
                 Dim WidthPerSpring As Long, Remainder As Long
-                WidthPerSpring = ((UserControl.ScaleWidth - 1) - TotalWidth) / CountSpring
+                WidthPerSpring = ((UserControl.ScaleWidth - 1) - TotalWidth) \ CountSpring
                 Remainder = ((UserControl.ScaleWidth - 1) - TotalWidth) - (WidthPerSpring * CountSpring)
                 For i = PropShadowPanelsCount To 1 Step -1
                     If PropShadowPanels(i).AutoSize = SbrPanelAutoSizeSpring And PropShadowPanels(i).Visible = True Then
