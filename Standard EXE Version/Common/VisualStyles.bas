@@ -465,7 +465,7 @@ If Theme <> NULL_PTR Then
         TextRect.Left = ClientRect.Left
         TextRect.Right = ClientRect.Right
         If ButtonPicture Is Nothing Then
-            TextRect.Top = ((ClientRect.Bottom - TextRect.Bottom) / 2) + (3 * PixelsPerDIP_Y())
+            TextRect.Top = ((ClientRect.Bottom - TextRect.Bottom) \ 2) + (3 * PixelsPerDIP_Y())
             TextRect.Bottom = TextRect.Top + TextRect.Bottom
         Else
             TextRect.Top = (ClientRect.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
@@ -481,8 +481,8 @@ End If
 If Not ButtonPicture Is Nothing Then
     CX = CHimetricToPixel_X(ButtonPicture.Width)
     CY = CHimetricToPixel_Y(ButtonPicture.Height)
-    X = ClientRect.Left + ((ClientRect.Right - ClientRect.Left - CX) / 2)
-    Y = ClientRect.Top + ((ClientRect.Bottom - ClientRect.Top - CY) / 2)
+    X = ClientRect.Left + ((ClientRect.Right - ClientRect.Left - CX) \ 2)
+    Y = ClientRect.Top + ((ClientRect.Bottom - ClientRect.Top - CY) \ 2)
     If Enabled = True Or DisabledPictureAvailable = True Then
         If ButtonPicture.Type = vbPicTypeBitmap And Button.UseMaskColor = True Then
             Dim hDCScreen As LongPtr
