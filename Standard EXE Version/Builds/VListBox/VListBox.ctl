@@ -1700,7 +1700,7 @@ If VListBoxHandle <> NULL_PTR Then
     If Index > -1 Then
         Dim RC As RECT
         SendMessage VListBoxHandle, LB_GETITEMRECT, Index, ByVal VarPtr(RC)
-        After = CBool(CLng(UserControl.ScaleY(Y, vbContainerPosition, vbPixels)) > (RC.Top + ((RC.Bottom - RC.Top) / 2)))
+        After = CBool(CLng(UserControl.ScaleY(Y, vbContainerPosition, vbPixels)) > (RC.Top + ((RC.Bottom - RC.Top) \ 2)))
     End If
     HitTestInsertMark = Index
 End If

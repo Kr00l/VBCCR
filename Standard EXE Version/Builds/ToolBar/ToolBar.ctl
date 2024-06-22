@@ -4353,16 +4353,16 @@ Select Case wMsg
                                 CX = CHimetricToPixel_X(MenuPicture.Width)
                                 CY = CHimetricToPixel_Y(MenuPicture.Height)
                                 If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                    Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, 1)
+                                    Call RenderPicture(MenuPicture, DIS.hDC, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) \ 2), CX, CY, 1)
                                 Else
                                     If MenuPicture.Type = vbPicTypeIcon Then
-                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_ICON Or DSS_DISABLED
+                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, MenuPicture.Handle, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) \ 2), CX, CY, DST_ICON Or DSS_DISABLED
                                     Else
                                         Dim hImage As LongPtr
                                         hImage = BitmapHandleFromPicture(MenuPicture, vbWhite)
                                         ' The DrawState API with DSS_DISABLED will draw white as transparent.
                                         ' This will ensure GIF bitmaps or metafiles are better drawn.
-                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2), CX, CY, DST_BITMAP Or DSS_DISABLED
+                                        DrawState DIS.hDC, NULL_PTR, NULL_PTR, hImage, 0, DIS.RCItem.Left, DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) \ 2), CX, CY, DST_BITMAP Or DSS_DISABLED
                                         DeleteObject hImage
                                     End If
                                 End If
