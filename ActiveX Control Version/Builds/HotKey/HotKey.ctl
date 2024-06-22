@@ -1191,10 +1191,10 @@ Select Case wMsg
                 If (CLngToULng(GetTickCount()) - HotKeyDblClickTickCount) <= HotKeyDblClickTime Then
                     Dim DblClickRect As RECT
                     With DblClickRect
-                    .Left = HotKeyDblClickX - (HotKeyDblClickCX / 2)
-                    .Right = HotKeyDblClickX + (HotKeyDblClickCX / 2)
-                    .Top = HotKeyDblClickY - (HotKeyDblClickCY / 2)
-                    .Bottom = HotKeyDblClickY + (HotKeyDblClickCY / 2)
+                    .Left = HotKeyDblClickX - (HotKeyDblClickCX \ 2)
+                    .Right = HotKeyDblClickX + (HotKeyDblClickCX \ 2)
+                    .Top = HotKeyDblClickY - (HotKeyDblClickCY \ 2)
+                    .Bottom = HotKeyDblClickY + (HotKeyDblClickCY \ 2)
                     End With
                     If PtInRect(DblClickRect, Get_X_lParam(lParam), Get_Y_lParam(lParam)) <> 0 Then HotKeyIsDblClick = True
                 End If

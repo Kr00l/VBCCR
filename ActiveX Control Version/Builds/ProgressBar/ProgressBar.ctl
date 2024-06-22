@@ -1414,10 +1414,10 @@ Select Case wMsg
                 If (CLngToULng(GetTickCount()) - ProgressBarDblClickTickCount) <= ProgressBarDblClickTime Then
                     Dim DblClickRect As RECT
                     With DblClickRect
-                    .Left = ProgressBarDblClickX - (ProgressBarDblClickCX / 2)
-                    .Right = ProgressBarDblClickX + (ProgressBarDblClickCX / 2)
-                    .Top = ProgressBarDblClickY - (ProgressBarDblClickCY / 2)
-                    .Bottom = ProgressBarDblClickY + (ProgressBarDblClickCY / 2)
+                    .Left = ProgressBarDblClickX - (ProgressBarDblClickCX \ 2)
+                    .Right = ProgressBarDblClickX + (ProgressBarDblClickCX \ 2)
+                    .Top = ProgressBarDblClickY - (ProgressBarDblClickCY \ 2)
+                    .Bottom = ProgressBarDblClickY + (ProgressBarDblClickCY \ 2)
                     End With
                     If PtInRect(DblClickRect, Get_X_lParam(lParam), Get_Y_lParam(lParam)) <> 0 Then ProgressBarIsDblClick = True
                 End If

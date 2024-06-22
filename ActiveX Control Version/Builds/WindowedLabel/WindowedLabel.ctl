@@ -956,7 +956,7 @@ If Not (DrawFlags And DT_SINGLELINE) = DT_SINGLELINE Then
         Height = DrawText(.hDC, StrPtr(Buffer), -1, CalcRect, DrawFlags Or DT_CALCRECT)
         Select Case PropVerticalAlignment
             Case CCVerticalAlignmentCenter
-                Result = (((RC.Bottom - RC.Top) - Height) / 2)
+                Result = (((RC.Bottom - RC.Top) - Height) \ 2)
             Case CCVerticalAlignmentBottom
                 Result = ((RC.Bottom - RC.Top) - Height)
         End Select

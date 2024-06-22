@@ -399,8 +399,8 @@ With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 If AnimationHandle <> NULL_PTR Then MoveWindow AnimationHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 If AnimationDesignMode = True Then
-    ImageFilm.Left = (.ScaleWidth / 2) - (ImageFilm.Width / 2)
-    ImageFilm.Top = (.ScaleHeight / 2) - (ImageFilm.Height / 2)
+    ImageFilm.Left = (.ScaleWidth \ 2) - (ImageFilm.Width \ 2)
+    ImageFilm.Top = (.ScaleHeight \ 2) - (ImageFilm.Height \ 2)
 End If
 End With
 InProc = False
