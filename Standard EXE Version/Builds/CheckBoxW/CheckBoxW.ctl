@@ -2280,7 +2280,7 @@ Select Case wMsg
                         TextRect.Left = DIS.RCItem.Left
                         TextRect.Right = DIS.RCItem.Right
                         If ButtonPicture Is Nothing Then
-                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) / 2) + (3 * PixelsPerDIP_Y())
+                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) \ 2) + (3 * PixelsPerDIP_Y())
                             TextRect.Bottom = TextRect.Top + TextRect.Bottom
                         Else
                             TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
@@ -2354,7 +2354,7 @@ Select Case wMsg
                         TextRect.Left = DIS.RCItem.Left
                         TextRect.Right = DIS.RCItem.Right
                         If ButtonPicture Is Nothing Then
-                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) / 2) + (3 * PixelsPerDIP_Y())
+                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) \ 2) + (3 * PixelsPerDIP_Y())
                             TextRect.Bottom = TextRect.Top + TextRect.Bottom
                         Else
                             TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
@@ -2371,8 +2371,8 @@ Select Case wMsg
                     Dim CX As Long, CY As Long, X As Long, Y As Long
                     CX = CHimetricToPixel_X(ButtonPicture.Width)
                     CY = CHimetricToPixel_Y(ButtonPicture.Height)
-                    X = DIS.RCItem.Left + ((DIS.RCItem.Right - DIS.RCItem.Left - CX) / 2)
-                    Y = DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) / 2)
+                    X = DIS.RCItem.Left + ((DIS.RCItem.Right - DIS.RCItem.Left - CX) \ 2)
+                    Y = DIS.RCItem.Top + ((DIS.RCItem.Bottom - DIS.RCItem.Top - CY) \ 2)
                     If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Or DisabledPictureAvailable = True Then
                         If ButtonPicture.Type = vbPicTypeBitmap And PropUseMaskColor = True Then
                             Dim hDC1 As LongPtr, hBmpOld1 As LongPtr
