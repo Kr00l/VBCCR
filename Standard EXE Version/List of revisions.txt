@@ -1,5 +1,9 @@
 List of revisions:
 
+22-Jun-2024
+- Use of integer division \ instead of double division / where applicable.
+  This does not mean that \ was never used, just all division operators got reviewed.
+
 29-May-2024
 - Bugfix that setting SelectedItem to Nothing will not fire Click event, if index changed, in the ImageCombo control.
 
