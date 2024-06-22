@@ -3265,11 +3265,11 @@ Select Case wMsg
                                         ImageList_GetIconSize RBI.hImageList, ImageWidth, ImageHeight
                                         If (dwStyle And CCS_VERT) = CCS_VERT And Not (dwStyle And RBS_VERTICALGRIPPER) = RBS_VERTICALGRIPPER Then
                                             .RC.Top = .RC.Top + (2 * PixelsPerDIP_Y())
-                                            ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left + ((.RC.Right - .RC.Left - ImageWidth) / 2), .RC.Top, ILD_TRANSPARENT
+                                            ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left + ((.RC.Right - .RC.Left - ImageWidth) \ 2), .RC.Top, ILD_TRANSPARENT
                                             .RC.Top = .RC.Top + ImageHeight
                                         Else
                                             .RC.Left = .RC.Left + (2 * PixelsPerDIP_X())
-                                            ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left, .RC.Top + ((.RC.Bottom - .RC.Top - ImageHeight) / 2), ILD_TRANSPARENT
+                                            ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left, .RC.Top + ((.RC.Bottom - .RC.Top - ImageHeight) \ 2), ILD_TRANSPARENT
                                             .RC.Left = .RC.Left + ImageWidth
                                         End If
                                     End If
@@ -3488,13 +3488,13 @@ Select Case wMsg
                                 If PropRightToLeft = True And PropRightToLeftLayout = True Then
                                     MapWindowPoints CoolBarHandle, UserControl.hWnd, NMRBCS.RCChild, 2
                                     With NMRBCS.RCChild
-                                    .Left = .Left - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2)
-                                    .Top = .Top - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2)
-                                    .Right = .Right - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2)
-                                    .Bottom = .Bottom - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2)
+                                    .Left = .Left - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
+                                    .Top = .Top - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
+                                    .Right = .Right - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
+                                    .Bottom = .Bottom - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
                                     End With
                                 End If
-                                .Move UserControl.ScaleX(NMRBCS.RCChild.Left + (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) / 2), vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top + (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) / 2), vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
+                                .Move UserControl.ScaleX(NMRBCS.RCChild.Left + (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2), vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top + (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) \ 2), vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)

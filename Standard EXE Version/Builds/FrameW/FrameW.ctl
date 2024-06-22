@@ -961,10 +961,10 @@ If PropBorderStyle <> vbBSNone Then
         End If
         GetThemeTextExtent Theme, .hDC, ButtonPart, GroupBoxState, StrPtr("A"), 1, DrawFlags, BoundingRect, ExtentRect
         If PictureHeight <= (ExtentRect.Bottom - ExtentRect.Top) Then
-            ClientRect.Top = ClientRect.Top + ((ExtentRect.Bottom - ExtentRect.Top) / 2)
+            ClientRect.Top = ClientRect.Top + ((ExtentRect.Bottom - ExtentRect.Top) \ 2)
         Else
-            ClientRect.Top = ClientRect.Top + (PictureHeight / 2)
-            BoundingRect.Top = BoundingRect.Top + ((PictureHeight - (ExtentRect.Bottom - ExtentRect.Top)) / 2)
+            ClientRect.Top = ClientRect.Top + (PictureHeight \ 2)
+            BoundingRect.Top = BoundingRect.Top + ((PictureHeight - (ExtentRect.Bottom - ExtentRect.Top)) \ 2)
         End If
         If Not PropCaption = vbNullString Then
             GetThemeTextExtent Theme, .hDC, ButtonPart, GroupBoxState, StrPtr(PropCaption), Len(PropCaption), DrawFlags, BoundingRect, ExtentRect
@@ -999,8 +999,8 @@ If PropBorderStyle <> vbBSNone Then
             CX = (BoundingRect.Right - BoundingRect.Left) - (ExtentRect.Right - ExtentRect.Left)
             Select Case PropAlignment
                 Case vbCenter
-                    ExtentRect.Left = ExtentRect.Left + (CX / 2)
-                    ExtentRect.Right = ExtentRect.Right + (CX / 2)
+                    ExtentRect.Left = ExtentRect.Left + (CX \ 2)
+                    ExtentRect.Right = ExtentRect.Right + (CX \ 2)
                 Case vbRightJustify
                     ExtentRect.Left = ExtentRect.Left + CX
                     ExtentRect.Right = ExtentRect.Right + CX
@@ -1010,8 +1010,8 @@ If PropBorderStyle <> vbBSNone Then
                     Case vbLeftJustify
                         ExtentRect.Right = ExtentRect.Right + PictureWidth + (2 * PixelsPerDIP_X())
                     Case vbCenter
-                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + (2 * PixelsPerDIP_X())) / 2)
-                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + (2 * PixelsPerDIP_X())) / 2)
+                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
+                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
                     Case vbRightJustify
                         ExtentRect.Left = ExtentRect.Left - PictureWidth - (2 * PixelsPerDIP_X())
                 End Select
@@ -1032,7 +1032,7 @@ If PropBorderStyle <> vbBSNone Then
                     ExtentRect.Left = BoundingRect.Left
                     ExtentRect.Right = ExtentRect.Left + PictureWidth
                 Case vbCenter
-                    ExtentRect.Left = BoundingRect.Left + ((BoundingRect.Right - BoundingRect.Left) / 2) - (PictureWidth / 2)
+                    ExtentRect.Left = BoundingRect.Left + ((BoundingRect.Right - BoundingRect.Left) \ 2) - (PictureWidth \ 2)
                     ExtentRect.Right = ExtentRect.Left + PictureWidth
                 Case vbRightJustify
                     ExtentRect.Left = BoundingRect.Right - PictureWidth
@@ -1054,10 +1054,10 @@ If PropBorderStyle <> vbBSNone Then
         Dim Size As SIZEAPI
         GetTextExtentPoint32 .hDC, ByVal StrPtr("A"), 1, Size
         If PictureHeight <= Size.CY Then
-            ClientRect.Top = ClientRect.Top + (Size.CY / 2)
+            ClientRect.Top = ClientRect.Top + (Size.CY \ 2)
         Else
-            ClientRect.Top = ClientRect.Top + (PictureHeight / 2)
-            BoundingRect.Top = BoundingRect.Top + ((PictureHeight - Size.CY) / 2)
+            ClientRect.Top = ClientRect.Top + (PictureHeight \ 2)
+            BoundingRect.Top = BoundingRect.Top + ((PictureHeight - Size.CY) \ 2)
         End If
         If Not PropCaption = vbNullString Then
             GetTextExtentPoint32 .hDC, ByVal StrPtr(PropCaption), Len(PropCaption), Size
@@ -1090,8 +1090,8 @@ If PropBorderStyle <> vbBSNone Then
             CX = (BoundingRect.Right - BoundingRect.Left) - (ExtentRect.Right - ExtentRect.Left)
             Select Case PropAlignment
                 Case vbCenter
-                    ExtentRect.Left = ExtentRect.Left + (CX / 2)
-                    ExtentRect.Right = ExtentRect.Right + (CX / 2)
+                    ExtentRect.Left = ExtentRect.Left + (CX \ 2)
+                    ExtentRect.Right = ExtentRect.Right + (CX \ 2)
                 Case vbRightJustify
                     ExtentRect.Left = ExtentRect.Left + CX
                     ExtentRect.Right = ExtentRect.Right + CX
@@ -1101,8 +1101,8 @@ If PropBorderStyle <> vbBSNone Then
                     Case vbLeftJustify
                         ExtentRect.Right = ExtentRect.Right + PictureWidth + (2 * PixelsPerDIP_X())
                     Case vbCenter
-                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + (2 * PixelsPerDIP_X())) / 2)
-                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + (2 * PixelsPerDIP_X())) / 2)
+                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
+                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
                     Case vbRightJustify
                         ExtentRect.Left = ExtentRect.Left - PictureWidth - (2 * PixelsPerDIP_X())
                 End Select
@@ -1123,7 +1123,7 @@ If PropBorderStyle <> vbBSNone Then
                     ExtentRect.Left = BoundingRect.Left
                     ExtentRect.Right = ExtentRect.Left + PictureWidth
                 Case vbCenter
-                    ExtentRect.Left = BoundingRect.Left + ((BoundingRect.Right - BoundingRect.Left) / 2) - (PictureWidth / 2)
+                    ExtentRect.Left = BoundingRect.Left + ((BoundingRect.Right - BoundingRect.Left) \ 2) - (PictureWidth \ 2)
                     ExtentRect.Right = ExtentRect.Left + PictureWidth
                 Case vbRightJustify
                     ExtentRect.Left = BoundingRect.Right - PictureWidth
