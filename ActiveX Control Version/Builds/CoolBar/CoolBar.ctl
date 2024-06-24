@@ -1696,7 +1696,9 @@ If Value Is Nothing Then
     Set PropPicture = Nothing
 Else
     If Value.Type = vbPicTypeBitmap Or Value.Handle = NULL_PTR Then
-        Set PropPicture = Value
+        Set UserControl.Picture = Value
+        Set PropPicture = UserControl.Picture
+        Set UserControl.Picture = Nothing
     Else
         If CoolBarDesignMode = True Then
             MsgBox "Invalid picture", vbCritical + vbOKOnly
@@ -2341,24 +2343,30 @@ If CoolBarHandle <> NULL_PTR Then
 End If
 End Property
 
-Friend Property Let FBandPicture(ByVal ID As Long, ByVal Value As IPictureDisp)
-If CoolBarHandle <> NULL_PTR Then
-    Dim Index As Long
-    Index = CLng(SendMessage(CoolBarHandle, RB_IDTOINDEX, ID, ByVal 0&))
-    If Index > -1 Then
-        Dim RBBI As REBARBANDINFO
-        With RBBI
-        .cbSize = LenB(RBBI)
-        .fMask = RBBIM_BACKGROUND
-        SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
-        If Value Is Nothing Then
-            .hBmpBack = NULL_PTR
-        Else
-            .hBmpBack = Value.Handle
+Friend Property Set FBandPicture(ByVal ID As Long, Optional ByRef Picture As IPictureDisp, ByVal Value As IPictureDisp)
+If Picture Is Nothing Then
+    If CoolBarHandle <> NULL_PTR Then
+        Dim Index As Long
+        Index = CLng(SendMessage(CoolBarHandle, RB_IDTOINDEX, ID, ByVal 0&))
+        If Index > -1 Then
+            Dim RBBI As REBARBANDINFO
+            With RBBI
+            .cbSize = LenB(RBBI)
+            .fMask = RBBIM_BACKGROUND
+            SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
+            If Value Is Nothing Then
+                .hBmpBack = NULL_PTR
+            Else
+                .hBmpBack = Value.Handle
+            End If
+            SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
+            End With
         End If
-        SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
-        End With
     End If
+Else
+    Set UserControl.Picture = Value
+    Set Picture = UserControl.Picture
+    Set UserControl.Picture = Nothing
 End If
 End Property
 
