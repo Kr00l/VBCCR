@@ -270,12 +270,17 @@ If Value Is Nothing Then
     Set PropPicture = Nothing
 Else
     If Value.Type = vbPicTypeBitmap Or Value.Handle = 0 Then
-        Set PropPicture = Value
+        Set PropPicture = New StdPicture
+        Set ShadowCoolBar.FBandPicture(PropID, PropPicture) = Value
     Else
         Err.Raise 481
     End If
 End If
-ShadowCoolBar.FBandPicture(PropID) = IIf(PropUseCoolBarPicture = True, ShadowCoolBar.Picture, PropPicture)
+If PropUseCoolBarPicture = True Then
+    Set ShadowCoolBar.FBandPicture(PropID) = ShadowCoolBar.Picture
+Else
+    Set ShadowCoolBar.FBandPicture(PropID) = PropPicture
+End If
 End Property
 
 Public Property Get UseCoolBarColors() As Boolean

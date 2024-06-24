@@ -3336,6 +3336,16 @@ If ToolBarHandle <> NULL_PTR And IsButtonAvailable(ID) = True Then
 End If
 End Property
 
+Friend Property Set FButtonMenuPicture(ByRef Picture As IPictureDisp, ByVal Value As IPictureDisp)
+If Value Is Nothing Then
+    Set Picture = Nothing
+Else
+    Set UserControl.Picture = Value
+    Set Picture = UserControl.Picture
+    Set UserControl.Picture = Nothing
+End If
+End Property
+
 Friend Property Get FButtonMenuParent(ByVal ID As Long) As TbrButton
 If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then

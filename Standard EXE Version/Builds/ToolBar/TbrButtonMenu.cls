@@ -144,7 +144,7 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
-Set PropPicture = Value
+Set ShadowToolBar.FButtonMenuPicture(PropPicture) = Value
 End Property
 
 Public Property Get Parent() As TbrButton
