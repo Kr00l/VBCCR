@@ -1,5 +1,9 @@
 List of revisions:
 
+19-Jul-2024
+- Use of GetTabbedTextExtent instead of GetTextExtentPoint32 for the GetIdealHorizontalExtent function in the ListBoxW/VListBox control.
+  When the UseTabStops property is False then GetTextExtentPoint32 is used.
+
 24-Jun-2024
 - Support for adding an .Image object from a PictureBox to the CoolBar/CbrBand/TbrButtonMenu.
   Prior to this update the .Image object needed to be persisted into the .Picture property of the PictureBox.
