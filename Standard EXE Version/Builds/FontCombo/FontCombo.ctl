@@ -3091,10 +3091,10 @@ Select Case wMsg
                 DrawFlags = DT_NOCLIP Or DT_SINGLELINE Or DT_VCENTER
                 LSet TextRect = DIS.RCItem
                 If PropRightToLeft = False Then
-                    TextRect.Left = TextRect.Left + (2 * PixelsPerDIP_X())
+                    TextRect.Left = TextRect.Left + 2
                     DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, DrawFlags Or DT_LEFT
                 Else
-                    TextRect.Right = TextRect.Right - (2 * PixelsPerDIP_X())
+                    TextRect.Right = TextRect.Right - 2
                     DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, DrawFlags Or DT_RTLREADING Or DT_RIGHT
                 End If
                 If hFontOld <> NULL_PTR Then SelectObject DIS.hDC, hFontOld

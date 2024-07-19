@@ -2659,9 +2659,9 @@ Select Case wMsg
                     OldTextColor = SetTextColor(DIS.hDC, WinColor(PropListForeColor))
                 End If
                 If PropRightToLeft = False Then
-                    TextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                    TextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
                 Else
-                    TextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                    TextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
                 End If
                 SetBkMode DIS.hDC, OldBkMode
                 SetTextColor DIS.hDC, OldTextColor

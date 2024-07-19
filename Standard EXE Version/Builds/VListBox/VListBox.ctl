@@ -2199,15 +2199,15 @@ Select Case wMsg
                 End If
                 If PropRightToLeft = False Then
                     If PropUseTabStops = False Then
-                        TextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                        TextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
                     Else
-                        TabbedTextOut DIS.hDC, DIS.RCItem.Left + (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                        TabbedTextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
                     End If
                 Else
                     If PropUseTabStops = False Then
-                        TextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                        TextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
                     Else
-                        TabbedTextOut DIS.hDC, DIS.RCItem.Right - (1 * PixelsPerDIP_X()), DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                        TabbedTextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
                     End If
                 End If
                 SetBkMode DIS.hDC, OldBkMode
