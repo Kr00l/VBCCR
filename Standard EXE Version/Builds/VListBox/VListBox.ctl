@@ -194,6 +194,7 @@ Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As 
 Private Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
 Private Declare PtrSafe Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare PtrSafe Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As LongPtr, ByVal lpsz As LongPtr, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
+Private Declare PtrSafe Function GetTabbedTextExtent Lib "user32" Alias "GetTabbedTextExtentW" (ByVal hDC As LongPtr, ByVal lpsz As LongPtr, ByVal cbString As Long, ByVal nTabPositions As Long, ByVal lpnTabStopPositions As LongPtr) As Long
 Private Declare PtrSafe Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As LongPtr, ByRef lpMetrics As TEXTMETRIC) As Long
 Private Declare PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare PtrSafe Function CreateRectRgnIndirect Lib "gdi32" (ByRef lpRect As RECT) As LongPtr
@@ -242,6 +243,7 @@ Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private Declare Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
+Private Declare Function GetTabbedTextExtent Lib "user32" Alias "GetTabbedTextExtentW" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByVal nTabPositions As Long, ByVal lpnTabStopPositions As Long) As Long
 Private Declare Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As Long, ByRef lpMetrics As TEXTMETRIC) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function CreateRectRgnIndirect Lib "gdi32" (ByRef lpRect As RECT) As Long
@@ -1762,7 +1764,11 @@ If VListBoxHandle <> NULL_PTR Then
         SelectObject hDC, VListBoxFontHandle
         For i = 0 To Count - 1
             RaiseEvent GetVirtualItem(i, Text)
-            GetTextExtentPoint32 hDC, ByVal StrPtr(Text), Len(Text), Size
+            If PropUseTabStops = False Then
+                GetTextExtentPoint32 hDC, ByVal StrPtr(Text), Len(Text), Size
+            Else
+                Size.CX = LoWord(GetTabbedTextExtent(hDC, ByVal StrPtr(Text), Len(Text), 0, NULL_PTR))
+            End If
             Text = vbNullString
             If (Size.CX - ScrollWidth) > CX Then CX = (Size.CX - ScrollWidth)
         Next i
