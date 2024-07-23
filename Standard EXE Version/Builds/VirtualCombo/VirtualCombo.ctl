@@ -297,7 +297,8 @@ Private Const HWND_DESKTOP As Long = &H0
 #End If
 Private Const GWL_STYLE As Long = (-16)
 Private Const CF_UNICODETEXT As Long = 13
-Private Const TA_RTLREADING = &H100, TA_RIGHT As Long = &H2
+Private Const TA_RTLREADING As Long = &H100
+Private Const TA_RIGHT As Long = &H2
 Private Const SM_CYBORDER As Long = 6
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000

@@ -337,7 +337,8 @@ Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_E
 Private Const GWL_STYLE As Long = (-16)
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const CF_UNICODETEXT As Long = 13
-Private Const TA_RTLREADING = &H100, TA_RIGHT As Long = &H2
+Private Const TA_RTLREADING As Long = &H100
+Private Const TA_RIGHT As Long = &H2
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_ACCEPTFILES As Long = &H10
