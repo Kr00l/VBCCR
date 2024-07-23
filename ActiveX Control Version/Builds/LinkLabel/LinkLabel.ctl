@@ -249,7 +249,7 @@ Private Const HWND_DESKTOP As LongPtr = &H0
 #Else
 Private Const HWND_DESKTOP As Long = &H0
 #End If
-Private Const TA_RTLREADING = &H100
+Private Const TA_RTLREADING As Long = &H100
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_TABSTOP As Long = &H10000
