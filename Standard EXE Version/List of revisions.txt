@@ -1,5 +1,8 @@
 List of revisions:
 
+25-Jul-2024
+- Bugfix that the Text property was not the default property in the LvwListSubItem object.
+
 19-Jul-2024
 - Use of GetTabbedTextExtent instead of GetTextExtentPoint32 for the GetIdealHorizontalExtent function in the ListBoxW/VListBox control.
   When the UseTabStops property is False then GetTextExtentPoint32 is used.
