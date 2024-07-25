@@ -81,6 +81,7 @@ End Property
 
 Public Property Get Text() As String
 Attribute Text.VB_Description = "Returns/sets the text of the list sub item."
+Attribute Text.VB_UserMemId = 0
 Text = ShadowListItem.FListSubItemProp(PropSubItemIndex, 3)
 End Property
 
