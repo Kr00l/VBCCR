@@ -1,5 +1,10 @@
 List of revisions:
 
+26-Jul-2024
+- LB_SETTABSTOPS now cached in the VListBox control to replicate MS ListBox behavior.
+  The ListBoxW control also caches these in case the Style property is 1 - Checkbox or 2 - Option.
+  When an app is not using LB_SETTABSTOPS then the defaults are in use and no difference therefore.
+
 25-Jul-2024
 - Bugfix that the Text property was not the default property in the LvwListSubItem object.
 
