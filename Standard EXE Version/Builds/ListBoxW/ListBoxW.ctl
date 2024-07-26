@@ -2674,7 +2674,7 @@ Select Case wMsg
     Case LB_SETTABSTOPS
         If WindowProcControl <> 0 Then
             If wParam > 0 Then
-                ListBoxTabPositions = wParam
+                ListBoxTabPositions = CLng(wParam)
                 ReDim ListBoxTabStopPositions(0 To (ListBoxTabPositions - 1)) As Long
                 CopyMemory ByVal VarPtr(ListBoxTabStopPositions(0)), ByVal lParam, ListBoxTabPositions * 4
                 ' Convert to device units here and ignore further font changes to replicate MS ListBox behavior.
