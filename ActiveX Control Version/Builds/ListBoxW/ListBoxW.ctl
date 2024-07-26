@@ -214,6 +214,7 @@ Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As 
 Private Declare PtrSafe Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As LongPtr, ByVal lpsz As LongPtr, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare PtrSafe Function GetTabbedTextExtent Lib "user32" Alias "GetTabbedTextExtentW" (ByVal hDC As LongPtr, ByVal lpsz As LongPtr, ByVal cbString As Long, ByVal nTabPositions As Long, ByVal lpnTabStopPositions As LongPtr) As Long
 Private Declare PtrSafe Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As LongPtr, ByRef lpMetrics As TEXTMETRIC) As Long
+Private Declare PtrSafe Function MulDiv Lib "kernel32" (ByVal nNumber As Long, ByVal nNumerator As Long, ByVal nDenominator As Long) As Long
 Private Declare PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare PtrSafe Function CreateRectRgnIndirect Lib "gdi32" (ByRef lpRect As RECT) As LongPtr
 Private Declare PtrSafe Function ExtSelectClipRgn Lib "gdi32" (ByVal hDC As LongPtr, ByVal hRgn As LongPtr, ByVal fnMode As Long) As Long
@@ -266,6 +267,7 @@ Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As
 Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare Function GetTabbedTextExtent Lib "user32" Alias "GetTabbedTextExtentW" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByVal nTabPositions As Long, ByVal lpnTabStopPositions As Long) As Long
 Private Declare Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsW" (ByVal hDC As Long, ByRef lpMetrics As TEXTMETRIC) As Long
+Private Declare Function MulDiv Lib "kernel32" (ByVal nNumber As Long, ByVal nNumerator As Long, ByVal nDenominator As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function CreateRectRgnIndirect Lib "gdi32" (ByRef lpRect As RECT) As Long
 Private Declare Function ExtSelectClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long, ByVal fnMode As Long) As Long
@@ -408,6 +410,7 @@ Private Const LB_GETTOPINDEX As Long = &H18E
 Private Const LB_FINDSTRING As Long = &H18F
 Private Const LB_GETSELCOUNT As Long = &H190
 Private Const LB_GETSELITEMS As Long = &H191
+Private Const LB_SETTABSTOPS As Long = &H192
 Private Const LB_GETHORIZONTALEXTENT As Long = &H193
 Private Const LB_SETHORIZONTALEXTENT As Long = &H194
 Private Const LB_SETCOLUMNWIDTH As Long = &H195
@@ -456,6 +459,7 @@ Private ListBoxInsertMark As Long, ListBoxInsertMarkAfter As Boolean
 Private ListBoxItemCheckedCount As Long
 Private ListBoxItemChecked() As Byte, ListBoxOptionIndex As Long
 Private ListBoxStateImageSize As Long
+Private ListBoxTabPositions As Long, ListBoxTabStopPositions() As Long
 Private UCNoSetFocusFwd As Boolean
 
 #If ImplementPreTranslateMsg = True Then
@@ -2243,7 +2247,11 @@ If ListBoxHandle <> NULL_PTR Then
                 If PropUseTabStops = False Then
                     GetTextExtentPoint32 hDC, ByVal StrPtr(Text), Length, Size
                 Else
-                    Size.CX = LoWord(GetTabbedTextExtent(hDC, ByVal StrPtr(Text), Length, 0, NULL_PTR))
+                    If ListBoxTabPositions = 0 Then
+                        Size.CX = LoWord(GetTabbedTextExtent(hDC, ByVal StrPtr(Text), Length, 0, NULL_PTR))
+                    Else
+                        Size.CX = LoWord(GetTabbedTextExtent(hDC, ByVal StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0))))
+                    End If
                 End If
                 If (Size.CX - ScrollWidth) > CX Then CX = (Size.CX - ScrollWidth)
             End If
@@ -2663,6 +2671,27 @@ Select Case wMsg
         If CheckTopIndex() = False And ListBoxInsertMark > -1 Then Call InvalidateInsertMark
     Case WM_PAINT
         If ListBoxInsertMark > -1 Then Call DrawInsertMark
+    Case LB_SETTABSTOPS
+        If WindowProcControl <> 0 Then
+            If wParam > 0 Then
+                ListBoxTabPositions = wParam
+                ReDim ListBoxTabStopPositions(0 To (ListBoxTabPositions - 1)) As Long
+                CopyMemory ByVal VarPtr(ListBoxTabStopPositions(0)), ByVal lParam, ListBoxTabPositions * 4
+                ' Convert to device units here and ignore further font changes to replicate MS ListBox behavior.
+                Dim hDC As LongPtr, Size As SIZEAPI, AveCharWidth As Long, i As Long
+                hDC = GetDC(hWnd)
+                SelectObject hDC, ListBoxFontHandle
+                GetTextExtentPoint32 hDC, StrPtr("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 52, Size
+                AveCharWidth = ((Size.CX \ 26) + 1) \ 2
+                For i = 0 To (ListBoxTabPositions - 1)
+                    ListBoxTabStopPositions(i) = MulDiv(ListBoxTabStopPositions(i), AveCharWidth, 4)
+                Next i
+                ReleaseDC hWnd, hDC
+            Else
+                ListBoxTabPositions = 0
+                Erase ListBoxTabStopPositions()
+            End If
+        End If
 End Select
 End Function
 
@@ -2804,13 +2833,21 @@ Select Case wMsg
                         If PropUseTabStops = False Then
                             TextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length
                         Else
-                            TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                            If ListBoxTabPositions = 0 Then
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length, 0, NULL_PTR, 0
+                            Else
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0)), 0
+                            End If
                         End If
                     Else
                         If PropUseTabStops = False Then
                             TextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length
                         Else
-                            TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                            If ListBoxTabPositions = 0 Then
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length, 0, NULL_PTR, 0
+                            Else
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0)), 0
+                            End If
                         End If
                     End If
                     SetBkMode DIS.hDC, OldBkMode
