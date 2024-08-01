@@ -1,5 +1,11 @@
 List of revisions:
 
+01-Aug-2024
+- Improved the HDN_DROPDOWN handler to remove any WM_LBUTTONDOWN/WM_LBUTTONDBLCLK message
+  afterwards for the header window only so that we can get a toggle effect on the split button.
+  This is exactly the same as the Button/ToolbarWindow32 window does for BCN_DROPDOWN/TBN_DROPDOWN. Bug in the SysListView32?
+  The improvement is most useful when showing a popup menu as drop-down.
+
 26-Jul-2024
 - LB_SETTABSTOPS now cached in the VListBox control to replicate MS ListBox behavior.
   The ListBoxW control also caches these in case the Style property is 1 - Checkbox or 2 - Option.
