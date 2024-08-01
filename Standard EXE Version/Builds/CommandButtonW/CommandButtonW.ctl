@@ -1622,7 +1622,7 @@ UserControl.PropertyChanged "Transparent"
 End Property
 
 Public Property Get SplitButton() As Boolean
-Attribute SplitButton.VB_Description = "Returns/sets a value that determines whether or not the command button displays a split button. The 'DropDown' event is fired when the split button is clicked. Requires comctl32.dll version 6.1 or higher."
+Attribute SplitButton.VB_Description = "Returns/sets a value that determines whether or not the command button displays a split button. The DropDown event is fired when the split button is clicked. Requires comctl32.dll version 6.1 or higher."
 SplitButton = PropSplitButton
 End Property
 
@@ -1674,7 +1674,7 @@ UserControl.PropertyChanged "SplitButtonAlignment"
 End Property
 
 Public Property Get SplitButtonNoSplit() As Boolean
-Attribute SplitButtonNoSplit.VB_Description = "Returns/sets a value indicating that the split on the part of the button that activates the drop-down will not be displayed. If so, the 'DropDown' event will not be fired. Use the 'Click' event instead. Requires comctl32.dll version 6.1 or higher."
+Attribute SplitButtonNoSplit.VB_Description = "Returns/sets a value indicating that the split on the part of the button that activates the drop-down will not be displayed. If so, the DropDown event will not be fired. Use the Click event instead. Requires comctl32.dll version 6.1 or higher."
 SplitButtonNoSplit = PropSplitButtonNoSplit
 End Property
 

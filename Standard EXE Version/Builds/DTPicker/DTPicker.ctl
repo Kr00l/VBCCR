@@ -1237,7 +1237,7 @@ UserControl.PropertyChanged "CalendarAlignment"
 End Property
 
 Public Property Get CalendarDayState() As Boolean
-Attribute CalendarDayState.VB_Description = "Returns/sets a value that determines whether or not the calendar requests information about which days should be displayed in bold. Use the 'CalendarGetDayBold' event to provide the requested information. Requires comctl32.dll version 6.1 or higher."
+Attribute CalendarDayState.VB_Description = "Returns/sets a value that determines whether or not the calendar requests information about which days should be displayed in bold. Use the CalendarGetDayBold event to provide the requested information. Requires comctl32.dll version 6.1 or higher."
 CalendarDayState = PropCalendarDayState
 End Property
 
@@ -1677,7 +1677,7 @@ UserControl.PropertyChanged "CheckBox"
 End Property
 
 Public Property Get AllowUserInput() As Boolean
-Attribute AllowUserInput.VB_Description = "Returns/sets a value indicating if user input is allowed. It enables when the user press the F2 key or click within the client area. The 'ParseUserInput' event is fired after. It is necessary to parse the input string and take action if necessary."
+Attribute AllowUserInput.VB_Description = "Returns/sets a value indicating if user input is allowed. It enables when the user press the F2 key or click within the client area. The ParseUserInput event is fired after. It is necessary to parse the input string and take action if necessary."
 AllowUserInput = PropAllowUserInput
 End Property
 
