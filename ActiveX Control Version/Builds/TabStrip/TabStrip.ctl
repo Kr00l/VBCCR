@@ -152,7 +152,7 @@ RCItem As RECT
 ItemData As LongPtr
 End Type
 Public Event TabBeforeClick(ByVal TabItem As TbsTab, ByRef Cancel As Boolean)
-Attribute TabBeforeClick.VB_Description = "Occurs when a tab is clicked, or the tab's value setting has been changed. Used to check parameters before actually generating a 'TabClick' event."
+Attribute TabBeforeClick.VB_Description = "Occurs when a tab is clicked, or the tab's value setting has been changed. Used to check parameters before actually generating a TabClick event."
 Public Event TabClick(ByVal TabItem As TbsTab)
 Attribute TabClick.VB_Description = "Occurs when a tab is clicked, or the tab's value setting has been changed."
 Public Event ItemDraw(ByVal TabItem As TbsTab, ByVal ItemAction As Long, ByVal ItemState As Long, ByVal hDC As Long, ByVal Left As Long, ByVal Top As Long, ByVal Right As Long, ByVal Bottom As Long)

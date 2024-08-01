@@ -181,7 +181,7 @@ ShadowListView.FColumnHeaderResizable(PropIndex, PropResizable) = Value
 End Property
 
 Public Property Get SplitButton() As Boolean
-Attribute SplitButton.VB_Description = "Returns/sets a value that determines whether or not the column header displays a split button. The 'ColumnDropDown' event is fired when the split button is clicked. Requires comctl32.dll version 6.1 or higher."
+Attribute SplitButton.VB_Description = "Returns/sets a value that determines whether or not the column header displays a split button. The ColumnDropDown event is fired when the split button is clicked. Requires comctl32.dll version 6.1 or higher."
 SplitButton = ShadowListView.FColumnHeaderSplitButton(PropIndex)
 End Property
 

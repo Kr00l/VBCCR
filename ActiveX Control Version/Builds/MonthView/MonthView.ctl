@@ -1488,7 +1488,7 @@ UserControl.PropertyChanged "MultiSelect"
 End Property
 
 Public Property Get DayState() As Boolean
-Attribute DayState.VB_Description = "Returns/sets a value that determines whether or not the control requests information about which days should be displayed in bold. Use the 'GetDayBold' event to provide the requested information."
+Attribute DayState.VB_Description = "Returns/sets a value that determines whether or not the control requests information about which days should be displayed in bold. Use the GetDayBold event to provide the requested information."
 DayState = PropDayState
 End Property
 

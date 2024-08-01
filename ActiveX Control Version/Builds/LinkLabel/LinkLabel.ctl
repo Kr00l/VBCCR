@@ -1085,7 +1085,7 @@ UserControl.PropertyChanged "Transparent"
 End Property
 
 Public Property Get ShowTips() As Boolean
-Attribute ShowTips.VB_Description = "Returns/sets a value that determines whether the 'LinkGetTipText' event will be raised to retrieve a tool tip text to be displayed or not."
+Attribute ShowTips.VB_Description = "Returns/sets a value that determines whether the LinkGetTipText event will be raised to retrieve a tool tip text to be displayed or not."
 ShowTips = PropShowTips
 End Property
 

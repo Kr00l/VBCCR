@@ -583,6 +583,7 @@ Private Declare PtrSafe Function SetWindowTheme Lib "uxtheme" (ByVal hWnd As Lon
 Private Declare PtrSafe Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare PtrSafe Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
+Private Declare PtrSafe Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare PtrSafe Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As LongPtr, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -625,6 +626,7 @@ Private Declare Function SetWindowTheme Lib "uxtheme" (ByVal hWnd As Long, ByVal
 Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As Long, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -705,6 +707,7 @@ Private Const WM_MBUTTONDOWN As Long = &H207
 Private Const WM_MBUTTONUP As Long = &H208
 Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
+Private Const WM_LBUTTONDBLCLK As Long = &H203
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
@@ -6999,7 +7002,7 @@ End If
 End Property
 
 Public Property Get ColumnFilterChangedTimeout() As Long
-Attribute ColumnFilterChangedTimeout.VB_Description = "Returns/sets the time in milliseconds before the 'ColumnFilterChanged' event is fired afer a filter was changed. A value of -1 indicates that the 'ColumnFilterChanged' is fired only when the filter edit is completed."
+Attribute ColumnFilterChangedTimeout.VB_Description = "Returns/sets the time in milliseconds before the ColumnFilterChanged event is fired afer a filter was changed. A value of -1 indicates that the 'ColumnFilterChanged' is fired only when the filter edit is completed."
 Attribute ColumnFilterChangedTimeout.VB_MemberFlags = "400"
 If ListViewHandle <> NULL_PTR Then
     If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader
@@ -7772,7 +7775,13 @@ Select Case wMsg
                     End If
                 Case HDN_DROPDOWN
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
-                    If NMHDR.iItem > -1 Then RaiseEvent ColumnDropDown(Me.ColumnHeaders(NMHDR.iItem + 1))
+                    If NMHDR.iItem > -1 Then
+                        RaiseEvent ColumnDropDown(Me.ColumnHeaders(NMHDR.iItem + 1))
+                        ' Remove any left mouse button down or double-click messages so that we can get a toggle effect on the split button.
+                        Dim Msg As TMSG
+                        Const PM_REMOVE As Long = &H1
+                        While PeekMessage(Msg, ListViewHeaderHandle, WM_LBUTTONDOWN, WM_LBUTTONDOWN, PM_REMOVE) <> 0 Or PeekMessage(Msg, ListViewHeaderHandle, WM_LBUTTONDBLCLK, WM_LBUTTONDBLCLK, PM_REMOVE) <> 0: Wend
+                    End If
                 Case HDN_ITEMSTATEICONCLICK
                     CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
                     If NMHDR.iItem > -1 Then

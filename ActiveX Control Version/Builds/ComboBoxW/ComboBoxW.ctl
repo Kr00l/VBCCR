@@ -1761,7 +1761,7 @@ If ComboBoxDesignMode = False Then
     Dim Count As Long, i As Long, FieldHeightCustomized As Boolean
     If ComboBoxHandle <> NULL_PTR Then
         If PropDrawMode <> CboDrawModeOwnerDrawVariable Then
-            ' ItemHeight does not need to be restored in an variable owner-drawn combo box as the 'MeasureItem' event will handle this.
+            ' ItemHeight does not need to be restored in an variable owner-drawn combo box as the MeasureItem event will handle this.
             ItemHeight = CLng(SendMessage(ComboBoxHandle, CB_GETITEMHEIGHT, 0, ByVal 0&))
         End If
         Count = CLng(SendMessage(ComboBoxHandle, CB_GETCOUNT, 0, ByVal 0&))
