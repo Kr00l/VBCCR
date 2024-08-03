@@ -202,7 +202,7 @@ Private Declare PtrSafe Function GetSystemDirectory Lib "kernel32" Alias "GetSys
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function GetMenu Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
-Private Declare PtrSafe Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
+Private Declare PtrSafe Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As LongPtr
 Private Declare PtrSafe Function GetCapture Lib "user32" () As LongPtr
 Private Declare PtrSafe Function GetWindowThreadProcessId Lib "user32" (ByVal hWnd As LongPtr, ByVal lpdwProcessId As LongPtr) As Long
 Private Declare PtrSafe Function FlashWindowEx Lib "user32" (ByRef pFWI As FLASHWINFO) As Long
