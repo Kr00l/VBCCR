@@ -221,7 +221,7 @@ Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (By
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
 Private Declare PtrSafe Function GetMessagePos Lib "user32" () As Long
-Private Declare PtrSafe Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
+Private Declare PtrSafe Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As LongPtr
 Private Declare PtrSafe Function GetCursor Lib "user32" () As LongPtr
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 #Else
