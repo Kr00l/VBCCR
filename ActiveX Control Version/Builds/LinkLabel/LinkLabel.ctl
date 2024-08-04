@@ -512,6 +512,7 @@ End Sub
 
 Private Sub UserControl_Paint()
 If LinkLabelHandle = NULL_PTR Then
+    If UserControl.DrawStyle = vbInvisible Then UserControl.DrawStyle = vbSolid
     Dim i As Long
     For i = 8 To (UserControl.ScaleHeight + UserControl.ScaleWidth) Step 8
         UserControl.Line (-1, i)-(i, -1), vbBlack
