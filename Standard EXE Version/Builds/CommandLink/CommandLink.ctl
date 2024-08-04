@@ -282,6 +282,7 @@ Private CommandLinkCharCodeCache As Long
 Private CommandLinkMouseOver As Boolean
 Private CommandLinkDesignMode As Boolean
 Private CommandLinkDisplayAsDefault As Boolean
+Private CommandLinkImageListButtonHandle As LongPtr
 Private CommandLinkImageListObjectPointer As LongPtr, CommandLinkImageListHandle As LongPtr
 Private UCNoSetFocusFwd As Boolean
 Private DispIdImageList As Long, ImageListArray() As String
@@ -1166,15 +1167,10 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
-Dim BTNIML As BUTTON_IMAGELIST
-If CommandLinkHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
-    SendMessage CommandLinkHandle, BCM_GETIMAGELIST, 0, ByVal VarPtr(BTNIML)
-    If BTNIML.hImageList = BCCL_NOGLYPH Then BTNIML.hImageList = NULL_PTR
-End If
 Dim dwStyle As Long
 If Value Is Nothing Then
     Set PropPicture = Nothing
-    If CommandLinkHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
+    If CommandLinkHandle <> NULL_PTR And CommandLinkImageListButtonHandle = NULL_PTR Then
         dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
         If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
         If (dwStyle And BS_BITMAP) = BS_BITMAP Then dwStyle = dwStyle And Not BS_BITMAP
@@ -1187,7 +1183,7 @@ Else
     Set UserControl.Picture = Value
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
-    If CommandLinkHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
+    If CommandLinkHandle <> NULL_PTR And CommandLinkImageListButtonHandle = NULL_PTR Then
         dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)
         If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
         If (dwStyle And BS_BITMAP) = BS_BITMAP Then dwStyle = dwStyle And Not BS_BITMAP
@@ -1287,6 +1283,7 @@ If CommandLinkTransparentBrush <> NULL_PTR Then
     DeleteObject CommandLinkTransparentBrush
     CommandLinkTransparentBrush = NULL_PTR
 End If
+CommandLinkImageListButtonHandle = NULL_PTR
 End Sub
 
 Public Sub Refresh()
@@ -1374,6 +1371,8 @@ If CommandLinkHandle <> NULL_PTR Then
     With BTNIML
     .hImageList = hImageList
     If .hImageList = NULL_PTR Then .hImageList = BCCL_NOGLYPH
+    CommandLinkImageListButtonHandle = hImageList
+    If CommandLinkImageListButtonHandle = BCCL_NOGLYPH Then CommandLinkImageListButtonHandle = NULL_PTR
     If .hImageList <> BCCL_NOGLYPH Then
         Dim dwStyle As Long
         dwStyle = GetWindowLong(CommandLinkHandle, GWL_STYLE)

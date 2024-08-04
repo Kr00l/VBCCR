@@ -456,6 +456,7 @@ Private CommandButtonCharCodeCache As Long
 Private CommandButtonMouseOver(0 To 1) As Boolean
 Private CommandButtonDesignMode As Boolean
 Private CommandButtonDisplayAsDefault As Boolean
+Private CommandButtonImageListButtonHandle As LongPtr
 Private CommandButtonImageListGlyphHandle As LongPtr, CommandButtonDefaultImageListGlyphHandle As LongPtr
 Private CommandButtonImageListObjectPointer As LongPtr, CommandButtonImageListHandle As LongPtr
 Private CommandButtonEnabledVisualStyles As Boolean
@@ -1521,15 +1522,10 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
-Dim BTNIML As BUTTON_IMAGELIST
-If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
-    SendMessage CommandButtonHandle, BCM_GETIMAGELIST, 0, ByVal VarPtr(BTNIML)
-    If BTNIML.hImageList = BCCL_NOGLYPH Then BTNIML.hImageList = NULL_PTR
-End If
 Dim dwStyle As Long
 If Value Is Nothing Then
     Set PropPicture = Nothing
-    If CommandButtonHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
+    If CommandButtonHandle <> NULL_PTR And CommandButtonImageListButtonHandle = NULL_PTR Then
         dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1544,7 +1540,7 @@ Else
     Set UserControl.Picture = Value
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
-    If CommandButtonHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
+    If CommandButtonHandle <> NULL_PTR And CommandButtonImageListButtonHandle = NULL_PTR Then
         dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1823,7 +1819,7 @@ UserControl.PropertyChanged "DownPicture"
 End Property
 
 Public Property Get UseMaskColor() As Boolean
-Attribute UseMaskColor.VB_Description = "Returns/sets a value which determines if the button control will use the mask color property. Only applicable if the style property is set to 1."
+Attribute UseMaskColor.VB_Description = "Returns/sets a value which determines if the button control will use the mask color property. Only applicable if the style property is set to 1 (graphical)."
 UseMaskColor = PropUseMaskColor
 End Property
 
@@ -1834,7 +1830,7 @@ UserControl.PropertyChanged "UseMaskColor"
 End Property
 
 Public Property Get MaskColor() As OLE_COLOR
-Attribute MaskColor.VB_Description = "Returns/sets a color in a picture to be a 'mask' (that is, transparent). Only applicable if the style property is set to 1."
+Attribute MaskColor.VB_Description = "Returns/sets a color in a picture to be a 'mask' (that is, transparent). Only applicable if the style property is set to 1 (graphical)."
 MaskColor = PropMaskColor
 End Property
 
@@ -1978,6 +1974,7 @@ If CommandButtonTransparentBrush <> NULL_PTR Then
     DeleteObject CommandButtonTransparentBrush
     CommandButtonTransparentBrush = NULL_PTR
 End If
+CommandButtonImageListButtonHandle = NULL_PTR
 If CommandButtonImageListGlyphHandle <> NULL_PTR Then
     ImageList_Destroy CommandButtonImageListGlyphHandle
     CommandButtonImageListGlyphHandle = NULL_PTR
@@ -2084,6 +2081,8 @@ If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
     With BTNIML
     .hImageList = hImageList
     If .hImageList = NULL_PTR Then .hImageList = BCCL_NOGLYPH
+    CommandButtonImageListButtonHandle = hImageList
+    If CommandButtonImageListButtonHandle = BCCL_NOGLYPH Then CommandButtonImageListButtonHandle = NULL_PTR
     If .hImageList <> BCCL_NOGLYPH Then
         Dim dwStyle As Long
         dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
