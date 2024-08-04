@@ -522,6 +522,7 @@ Private Sub UserControl_Paint()
 If CommandLinkHandle <> NULL_PTR Then
     If CommandLinkDisplayAsDefault Xor Ambient.DisplayAsDefault Then Call UserControl_AmbientChanged("DisplayAsDefault")
 Else
+    If UserControl.DrawStyle = vbInvisible Then UserControl.DrawStyle = vbSolid
     Dim i As Long
     For i = 8 To (UserControl.ScaleHeight + UserControl.ScaleWidth) Step 8
         UserControl.Line (-1, i)-(i, -1), vbBlack
