@@ -399,6 +399,7 @@ Private OptionButtonFontHandle As LongPtr
 Private OptionButtonCharCodeCache As Long
 Private OptionButtonMouseOver(0 To 1) As Boolean
 Private OptionButtonDesignMode As Boolean
+Private OptionButtonImageListButtonHandle As LongPtr
 Private OptionButtonImageListObjectPointer As LongPtr, OptionButtonImageListHandle As LongPtr
 Private OptionButtonEnabledVisualStyles As Boolean
 Private OptionButtonPictureRenderFlag As Integer
@@ -1372,15 +1373,10 @@ Set Me.Picture = Value
 End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
-Dim BTNIML As BUTTON_IMAGELIST
-If OptionButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
-    SendMessage OptionButtonHandle, BCM_GETIMAGELIST, 0, ByVal VarPtr(BTNIML)
-    If BTNIML.hImageList = BCCL_NOGLYPH Then BTNIML.hImageList = NULL_PTR
-End If
 Dim dwStyle As Long
 If Value Is Nothing Then
     Set PropPicture = Nothing
-    If OptionButtonHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
+    If OptionButtonHandle <> NULL_PTR And OptionButtonImageListButtonHandle = NULL_PTR Then
         dwStyle = GetWindowLong(OptionButtonHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1395,7 +1391,7 @@ Else
     Set UserControl.Picture = Value
     Set PropPicture = UserControl.Picture
     Set UserControl.Picture = Nothing
-    If OptionButtonHandle <> NULL_PTR And BTNIML.hImageList = NULL_PTR Then
+    If OptionButtonHandle <> NULL_PTR And OptionButtonImageListButtonHandle = NULL_PTR Then
         dwStyle = GetWindowLong(OptionButtonHandle, GWL_STYLE)
         If Not (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then
             If (dwStyle And BS_ICON) = BS_ICON Then dwStyle = dwStyle And Not BS_ICON
@@ -1564,7 +1560,7 @@ UserControl.PropertyChanged "DownPicture"
 End Property
 
 Public Property Get UseMaskColor() As Boolean
-Attribute UseMaskColor.VB_Description = "Returns/sets a value which determines if the button control will use the mask color property. Only applicable if the style property is set to 1."
+Attribute UseMaskColor.VB_Description = "Returns/sets a value which determines if the button control will use the mask color property. Only applicable if the style property is set to 1 (graphical)."
 UseMaskColor = PropUseMaskColor
 End Property
 
@@ -1575,7 +1571,7 @@ UserControl.PropertyChanged "UseMaskColor"
 End Property
 
 Public Property Get MaskColor() As OLE_COLOR
-Attribute MaskColor.VB_Description = "Returns/sets a color in a picture to be a 'mask' (that is, transparent). Only applicable if the style property is set to 1."
+Attribute MaskColor.VB_Description = "Returns/sets a color in a picture to be a 'mask' (that is, transparent). Only applicable if the style property is set to 1 (graphical)."
 MaskColor = PropMaskColor
 End Property
 
@@ -1709,6 +1705,7 @@ If OptionButtonOwnerDrawCheckedBrush <> NULL_PTR Then
     DeleteObject OptionButtonOwnerDrawCheckedBrush
     OptionButtonOwnerDrawCheckedBrush = NULL_PTR
 End If
+OptionButtonImageListButtonHandle = NULL_PTR
 End Sub
 
 Public Sub Refresh()
@@ -1752,6 +1749,8 @@ If OptionButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
     With BTNIML
     .hImageList = hImageList
     If .hImageList = NULL_PTR Then .hImageList = BCCL_NOGLYPH
+    OptionButtonImageListButtonHandle = hImageList
+    If OptionButtonImageListButtonHandle = BCCL_NOGLYPH Then OptionButtonImageListButtonHandle = NULL_PTR
     If .hImageList <> BCCL_NOGLYPH Then
         Dim dwStyle As Long
         dwStyle = GetWindowLong(OptionButtonHandle, GWL_STYLE)
