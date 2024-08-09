@@ -504,6 +504,8 @@ If ComCtlsSupportLevel() >= 1 Then ' XP+
     ListView1.Groups.Add , , "Group C"
     ListView1.Groups.Add , , "Group D"
     GroupsAvailable = True
+Else
+    ListView1.GroupView = False
 End If
 ListView1.Redraw = False
 Dim i As Long

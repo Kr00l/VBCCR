@@ -1,5 +1,10 @@
 List of revisions:
 
+09-Aug-2024
+- Bugfix in the VirtualItemCount property to add flag LVSICF_NOSCROLL. (same behavior as in non-virtual mode)
+  That flag was meant to fix LVM_SETITEMCOUNT as of IE 3.0.
+  LVSICF_NOINVALIDATEALL was not added intentionally because the underlying data could be changed for the current page as well.
+
 01-Aug-2024
 - Improved the HDN_DROPDOWN handler to remove any WM_LBUTTONDOWN/WM_LBUTTONDBLCLK message
   afterwards for the header window only so that we can get a toggle effect on the split button.
