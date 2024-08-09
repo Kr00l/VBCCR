@@ -946,6 +946,8 @@ Private Const LVFI_NEARESTXY As Long = &H40
 Private Const LVKF_ALT As Long = &H1
 Private Const LVKF_CONTROL As Long = &H2
 Private Const LVKF_SHIFT As Long = &H4
+Private Const LVSICF_NOINVALIDATEALL As Long = &H1
+Private Const LVSICF_NOSCROLL As Long = &H2
 Private Const LVBKIF_SOURCE_NONE As Long = &H0
 Private Const LVBKIF_SOURCE_HBITMAP As Long = &H1
 Private Const LVBKIF_SOURCE_URL As Long = &H2
@@ -3938,7 +3940,7 @@ If Value < 0 Or Value > 100000000 Then
 End If
 If PropVirtualMode = True Then
     If ListViewHandle <> NULL_PTR And ListViewDesignMode = False Then
-        If SendMessage(ListViewHandle, LVM_SETITEMCOUNT, Value, ByVal 0&) = 0 Then Err.Raise 380
+        If SendMessage(ListViewHandle, LVM_SETITEMCOUNT, Value, ByVal LVSICF_NOSCROLL) = 0 Then Err.Raise 380
         If ListViewListItemsControl = 0 Then
             Dim LVI As LVITEM
             With LVI
