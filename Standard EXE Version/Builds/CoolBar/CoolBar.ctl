@@ -2760,6 +2760,7 @@ If CoolBarHandle = NULL_PTR Then Exit Sub
 Call ComCtlsRemoveSubclass(CoolBarHandle)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
 Call DestroyToolTip
+Call DetachChildren
 ShowWindow CoolBarHandle, SW_HIDE
 SetParent CoolBarHandle, NULL_PTR
 DestroyWindow CoolBarHandle
@@ -2866,6 +2867,30 @@ If CoolBarHandle <> NULL_PTR And Handle <> NULL_PTR Then
                 .hWndChild = INVALID_HANDLE_VALUE
                 SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
                 SetParent Handle, UserControl.hWnd
+            End If
+        Next i
+        End With
+    End If
+End If
+End Sub
+
+Private Sub DetachChildren()
+If CoolBarHandle <> NULL_PTR Then
+    Dim Count As Long
+    Count = CLng(SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&))
+    If Count > 0 Then
+        Dim i As Long, PrevWndChild As LongPtr
+        Dim RBBI As REBARBANDINFO
+        With RBBI
+        .cbSize = LenB(RBBI)
+        .fMask = RBBIM_CHILD
+        For i = 0 To Count - 1
+            SendMessage CoolBarHandle, RB_GETBANDINFO, i, ByVal VarPtr(RBBI)
+            If .hWndChild <> NULL_PTR Then
+                PrevWndChild = .hWndChild
+                .hWndChild = NULL_PTR
+                SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
+                If Not PrevWndChild = INVALID_HANDLE_VALUE Then SetParent PrevWndChild, UserControl.hWnd
             End If
         Next i
         End With
