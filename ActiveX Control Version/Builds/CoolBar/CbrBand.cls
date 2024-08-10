@@ -51,7 +51,7 @@ Friend Sub FInit(ByVal Object As CoolBar, ByVal Key As String, ByVal Child As Va
 ShadowObjectPointer = ObjPtr(Object)
 PropKey = Key
 If IsObject(Child) Then
-    If Not Child Is Nothing Then PropChild = ObjPtr(Child)
+    PropChild = ObjPtr(Child)
 ElseIf VarType(Child) = vbString Then
     PropChild = Child
 End If

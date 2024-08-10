@@ -14,7 +14,7 @@ Begin VB.UserControl CoolBar
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   160
    ToolboxBitmap   =   "CoolBar.ctx":0059
-   Begin VB.Timer TimerInitChilds 
+   Begin VB.Timer TimerInitChildren 
       Enabled         =   0   'False
       Interval        =   1
       Left            =   0
@@ -733,7 +733,7 @@ PropVerticalGripper = .ReadProperty("VerticalGripper", False)
 PropShowTips = .ReadProperty("ShowTips", False)
 PropDoubleBuffer = .ReadProperty("DoubleBuffer", True)
 End With
-Dim InitChilds As Boolean
+Dim InitChildren As Boolean
 With New PropertyBag
 On Error Resume Next
 .Contents = PropBag.ReadProperty("InitBands", 0)
@@ -749,7 +749,7 @@ If InitBandsCount > 0 Then
         InitBands(i).Key = VarToStr(.ReadProperty("InitBandsKey" & CStr(i), vbNullString))
         InitBands(i).Tag = VarToStr(.ReadProperty("InitBandsTag" & CStr(i), vbNullString))
         InitBands(i).ChildName = VarToStr(.ReadProperty("InitBandsChildName" & CStr(i), vbNullString))
-        If Not InitBands(i).ChildName = vbNullString Then InitChilds = True
+        If Not InitBands(i).ChildName = vbNullString Then InitChildren = True
         InitBands(i).Style = .ReadProperty("InitBandsStyle" & CStr(i), CbrBandStyleNormal)
         VarValue = .ReadProperty("InitBandsImage" & CStr(i), 0)
         If VarType(VarValue) = vbArray + vbByte Then
@@ -811,7 +811,7 @@ If InitBandsCount > 0 And CoolBarHandle <> NULL_PTR Then
     PropImageListInit = ImageListInit
 End If
 If Not PropImageListName = "(None)" Then TimerImageList.Enabled = True
-If InitChilds = True Then TimerInitChilds.Enabled = True
+If InitChildren = True Then TimerInitChildren.Enabled = True
 End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
@@ -1005,7 +1005,7 @@ End If
 TimerImageList.Enabled = False
 End Sub
 
-Private Sub TimerInitChilds_Timer()
+Private Sub TimerInitChildren_Timer()
 Dim Count As Long
 Count = Me.Bands.Count
 If Count > 0 Then
@@ -1031,7 +1031,7 @@ If Count > 0 Then
         Call UserControl_Resize
     End If
 End If
-TimerInitChilds.Enabled = False
+TimerInitChildren.Enabled = False
 End Sub
 
 Public Property Get ControlsEnum() As VBRUN.ParentControls
