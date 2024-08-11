@@ -208,6 +208,7 @@ Private Declare PtrSafe Function GetClientRect Lib "user32" (ByVal hWnd As LongP
 Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal nCmdShow As Long) As Long
 Private Declare PtrSafe Function MoveWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
+Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function SetParent Lib "user32" (ByVal hWndChild As LongPtr, ByVal hWndNewParent As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
@@ -218,6 +219,7 @@ Private Declare PtrSafe Function GetFocus Lib "user32" () As LongPtr
 Private Declare PtrSafe Function BeginPaint Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPaint As PAINTSTRUCT) As LongPtr
 Private Declare PtrSafe Function EndPaint Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare PtrSafe Function WindowFromDC Lib "user32" (ByVal hDC As LongPtr) As LongPtr
+Private Declare PtrSafe Function SetLayout Lib "gdi32" (ByVal hDC As LongPtr, ByVal dwLayout As Long) As Long
 Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As LongPtr) As LongPtr
 Private Declare PtrSafe Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As LongPtr, ByVal nWidth As Long, ByVal nHeight As Long) As LongPtr
 Private Declare PtrSafe Function DeleteDC Lib "gdi32" (ByVal hDC As LongPtr) As Long
@@ -248,6 +250,7 @@ Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef l
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
 Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
@@ -258,6 +261,7 @@ Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function BeginPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare Function EndPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare Function WindowFromDC Lib "user32" (ByVal hDC As Long) As Long
+Private Declare Function SetLayout Lib "gdi32" (ByVal hDC As Long, ByVal dwLayout As Long) As Long
 Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
 Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
@@ -278,12 +282,14 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 #End If
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
-Private Const GWL_STYLE As Long = (-16)
 #If VBA7 Then
 Private Const HWND_DESKTOP As LongPtr = &H0
 #Else
 Private Const HWND_DESKTOP As Long = &H0
 #End If
+Private Const GWL_STYLE As Long = (-16)
+Private Const GWL_EXSTYLE As Long = (-20)
+Private Const LAYOUT_RTL As Long = &H1
 Private Const COLOR_BTNFACE As Long = 15
 Private Const RGN_OR As Long = 2
 Private Const RGN_DIFF As Long = 4
@@ -2191,14 +2197,17 @@ hDCBmp = CreateCompatibleDC(hDC)
 If hDCBmp <> NULL_PTR Then
     hBmp = CreateCompatibleBitmap(hDC, .ScaleWidth, .ScaleHeight)
     If hBmp <> NULL_PTR Then
+        Dim hWndParent As LongPtr
+        hWndParent = GetParent(.hWnd)
+        If (GetWindowLong(hWndParent, GWL_EXSTYLE) And WS_EX_LAYOUTRTL) = WS_EX_LAYOUTRTL Then SetLayout hDCBmp, LAYOUT_RTL
         hBmpOld = SelectObject(hDCBmp, hBmp)
         Dim WndRect As RECT, P As POINTAPI
         GetWindowRect .hWnd, WndRect
-        MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
+        MapWindowPoints HWND_DESKTOP, hWndParent, WndRect, 2
         P.X = WndRect.Left
         P.Y = WndRect.Top
         SetViewportOrgEx hDCBmp, -P.X, -P.Y, P
-        SendMessage GetParent(.hWnd), WM_PAINT, hDCBmp, ByVal 0&
+        SendMessage hWndParent, WM_PAINT, hDCBmp, ByVal 0&
         SetViewportOrgEx hDCBmp, P.X, P.Y, P
         CreateTransparentBrush = CreatePatternBrush(hBmp)
         SelectObject hDCBmp, hBmpOld

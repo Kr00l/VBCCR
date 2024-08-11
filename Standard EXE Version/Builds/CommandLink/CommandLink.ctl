@@ -144,6 +144,7 @@ Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
 Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
 Private Declare PtrSafe Function SetBkMode Lib "gdi32" (ByVal hDC As LongPtr, ByVal nBkMode As Long) As Long
+Private Declare PtrSafe Function SetLayout Lib "gdi32" (ByVal hDC As LongPtr, ByVal dwLayout As Long) As Long
 Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As LongPtr) As LongPtr
 Private Declare PtrSafe Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As LongPtr, ByVal nWidth As Long, ByVal nHeight As Long) As LongPtr
 Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
@@ -176,6 +177,7 @@ Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fE
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
+Private Declare Function SetLayout Lib "gdi32" (ByVal hDC As Long, ByVal dwLayout As Long) As Long
 Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
@@ -200,6 +202,8 @@ Private Const FVIRTKEY As Long = &H1
 Private Const FSHIFT As Long = &H4
 Private Const FALT As Long = &H10
 Private Const GWL_STYLE As Long = (-16)
+Private Const GWL_EXSTYLE As Long = (-20)
+Private Const LAYOUT_RTL As Long = &H1
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
@@ -1597,14 +1601,17 @@ Select Case wMsg
                 If hDCBmp <> NULL_PTR Then
                     hBmp = CreateCompatibleBitmap(wParam, .ScaleWidth, .ScaleHeight)
                     If hBmp <> NULL_PTR Then
+                        Dim hWndParent As LongPtr
+                        hWndParent = GetParent(.hWnd)
+                        If (GetWindowLong(hWndParent, GWL_EXSTYLE) And WS_EX_LAYOUTRTL) = WS_EX_LAYOUTRTL Then SetLayout hDCBmp, LAYOUT_RTL
                         hBmpOld = SelectObject(hDCBmp, hBmp)
                         Dim WndRect As RECT, P As POINTAPI
                         GetWindowRect .hWnd, WndRect
-                        MapWindowPoints HWND_DESKTOP, GetParent(.hWnd), WndRect, 2
+                        MapWindowPoints HWND_DESKTOP, hWndParent, WndRect, 2
                         P.X = WndRect.Left
                         P.Y = WndRect.Top
                         SetViewportOrgEx hDCBmp, -P.X, -P.Y, P
-                        SendMessage GetParent(.hWnd), WM_PAINT, hDCBmp, ByVal 0&
+                        SendMessage hWndParent, WM_PAINT, hDCBmp, ByVal 0&
                         SetViewportOrgEx hDCBmp, P.X, P.Y, P
                         CommandLinkTransparentBrush = CreatePatternBrush(hBmp)
                         SelectObject hDCBmp, hBmpOld
