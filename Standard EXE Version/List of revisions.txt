@@ -1,5 +1,8 @@
 List of revisions:
 
+11-Aug-2024
+- All Transparent properties improved to use LAYOUT_RTL on the memory DC, if applicable. (parent)
+
 09-Aug-2024
 - Bugfix in the VirtualItemCount property to add flag LVSICF_NOSCROLL. (same behavior as in non-virtual mode)
   That flag was meant to fix LVM_SETITEMCOUNT as of IE 3.0.
