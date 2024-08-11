@@ -1295,19 +1295,26 @@ Public Sub ComCtlsCdlFRReleaseHook(ByVal hDlg As LongPtr)
 #Else
 Public Sub ComCtlsCdlFRReleaseHook(ByVal hDlg As Long)
 #End If
-CdlFRDialogCount = CdlFRDialogCount - 1
-If CdlFRHookHandle <> NULL_PTR And CdlFRDialogCount = 0 Then
-    UnhookWindowsHookEx CdlFRHookHandle
-    CdlFRHookHandle = NULL_PTR
-    Erase CdlFRDialogHandle()
-Else
-    If CdlFRDialogCount > 0 Then
-        Dim i As Long
-        For i = 0 To CdlFRDialogCount
-            If CdlFRDialogHandle(i) = hDlg And i < CdlFRDialogCount Then
+Dim Index As Long, i As Long
+Index = -1
+For i = 0 To CdlFRDialogCount - 1
+    If CdlFRDialogHandle(i) = hDlg Then
+        Index = i
+        Exit For
+    End If
+Next i
+If Index > -1 Then
+    CdlFRDialogCount = CdlFRDialogCount - 1
+    If CdlFRHookHandle <> NULL_PTR And CdlFRDialogCount = 0 Then
+        UnhookWindowsHookEx CdlFRHookHandle
+        CdlFRHookHandle = NULL_PTR
+        Erase CdlFRDialogHandle()
+    Else
+        If Index < CdlFRDialogCount Then
+            For i = Index To CdlFRDialogCount - 1
                 CdlFRDialogHandle(i) = CdlFRDialogHandle(i + 1)
-            End If
-        Next i
+            Next i
+        End If
         ReDim Preserve CdlFRDialogHandle(0 To CdlFRDialogCount - 1) ' As LongPtr
     End If
 End If
