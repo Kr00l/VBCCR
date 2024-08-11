@@ -1017,15 +1017,20 @@ If Count > 0 Then
             End With
         Next i
     Else
+        Dim PrevWndChild As LongPtr
         Dim RBBI As REBARBANDINFO
         With RBBI
         .cbSize = LenB(RBBI)
         .fMask = RBBIM_CHILD
         For i = 0 To Count - 1
-            .hWndChild = NULL_PTR
-            SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
-            .hWndChild = INVALID_HANDLE_VALUE
-            SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
+            SendMessage CoolBarHandle, RB_GETBANDINFO, i, ByVal VarPtr(RBBI)
+            If .hWndChild <> NULL_PTR Then
+                PrevWndChild = .hWndChild
+                .hWndChild = NULL_PTR
+                SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
+                .hWndChild = PrevWndChild
+                SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
+            End If
         Next i
         End With
         Call UserControl_Resize
@@ -1350,22 +1355,23 @@ If PropRightToLeft = True And PropRightToLeftLayout = True Then dwMask = WS_EX_L
 If CoolBarDesignMode = False Then Call ComCtlsSetRightToLeft(UserControl.hWnd, dwMask)
 If CoolBarHandle <> NULL_PTR Then
     Call ComCtlsSetRightToLeft(CoolBarHandle, dwMask)
-    If CoolBarDesignMode = False Then
-        Dim Band As CbrBand, Child As Object
-        For Each Band In Me.Bands
-            Set Child = Band.Child
-            If Not Child Is Nothing Then Child.Move Child.Left
-        Next Band
-    Else
-        Dim RBBI As REBARBANDINFO, i As Long
+    Dim Count As Long
+    Count = CLng(SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&))
+    If Count > 0 Then
+        Dim i As Long, PrevWndChild As LongPtr
+        Dim RBBI As REBARBANDINFO
         With RBBI
         .cbSize = LenB(RBBI)
         .fMask = RBBIM_CHILD
-        For i = 1 To CLng(SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&))
-            .hWndChild = NULL_PTR
-            SendMessage CoolBarHandle, RB_SETBANDINFO, i - 1, ByVal VarPtr(RBBI)
-            .hWndChild = INVALID_HANDLE_VALUE
-            SendMessage CoolBarHandle, RB_SETBANDINFO, i - 1, ByVal VarPtr(RBBI)
+        For i = 0 To Count - 1
+            SendMessage CoolBarHandle, RB_GETBANDINFO, i, ByVal VarPtr(RBBI)
+            If .hWndChild <> NULL_PTR Then
+                PrevWndChild = .hWndChild
+                .hWndChild = NULL_PTR
+                SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
+                .hWndChild = PrevWndChild
+                SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
+            End If
         Next i
         End With
     End If
