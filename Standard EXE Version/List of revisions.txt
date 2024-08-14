@@ -1,5 +1,8 @@
 List of revisions:
 
+14-Aug-2024
+- Internal improvement in the CoolBar control.
+
 11-Aug-2024
 - All Transparent properties improved to use LAYOUT_RTL on the memory DC, if applicable. (parent)
 
