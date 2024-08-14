@@ -379,13 +379,12 @@ Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_E
 Private Const SWP_NOMOVE As Long = &H2
 Private Const SWP_NOOWNERZORDER As Long = &H200
 Private Const SWP_NOZORDER As Long = &H4
+Private Const GWLP_WNDPROC As Long = (-4)
 Private Const GWL_STYLE As Long = (-16)
 #If VBA7 Then
 Private Const LPSTR_TEXTCALLBACK As LongPtr = (-1)
-private Const INVALID_HANDLE_VALUE As LongPtr = (-1)
 #Else
 Private Const LPSTR_TEXTCALLBACK As Long = (-1)
-Private Const INVALID_HANDLE_VALUE As Long = (-1)
 #End If
 Private Const TA_RTLREADING As Long = &H100
 Private Const ILD_TRANSPARENT As Long = 1
@@ -397,6 +396,7 @@ Private Const DT_VCENTER As Long = &H4
 Private Const DT_END_ELLIPSIS As Long = &H8000&
 Private Const WS_EX_TOOLWINDOW As Long = &H80
 Private Const WS_EX_TOPMOST As Long = &H8
+Private Const WS_EX_TRANSPARENT As Long = &H20
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_CLIPCHILDREN As Long = &H2000000
@@ -577,6 +577,8 @@ Private CoolBarToolTipIndex As Long
 Private CoolBarDoubleBufferEraseBkgDC As LongPtr
 Private CoolBarAlignable As Boolean
 Private CoolBarTheme As LongPtr
+Private CoolBarPlaceholderWindowsCount As Long
+Private CoolBarPlaceholderWindows() As LongPtr
 Private CoolBarImageListObjectPointer As LongPtr, CoolBarImageListHandle As LongPtr
 Private DispIdBorderStyle As Long
 Private DispIdImageList As Long, ImageListArray() As String
@@ -1856,7 +1858,7 @@ If Not Child Is Nothing Then
         Err.Raise 380
     End If
 Else
-    .hWndChild = INVALID_HANDLE_VALUE
+    .hWndChild = CreatePlaceholderWindow()
 End If
 .CXMinChild = 0
 .CYMinChild = (24 * PixelsPerDIP_Y())
@@ -1986,12 +1988,16 @@ If CoolBarHandle <> NULL_PTR Then
                 Err.Raise 380
             End If
         Else
-            .hWndChild = INVALID_HANDLE_VALUE
+            .hWndChild = CreatePlaceholderWindow()
             SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
         End If
-        If PrevWndChild <> NULL_PTR And PrevWndChild <> .hWndChild And Not PrevWndChild = INVALID_HANDLE_VALUE Then
-            SetParent PrevWndChild, UserControl.hWnd
-            ShowWindow PrevWndChild, SW_SHOW
+        If PrevWndChild <> NULL_PTR And PrevWndChild <> .hWndChild Then
+            If IsPlaceholderWindow(PrevWndChild) = False Then
+                SetParent PrevWndChild, UserControl.hWnd
+                ShowWindow PrevWndChild, SW_SHOW
+            Else
+                Call DestroyPlaceholderWindow(PrevWndChild)
+            End If
         End If
         End With
         Call UserControl_Resize
@@ -2864,18 +2870,111 @@ If CoolBarHandle <> NULL_PTR And Handle <> NULL_PTR Then
         .fMask = RBBIM_CHILD Or RBBIM_LPARAM
         For i = 0 To Count - 1
             SendMessage CoolBarHandle, RB_GETBANDINFO, i, ByVal VarPtr(RBBI)
-            If .hWndChild = Handle And Not .hWndChild = INVALID_HANDLE_VALUE Then
+            If .hWndChild = Handle Then
                 If .lParam <> 0 Then
                     Set Band = PtrToObj(.lParam)
                     Band.FInit Me, Band.Key, Nothing, Band.Image, Band.ImageIndex
                 End If
                 .fMask = RBBIM_CHILD
-                .hWndChild = INVALID_HANDLE_VALUE
+                .hWndChild = CreatePlaceholderWindow()
                 SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
                 SetParent Handle, UserControl.hWnd
             End If
         Next i
         End With
+    End If
+End If
+End Sub
+
+Private Function HasWndChild(ByVal Handle As LongPtr) As Boolean
+If CoolBarHandle <> NULL_PTR And Handle <> NULL_PTR Then
+    Dim Count As Long
+    Count = CLng(SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&))
+    If Count > 0 Then
+        Dim i As Long
+        Dim RBBI As REBARBANDINFO
+        With RBBI
+        .cbSize = LenB(RBBI)
+        .fMask = RBBIM_CHILD
+        For i = 0 To Count - 1
+            SendMessage CoolBarHandle, RB_GETBANDINFO, i, ByVal VarPtr(RBBI)
+            If .hWndChild = Handle Then
+                HasWndChild = True
+                Exit For
+            End If
+        Next i
+        End With
+    End If
+End If
+End Function
+
+Private Function IsPlaceholderWindow(ByVal Handle As LongPtr) As Boolean
+If Handle <> NULL_PTR Then
+    Dim i As Long
+    For i = 0 To CoolBarPlaceholderWindowsCount - 1
+        If CoolBarPlaceholderWindows(i) = Handle Then
+            IsPlaceholderWindow = True
+            Exit For
+        End If
+    Next i
+End If
+End Function
+
+Private Sub CheckPlaceholderWindows()
+If CoolBarPlaceholderWindowsCount > 0 Then
+    Dim Arr() As LongPtr, Count As Long, i As Long
+    For i = 0 To CoolBarPlaceholderWindowsCount - 1
+        If HasWndChild(CoolBarPlaceholderWindows(i)) = False Then
+            ReDim Preserve Arr(0 To Count) ' As LongPtr
+            Arr(Count) = CoolBarPlaceholderWindows(i)
+            Count = Count + 1
+        End If
+    Next i
+    For i = 0 To Count - 1
+        Call DestroyPlaceholderWindow(Arr(i))
+    Next i
+End If
+End Sub
+
+Private Function CreatePlaceholderWindow() As LongPtr
+If CoolBarHandle <> NULL_PTR Then
+    Dim dwStyle As Long, dwExStyle As Long, hWndPlaceholder As LongPtr
+    dwStyle = WS_CHILD Or WS_CLIPCHILDREN Or WS_CLIPSIBLINGS
+    dwExStyle = WS_EX_TRANSPARENT
+    hWndPlaceholder = CreateWindowEx(dwExStyle, StrPtr("Static"), NULL_PTR, dwStyle, 0, 0, 0, 0, CoolBarHandle, 0, App.hInstance, ByVal NULL_PTR)
+    If hWndPlaceholder <> NULL_PTR Then
+        SetWindowLong hWndPlaceholder, GWLP_WNDPROC, AddressOf ComCtlsCbrPlaceholderWindowProc
+        ReDim Preserve CoolBarPlaceholderWindows(0 To CoolBarPlaceholderWindowsCount) ' As LongPtr
+        CoolBarPlaceholderWindows(CoolBarPlaceholderWindowsCount) = hWndPlaceholder
+        CoolBarPlaceholderWindowsCount = CoolBarPlaceholderWindowsCount + 1
+        CreatePlaceholderWindow = hWndPlaceholder
+    End If
+End If
+End Function
+
+Private Sub DestroyPlaceholderWindow(ByVal Handle As LongPtr)
+If Handle <> NULL_PTR Then
+    Dim Index As Long, i As Long
+    Index = -1
+    For i = 0 To CoolBarPlaceholderWindowsCount - 1
+        If CoolBarPlaceholderWindows(i) = Handle Then
+            Index = i
+            Exit For
+        End If
+    Next i
+    If Index > -1 Then
+        CoolBarPlaceholderWindowsCount = CoolBarPlaceholderWindowsCount - 1
+        If CoolBarPlaceholderWindowsCount > 0 Then
+            If Index < CoolBarPlaceholderWindowsCount Then
+                For i = Index To CoolBarPlaceholderWindowsCount - 1
+                    CoolBarPlaceholderWindows(i) = CoolBarPlaceholderWindows(i + 1)
+                Next i
+            End If
+            ReDim Preserve CoolBarPlaceholderWindows(0 To CoolBarPlaceholderWindowsCount - 1) ' As LongPtr
+        Else
+            Erase CoolBarPlaceholderWindows()
+        End If
+        DestroyWindow Handle
     End If
 End If
 End Sub
@@ -2896,7 +2995,11 @@ If CoolBarHandle <> NULL_PTR Then
                 PrevWndChild = .hWndChild
                 .hWndChild = NULL_PTR
                 SendMessage CoolBarHandle, RB_SETBANDINFO, i, ByVal VarPtr(RBBI)
-                If Not PrevWndChild = INVALID_HANDLE_VALUE Then SetParent PrevWndChild, UserControl.hWnd
+                If IsPlaceholderWindow(PrevWndChild) = False Then
+                    SetParent PrevWndChild, UserControl.hWnd
+                Else
+                    Call DestroyPlaceholderWindow(PrevWndChild)
+                End If
             End If
         Next i
         End With
@@ -3205,7 +3308,7 @@ End Function
 Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_NOTIFY
-        Dim NM As NMHDR, NMRB As NMREBAR
+        Dim NM As NMHDR
         Dim RBBI As REBARBANDINFO, Cancel As Boolean, Band As CbrBand
         CopyMemory NM, ByVal lParam, LenB(NM)
         If NM.hWndFrom = CoolBarHandle Then
@@ -3410,30 +3513,31 @@ Select Case wMsg
                         End If
                     End If
                 Case RBN_DELETINGBAND
+                    Dim NMRB As NMREBAR
                     CopyMemory NMRB, ByVal lParam, LenB(NMRB)
                     If NMRB.uBand > -1 Then
                         With RBBI
                         .cbSize = LenB(RBBI)
                         .fMask = RBBIM_CHILD
                         SendMessage CoolBarHandle, RB_GETBANDINFO, NMRB.uBand, ByVal VarPtr(RBBI)
-                        If .hWndChild <> NULL_PTR And Not .hWndChild = INVALID_HANDLE_VALUE Then SetParent .hWndChild, UserControl.hWnd
+                        If .hWndChild <> NULL_PTR Then
+                            If IsPlaceholderWindow(.hWndChild) = False Then SetParent .hWndChild, UserControl.hWnd
+                        End If
                         End With
                     End If
                 Case RBN_DELETEDBAND
-                    CopyMemory NMRB, ByVal lParam, LenB(NMRB)
-                    If NMRB.uBand = 0 Then
-                        If SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&) > 0 Then
-                            With RBBI
-                            .cbSize = LenB(RBBI)
-                            .fMask = RBBIM_STYLE
-                            SendMessage CoolBarHandle, RB_GETBANDINFO, 0, ByVal VarPtr(RBBI)
-                            If (.fStyle And RBBS_BREAK) = RBBS_BREAK Then
-                                .fStyle = .fStyle And Not RBBS_BREAK
-                                SendMessage CoolBarHandle, RB_SETBANDINFO, 0, ByVal VarPtr(RBBI)
-                            End If
-                            End With
+                    If SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&) > 0 Then
+                        With RBBI
+                        .cbSize = LenB(RBBI)
+                        .fMask = RBBIM_STYLE
+                        SendMessage CoolBarHandle, RB_GETBANDINFO, 0, ByVal VarPtr(RBBI)
+                        If (.fStyle And RBBS_BREAK) = RBBS_BREAK Then
+                            .fStyle = .fStyle And Not RBBS_BREAK
+                            SendMessage CoolBarHandle, RB_SETBANDINFO, 0, ByVal VarPtr(RBBI)
                         End If
+                        End With
                     End If
+                    Call CheckPlaceholderWindows
                 Case RBN_MINMAX
                     RaiseEvent MinMax(Cancel)
                     If Cancel = True Then
@@ -3550,21 +3654,18 @@ Select Case wMsg
                         End If
                     End If
                 Case RBN_DELETEDBAND
-                    Dim NMRB As NMREBAR
-                    CopyMemory NMRB, ByVal lParam, LenB(NMRB)
-                    If NMRB.uBand = 0 Then
-                        If SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&) > 0 Then
-                            With RBBI
-                            .cbSize = LenB(RBBI)
-                            .fMask = RBBIM_STYLE
-                            SendMessage CoolBarHandle, RB_GETBANDINFO, 0, ByVal VarPtr(RBBI)
-                            If (.fStyle And RBBS_BREAK) = RBBS_BREAK Then
-                                .fStyle = .fStyle And Not RBBS_BREAK
-                                SendMessage CoolBarHandle, RB_SETBANDINFO, 0, ByVal VarPtr(RBBI)
-                            End If
-                            End With
+                    If SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&) > 0 Then
+                        With RBBI
+                        .cbSize = LenB(RBBI)
+                        .fMask = RBBIM_STYLE
+                        SendMessage CoolBarHandle, RB_GETBANDINFO, 0, ByVal VarPtr(RBBI)
+                        If (.fStyle And RBBS_BREAK) = RBBS_BREAK Then
+                            .fStyle = .fStyle And Not RBBS_BREAK
+                            SendMessage CoolBarHandle, RB_SETBANDINFO, 0, ByVal VarPtr(RBBI)
                         End If
+                        End With
                     End If
+                    Call CheckPlaceholderWindows
             End Select
         End If
 End Select
