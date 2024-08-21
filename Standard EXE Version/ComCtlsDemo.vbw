@@ -1,4 +1,4 @@
-MainForm = 80, 120, 1129, 939, C, 135, 71, 911, 799, C
+MainForm = 80, 120, 1129, 939, C, 139, 88, 915, 816, C
 PagerForm = 25, 25, 932, 818, C, 25, 25, 646, 642, C
 RichTextBoxForm = 369, 195, 1330, 897, C, 50, 50, 1247, 732, C
 VirtualControlsForm = 77, 125, 1289, 798, C, 22, 29, 1175, 801, C
@@ -7,7 +7,7 @@ Startup = 125, 144, 1066, 820, C
 VisualStyles = 107, 183, 1157, 911, C
 CommonDialog = 179, 82, 1363, 937, C
 ISubclass = 25, 25, 655, 642, C
-ComCtlsBase = 172, 83, 1258, 898, C
+ComCtlsBase = 152, 73, 1238, 888, C
 VTableHandle = 23, 50, 1103, 789, C
 Animation = 71, 30, 1087, 735, C, 200, 200, 821, 817, C
 PPAnimationGeneral = 0, 0, 0, 0, C, 225, 225, 846, 842, C

@@ -1,5 +1,8 @@
 List of revisions:
 
+21-Aug-2024
+- Internal improvement in the ToolBar control.
+
 14-Aug-2024
 - Internal improvement in the CoolBar control.
 
