@@ -1248,6 +1248,7 @@ If PropTransparent = True Then
         DeleteObject ToolBarTransparentBrush
         ToolBarTransparentBrush = NULL_PTR
     End If
+    UserControl.Refresh
     RedrawWindow ToolBarHandle, NULL_PTR, NULL_PTR, RDW_FRAME Or RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
 Else
     MoveWindow ToolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
@@ -2673,7 +2674,7 @@ With TBB
 .IDCommand = NextButtonID()
 NewButton.ID = .IDCommand
 .iBitmap = ImageIndex - 1
-.iString = StrPtr(Caption)
+If Not Caption = vbNullString Then .iString = StrPtr(Caption) Else .iString = NULL_PTR
 .fsState = TBSTATE_ENABLED
 Select Case Style
     Case TbrButtonStyleDefault
@@ -2747,7 +2748,7 @@ If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then
         Call ResetCustomizeButtons
         Dim NewButton As ShadowButtonStruct
-        NewButton = GetShadowButton(ID)
+        Call GetShadowButton(ID, NewButton)
         NewButton.Caption = Value
         Call ModifyButton(ID, NewButton)
         Call UserControl_Resize
@@ -2755,7 +2756,7 @@ If ToolBarHandle <> NULL_PTR Then
 End If
 End Property
 
-Friend Property Get FButtonStyle(ByVal ID As Long, ByVal ImageIndex As Long) As TbrButtonStyleConstants
+Friend Property Get FButtonStyle(ByVal ID As Long, ByVal Caption As String, ByVal ImageIndex As Long) As TbrButtonStyleConstants
 If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then
         Dim TBBI As TBBUTTONINFO
@@ -2802,12 +2803,12 @@ If ToolBarHandle <> NULL_PTR Then
 End If
 End Property
 
-Friend Property Let FButtonStyle(ByVal ID As Long, ByVal ImageIndex As Long, ByVal Value As TbrButtonStyleConstants)
+Friend Property Let FButtonStyle(ByVal ID As Long, ByVal Caption As String, ByVal ImageIndex As Long, ByVal Value As TbrButtonStyleConstants)
 If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then
         Call ResetCustomizeButtons
         Dim OldButton As ShadowButtonStruct, NewButton As ShadowButtonStruct
-        OldButton = GetShadowButton(ID)
+        Call GetShadowButton(ID, OldButton)
         With NewButton
         LSet .TBB = OldButton.TBB
         With .TBB
@@ -2829,7 +2830,7 @@ If ToolBarHandle <> NULL_PTR Then
             Case TbrButtonStyleSeparator
                 .fsStyle = .fsStyle Or BTNS_SEP
                 .iBitmap = 0
-                .iString = 0
+                .iString = NULL_PTR
             Case TbrButtonStyleDropDown
                 .fsStyle = .fsStyle Or BTNS_DROPDOWN
             Case TbrButtonStyleWholeDropDown
@@ -2838,7 +2839,7 @@ If ToolBarHandle <> NULL_PTR Then
                 Err.Raise 380
         End Select
         End With
-        .Caption = GetButtonText(ID)
+        .Caption = Caption
         .CX = OldButton.CX
         End With
         Call ModifyButton(ID, NewButton)
@@ -3084,7 +3085,7 @@ Friend Property Let FButtonNoImage(ByVal ID As Long, ByVal ImageIndex As Long, B
 If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then
         Dim NewButton As ShadowButtonStruct
-        NewButton = GetShadowButton(ID)
+        Call GetShadowButton(ID, NewButton)
         If (NewButton.TBB.fsStyle And BTNS_SEP) = 0 Then
             With NewButton
             .TBB.iBitmap = IIf(Value, I_IMAGENONE, ImageIndex - 1)
@@ -3138,8 +3139,8 @@ Friend Property Let FButtonNoPrefix(ByVal ID As Long, ByVal Value As Boolean)
 If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then
         Dim NewButton As ShadowButtonStruct
+        Call GetShadowButton(ID, NewButton)
         With NewButton
-        NewButton = GetShadowButton(ID)
         If Value = True Then
             If Not (.TBB.fsStyle And BTNS_NOPREFIX) = BTNS_NOPREFIX Then .TBB.fsStyle = .TBB.fsStyle Or BTNS_NOPREFIX
         Else
@@ -3192,7 +3193,7 @@ Friend Property Let FButtonAutoSize(ByVal ID As Long, ByVal Value As Boolean)
 If ToolBarHandle <> NULL_PTR Then
     If IsButtonAvailable(ID) = True Then
         Dim NewButton As ShadowButtonStruct
-        NewButton = GetShadowButton(ID)
+        Call GetShadowButton(ID, NewButton)
         With NewButton
         If Value = True Then
             If Not (.TBB.fsStyle And BTNS_AUTOSIZE) = BTNS_AUTOSIZE Then .TBB.fsStyle = .TBB.fsStyle Or BTNS_AUTOSIZE
@@ -3893,7 +3894,7 @@ If ToolBarHandle <> NULL_PTR Then
     ReDim TBB(0 To (ToolBarCustomizeButtonsCount - 1)) As TBBUTTON
     For i = 1 To ToolBarCustomizeButtonsCount
         LSet TBB(i - 1) = ToolBarCustomizeButtons(i).TBB
-        TBB(i - 1).iString = StrPtr(ToolBarCustomizeButtons(i).Caption)
+        If Not ToolBarCustomizeButtons(i).Caption = vbNullString Then TBB(i - 1).iString = StrPtr(ToolBarCustomizeButtons(i).Caption) Else TBB(i - 1).iString = NULL_PTR
     Next i
     SendMessage ToolBarHandle, TB_ADDBUTTONS, ToolBarCustomizeButtonsCount, ByVal VarPtr(TBB(0))
     Dim TBBI As TBBUTTONINFO
@@ -3919,7 +3920,7 @@ If ToolBarHandle <> NULL_PTR Then
     If ToolBarCustomizeButtonsCount > 0 Then
         ReDim ToolBarCustomizeButtons(1 To ToolBarCustomizeButtonsCount) As ShadowButtonStruct
         Dim i As Long
-        For i = 1 To ToolBarCustomizeButtonsCount: ToolBarCustomizeButtons(i) = GetShadowButton(GetButtonID(i)): Next i
+        For i = 1 To ToolBarCustomizeButtonsCount: Call GetShadowButton(GetButtonID(i), ToolBarCustomizeButtons(i)): Next i
     End If
 End If
 End Sub
@@ -3929,18 +3930,21 @@ If ToolBarHandle <> NULL_PTR Then
     Dim Index As Long
     Index = CLng(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&)) + 1
     If Index > 0 Then
-        Dim Count As Long, i As Long, NoText As Boolean
+        Dim Count As Long, i As Long, HasText As Boolean
         Count = CLng(SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&))
-        NoText = True
         For i = 1 To Count
-            If Not GetButtonText(GetButtonID(i)) = vbNullString Then NoText = False
+            If i <> Index Then
+                If Not GetButtonText(GetButtonID(i)) = vbNullString Then HasText = True
+            Else
+                If Not NewButton.Caption = vbNullString Then HasText = True
+            End If
         Next i
-        If NoText = False Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal MakeDWord(PropButtonWidth + 10, PropButtonHeight + 10)
+        If HasText = True Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
         SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
         With NewButton
         Dim TBB As TBBUTTON
         LSet TBB = .TBB
-        TBB.iString = StrPtr(.Caption)
+        If Not .Caption = vbNullString Then TBB.iString = StrPtr(.Caption) Else TBB.iString = NULL_PTR
         SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
         If .CX > 0 And (.TBB.fsStyle And BTNS_AUTOSIZE) = 0 Then
             Dim TBBI As TBBUTTONINFO
@@ -3965,20 +3969,19 @@ If ToolBarHandle <> NULL_PTR Then
     If Count > 0 Then
         Dim ReButtons() As ShadowButtonStruct
         ReDim ReButtons(1 To Count) As ShadowButtonStruct
-        Dim i As Long, NoText As Boolean
-        NoText = True
+        Dim i As Long, HasText As Boolean
         For i = 1 To Count
-            ReButtons(i) = GetShadowButton(GetButtonID(i))
-            If Not ReButtons(i).Caption = vbNullString Then NoText = False
+            Call GetShadowButton(GetButtonID(i), ReButtons(i))
+            If Not ReButtons(i).Caption = vbNullString Then HasText = True
         Next i
-        If NoText = False Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal MakeDWord(PropButtonWidth + 10, PropButtonHeight + 10)
+        If HasText = True Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
         Do While SendMessage(ToolBarHandle, TB_DELETEBUTTON, 0, ByVal 0&) <> 0: Loop
         Dim TBB() As TBBUTTON
         ReDim TBB(0 To (Count - 1)) As TBBUTTON
         For i = 0 To (Count - 1)
             With ReButtons(i + 1)
             LSet TBB(i) = .TBB
-            TBB(i).iString = StrPtr(.Caption)
+            If Not .Caption = vbNullString Then TBB(i).iString = StrPtr(.Caption) Else TBB(i).iString = NULL_PTR
             End With
         Next i
         SendMessage ToolBarHandle, TB_ADDBUTTONS, Count, ByVal VarPtr(TBB(0))
@@ -4023,7 +4026,7 @@ End If
 End Function
 
 Private Function GetButtonText(ByVal ID As Long) As String
-If ToolBarHandle <> NULL_PTR Then
+If ToolBarHandle <> NULL_PTR And IsButtonAvailable(ID) = True Then
     Dim Length As Long
     Length = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONTEXT, ID, ByVal 0&))
     If Length > 0 Then
@@ -4037,12 +4040,12 @@ Private Function IsButtonAvailable(ByVal ID As Long) As Boolean
 If ToolBarHandle <> NULL_PTR Then IsButtonAvailable = CBool(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&) > -1)
 End Function
 
-Private Function GetShadowButton(ByVal ID As Long) As ShadowButtonStruct
+Private Sub GetShadowButton(ByVal ID As Long, ByRef ShadowButton As ShadowButtonStruct)
 If ToolBarHandle <> NULL_PTR Then
     Dim Index As Long
     Index = CLng(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&)) + 1
     If Index > 0 Then
-        With GetShadowButton
+        With ShadowButton
         SendMessage ToolBarHandle, TB_GETBUTTON, Index - 1, ByVal VarPtr(.TBB)
         .Caption = GetButtonText(ID)
         Dim TBBI As TBBUTTONINFO
@@ -4053,7 +4056,7 @@ If ToolBarHandle <> NULL_PTR Then
         End With
     End If
 End If
-End Function
+End Sub
 
 Private Function ShowButtonMenuItems(ByVal Button As TbrButton, ByVal Keyboard As Boolean) As Long
 If ToolBarHandle <> NULL_PTR Then
@@ -4684,7 +4687,7 @@ Select Case wMsg
                     If NMTB.iItem >= 0 And NMTB.iItem < ToolBarCustomizeButtonsCount Then
                         With ToolBarCustomizeButtons(NMTB.iItem + 1)
                         LSet NMTB.TBB = .TBB
-                        NMTB.TBB.iString = StrPtr(.Caption)
+                        If Not .Caption = vbNullString Then NMTB.TBB.iString = StrPtr(.Caption) Else NMTB.TBB.iString = NULL_PTR
                         If (NMTB.TBB.fsState And TBSTATE_CHECKED) = TBSTATE_CHECKED Then NMTB.TBB.fsState = NMTB.TBB.fsState And Not TBSTATE_CHECKED
                         If (NMTB.TBB.fsState And TBSTATE_PRESSED) = TBSTATE_PRESSED Then NMTB.TBB.fsState = NMTB.TBB.fsState And Not TBSTATE_PRESSED
                         If NMTB.TBB.dwData <> 0 Then

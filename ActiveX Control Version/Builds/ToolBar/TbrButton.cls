@@ -115,11 +115,11 @@ End Property
 
 Public Property Get Style() As TbrButtonStyleConstants
 Attribute Style.VB_Description = "Returns/sets the style of the button."
-Style = ShadowToolBar.FButtonStyle(PropID, PropImageIndex)
+Style = ShadowToolBar.FButtonStyle(PropID, vbNullString, 0)
 End Property
 
 Public Property Let Style(ByVal Value As TbrButtonStyleConstants)
-ShadowToolBar.FButtonStyle(PropID, PropImageIndex) = Value
+ShadowToolBar.FButtonStyle(PropID, PropCaption, PropImageIndex) = Value
 End Property
 
 Public Property Get Image() As Variant
@@ -207,7 +207,7 @@ End Property
 
 Public Property Get NoImage() As Boolean
 Attribute NoImage.VB_Description = "Returns/sets a value indicating that no image will be drawn."
-NoImage = ShadowToolBar.FButtonNoImage(PropID, PropImageIndex)
+NoImage = ShadowToolBar.FButtonNoImage(PropID, 0)
 End Property
 
 Public Property Let NoImage(ByVal Value As Boolean)
