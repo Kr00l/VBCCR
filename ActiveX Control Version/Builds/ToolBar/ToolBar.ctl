@@ -2712,9 +2712,24 @@ End Sub
 
 Friend Sub FButtonsRemove(ByVal ID As Long)
 If ToolBarHandle <> NULL_PTR Then
-    Call ResetCustomizeButtons
-    SendMessage ToolBarHandle, TB_DELETEBUTTON, SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&), ByVal 0&
-    Call ReCreateButtons
+    Dim Index As Long
+    Index = CLng(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&)) + 1
+    If Index > 0 Then
+        Call ResetCustomizeButtons
+        Dim TBB As TBBUTTON
+        SendMessage ToolBarHandle, TB_GETBUTTON, Index - 1, ByVal VarPtr(TBB)
+        SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
+        If TBB.iString <> NULL_PTR Then
+            ' Insert and delete again (without text) to force button size adjustment.
+            TBB.iString = NULL_PTR
+            SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
+            SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
+        End If
+        Dim Size As Long
+        Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
+        PropButtonWidth = LoWord(Size)
+        PropButtonHeight = HiWord(Size)
+    End If
 End If
 Call UserControl_Resize
 UserControl.PropertyChanged "InitButtons"
@@ -2736,7 +2751,6 @@ If ToolBarHandle <> NULL_PTR And IsButtonAvailable(ID) = True Then
     If SendMessage(ToolBarHandle, TB_GETITEMRECT, SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&), ByVal VarPtr(RC)) <> 0 Then
         InvalidateRect ToolBarHandle, ByVal VarPtr(RC), 1
         UpdateWindow ToolBarHandle
-        UserControl.Refresh
     End If
 End If
 End Sub
@@ -3919,21 +3933,18 @@ If ToolBarHandle <> NULL_PTR Then
     Dim Index As Long
     Index = CLng(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&)) + 1
     If Index > 0 Then
+        Dim TBB As TBBUTTON
         Dim Count As Long, i As Long, HasText As Boolean
         Count = CLng(SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&))
-        For i = 1 To Count
-            If i <> Index Then
-                If Not GetButtonText(GetButtonID(i)) = vbNullString Then HasText = True
-            Else
-                If Not NewButton.Caption = vbNullString Then HasText = True
-            End If
+        For i = 0 To Count - 1
+            SendMessage ToolBarHandle, TB_GETBUTTON, i, ByVal VarPtr(TBB)
+            If TBB.iString <> NULL_PTR Then HasText = True
         Next i
-        If HasText = True Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
         SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
         With NewButton
-        Dim TBB As TBBUTTON
         LSet TBB = .TBB
         If Not .Caption = vbNullString Then TBB.iString = StrPtr(.Caption) Else TBB.iString = NULL_PTR
+        If HasText = False And TBB.iString <> NULL_PTR Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
         SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
         If .CX > 0 And (.TBB.fsStyle And BTNS_AUTOSIZE) = 0 Then
             Dim TBBI As TBBUTTONINFO
@@ -3958,12 +3969,8 @@ If ToolBarHandle <> NULL_PTR Then
     If Count > 0 Then
         Dim ReButtons() As ShadowButtonStruct
         ReDim ReButtons(1 To Count) As ShadowButtonStruct
-        Dim i As Long, HasText As Boolean
-        For i = 1 To Count
-            Call GetShadowButton(GetButtonID(i), ReButtons(i))
-            If Not ReButtons(i).Caption = vbNullString Then HasText = True
-        Next i
-        If HasText = True Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
+        Dim i As Long
+        For i = 1 To Count: Call GetShadowButton(GetButtonID(i), ReButtons(i)): Next i
         Do While SendMessage(ToolBarHandle, TB_DELETEBUTTON, 0, ByVal 0&) <> 0: Loop
         Dim TBB() As TBBUTTON
         ReDim TBB(0 To (Count - 1)) As TBBUTTON
