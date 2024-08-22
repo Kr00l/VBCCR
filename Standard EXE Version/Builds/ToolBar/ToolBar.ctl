@@ -392,6 +392,7 @@ Private Declare PtrSafe Function IsMenu Lib "user32" (ByVal hMenu As LongPtr) As
 Private Declare PtrSafe Function GetMenuItemCount Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
+Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #Else
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
@@ -443,6 +444,7 @@ Private Declare Function IsMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function GetMenuItemCount Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function SendInput Lib "user32" (ByVal nInputs As Long, ByRef pInputs As Any, ByVal cbSize As Long) As Long
+Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 #End If
 Private Const ICC_BAR_CLASSES As Long = &H20
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80, RDW_FRAME As Long = &H400
@@ -455,6 +457,7 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const GWL_EXSTYLE As Long = (-20)
 Private Const LAYOUT_RTL As Long = &H1
 Private Const COLOR_MENU As Long = 4
+Private Const SM_CYEDGE As Long = 46
 Private Const DST_ICON As Long = &H3
 Private Const DST_BITMAP As Long = &H4
 Private Const DSS_DISABLED As Long = &H20
@@ -1192,10 +1195,7 @@ Else
     Size.CX = PropButtonWidth
     Size.CY = PropButtonHeight
 End If
-If Not (dwStyle And CCS_NODIVIDER) = CCS_NODIVIDER Then
-    ' The divider line is a two-pixel highlight.
-    Size.CY = Size.CY + 2
-End If
+If Not (dwStyle And CCS_NODIVIDER) = CCS_NODIVIDER Then Size.CY = Size.CY + GetSystemMetrics(SM_CYEDGE)
 With UserControl
 Dim Align As Integer
 If ToolBarAlignable = True Then Align = .Extender.Align Else Align = vbAlignNone
@@ -2190,11 +2190,9 @@ End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 PropBackColor = Value
-If ToolBarDesignMode = False Then
-    If ToolBarHandle <> NULL_PTR Then
-        If ToolBarBackColorBrush <> NULL_PTR Then DeleteObject ToolBarBackColorBrush
-        ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
-    End If
+If ToolBarHandle <> NULL_PTR Then
+    If ToolBarBackColorBrush <> NULL_PTR Then DeleteObject ToolBarBackColorBrush
+    ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
 End If
 UserControl.BackColor = PropBackColor
 Me.Refresh
@@ -3087,10 +3085,7 @@ If ToolBarHandle <> NULL_PTR Then
         Dim NewButton As ShadowButtonStruct
         Call GetShadowButton(ID, NewButton)
         If (NewButton.TBB.fsStyle And BTNS_SEP) = 0 Then
-            With NewButton
-            .TBB.iBitmap = IIf(Value, I_IMAGENONE, ImageIndex - 1)
-            .Caption = GetButtonText(ID)
-            End With
+            NewButton.TBB.iBitmap = IIf(Value, I_IMAGENONE, ImageIndex - 1)
             Call ModifyButton(ID, NewButton)
             Call UserControl_Resize
         End If
@@ -3146,7 +3141,6 @@ If ToolBarHandle <> NULL_PTR Then
         Else
             If (.TBB.fsStyle And BTNS_NOPREFIX) = BTNS_NOPREFIX Then .TBB.fsStyle = .TBB.fsStyle And Not BTNS_NOPREFIX
         End If
-        .Caption = GetButtonText(ID)
         End With
         Call ModifyButton(ID, NewButton)
         Call UserControl_Resize
@@ -3200,7 +3194,6 @@ If ToolBarHandle <> NULL_PTR Then
         Else
             If (.TBB.fsStyle And BTNS_AUTOSIZE) = BTNS_AUTOSIZE Then .TBB.fsStyle = .TBB.fsStyle And Not BTNS_AUTOSIZE
         End If
-        .Caption = GetButtonText(ID)
         .CX = 0
         End With
         Call ModifyButton(ID, NewButton)
@@ -3374,7 +3367,7 @@ End Property
 Private Sub CreateToolBar()
 If ToolBarHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE Or WS_CLIPSIBLINGS Or CCS_NORESIZE
+dwStyle = WS_CHILD Or WS_VISIBLE Or WS_CLIPSIBLINGS Or CCS_NORESIZE Or TBSTYLE_TRANSPARENT
 Dim Align As Integer
 If ToolBarAlignable = True Then Align = Extender.Align Else Align = vbAlignNone
 Select Case Align
@@ -3397,10 +3390,6 @@ If PropShowTips = True Then dwStyle = dwStyle Or TBSTYLE_TOOLTIPS
 If PropWrappable = True Then dwStyle = dwStyle Or TBSTYLE_WRAPABLE
 If PropAllowCustomize = True Then dwStyle = dwStyle Or CCS_ADJUSTABLE
 If PropAltDrag = True Then dwStyle = dwStyle Or TBSTYLE_ALTDRAG
-If ToolBarDesignMode = True Then
-    dwStyle = dwStyle Or TBSTYLE_TRANSPARENT
-    dwExStyle = dwExStyle Or WS_EX_TRANSPARENT
-End If
 ToolBarHandle = CreateWindowEx(dwExStyle, StrPtr("ToolbarWindow32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If ToolBarHandle <> NULL_PTR Then
     Call ComCtlsShowAllUIStates(ToolBarHandle)
@@ -3435,7 +3424,10 @@ If ToolBarDesignMode = False Then
     End If
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 Else
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
+    If ToolBarHandle <> NULL_PTR Then
+        If ToolBarBackColorBrush = NULL_PTR Then ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
+        Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
+    End If
 End If
 UserControl.BackColor = PropBackColor
 End Sub
@@ -3601,10 +3593,7 @@ If ToolBarHandle <> NULL_PTR Then
         Size.CX = PropButtonWidth
         Size.CY = PropButtonHeight
     End If
-    If Not (dwStyle And CCS_NODIVIDER) = CCS_NODIVIDER Then
-        ' The divider line is a two-pixel highlight.
-        Size.CY = Size.CY + 2
-    End If
+    If Not (dwStyle And CCS_NODIVIDER) = CCS_NODIVIDER Then Size.CY = Size.CY + GetSystemMetrics(SM_CYEDGE)
     Width = .ScaleX(Size.CX, vbPixels, vbContainerSize)
     Height = .ScaleY(Size.CY, vbPixels, vbContainerSize)
     End With
@@ -4284,20 +4273,6 @@ Select Case wMsg
         If PropDoubleBuffer = True And (ToolBarDoubleBufferEraseBkgDC <> wParam Or ToolBarDoubleBufferEraseBkgDC = NULL_PTR) And WindowFromDC(wParam) = hWnd Then
             WindowProcControl = 0
             Exit Function
-        Else
-            If ToolBarHandle <> NULL_PTR Then
-                If ToolBarBackColorBrush <> NULL_PTR And (SendMessage(ToolBarHandle, TB_GETEXTENDEDSTYLE, 0, ByVal 0&) And TBSTYLE_EX_DOUBLEBUFFER) = 0 Then
-                    Dim RC As RECT
-                    GetClientRect hWnd, RC
-                    FillRect wParam, RC, ToolBarBackColorBrush
-                    If PropTransparent = True Then
-                        If ToolBarTransparentBrush = NULL_PTR Then ToolBarTransparentBrush = CreateTransparentBrush(wParam)
-                        If ToolBarTransparentBrush <> NULL_PTR Then FillRect wParam, RC, ToolBarTransparentBrush
-                    End If
-                    WindowProcControl = 1
-                    Exit Function
-                End If
-            End If
         End If
     Case WM_PAINT
         If wParam = 0 Then
@@ -4543,20 +4518,20 @@ Select Case wMsg
             End With
         End If
     Case WM_ERASEBKGND
-        If ToolBarHandle <> NULL_PTR Then
-            If ToolBarBackColorBrush <> NULL_PTR And (SendMessage(ToolBarHandle, TB_GETEXTENDEDSTYLE, 0, ByVal 0&) And TBSTYLE_EX_DOUBLEBUFFER) = 0 Then
-                Dim RC As RECT
-                GetClientRect hWnd, RC
-                FillRect wParam, RC, ToolBarBackColorBrush
-                If PropTransparent = True Then
-                    If ToolBarTransparentBrush = NULL_PTR Then ToolBarTransparentBrush = CreateTransparentBrush(wParam)
-                    If ToolBarTransparentBrush <> NULL_PTR Then FillRect wParam, RC, ToolBarTransparentBrush
-                End If
-                WindowProcUserControl = 1
+        If ToolBarBackColorBrush <> NULL_PTR Then
+            Dim RC As RECT
+            GetClientRect hWnd, RC
+            FillRect wParam, RC, ToolBarBackColorBrush
+            If PropTransparent = True Then
+                If ToolBarTransparentBrush = NULL_PTR Then ToolBarTransparentBrush = CreateTransparentBrush(wParam)
+                If ToolBarTransparentBrush <> NULL_PTR Then FillRect wParam, RC, ToolBarTransparentBrush
             End If
-            ' It is necessary to exit this message in all cases to avoid artifacts. (Bug?)
-            Exit Function
+            WindowProcUserControl = 1
+        Else
+            WindowProcUserControl = 0
         End If
+        ' It is necessary to exit this message in all cases to avoid artifacts.
+        Exit Function
     Case WM_NOTIFY
         Dim NM As NMHDR, NMTB As NMTOOLBAR, Button As TbrButton
         CopyMemory NM, ByVal lParam, LenB(NM)
@@ -4721,14 +4696,26 @@ WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
-If wMsg = WM_NOTIFY Then
-    Dim NM As NMHDR
-    CopyMemory NM, ByVal lParam, LenB(NM)
-    If NM.hWndFrom = ToolBarHandle And NM.Code = NM_CUSTOMDRAW Then
-        WindowProcUserControlDesignMode = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_ERASEBKGND
+        If ToolBarBackColorBrush <> NULL_PTR Then
+            Dim RC As RECT
+            GetClientRect hWnd, RC
+            FillRect wParam, RC, ToolBarBackColorBrush
+            WindowProcUserControlDesignMode = 1
+        Else
+            WindowProcUserControlDesignMode = 0
+        End If
+        ' It is necessary to exit this message in all cases to avoid artifacts.
         Exit Function
-    End If
-End If
+    Case WM_NOTIFY
+        Dim NM As NMHDR
+        CopyMemory NM, ByVal lParam, LenB(NM)
+        If NM.hWndFrom = ToolBarHandle And NM.Code = NM_CUSTOMDRAW Then
+            WindowProcUserControlDesignMode = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+            Exit Function
+        End If
+End Select
 WindowProcUserControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_DESTROY, WM_NCDESTROY

@@ -3513,7 +3513,7 @@ Select Case wMsg
                                 Else
                                     CY = UserControl.ScaleX(.Width, vbTwips, vbPixels)
                                 End If
-                                If RBBI.CYMinChild < CY Then
+                                If RBBI.CYMinChild <> CY And CY > 0 Then
                                     RBBI.fMask = RBBIM_CHILDSIZE
                                     RBBI.CYMinChild = CY
                                     SendMessage CoolBarHandle, RB_SETBANDINFO, NMRBCS.uBand, ByVal VarPtr(RBBI)
@@ -3654,7 +3654,7 @@ Select Case wMsg
                                 Else
                                     CY = UserControl.ScaleX(.Width, vbTwips, vbPixels)
                                 End If
-                                If RBBI.CYMinChild < CY Then
+                                If RBBI.CYMinChild <> CY And CY > 0 Then
                                     RBBI.fMask = RBBIM_CHILDSIZE
                                     RBBI.CYMinChild = CY
                                     SendMessage CoolBarHandle, RB_SETBANDINFO, NMRBCS.uBand, ByVal VarPtr(RBBI)
