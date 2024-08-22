@@ -381,6 +381,7 @@ Private Declare Function CloseThemeData Lib "uxtheme" (ByVal Theme As Long) As L
 
 #End If
 
+Private Const ICC_STANDARD_CLASSES As Long = &H4000
 Private Const ICC_COOL_CLASSES As Long = &H400
 Private Const ICC_TAB_CLASSES As Long = &H8
 Private Const DISPID_HWND As Long = -515
@@ -666,7 +667,7 @@ End Sub
 
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
-Call ComCtlsInitCC(ICC_COOL_CLASSES)
+Call ComCtlsInitCC(ICC_STANDARD_CLASSES Or ICC_COOL_CLASSES)
 Call SetVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 ReDim ImageListArray(0) As String
 CoolBarToolTipIndex = -1
@@ -3512,7 +3513,7 @@ Select Case wMsg
                                 Else
                                     CY = UserControl.ScaleX(.Width, vbTwips, vbPixels)
                                 End If
-                                If RBBI.CYMinChild < CY Then
+                                If RBBI.CYMinChild <> CY And CY > 0 Then
                                     RBBI.fMask = RBBIM_CHILDSIZE
                                     RBBI.CYMinChild = CY
                                     SendMessage CoolBarHandle, RB_SETBANDINFO, NMRBCS.uBand, ByVal VarPtr(RBBI)
@@ -3653,7 +3654,7 @@ Select Case wMsg
                                 Else
                                     CY = UserControl.ScaleX(.Width, vbTwips, vbPixels)
                                 End If
-                                If RBBI.CYMinChild < CY Then
+                                If RBBI.CYMinChild <> CY And CY > 0 Then
                                     RBBI.fMask = RBBIM_CHILDSIZE
                                     RBBI.CYMinChild = CY
                                     SendMessage CoolBarHandle, RB_SETBANDINFO, NMRBCS.uBand, ByVal VarPtr(RBBI)
