@@ -23,7 +23,7 @@ Begin VB.Form RichTextBoxForm
          Height          =   315
          Left            =   11415
          TabIndex        =   2
-         Top             =   30
+         Top             =   45
          Width           =   1335
          _ExtentX        =   2355
          _ExtentY        =   556
@@ -48,7 +48,7 @@ Begin VB.Form RichTextBoxForm
          Height          =   315
          Left            =   8955
          TabIndex        =   1
-         Top             =   30
+         Top             =   45
          Width           =   2205
          _ExtentX        =   3889
          _ExtentY        =   556

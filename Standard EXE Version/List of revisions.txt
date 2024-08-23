@@ -1,10 +1,8 @@
 List of revisions:
 
-21-Aug-2024
-- Internal improvement in the ToolBar control.
-
-14-Aug-2024
-- Internal improvement in the CoolBar control.
+23-Aug-2024
+- Internal improvement in the ToolBar/CoolBar control.
+- MaxTextRows property is now allowed to be set to 0 in the ToolBar control.
 
 11-Aug-2024
 - All Transparent properties improved to use LAYOUT_RTL on the memory DC, if applicable. (parent)
