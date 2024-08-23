@@ -488,7 +488,6 @@ Private Const TPM_LAYOUTRTL As Long = &H8000&
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_CLIPSIBLINGS As Long = &H4000000
-Private Const WS_EX_TRANSPARENT As Long = &H20
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
@@ -2672,7 +2671,7 @@ With TBB
 .IDCommand = NextButtonID()
 NewButton.ID = .IDCommand
 .iBitmap = ImageIndex - 1
-If Not Caption = vbNullString Then .iString = StrPtr(Caption) Else .iString = NULL_PTR
+If Not Caption = vbNullString Then .iString = StrPtr(Caption) Else .iString = -1
 .fsState = TBSTATE_ENABLED
 Select Case Style
     Case TbrButtonStyleDefault
@@ -2684,7 +2683,7 @@ Select Case Style
     Case TbrButtonStyleSeparator
         .fsStyle = BTNS_SEP
         .iBitmap = 0
-        .iString = NULL_PTR
+        .iString = -1
     Case TbrButtonStyleDropDown
         .fsStyle = BTNS_DROPDOWN
     Case TbrButtonStyleWholeDropDown
@@ -2719,9 +2718,9 @@ If ToolBarHandle <> NULL_PTR Then
         Dim TBB As TBBUTTON
         SendMessage ToolBarHandle, TB_GETBUTTON, Index - 1, ByVal VarPtr(TBB)
         SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
-        If TBB.iString <> NULL_PTR Then
+        If TBB.iString <> -1 Then
             ' Insert and delete again (without text) to force button size adjustment.
-            TBB.iString = NULL_PTR
+            TBB.iString = -1
             SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
             SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
         End If
@@ -2842,7 +2841,7 @@ If ToolBarHandle <> NULL_PTR Then
             Case TbrButtonStyleSeparator
                 .fsStyle = .fsStyle Or BTNS_SEP
                 .iBitmap = 0
-                .iString = NULL_PTR
+                .iString = -1
             Case TbrButtonStyleDropDown
                 .fsStyle = .fsStyle Or BTNS_DROPDOWN
             Case TbrButtonStyleWholeDropDown
@@ -3897,7 +3896,7 @@ If ToolBarHandle <> NULL_PTR Then
     ReDim TBB(0 To (ToolBarCustomizeButtonsCount - 1)) As TBBUTTON
     For i = 1 To ToolBarCustomizeButtonsCount
         LSet TBB(i - 1) = ToolBarCustomizeButtons(i).TBB
-        If Not ToolBarCustomizeButtons(i).Caption = vbNullString Then TBB(i - 1).iString = StrPtr(ToolBarCustomizeButtons(i).Caption) Else TBB(i - 1).iString = NULL_PTR
+        If Not ToolBarCustomizeButtons(i).Caption = vbNullString Then TBB(i - 1).iString = StrPtr(ToolBarCustomizeButtons(i).Caption) Else TBB(i - 1).iString = -1
     Next i
     SendMessage ToolBarHandle, TB_ADDBUTTONS, ToolBarCustomizeButtonsCount, ByVal VarPtr(TBB(0))
     Dim TBBI As TBBUTTONINFO
@@ -3938,13 +3937,13 @@ If ToolBarHandle <> NULL_PTR Then
         Count = CLng(SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&))
         For i = 0 To Count - 1
             SendMessage ToolBarHandle, TB_GETBUTTON, i, ByVal VarPtr(TBB)
-            If TBB.iString <> NULL_PTR Then HasText = True
+            If TBB.iString <> -1 Then HasText = True
         Next i
         SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
         With NewButton
         LSet TBB = .TBB
-        If Not .Caption = vbNullString Then TBB.iString = StrPtr(.Caption) Else TBB.iString = NULL_PTR
-        If HasText = False And TBB.iString <> NULL_PTR Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
+        If Not .Caption = vbNullString Then TBB.iString = StrPtr(.Caption) Else TBB.iString = -1
+        If HasText = False And TBB.iString <> -1 Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
         SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
         If .CX > 0 And (.TBB.fsStyle And BTNS_AUTOSIZE) = 0 Then
             Dim TBBI As TBBUTTONINFO
@@ -3977,7 +3976,7 @@ If ToolBarHandle <> NULL_PTR Then
         For i = 0 To (Count - 1)
             With ReButtons(i + 1)
             LSet TBB(i) = .TBB
-            If Not .Caption = vbNullString Then TBB(i).iString = StrPtr(.Caption) Else TBB(i).iString = NULL_PTR
+            If Not .Caption = vbNullString Then TBB(i).iString = StrPtr(.Caption) Else TBB(i).iString = -1
             End With
         Next i
         SendMessage ToolBarHandle, TB_ADDBUTTONS, Count, ByVal VarPtr(TBB(0))
@@ -4669,7 +4668,7 @@ Select Case wMsg
                     If NMTB.iItem >= 0 And NMTB.iItem < ToolBarCustomizeButtonsCount Then
                         With ToolBarCustomizeButtons(NMTB.iItem + 1)
                         LSet NMTB.TBB = .TBB
-                        If Not .Caption = vbNullString Then NMTB.TBB.iString = StrPtr(.Caption) Else NMTB.TBB.iString = NULL_PTR
+                        If Not .Caption = vbNullString Then NMTB.TBB.iString = StrPtr(.Caption) Else NMTB.TBB.iString = -1
                         If (NMTB.TBB.fsState And TBSTATE_CHECKED) = TBSTATE_CHECKED Then NMTB.TBB.fsState = NMTB.TBB.fsState And Not TBSTATE_CHECKED
                         If (NMTB.TBB.fsState And TBSTATE_PRESSED) = TBSTATE_PRESSED Then NMTB.TBB.fsState = NMTB.TBB.fsState And Not TBSTATE_PRESSED
                         If NMTB.TBB.dwData <> 0 Then
