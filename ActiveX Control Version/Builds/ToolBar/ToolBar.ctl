@@ -1508,7 +1508,9 @@ If ToolBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
         RemoveVisualStyles ToolBarHandle
     End If
     Call SetVisualStylesToolTip
-    Call ReCalcButtonSize
+    ' The font need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
+    If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
+    Call CheckButtonSize
     Call UserControl_Resize
     Me.Refresh
 End If
@@ -2640,17 +2642,27 @@ MaxTextRows = PropMaxTextRows
 End Property
 
 Public Property Let MaxTextRows(ByVal Value As Integer)
-If Value < 1 Then Err.Raise 380
-If Value > 1 And PropTextAlignment = TbrTextAlignRight Then
+If Value < 0 Then
     If ToolBarDesignMode = True Then
-        MsgBox "MaxTextRows must be 1 when TextAlignment is 1 - TextAlignRight", vbCritical + vbOKOnly
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
         Exit Property
     Else
-        Err.Raise Number:=383, Description:="MaxTextRows must be 1 when TextAlignment is 1 - TextAlignRight"
+        Err.Raise 380
+    End If
+End If
+If Value > 1 And PropTextAlignment = TbrTextAlignRight Then
+    If ToolBarDesignMode = True Then
+        MsgBox "MaxTextRows must not be higher than 1 when TextAlignment is 1 - TextAlignRight", vbCritical + vbOKOnly
+        Exit Property
+    Else
+        Err.Raise Number:=383, Description:="MaxTextRows must not be higher than 1 when TextAlignment is 1 - TextAlignRight"
     End If
 End If
 PropMaxTextRows = Value
-If ToolBarHandle <> NULL_PTR Then SendMessage ToolBarHandle, TB_SETMAXTEXTROWS, PropMaxTextRows, ByVal 0&
+If ToolBarHandle <> NULL_PTR Then
+    SendMessage ToolBarHandle, TB_SETMAXTEXTROWS, PropMaxTextRows, ByVal 0&
+    Call CheckButtonSize
+End If
 Call UserControl_Resize
 UserControl.PropertyChanged "MaxTextRows"
 End Property
@@ -3377,7 +3389,7 @@ If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwEx
 If PropStyle = TbrStyleFlat Then dwStyle = dwStyle Or TBSTYLE_FLAT
 If PropTextAlignment = TbrTextAlignRight Then
     dwStyle = dwStyle Or TBSTYLE_LIST
-    PropMaxTextRows = 1
+    If PropMaxTextRows > 1 Then PropMaxTextRows = 1
 End If
 If PropDivider = False Then dwStyle = dwStyle Or CCS_NODIVIDER
 If PropShowTips = True Then dwStyle = dwStyle Or TBSTYLE_TOOLTIPS
@@ -3968,13 +3980,26 @@ If ToolBarHandle <> NULL_PTR Then
 End If
 End Sub
 
+Private Sub CheckButtonSize()
+If ToolBarHandle <> NULL_PTR Then
+    If SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&) > 0 Then
+        Dim Size As Long
+        Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
+        PropButtonWidth = LoWord(Size)
+        PropButtonHeight = HiWord(Size)
+    End If
+End If
+End Sub
+
 Private Sub ReCalcButtonSize()
 If ToolBarHandle <> NULL_PTR Then
-    If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
-    Dim Size As Long
-    Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
-    PropButtonWidth = LoWord(Size)
-    PropButtonHeight = HiWord(Size)
+    If SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&) > 0 Then
+        If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
+        Dim Size As Long
+        Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
+        PropButtonWidth = LoWord(Size)
+        PropButtonHeight = HiWord(Size)
+    End If
 End If
 End Sub
 
