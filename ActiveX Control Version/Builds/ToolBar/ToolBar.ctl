@@ -1508,8 +1508,7 @@ If ToolBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
         RemoveVisualStyles ToolBarHandle
     End If
     Call SetVisualStylesToolTip
-    ' The font need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
-    If ToolBarFontHandle <> 0 Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 1&
+    Call ReCalcButtonSize
     Call UserControl_Resize
     Me.Refresh
 End If
@@ -2700,10 +2699,7 @@ If ToolBarHandle <> NULL_PTR Then
     Else
         SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
     End If
-    Dim Size As Long
-    Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
-    PropButtonWidth = LoWord(Size)
-    PropButtonHeight = HiWord(Size)
+    Call ReCalcButtonSize
 End If
 Call UserControl_Resize
 UserControl.PropertyChanged "InitButtons"
@@ -2711,24 +2707,9 @@ End Sub
 
 Friend Sub FButtonsRemove(ByVal ID As Long)
 If ToolBarHandle <> NULL_PTR Then
-    Dim Index As Long
-    Index = CLng(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&)) + 1
-    If Index > 0 Then
-        Call ResetCustomizeButtons
-        Dim TBB As TBBUTTON
-        SendMessage ToolBarHandle, TB_GETBUTTON, Index - 1, ByVal VarPtr(TBB)
-        SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
-        If TBB.iString <> -1 Then
-            ' Insert and delete again (without text) to force button size adjustment.
-            TBB.iString = -1
-            SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
-            SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
-        End If
-        Dim Size As Long
-        Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
-        PropButtonWidth = LoWord(Size)
-        PropButtonHeight = HiWord(Size)
-    End If
+    Call ResetCustomizeButtons
+    SendMessage ToolBarHandle, TB_DELETEBUTTON, SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&), ByVal 0&
+    Call ReCalcButtonSize
 End If
 Call UserControl_Resize
 UserControl.PropertyChanged "InitButtons"
@@ -3932,18 +3913,11 @@ If ToolBarHandle <> NULL_PTR Then
     Dim Index As Long
     Index = CLng(SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&)) + 1
     If Index > 0 Then
-        Dim TBB As TBBUTTON
-        Dim Count As Long, i As Long, HasText As Boolean
-        Count = CLng(SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&))
-        For i = 0 To Count - 1
-            SendMessage ToolBarHandle, TB_GETBUTTON, i, ByVal VarPtr(TBB)
-            If TBB.iString <> -1 Then HasText = True
-        Next i
         SendMessage ToolBarHandle, TB_DELETEBUTTON, Index - 1, ByVal 0&
         With NewButton
+        Dim TBB As TBBUTTON
         LSet TBB = .TBB
         If Not .Caption = vbNullString Then TBB.iString = StrPtr(.Caption) Else TBB.iString = -1
-        If HasText = False And TBB.iString <> -1 Then SendMessage ToolBarHandle, TB_SETBUTTONSIZE, 0, ByVal &H7FFF7FFF
         SendMessage ToolBarHandle, TB_INSERTBUTTON, Index - 1, ByVal VarPtr(TBB)
         If .CX > 0 And (.TBB.fsStyle And BTNS_AUTOSIZE) = 0 Then
             Dim TBBI As TBBUTTONINFO
@@ -3953,10 +3927,7 @@ If ToolBarHandle <> NULL_PTR Then
             SendMessage ToolBarHandle, TB_SETBUTTONINFO, ID, ByVal VarPtr(TBBI)
         End If
         End With
-        Dim Size As Long
-        Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
-        PropButtonWidth = LoWord(Size)
-        PropButtonHeight = HiWord(Size)
+        Call ReCalcButtonSize
     End If
 End If
 End Sub
@@ -3991,12 +3962,19 @@ If ToolBarHandle <> NULL_PTR Then
             End If
             End With
         Next i
-        Dim Size As Long
-        Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
-        PropButtonWidth = LoWord(Size)
-        PropButtonHeight = HiWord(Size)
+        Call ReCalcButtonSize
     End If
     InvalidateRect ToolBarHandle, ByVal NULL_PTR, 1
+End If
+End Sub
+
+Private Sub ReCalcButtonSize()
+If ToolBarHandle <> NULL_PTR Then
+    If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
+    Dim Size As Long
+    Size = CLng(SendMessage(ToolBarHandle, TB_GETBUTTONSIZE, 0, ByVal 0&))
+    PropButtonWidth = LoWord(Size)
+    PropButtonHeight = HiWord(Size)
 End If
 End Sub
 
