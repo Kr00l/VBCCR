@@ -778,7 +778,7 @@ Else
     IntValue = CInt(TextMaxTextRows.Text)
     Cancel = CBool(Err.Number <> 0)
     On Error GoTo 0
-    If IntValue < 1 Then Cancel = True
+    If IntValue < 0 Then Cancel = True
     If Cancel = False Then
         TextMaxTextRows.Text = IntValue
     Else
