@@ -1928,11 +1928,12 @@ If CoolBarHandle <> NULL_PTR Then
         With RBBI
         .cbSize = LenB(RBBI)
         .fMask = RBBIM_TEXT
-        SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
-        Buffer = String(.cch, vbNullChar)
-        .lpText = StrPtr(Buffer)
-        SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
-        FBandCaption = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        If SendMessage(CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)) <> 0 Then
+            Buffer = String(.cch, vbNullChar)
+            .lpText = StrPtr(Buffer)
+            SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
+            FBandCaption = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+        End If
         End With
     End If
 End If
@@ -3387,7 +3388,7 @@ Select Case wMsg
                                         If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, RP_GRIPPERVERT, 0) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
                                         DrawThemeBackground CoolBarTheme, .hDC, RP_GRIPPERVERT, 0, GrabberRect, GrabberRect
                                     End If
-                                    .RC.Top = i + (1 * PixelsPerDIP_Y())
+                                    .RC.Top = i + 1
                                 Else
                                     RBHTI.PT.Y = .RC.Top
                                     For i = .RC.Left To .RC.Right
@@ -3403,7 +3404,7 @@ Select Case wMsg
                                         If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, RP_GRIPPER, 0) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
                                         DrawThemeBackground CoolBarTheme, .hDC, RP_GRIPPER, 0, GrabberRect, GrabberRect
                                     End If
-                                    .RC.Left = i + (1 * PixelsPerDIP_X())
+                                    .RC.Left = i + 1
                                 End If
                                 RBBI.cbSize = LenB(RBBI)
                                 RBBI.fMask = RBBIM_IMAGE Or RBBIM_STYLE
@@ -3416,11 +3417,11 @@ Select Case wMsg
                                     If RBI.hImageList <> NULL_PTR Then
                                         ImageList_GetIconSize RBI.hImageList, ImageWidth, ImageHeight
                                         If (dwStyle And CCS_VERT) = CCS_VERT And Not (dwStyle And RBS_VERTICALGRIPPER) = RBS_VERTICALGRIPPER Then
-                                            .RC.Top = .RC.Top + (2 * PixelsPerDIP_Y())
+                                            .RC.Top = .RC.Top + 2
                                             ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left + ((.RC.Right - .RC.Left - ImageWidth) \ 2), .RC.Top, ILD_TRANSPARENT
                                             .RC.Top = .RC.Top + ImageHeight
                                         Else
-                                            .RC.Left = .RC.Left + (2 * PixelsPerDIP_X())
+                                            .RC.Left = .RC.Left + 2
                                             ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left, .RC.Top + ((.RC.Bottom - .RC.Top - ImageHeight) \ 2), ILD_TRANSPARENT
                                             .RC.Left = .RC.Left + ImageWidth
                                         End If
@@ -3435,10 +3436,10 @@ Select Case wMsg
                                         If hFont <> NULL_PTR Then hFontOld = SelectObject(.hDC, hFont)
                                         OldBkMode = SetBkMode(.hDC, 1)
                                         If (dwStyle And CCS_VERT) = CCS_VERT And Not (dwStyle And RBS_VERTICALGRIPPER) = RBS_VERTICALGRIPPER Then
-                                            .RC.Top = .RC.Top + (2 * PixelsPerDIP_Y())
+                                            .RC.Top = .RC.Top + 2
                                             DrawFlags = DT_SINGLELINE Or DT_CENTER Or DT_TOP Or DT_END_ELLIPSIS
                                         Else
-                                            .RC.Left = .RC.Left + (2 * PixelsPerDIP_X())
+                                            .RC.Left = .RC.Left + 2
                                             DrawFlags = DT_SINGLELINE Or DT_LEFT Or DT_VCENTER
                                         End If
                                         If ComCtlsSupportLevel() >= 2 Then
