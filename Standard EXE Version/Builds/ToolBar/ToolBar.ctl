@@ -601,6 +601,7 @@ Private Const TB_GETPRESSEDIMAGELIST As Long = (WM_USER + 105)
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
 Private Const TB_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
+Private Const CCM_SETVERSION As Long = (CCM_FIRST + 7)
 Private Const CCS_TOP As Long = &H1
 Private Const CCS_VERT As Long = &H80
 Private Const CCS_NORESIZE As Long = &H4
@@ -3423,17 +3424,15 @@ Me.Enabled = UserControl.Enabled
 Me.InsertMarkColor = PropInsertMarkColor
 Me.HideClippedButtons = PropHideClippedButtons
 Me.AnchorHot = PropAnchorHot
+If ToolBarHandle <> NULL_PTR Then
+    If ComCtlsSupportLevel() = 0 Then SendMessage ToolBarHandle, CCM_SETVERSION, 5, ByVal 0&
+    If ToolBarBackColorBrush = NULL_PTR Then ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
+End If
 If ToolBarDesignMode = False Then
-    If ToolBarHandle <> NULL_PTR Then
-        If ToolBarBackColorBrush = NULL_PTR Then ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
-        Call ComCtlsSetSubclass(ToolBarHandle, Me, 1)
-    End If
+    If ToolBarHandle <> NULL_PTR Then Call ComCtlsSetSubclass(ToolBarHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 Else
-    If ToolBarHandle <> NULL_PTR Then
-        If ToolBarBackColorBrush = NULL_PTR Then ToolBarBackColorBrush = CreateSolidBrush(WinColor(PropBackColor))
-        Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
-    End If
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
 End If
 UserControl.BackColor = PropBackColor
 End Sub
