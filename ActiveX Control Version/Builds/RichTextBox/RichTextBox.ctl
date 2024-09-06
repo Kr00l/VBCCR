@@ -2127,6 +2127,7 @@ If Value < 0 Then
     End If
 End If
 If RichTextBoxHandle <> NULL_PTR Then
+    If Value > 1000 Then Value = 1000
     If Value < 1 Then
         SendMessage RichTextBoxHandle, EM_SETTEXTMODE, TM_SINGLELEVELUNDO, ByVal 0&
         PropUndoLimit = CLng(SendMessage(RichTextBoxHandle, EM_SETUNDOLIMIT, 0, ByVal 0&))
