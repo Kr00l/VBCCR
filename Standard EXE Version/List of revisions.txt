@@ -1,5 +1,8 @@
 List of revisions:
 
+06-Sep-2024
+- UndoLimit now capped at 1000 in the RichTextBox control.
+
 23-Aug-2024
 - Internal improvement in the ToolBar/CoolBar control.
 - MaxTextRows property is now allowed to be set to 0 in the ToolBar control.
