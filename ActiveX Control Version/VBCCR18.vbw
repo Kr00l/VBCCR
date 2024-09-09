@@ -1,5 +1,5 @@
 Common = 97, 61, 831, 643, C
-VisualStyles = 21, 87, 854, 716, C
+VisualStyles = 21, 87, 1142, 896, C
 CommonDialog = 71, 39, 1280, 849, C
 ISubclass = 118, 55, 1060, 807, C
 ComCtlsBase = 61, 257, 1299, 924, C
@@ -11,7 +11,7 @@ ComboBoxW = 403, 231, 1424, 903, C, 66, 87, 912, 617, C
 CommandButtonW = 563, 248, 1409, 778, C, 22, 29, 868, 559, C
 CommandLink = 605, 113, 1451, 643, C, 66, 87, 912, 617, C
 PPCommandLinkGeneral = 44, 58, 890, 588, C, 29, 141, 875, 671, C
-CoolBar = 137, 151, 1355, 954, C, 22, 29, 868, 559, C
+CoolBar = 72, 243, 1290, 1046, C, 22, 29, 868, 559, C
 CbrBand = 18, 18, 1008, 550, C
 CbrBandProperties = 0, 0, 0, 0, C
 CbrBands = -32, 193, 958, 725, C
