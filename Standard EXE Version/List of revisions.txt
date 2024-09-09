@@ -1,5 +1,8 @@
 List of revisions:
 
+09-Sep-2024
+- The height of the header will now be adjusted according to ColumnHeaderIcons in the ListView control. (like MS ListView)
+
 06-Sep-2024
 - UndoLimit now capped at 1000 in the RichTextBox control.
 
