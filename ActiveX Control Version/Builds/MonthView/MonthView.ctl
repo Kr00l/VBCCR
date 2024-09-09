@@ -227,6 +227,10 @@ Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Const ICC_DATE_CLASSES As Long = &H100
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const GWL_STYLE As Long = (-16)
+Private Const SM_CXBORDER As Long = 5
+Private Const SM_CYBORDER As Long = 6
+Private Const SM_CXEDGE As Long = 45
+Private Const SM_CYEDGE As Long = 46
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
@@ -633,13 +637,9 @@ If MonthViewReqWidth <> 0 And MonthViewReqHeight <> 0 Then
     If ComCtlsSupportLevel() <= 1 Then
         Select Case PropBorderStyle
             Case CCBorderStyleThin
-                Const SM_CXBORDER As Long = &H5
-                Const SM_CYBORDER As Long = &H6
                 ExtraWidth = GetSystemMetrics(SM_CXBORDER) * 2
                 ExtraHeight = GetSystemMetrics(SM_CYBORDER) * 2
             Case CCBorderStyleSunken
-                Const SM_CXEDGE As Long = 45
-                Const SM_CYEDGE As Long = 46
                 ExtraWidth = GetSystemMetrics(SM_CXEDGE) * 2
                 ExtraHeight = GetSystemMetrics(SM_CYEDGE) * 2
         End Select
@@ -2037,39 +2037,40 @@ End Sub
 
 Private Sub GetReqRect(ByVal MonthColumns As Byte, ByVal MonthRows As Byte, ByRef ModRect As RECT)
 If MonthViewHandle <> NULL_PTR Then
-    Dim WndRect As RECT, Buffer As Long
+    Dim WndRect As RECT
     SendMessage MonthViewHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(WndRect)
-    Buffer = 6
     If ComCtlsSupportLevel() >= 2 Then
         Dim ReqWndRect As RECT
         ReqWndRect.Left = WndRect.Left
         ReqWndRect.Top = WndRect.Top
-        ReqWndRect.Right = ((WndRect.Right - WndRect.Left) + (Buffer * PixelsPerDIP_X())) * MonthColumns
-        ReqWndRect.Bottom = ((WndRect.Bottom - WndRect.Top) + (Buffer * PixelsPerDIP_Y())) * MonthRows
+        ReqWndRect.Right = (WndRect.Right - WndRect.Left) * MonthColumns
+        ReqWndRect.Bottom = (WndRect.Bottom - WndRect.Top) * MonthRows
         SendMessage MonthViewHandle, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
         ModRect.Left = ReqWndRect.Left
         ModRect.Right = ReqWndRect.Right
         ModRect.Top = ReqWndRect.Top
         ModRect.Bottom = ReqWndRect.Bottom
     Else
+        Dim Padding As Long
+        Padding = 6
         Select Case PropBorderStyle
             Case CCBorderStyleSingle
-                Buffer = 4
+                Padding = 4
             Case CCBorderStyleRaised
-                Buffer = 0
+                Padding = 0
         End Select
         Dim TodayHeight As Long, TodayWidth As Long
         TodayHeight = MulDiv(CLng(PropFont.Size), DPI_Y(), 72)
         If PropShowToday = True Then TodayWidth = CLng(SendMessage(MonthViewHandle, MCM_GETMAXTODAYWIDTH, 0, ByVal 0&))
         If TodayWidth > (WndRect.Right - WndRect.Left) Then WndRect.Right = WndRect.Left + TodayWidth
         ModRect.Left = WndRect.Left
-        ModRect.Right = (WndRect.Right * MonthColumns) + ((MonthColumns - 1) * (Buffer * PixelsPerDIP_X()))
+        ModRect.Right = (WndRect.Right * MonthColumns) + ((MonthColumns - 1) * Padding)
         ModRect.Top = WndRect.Top
         If PropShowToday = True Then
-            ModRect.Bottom = (WndRect.Bottom * MonthRows) - ((MonthRows - 1) * (TodayHeight * 1.5)) + ((MonthRows - 1) * (Buffer * PixelsPerDIP_Y()))
+            ModRect.Bottom = (WndRect.Bottom * MonthRows) - ((MonthRows - 1) * (TodayHeight * 1.5)) + ((MonthRows - 1) * Padding)
         Else
-            ModRect.Bottom = (WndRect.Bottom * MonthRows) + ((MonthRows - 1) * (Buffer * PixelsPerDIP_Y()))
-            ModRect.Bottom = ModRect.Bottom + (TodayHeight * 1.5) + (2 * PixelsPerDIP_Y())
+            ModRect.Bottom = (WndRect.Bottom * MonthRows) + ((MonthRows - 1) * Padding)
+            ModRect.Bottom = ModRect.Bottom + (TodayHeight * 1.5) + 2
         End If
     End If
 End If
