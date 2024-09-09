@@ -685,6 +685,8 @@ Private Const SB_LINELEFT As Long = 0, SB_LINERIGHT As Long = 1
 Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const SM_CXVSCROLL As Long = 2
 Private Const SM_CYHSCROLL As Long = 3
+Private Const SM_CYBORDER As Long = 6
+Private Const SM_CYEDGE As Long = 46
 Private Const SW_HIDE As Long = &H0
 Private Const SW_SHOW As Long = &H5
 Private Const WM_NOTIFY As Long = &H4E
@@ -1012,6 +1014,7 @@ Private Const HDS_HOTTRACK As Long = &H4
 Private Const HDS_CHECKBOXES As Long = &H400
 Private Const HDS_FULLDRAG As Long = &H80
 Private Const HDS_FILTERBAR As Long = &H100
+Private Const HDS_FLAT As Long = &H200
 Private Const HDS_NOSIZING As Long = &H800
 Private Const HDS_OVERFLOW As Long = &H1000
 Private Const HDN_FIRST As Long = (-300)
@@ -2089,6 +2092,8 @@ If ListViewHandle <> NULL_PTR And EnabledVisualStyles() = True Then
     Call SetVisualStylesHeader
     Call SetVisualStylesToolTip
     Call SetVisualStylesHeaderToolTip
+    ' Set the font again to force the view area to reflect the change.
+    If ListViewFontHandle <> NULL_PTR Then SendMessage ListViewHandle, WM_SETFONT, ListViewFontHandle, ByVal 0&
     Me.Refresh
     If ComCtlsSupportLevel() >= 2 Then
         If Not PropPicture Is Nothing Then
@@ -2623,10 +2628,14 @@ If ListViewDesignMode = False Then
         ' LVM_SETIMAGELIST with LVSIL_SMALL overrides the image list for the column icons.
         If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader
         If ListViewHeaderHandle <> NULL_PTR Then
+            Dim hImageList As LongPtr
             If Not PropColumnHeaderIconsControl Is Nothing Then
-                Dim ImageListHandle As LongPtr
-                ImageListHandle = PropColumnHeaderIconsControl.hImageList
-                SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal ImageListHandle
+                hImageList = PropColumnHeaderIconsControl.hImageList
+            Else
+                hImageList = ListViewColumnHeaderIconsHandle
+            End If
+            If hImageList <> NULL_PTR Then
+                SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal hImageList
                 RedrawWindow ListViewHeaderHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
             Else
                 SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal 0&
@@ -2731,6 +2740,11 @@ If ListViewDesignMode = False Then
                 If Icon > 0 Then Me.FColumnHeaderIcon(i) = Icon
             Next i
         End If
+        ' Hide and immediately show again to ensure that HDM_LAYOUT will be sent.
+        ShowWindow ListViewHandle, SW_HIDE
+        ShowWindow ListViewHandle, SW_SHOW
+        ' Set the font again to force the view area to reflect the change.
+        If ListViewFontHandle <> NULL_PTR Then SendMessage ListViewHandle, WM_SETFONT, ListViewFontHandle, ByVal 1&
     End If
 Else
     PropColumnHeaderIconsName = Value
@@ -3848,16 +3862,11 @@ If ListViewHandle <> NULL_PTR Then
                 If (dwStyle And HDS_FILTERBAR) = HDS_FILTERBAR Then dwStyle = dwStyle And Not HDS_FILTERBAR
             End If
             SetWindowLong ListViewHeaderHandle, GWL_STYLE, dwStyle
-            ' The header layout needs to be adjusted.
-            Dim HDL As HDLAYOUT, RC As RECT, WPOS As WINDOWPOS
-            GetClientRect ListViewHandle, RC
-            HDL.lpRC = VarPtr(RC)
-            HDL.lpWPOS = VarPtr(WPOS)
-            SendMessage ListViewHeaderHandle, HDM_LAYOUT, 0, ByVal VarPtr(HDL)
-            SetWindowPos WPOS.hWnd, WPOS.hWndInsertAfter, WPOS.X, WPOS.Y, WPOS.CX, WPOS.CY, WPOS.Flags
-            ' Hide and show will force the necessary updates in the view area.
+            ' Hide and immediately show again to ensure that HDM_LAYOUT will be sent.
             ShowWindow ListViewHandle, SW_HIDE
             ShowWindow ListViewHandle, SW_SHOW
+            ' Set the font again to force the view area to reflect the change.
+            If ListViewFontHandle <> NULL_PTR Then SendMessage ListViewHandle, WM_SETFONT, ListViewFontHandle, ByVal 1&
         End If
     End If
 End If
@@ -4943,7 +4952,7 @@ If ListViewHandle <> NULL_PTR Then
                 End Select
                 SendMessage ListViewHeaderHandle, HDM_SETITEM, Index - 1, ByVal VarPtr(HDI)
                 .FilterType = .FilterType Or HDFT_HASNOVALUE
-                .pvFilter = 0
+                .pvFilter = NULL_PTR
                 SendMessage ListViewHeaderHandle, HDM_SETITEM, Index - 1, ByVal VarPtr(HDI)
                 End With
             Case Else
@@ -5004,7 +5013,7 @@ If ListViewHandle <> NULL_PTR Then
                         .pvFilter = VarPtr(HDTF)
                     Case vbNull, vbEmpty
                         .FilterType = .FilterType Or HDFT_HASNOVALUE
-                        .pvFilter = 0
+                        .pvFilter = NULL_PTR
                     Case Else
                         Err.Raise 13
                 End Select
@@ -5019,7 +5028,7 @@ If ListViewHandle <> NULL_PTR Then
                         .pvFilter = VarPtr(LngValue)
                     Case vbNull, vbEmpty
                         .FilterType = .FilterType Or HDFT_HASNOVALUE
-                        .pvFilter = 0
+                        .pvFilter = NULL_PTR
                     Case Else
                         Err.Raise 13
                 End Select
@@ -8185,6 +8194,50 @@ Select Case wMsg
         Exit Function
 End Select
 WindowProcHeader = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+If wMsg = HDM_LAYOUT Then
+    If lParam <> 0 Then
+        Dim HDL As HDLAYOUT, RC As RECT, WPOS As WINDOWPOS
+        CopyMemory HDL, ByVal lParam, LenB(HDL)
+        If HDL.lpRC <> NULL_PTR And HDL.lpWPOS <> NULL_PTR Then
+            Dim hImageList As LongPtr
+            hImageList = SendMessage(hWnd, HDM_GETIMAGELIST, HDSIL_NORMAL, ByVal 0&)
+            If hImageList <> NULL_PTR Then
+                ' Adjust the height of the header according to the icon size.
+                Dim Size As SIZEAPI
+                If ImageList_GetIconSize(hImageList, Size.CX, Size.CY) <> 0 Then
+                    Dim dwStyle As Long
+                    dwStyle = GetWindowLong(hWnd, GWL_STYLE)
+                    If ComCtlsSupportLevel() >= 1 Then
+                        If EnabledVisualStyles() = False Or PropVisualStyles = False Then
+                            If Not (dwStyle And HDS_FLAT) = HDS_FLAT Then Size.CY = Size.CY + (GetSystemMetrics(SM_CYEDGE) * 2)
+                        End If
+                    Else
+                        Size.CY = Size.CY + (GetSystemMetrics(SM_CYEDGE) * 2)
+                    End If
+                    If (dwStyle And HDS_FILTERBAR) = HDS_FILTERBAR Then Size.CY = (Size.CY * 2) + GetSystemMetrics(SM_CYBORDER)
+                    CopyMemory RC, ByVal HDL.lpRC, LenB(RC)
+                    CopyMemory WPOS, ByVal HDL.lpWPOS, LenB(WPOS)
+                    If RC.Top < Size.CY Then
+                        If Size.CY < RC.Bottom Then
+                            RC.Top = Size.CY
+                        Else
+                            RC.Top = RC.Bottom
+                        End If
+                    End If
+                    If WPOS.CY < Size.CY Then
+                        If Size.CY < RC.Bottom Then
+                            WPOS.CY = Size.CY
+                        Else
+                            WPOS.CY = RC.Bottom
+                        End If
+                    End If
+                    CopyMemory ByVal HDL.lpRC, RC, LenB(RC)
+                    CopyMemory ByVal HDL.lpWPOS, WPOS, LenB(WPOS)
+                End If
+            End If
+        End If
+    End If
+End If
 End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
