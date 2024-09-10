@@ -3408,7 +3408,11 @@ Select Case wMsg
                                         DrawThemeBackground CoolBarTheme, .hDC, GrabberPart, GrabberState, GrabberRect, GrabberRect
                                         .RC.Top = GrabberRect.Bottom
                                     Else
-                                        SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CX, .RC.Bottom
+                                        If (dwStyle And CCS_VERT) = CCS_VERT Then
+                                            SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CY, .RC.Top + (GrabberSize.CY * ((.RC.Bottom - .RC.Top) \ GrabberSize.CY))
+                                        Else
+                                            SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CX, .RC.Bottom
+                                        End If
                                         If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, GrabberPart, GrabberState) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
                                         DrawThemeBackground CoolBarTheme, .hDC, GrabberPart, GrabberState, GrabberRect, GrabberRect
                                         .RC.Left = GrabberRect.Right
