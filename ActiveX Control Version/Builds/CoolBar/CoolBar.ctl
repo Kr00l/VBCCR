@@ -3395,7 +3395,7 @@ Select Case wMsg
                                 End If
                                 If HasGrabber = True Then
                                     Dim GrabberPart As Long, GrabberState As Long, GrabberSize As SIZEAPI, GrabberRect As RECT
-                                    If (dwStyle And CCS_VERT) = CCS_VERT Then
+                                    If (dwStyle And CCS_VERT) = CCS_VERT And (dwStyle And RBS_VERTICALGRIPPER) = 0 Then
                                         GrabberPart = RP_GRIPPERVERT
                                     Else
                                         GrabberPart = RP_GRIPPER
@@ -3409,7 +3409,7 @@ Select Case wMsg
                                         .RC.Top = GrabberRect.Bottom
                                     Else
                                         If (dwStyle And CCS_VERT) = CCS_VERT Then
-                                            SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CY, .RC.Top + (GrabberSize.CY * ((.RC.Bottom - .RC.Top) \ GrabberSize.CY))
+                                            SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CX, .RC.Top + (GrabberSize.CY * ((.RC.Bottom - .RC.Top) \ GrabberSize.CY))
                                         Else
                                             SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CX, .RC.Bottom
                                         End If
