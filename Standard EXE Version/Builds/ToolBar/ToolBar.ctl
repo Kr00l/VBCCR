@@ -1161,7 +1161,7 @@ End Sub
 
 Private Sub UserControl_Resize()
 Static PrevHeight As Long, PrevWidth As Long
-Static InProc As Boolean
+Static InProc As Boolean, IsRecursive As Boolean
 If InProc = True Or ToolBarResizeFrozen = True Then Exit Sub
 InProc = True
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
@@ -1256,7 +1256,14 @@ End If
 End With
 InProc = False
 If Count > 0 And PropWrappable = True Then
-    If Rows <> SendMessage(ToolBarHandle, TB_GETROWS, 0, ByVal 0&) Then Call UserControl_Resize: Exit Sub
+    If Rows <> SendMessage(ToolBarHandle, TB_GETROWS, 0, ByVal 0&) Then
+        If IsRecursive = False Then
+            IsRecursive = True
+            Call UserControl_Resize
+            IsRecursive = False
+            Exit Sub
+        End If
+    End If
 End If
 With UserControl
 If PrevHeight <> .ScaleHeight Or PrevWidth <> .ScaleWidth Then
