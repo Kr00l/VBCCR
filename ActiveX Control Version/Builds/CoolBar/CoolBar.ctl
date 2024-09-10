@@ -345,6 +345,11 @@ CHEVS_NORMAL = 1
 CHEVS_HOT = 2
 CHEVS_PRESSED = 3
 End Enum
+Private Enum UxThemeThemeSize
+TS_MIN = 0
+TS_TRUE = 1
+TS_DRAW = 2
+End Enum
 Private Const DTT_TEXTCOLOR As Long = 1
 Private Type DTTOPTS
 dwSize As Long
@@ -362,6 +367,7 @@ fApplyOverlay As Long
 iGlowSize As Long
 End Type
 #If VBA7 Then
+Private Declare PtrSafe Function GetThemePartSize Lib "uxtheme" (ByVal Theme As LongPtr, ByVal hDC As LongPtr, ByVal iPartId As Long, ByVal iStateId As Long, ByRef lpRect As Any, ByVal eSize As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare PtrSafe Function IsThemeBackgroundPartiallyTransparent Lib "uxtheme" (ByVal Theme As LongPtr, ByVal iPartId As Long, ByVal iStateId As Long) As Long
 Private Declare PtrSafe Function DrawThemeParentBackground Lib "uxtheme" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr, ByRef pRect As RECT) As Long
 Private Declare PtrSafe Function DrawThemeBackground Lib "uxtheme" (ByVal Theme As LongPtr, ByVal hDC As LongPtr, ByVal iPartId As Long, ByVal iStateId As Long, ByRef pRect As RECT, ByRef pClipRect As RECT) As Long
@@ -370,6 +376,7 @@ Private Declare PtrSafe Function DrawThemeTextEx Lib "uxtheme" (ByVal Theme As L
 Private Declare PtrSafe Function OpenThemeData Lib "uxtheme" (ByVal hWnd As LongPtr, ByVal lpszClassList As LongPtr) As LongPtr
 Private Declare PtrSafe Function CloseThemeData Lib "uxtheme" (ByVal Theme As LongPtr) As Long
 #Else
+Private Declare Function GetThemePartSize Lib "uxtheme" (ByVal Theme As Long, ByVal hDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, ByRef lpRect As Any, ByVal eSize As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare Function IsThemeBackgroundPartiallyTransparent Lib "uxtheme" (ByVal Theme As Long, ByVal iPartId As Long, ByVal iStateId As Long) As Long
 Private Declare Function DrawThemeParentBackground Lib "uxtheme" (ByVal hWnd As Long, ByVal hDC As Long, ByRef pRect As RECT) As Long
 Private Declare Function DrawThemeBackground Lib "uxtheme" (ByVal Theme As Long, ByVal hDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, ByRef pRect As RECT, ByRef pClipRect As RECT) As Long
@@ -934,7 +941,7 @@ End Sub
 Private Sub UserControl_Resize()
 Static LastHeight As Single, LastWidth As Single, LastAlign As Integer
 Static PrevHeight As Long, PrevWidth As Long
-Static InProc As Boolean
+Static InProc As Boolean, IsRecursive As Boolean
 If InProc = True Then Exit Sub
 InProc = True
 With UserControl.Extender
@@ -992,7 +999,14 @@ MoveWindow CoolBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
 InProc = False
 If Count > 0 Then
-    If Rows <> SendMessage(CoolBarHandle, RB_GETROWCOUNT, 0, ByVal 0&) Then Call UserControl_Resize: Exit Sub
+    If Rows <> SendMessage(CoolBarHandle, RB_GETROWCOUNT, 0, ByVal 0&) Then
+        If IsRecursive = False Then
+            IsRecursive = True
+            Call UserControl_Resize
+            IsRecursive = False
+            Exit Sub
+        End If
+    End If
 End If
 With UserControl
 If PrevHeight <> .ScaleHeight Or PrevWidth <> .ScaleWidth Then
@@ -3372,58 +3386,60 @@ Select Case wMsg
                                 With NMCD
                                 Index = CLng(SendMessage(CoolBarHandle, RB_IDTOINDEX, .dwItemSpec, ByVal 0&))
                                 dwStyle = GetWindowLong(CoolBarHandle, GWL_STYLE)
-                                Dim RBHTI As RBHITTESTINFO, i As Long, GrabberRect As RECT
-                                If (dwStyle And CCS_VERT) = CCS_VERT And Not (dwStyle And RBS_VERTICALGRIPPER) = RBS_VERTICALGRIPPER Then
-                                    RBHTI.PT.X = .RC.Left
-                                    For i = .RC.Top To .RC.Bottom
-                                        RBHTI.PT.Y = i
-                                        If SendMessage(CoolBarHandle, RB_HITTEST, 0, ByVal VarPtr(RBHTI)) = Index Then
-                                            If RBHTI.Flag <> RBHT_GRABBER Then Exit For
-                                        Else
-                                            Exit For
-                                        End If
-                                    Next i
-                                    If i > .RC.Top Then
-                                        SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Right, i - 1
-                                        If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, RP_GRIPPERVERT, 0) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
-                                        DrawThemeBackground CoolBarTheme, .hDC, RP_GRIPPERVERT, 0, GrabberRect, GrabberRect
-                                    End If
-                                    .RC.Top = i + 1
-                                Else
-                                    RBHTI.PT.Y = .RC.Top
-                                    For i = .RC.Left To .RC.Right
-                                        RBHTI.PT.X = i
-                                        If SendMessage(CoolBarHandle, RB_HITTEST, 0, ByVal VarPtr(RBHTI)) = Index Then
-                                            If RBHTI.Flag <> RBHT_GRABBER Then Exit For
-                                        Else
-                                            Exit For
-                                        End If
-                                    Next i
-                                    If i > .RC.Left Then
-                                        SetRect GrabberRect, .RC.Left, .RC.Top, i - 1, .RC.Bottom
-                                        If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, RP_GRIPPER, 0) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
-                                        DrawThemeBackground CoolBarTheme, .hDC, RP_GRIPPER, 0, GrabberRect, GrabberRect
-                                    End If
-                                    .RC.Left = i + 1
-                                End If
+                                Dim HasGrabber As Boolean
                                 RBBI.cbSize = LenB(RBBI)
                                 RBBI.fMask = RBBIM_IMAGE Or RBBIM_STYLE
                                 SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
+                                If (RBBI.fStyle And RBBS_NOGRIPPER) = 0 Then
+                                    If (RBBI.fStyle And RBBS_GRIPPERALWAYS) = RBBS_GRIPPERALWAYS Or (RBBI.fStyle And RBBS_FIXEDSIZE) = 0 Then HasGrabber = True
+                                End If
+                                If HasGrabber = True Then
+                                    Dim GrabberPart As Long, GrabberState As Long, GrabberSize As SIZEAPI, GrabberRect As RECT
+                                    If (dwStyle And CCS_VERT) = CCS_VERT Then
+                                        GrabberPart = RP_GRIPPERVERT
+                                    Else
+                                        GrabberPart = RP_GRIPPER
+                                    End If
+                                    GrabberState = 0
+                                    GetThemePartSize CoolBarTheme, .hDC, GrabberPart, GrabberState, ByVal NULL_PTR, TS_TRUE, GrabberSize
+                                    If (dwStyle And CCS_VERT) = CCS_VERT And (dwStyle And RBS_VERTICALGRIPPER) = 0 Then
+                                        SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Right, .RC.Top + GrabberSize.CY
+                                        If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, GrabberPart, GrabberState) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
+                                        DrawThemeBackground CoolBarTheme, .hDC, GrabberPart, GrabberState, GrabberRect, GrabberRect
+                                        .RC.Top = GrabberRect.Bottom
+                                    Else
+                                        SetRect GrabberRect, .RC.Left, .RC.Top, .RC.Left + GrabberSize.CX, .RC.Bottom
+                                        If IsThemeBackgroundPartiallyTransparent(CoolBarTheme, GrabberPart, GrabberState) <> 0 Then DrawThemeParentBackground CoolBarHandle, .hDC, GrabberRect
+                                        DrawThemeBackground CoolBarTheme, .hDC, GrabberPart, GrabberState, GrabberRect, GrabberRect
+                                        .RC.Left = GrabberRect.Right
+                                    End If
+                                End If
+                                If (dwStyle And CCS_VERT) = CCS_VERT And (dwStyle And RBS_VERTICALGRIPPER) = 0 Then
+                                    .RC.Top = .RC.Top + 2
+                                Else
+                                    If (dwStyle And CCS_VERT) = CCS_VERT Then
+                                        .RC.Left = .RC.Left + 4
+                                    Else
+                                        .RC.Left = .RC.Left + 2
+                                    End If
+                                End If
                                 If RBBI.iImage > -1 Then
-                                    Dim RBI As REBARINFO, ImageWidth As Long, ImageHeight As Long
+                                    Dim RBI As REBARINFO
                                     RBI.cbSize = LenB(RBI)
                                     RBI.fMask = RBIM_IMAGELIST
                                     SendMessage CoolBarHandle, RB_GETBARINFO, 0, ByVal VarPtr(RBI)
                                     If RBI.hImageList <> NULL_PTR Then
-                                        ImageList_GetIconSize RBI.hImageList, ImageWidth, ImageHeight
-                                        If (dwStyle And CCS_VERT) = CCS_VERT And Not (dwStyle And RBS_VERTICALGRIPPER) = RBS_VERTICALGRIPPER Then
-                                            .RC.Top = .RC.Top + 2
-                                            ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left + ((.RC.Right - .RC.Left - ImageWidth) \ 2), .RC.Top, ILD_TRANSPARENT
-                                            .RC.Top = .RC.Top + ImageHeight
-                                        Else
-                                            .RC.Left = .RC.Left + 2
-                                            ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left, .RC.Top + ((.RC.Bottom - .RC.Top - ImageHeight) \ 2), ILD_TRANSPARENT
-                                            .RC.Left = .RC.Left + ImageWidth
+                                        Dim ImageWidth As Long, ImageHeight As Long
+                                        If ImageList_GetIconSize(RBI.hImageList, ImageWidth, ImageHeight) <> 0 Then
+                                            If (dwStyle And CCS_VERT) = CCS_VERT And (dwStyle And RBS_VERTICALGRIPPER) = 0 Then
+                                                .RC.Top = .RC.Top + 2
+                                                ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left + ((.RC.Right - .RC.Left - ImageWidth) \ 2), .RC.Top, ILD_TRANSPARENT
+                                                .RC.Top = .RC.Top + ImageHeight
+                                            Else
+                                                .RC.Left = .RC.Left + 2
+                                                ImageList_Draw RBI.hImageList, RBBI.iImage, .hDC, .RC.Left, .RC.Top + ((.RC.Bottom - .RC.Top - ImageHeight) \ 2), ILD_TRANSPARENT
+                                                .RC.Left = .RC.Left + ImageWidth
+                                            End If
                                         End If
                                     End If
                                 End If
@@ -3435,7 +3451,7 @@ Select Case wMsg
                                         hFont = SendMessage(CoolBarHandle, WM_GETFONT, 0, ByVal 0&)
                                         If hFont <> NULL_PTR Then hFontOld = SelectObject(.hDC, hFont)
                                         OldBkMode = SetBkMode(.hDC, 1)
-                                        If (dwStyle And CCS_VERT) = CCS_VERT And Not (dwStyle And RBS_VERTICALGRIPPER) = RBS_VERTICALGRIPPER Then
+                                        If (dwStyle And CCS_VERT) = CCS_VERT And (dwStyle And RBS_VERTICALGRIPPER) = 0 Then
                                             .RC.Top = .RC.Top + 2
                                             DrawFlags = DT_SINGLELINE Or DT_CENTER Or DT_TOP Or DT_END_ELLIPSIS
                                         Else
