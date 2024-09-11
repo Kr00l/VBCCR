@@ -2883,6 +2883,28 @@ ID = ID + 1
 NextBandID = ID
 End Function
 
+Private Function GetFirstVisibleBandID() As Long
+If CoolBarHandle <> NULL_PTR Then
+    Dim Count As Long
+    Count = CLng(SendMessage(CoolBarHandle, RB_GETBANDCOUNT, 0, ByVal 0&))
+    If Count > 0 Then
+        Dim i As Long
+        Dim RBBI As REBARBANDINFO
+        With RBBI
+        .cbSize = LenB(RBBI)
+        .fMask = RBBIM_ID Or RBBIM_STYLE
+        For i = 0 To Count - 1
+            SendMessage CoolBarHandle, RB_GETBANDINFO, i, ByVal VarPtr(RBBI)
+            If (RBBI.fStyle And RBBS_HIDDEN) = 0 Then
+                GetFirstVisibleBandID = RBBI.wID
+                Exit For
+            End If
+        Next i
+        End With
+    End If
+End If
+End Function
+
 Private Sub EvaluateWndChild(ByVal Handle As LongPtr)
 If CoolBarHandle <> NULL_PTR And Handle <> NULL_PTR Then
     Dim Count As Long
@@ -3391,7 +3413,15 @@ Select Case wMsg
                                 RBBI.fMask = RBBIM_IMAGE Or RBBIM_STYLE
                                 SendMessage CoolBarHandle, RB_GETBANDINFO, Index, ByVal VarPtr(RBBI)
                                 If (RBBI.fStyle And RBBS_NOGRIPPER) = 0 Then
-                                    If (RBBI.fStyle And RBBS_GRIPPERALWAYS) = RBBS_GRIPPERALWAYS Or (RBBI.fStyle And RBBS_FIXEDSIZE) = 0 Then HasGrabber = True
+                                    If (RBBI.fStyle And RBBS_GRIPPERALWAYS) = RBBS_GRIPPERALWAYS Then
+                                        HasGrabber = True
+                                    ElseIf (RBBI.fStyle And RBBS_FIXEDSIZE) = 0 Then
+                                        If (dwStyle And RBS_FIXEDORDER) = 0 Then
+                                            HasGrabber = True
+                                        Else
+                                            If .dwItemSpec <> GetFirstVisibleBandID() Then HasGrabber = True
+                                        End If
+                                    End If
                                 End If
                                 If HasGrabber = True Then
                                     Dim GrabberPart As Long, GrabberState As Long, GrabberSize As SIZEAPI, GrabberRect As RECT
