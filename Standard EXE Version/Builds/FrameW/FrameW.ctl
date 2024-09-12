@@ -923,7 +923,7 @@ If PropBorderStyle <> vbBSNone Then
     Dim TextRect As RECT, CX As Long
     GetClientRect .hWnd, ClientRect
     LSet BoundingRect = ClientRect
-    BoundingRect.Left = (9 * PixelsPerDIP_X())
+    BoundingRect.Left = 9
     BoundingRect.Right = BoundingRect.Right - BoundingRect.Left
     DrawFlags = DT_NOCLIP Or DT_SINGLELINE
     If PropRightToLeft = True Then DrawFlags = DrawFlags Or DT_RTLREADING
@@ -972,15 +972,15 @@ If PropBorderStyle <> vbBSNone Then
             If PictureWidth > 0 And PictureHeight > 0 Then
                 Select Case PropAlignment
                     Case vbLeftJustify
-                        If PropPictureAlignment = CCLeftRightAlignmentLeft Then TextRect.Left = TextRect.Left + PictureWidth + (2 * PixelsPerDIP_X())
+                        If PropPictureAlignment = CCLeftRightAlignmentLeft Then TextRect.Left = TextRect.Left + PictureWidth + 2
                     Case vbCenter
                         If PropPictureAlignment = CCLeftRightAlignmentLeft Then
-                            TextRect.Left = TextRect.Left + PictureWidth + (2 * PixelsPerDIP_X())
+                            TextRect.Left = TextRect.Left + PictureWidth + 2
                         ElseIf PropPictureAlignment = CCLeftRightAlignmentRight Then
-                            TextRect.Left = TextRect.Left - PictureWidth - (2 * PixelsPerDIP_X())
+                            TextRect.Left = TextRect.Left - PictureWidth - 2
                         End If
                     Case vbRightJustify
-                        If PropPictureAlignment = CCLeftRightAlignmentRight Then TextRect.Right = TextRect.Right - PictureWidth - (2 * PixelsPerDIP_X())
+                        If PropPictureAlignment = CCLeftRightAlignmentRight Then TextRect.Right = TextRect.Right - PictureWidth - 2
                 End Select
             End If
             If ComCtlsSupportLevel() >= 2 Then
@@ -1008,12 +1008,12 @@ If PropBorderStyle <> vbBSNone Then
             If PictureWidth > 0 And PictureHeight > 0 Then
                 Select Case PropAlignment
                     Case vbLeftJustify
-                        ExtentRect.Right = ExtentRect.Right + PictureWidth + (2 * PixelsPerDIP_X())
+                        ExtentRect.Right = ExtentRect.Right + PictureWidth + 2
                     Case vbCenter
-                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
-                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
+                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + 2) \ 2)
+                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + 2) \ 2)
                     Case vbRightJustify
-                        ExtentRect.Left = ExtentRect.Left - PictureWidth - (2 * PixelsPerDIP_X())
+                        ExtentRect.Left = ExtentRect.Left - PictureWidth - 2
                 End Select
                 If PictureHeight > ExtentRect.Bottom Then ExtentRect.Bottom = PictureHeight
                 If PropPictureAlignment = CCLeftRightAlignmentLeft Then
@@ -1023,7 +1023,7 @@ If PropBorderStyle <> vbBSNone Then
                 End If
                 Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
             End If
-            ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
+            ExcludeClipRect .hDC, ExtentRect.Left - 2, ExtentRect.Top, ExtentRect.Right + 2, ExtentRect.Bottom
         ElseIf PictureWidth > 0 And PictureHeight > 0 Then
             ExtentRect.Top = PictureTop
             ExtentRect.Bottom = ExtentRect.Top + PictureHeight
@@ -1040,7 +1040,7 @@ If PropBorderStyle <> vbBSNone Then
             End Select
             PictureLeft = ExtentRect.Left
             Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
-            ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
+            ExcludeClipRect .hDC, ExtentRect.Left - 2, ExtentRect.Top, ExtentRect.Right + 2, ExtentRect.Bottom
         End If
         If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, GroupBoxState) <> 0 Then DrawThemeParentBackground .hWnd, .hDC, ClientRect
         DrawThemeBackground Theme, .hDC, ButtonPart, GroupBoxState, ClientRect, ClientRect
@@ -1068,15 +1068,15 @@ If PropBorderStyle <> vbBSNone Then
             If PictureWidth > 0 And PictureHeight > 0 Then
                 Select Case PropAlignment
                     Case vbLeftJustify
-                        If PropPictureAlignment = CCLeftRightAlignmentLeft Then TextRect.Left = TextRect.Left + PictureWidth + (2 * PixelsPerDIP_X())
+                        If PropPictureAlignment = CCLeftRightAlignmentLeft Then TextRect.Left = TextRect.Left + PictureWidth + 2
                     Case vbCenter
                         If PropPictureAlignment = CCLeftRightAlignmentLeft Then
-                            TextRect.Left = TextRect.Left + PictureWidth + (2 * PixelsPerDIP_X())
+                            TextRect.Left = TextRect.Left + PictureWidth + 2
                         ElseIf PropPictureAlignment = CCLeftRightAlignmentRight Then
-                            TextRect.Left = TextRect.Left - PictureWidth - (2 * PixelsPerDIP_X())
+                            TextRect.Left = TextRect.Left - PictureWidth - 2
                         End If
                     Case vbRightJustify
-                        If PropPictureAlignment = CCLeftRightAlignmentRight Then TextRect.Right = TextRect.Right - PictureWidth - (2 * PixelsPerDIP_X())
+                        If PropPictureAlignment = CCLeftRightAlignmentRight Then TextRect.Right = TextRect.Right - PictureWidth - 2
                 End Select
             End If
             Dim OldTextColor As Long
@@ -1099,12 +1099,12 @@ If PropBorderStyle <> vbBSNone Then
             If PictureWidth > 0 And PictureHeight > 0 Then
                 Select Case PropAlignment
                     Case vbLeftJustify
-                        ExtentRect.Right = ExtentRect.Right + PictureWidth + (2 * PixelsPerDIP_X())
+                        ExtentRect.Right = ExtentRect.Right + PictureWidth + 2
                     Case vbCenter
-                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
-                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + (2 * PixelsPerDIP_X())) \ 2)
+                        ExtentRect.Left = ExtentRect.Left - ((PictureWidth + 2) \ 2)
+                        ExtentRect.Right = ExtentRect.Right + ((PictureWidth + 2) \ 2)
                     Case vbRightJustify
-                        ExtentRect.Left = ExtentRect.Left - PictureWidth - (2 * PixelsPerDIP_X())
+                        ExtentRect.Left = ExtentRect.Left - PictureWidth - 2
                 End Select
                 If PictureHeight > ExtentRect.Bottom Then ExtentRect.Bottom = PictureHeight
                 If PropPictureAlignment = CCLeftRightAlignmentLeft Then
@@ -1114,7 +1114,7 @@ If PropBorderStyle <> vbBSNone Then
                 End If
                 Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
             End If
-            ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
+            ExcludeClipRect .hDC, ExtentRect.Left - 2, ExtentRect.Top, ExtentRect.Right + 2, ExtentRect.Bottom
         ElseIf PictureWidth > 0 And PictureHeight > 0 Then
             ExtentRect.Top = PictureTop
             ExtentRect.Bottom = ExtentRect.Top + PictureHeight
@@ -1131,7 +1131,7 @@ If PropBorderStyle <> vbBSNone Then
             End Select
             PictureLeft = ExtentRect.Left
             Call RenderPicture(PropPicture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, FramePictureRenderFlag)
-            ExcludeClipRect .hDC, ExtentRect.Left - (2 * PixelsPerDIP_X()), ExtentRect.Top, ExtentRect.Right + (2 * PixelsPerDIP_X()), ExtentRect.Bottom
+            ExcludeClipRect .hDC, ExtentRect.Left - 2, ExtentRect.Top, ExtentRect.Right + 2, ExtentRect.Bottom
         End If
         DrawEdge .hDC, ClientRect, EDGE_ETCHED, BF_RECT Or IIf(.Appearance = CCAppearanceFlat, BF_MONO, 0)
         SelectClipRgn .hDC, NULL_PTR

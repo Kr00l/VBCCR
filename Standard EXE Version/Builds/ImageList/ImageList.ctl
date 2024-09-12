@@ -502,7 +502,7 @@ Else
             Dim i As Long, j As Long
             For i = OrigCount To ImageListIndex Step -1
                 For j = i To (i + NewCount - OrigCount - 1)
-                   ImageList_Copy ImageListHandle, j, ImageListHandle, j - 1, ILCF_SWAP
+                    ImageList_Copy ImageListHandle, j, ImageListHandle, j - 1, ILCF_SWAP
                 Next j
             Next i
         End If
