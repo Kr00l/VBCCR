@@ -962,6 +962,7 @@ If PropBorderStyle <> vbBSNone Then
         GetThemeTextExtent Theme, .hDC, ButtonPart, GroupBoxState, StrPtr("A"), 1, DrawFlags, BoundingRect, ExtentRect
         If PictureHeight <= (ExtentRect.Bottom - ExtentRect.Top) Then
             ClientRect.Top = ClientRect.Top + ((ExtentRect.Bottom - ExtentRect.Top) \ 2)
+            PictureTop = PictureTop + (((ExtentRect.Bottom - ExtentRect.Top) - PictureHeight) \ 2)
         Else
             ClientRect.Top = ClientRect.Top + (PictureHeight \ 2)
             BoundingRect.Top = BoundingRect.Top + ((PictureHeight - (ExtentRect.Bottom - ExtentRect.Top)) \ 2)
@@ -1055,6 +1056,7 @@ If PropBorderStyle <> vbBSNone Then
         GetTextExtentPoint32 .hDC, ByVal StrPtr("A"), 1, Size
         If PictureHeight <= Size.CY Then
             ClientRect.Top = ClientRect.Top + (Size.CY \ 2)
+            PictureTop = PictureTop + ((Size.CY - PictureHeight) \ 2)
         Else
             ClientRect.Top = ClientRect.Top + (PictureHeight \ 2)
             BoundingRect.Top = BoundingRect.Top + ((PictureHeight - Size.CY) \ 2)
