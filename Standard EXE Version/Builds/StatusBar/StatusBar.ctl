@@ -696,7 +696,10 @@ LastAlign = Align
 End With
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call SetMinHeight
-If StatusBarHandle <> NULL_PTR Then MoveWindow StatusBarHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 1
+If StatusBarHandle <> NULL_PTR Then
+    MoveWindow StatusBarHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
+    InvalidateRect StatusBarHandle, ByVal NULL_PTR, 1
+End If
 Call SetParts
 If PropShowTips = True Then Call UpdateToolTipRects
 InProc = False
@@ -1756,27 +1759,29 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
             PictureTop = RC.Top + ((RC.Bottom - RC.Top) \ 2) - (PictureHeight \ 2)
         End If
     End If
-    RC.Top = RC.Top + ((RC.Bottom - RC.Top) \ 2) - (Size.CY \ 2) - (1 * PixelsPerDIP_Y())
+    RC.Top = RC.Top + ((RC.Bottom - RC.Top) \ 2) - (Size.CY \ 2)
     Select Case .Alignment
         Case SbrPanelAlignmentLeft
-            RC.Right = RC.Right + PictureWidth + (IIf(PictureWidth > 0, 5, 1) * PixelsPerDIP_X())
-            RC.Left = RC.Left + PictureWidth + (IIf(PictureWidth > 0, 5, 1) * PixelsPerDIP_X())
+            RC.Left = RC.Left + 1
+            If PictureWidth > 0 And PictureHeight > 0 Then RC.Left = RC.Left + (PictureWidth + 4)
         Case SbrPanelAlignmentCenter
-            RC.Right = RC.Right - (1 * PixelsPerDIP_X())
-            RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - PictureWidth - (IIf(PictureWidth > 0, 4, 0) * PixelsPerDIP_X()))) \ 2)
+            If PictureWidth > 0 And PictureHeight > 0 Then
+                RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth - 4))) \ 2) + 4
+            Else
+                RC.Left = RC.Left + (((RC.Right - RC.Left) - Size.CX) \ 2)
+            End If
         Case SbrPanelAlignmentRight
-            RC.Right = RC.Right - (1 * PixelsPerDIP_X())
-            RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX)
+            RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
-        PictureLeft = RC.Left - (PictureWidth + (4 * PixelsPerDIP_X()))
+        PictureLeft = RC.Left - (PictureWidth + 4)
         Call RenderPicture(.Picture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, .PictureRenderFlag)
     End If
     Dim Flags As Long
     Flags = DST_TEXT
     If .Enabled = False Then Flags = Flags Or DSS_DISABLED
     If PropRightToLeft = True And PropRightToLeftLayout = False Then OldTextAlign = SetTextAlign(hDC, TA_RTLREADING)
-    DrawState hDC, NULL_PTR, NULL_PTR, StrPtr(Text), Len(Text), RC.Left, RC.Top, RC.Right - RC.Left, RC.Bottom - RC.Top, Flags
+    DrawState hDC, NULL_PTR, NULL_PTR, StrPtr(Text), Len(Text), RC.Left, RC.Top, 0, 0, Flags
     If PropRightToLeft = True And PropRightToLeftLayout = False Then SetTextAlign hDC, OldTextAlign
     SetBkMode hDC, OldBkMode
     SetTextColor hDC, OldTextColor
@@ -1912,7 +1917,7 @@ If StatusBarHandle <> NULL_PTR And StatusBarFontHandle <> NULL_PTR Then
             Dim Text As String
             Text = PropShadowPanels(Index).DisplayText
             GetTextExtentPoint32 hDC, StrPtr(Text), Len(Text), Size
-            GetTextWidth = Size.CX + (8 * PixelsPerDIP_X())
+            GetTextWidth = Size.CX + 8
             SelectObject hDC, hFontOld
         End If
         ReleaseDC StatusBarHandle, hDC
