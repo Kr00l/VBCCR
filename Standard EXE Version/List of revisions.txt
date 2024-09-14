@@ -1,5 +1,8 @@
 List of revisions:
 
+14-Sep-2024
+- Bugfix in the internal DrawPanel method in the StatusBar control.
+
 09-Sep-2024
 - The height of the header will now be adjusted according to ColumnHeaderIcons in the ListView control. (like MS ListView)
 
