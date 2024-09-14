@@ -1766,7 +1766,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
             If PictureWidth > 0 And PictureHeight > 0 Then RC.Left = RC.Left + (PictureWidth + 4)
         Case SbrPanelAlignmentCenter
             If PictureWidth > 0 And PictureHeight > 0 Then
-                RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth - 4))) \ 2) + 4
+                RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4))) \ 2)
             Else
                 RC.Left = RC.Left + (((RC.Right - RC.Left) - Size.CX) \ 2)
             End If
