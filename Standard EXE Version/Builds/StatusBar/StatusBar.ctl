@@ -1882,8 +1882,8 @@ End Sub
 
 Private Function GetGoodWidth(ByVal Index As Long) As Long
 If StatusBarHandle <> NULL_PTR Then
-    GetGoodWidth = PropShadowPanels(Index).MinWidth
     If PropShadowPanels(Index).Visible = True Then
+        GetGoodWidth = PropShadowPanels(Index).MinWidth
         Select Case PropShadowPanels(Index).AutoSize
             Case SbrPanelAutoSizeNone
                 If PropShadowPanels(Index).FixedWidth > -1 Then GetGoodWidth = PropShadowPanels(Index).FixedWidth
@@ -1892,11 +1892,9 @@ If StatusBarHandle <> NULL_PTR Then
                 Width = GetTextWidth(Index)
                 If Width > GetGoodWidth Then GetGoodWidth = Width
                 If Not PropShadowPanels(Index).Picture Is Nothing Then
-                    If PropShadowPanels(Index).Picture.Handle <> NULL_PTR Then GetGoodWidth = GetGoodWidth + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 2
+                    If PropShadowPanels(Index).Picture.Handle <> NULL_PTR Then GetGoodWidth = GetGoodWidth + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 4
                 End If
         End Select
-    Else
-        GetGoodWidth = 0
     End If
 End If
 End Function
@@ -1917,7 +1915,7 @@ If StatusBarHandle <> NULL_PTR And StatusBarFontHandle <> NULL_PTR Then
             Dim Text As String
             Text = PropShadowPanels(Index).DisplayText
             GetTextExtentPoint32 hDC, StrPtr(Text), Len(Text), Size
-            GetTextWidth = Size.CX + 8
+            GetTextWidth = Size.CX + 4
             SelectObject hDC, hFontOld
         End If
         ReleaseDC StatusBarHandle, hDC
