@@ -1889,11 +1889,11 @@ If StatusBarHandle <> NULL_PTR Then
                 If PropShadowPanels(Index).FixedWidth > -1 Then GetGoodWidth = PropShadowPanels(Index).FixedWidth
             Case SbrPanelAutoSizeContent
                 Dim Width As Long
-                Width = GetTextWidth(Index)
-                If Width > GetGoodWidth Then GetGoodWidth = Width
+                Width = GetTextWidth(Index) + 4 ' Left and right edge
                 If Not PropShadowPanels(Index).Picture Is Nothing Then
-                    If PropShadowPanels(Index).Picture.Handle <> NULL_PTR Then GetGoodWidth = GetGoodWidth + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 4
+                    If PropShadowPanels(Index).Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 4
                 End If
+                If Width > GetGoodWidth Then GetGoodWidth = Width
         End Select
     End If
 End If
@@ -1902,22 +1902,17 @@ End Function
 Private Function GetTextWidth(ByVal Index As Long) As Long
 If StatusBarHandle <> NULL_PTR And StatusBarFontHandle <> NULL_PTR Then
     Dim hDC As LongPtr
-    Dim hFontOld As LongPtr
-    Dim Size As SIZEAPI
     hDC = GetDC(StatusBarHandle)
     If hDC <> NULL_PTR Then
+        Dim hFontOld As LongPtr, Size As SIZEAPI
         If PropShadowPanels(Index).Bold = False Or StatusBarBoldFontHandle = NULL_PTR Then
             hFontOld = SelectObject(hDC, StatusBarFontHandle)
         Else
             hFontOld = SelectObject(hDC, StatusBarBoldFontHandle)
         End If
-        If hFontOld <> NULL_PTR Then
-            Dim Text As String
-            Text = PropShadowPanels(Index).DisplayText
-            GetTextExtentPoint32 hDC, StrPtr(Text), Len(Text), Size
-            GetTextWidth = Size.CX + 4
-            SelectObject hDC, hFontOld
-        End If
+        GetTextExtentPoint32 hDC, StrPtr(PropShadowPanels(Index).DisplayText), Len(PropShadowPanels(Index).DisplayText), Size
+        GetTextWidth = Size.CX
+        If hFontOld <> NULL_PTR Then SelectObject hDC, hFontOld
         ReleaseDC StatusBarHandle, hDC
     End If
 End If
