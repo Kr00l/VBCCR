@@ -1804,11 +1804,9 @@ If StatusBarHandle <> NULL_PTR Then
         hDC = GetDC(StatusBarHandle)
         If hDC <> NULL_PTR Then
             hFontOld = SelectObject(hDC, StatusBarFontHandle)
-            If hFontOld <> NULL_PTR Then
-                GetTextExtentPoint32 hDC, StrPtr("A"), 1, Size
-                FontHeight = Size.CY + Borders(SBB_VERTICAL)
-                SelectObject hDC, hFontOld
-            End If
+            GetTextExtentPoint32 hDC, StrPtr("A"), 1, Size
+            FontHeight = Size.CY + Borders(SBB_VERTICAL)
+            If hFontOld <> NULL_PTR Then SelectObject hDC, hFontOld
             ReleaseDC StatusBarHandle, hDC
         End If
     End If
@@ -1904,13 +1902,14 @@ If StatusBarHandle <> NULL_PTR And StatusBarFontHandle <> NULL_PTR Then
     Dim hDC As LongPtr
     hDC = GetDC(StatusBarHandle)
     If hDC <> NULL_PTR Then
-        Dim hFontOld As LongPtr, Size As SIZEAPI
+        Dim hFontOld As LongPtr, Text As String, Size As SIZEAPI
         If PropShadowPanels(Index).Bold = False Or StatusBarBoldFontHandle = NULL_PTR Then
             hFontOld = SelectObject(hDC, StatusBarFontHandle)
         Else
             hFontOld = SelectObject(hDC, StatusBarBoldFontHandle)
         End If
-        GetTextExtentPoint32 hDC, StrPtr(PropShadowPanels(Index).DisplayText), Len(PropShadowPanels(Index).DisplayText), Size
+        Text = PropShadowPanels(Index).DisplayText
+        GetTextExtentPoint32 hDC, StrPtr(Text), Len(Text), Size
         GetTextWidth = Size.CX
         If hFontOld <> NULL_PTR Then SelectObject hDC, hFontOld
         ReleaseDC StatusBarHandle, hDC
