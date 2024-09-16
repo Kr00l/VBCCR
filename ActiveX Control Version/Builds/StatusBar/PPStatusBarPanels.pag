@@ -36,19 +36,17 @@ Begin VB.PropertyPage PPStatusBarPanels
       Height          =   285
       Left            =   3000
       TabIndex        =   38
-      Top             =   3390
+      Top             =   3360
       Width           =   1215
    End
-   Begin VBCCR18.TextBoxW TextToolTipText 
+   Begin VB.TextBox TextToolTipText 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   1200
       TabIndex        =   9
       Top             =   840
       Width           =   4455
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Enabled         =   0   'False
    End
    Begin VB.Frame FramePicture 
       Caption         =   "Picture"
@@ -141,27 +139,23 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3030
       Width           =   1215
    End
-   Begin VBCCR18.TextBoxW TextActualWidth 
+   Begin VB.TextBox TextActualWidth 
+      BackColor       =   &H8000000F&
       Height          =   315
       Left            =   4080
+      Locked          =   -1  'True
       TabIndex        =   29
       Top             =   1560
       Width           =   1575
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Locked          =   -1  'True
    End
-   Begin VBCCR18.TextBoxW TextMinWidth 
+   Begin VB.TextBox TextMinWidth 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   4080
       TabIndex        =   27
       Top             =   1200
       Width           =   1575
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Enabled         =   0   'False
    End
    Begin VB.ComboBox ComboAutoSize 
       BackColor       =   &H8000000F&
@@ -203,38 +197,32 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3000
       Width           =   1575
    End
-   Begin VBCCR18.TextBoxW TextTag 
+   Begin VB.TextBox TextTag 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   1200
       TabIndex        =   13
       Top             =   1560
       Width           =   1575
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Enabled         =   0   'False
    End
-   Begin VBCCR18.TextBoxW TextText 
+   Begin VB.TextBox TextText 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   1200
       TabIndex        =   7
       Top             =   480
       Width           =   4455
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Enabled         =   0   'False
    End
-   Begin VBCCR18.TextBoxW TextKey 
+   Begin VB.TextBox TextKey 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   1200
       TabIndex        =   11
       Top             =   1200
       Width           =   1575
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Enabled         =   0   'False
    End
    Begin VB.CommandButton CommandBack 
       Caption         =   "3"
@@ -274,17 +262,15 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   120
       Width           =   300
    End
-   Begin VBCCR18.TextBoxW TextIndex 
+   Begin VB.TextBox TextIndex 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
       Height          =   315
       Left            =   1200
+      Locked          =   -1  'True
       TabIndex        =   1
       Top             =   120
       Width           =   870
-      _ExtentX        =   0
-      _ExtentY        =   0
-      BackColor       =   -2147483633
-      Enabled         =   0   'False
-      Locked          =   -1  'True
    End
    Begin VB.CommandButton CommandRemove 
       Caption         =   "&Remove..."

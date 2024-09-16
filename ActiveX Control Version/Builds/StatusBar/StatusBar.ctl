@@ -384,10 +384,10 @@ DTFormat As SbrPanelDTFormatConstants
 ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
+PictureRenderFlag As Integer
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
-PictureRenderFlag As Integer
 FixedWidth As Long
 Left As Long
 ActualWidth As Long
