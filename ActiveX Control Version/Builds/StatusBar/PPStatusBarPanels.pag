@@ -36,7 +36,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Height          =   285
       Left            =   3000
       TabIndex        =   38
-      Top             =   3360
+      Top             =   3390
       Width           =   1215
    End
    Begin VBCCR18.TextBoxW TextToolTipText 
