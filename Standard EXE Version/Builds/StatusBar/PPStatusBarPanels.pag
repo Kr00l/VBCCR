@@ -6,6 +6,7 @@ Begin VB.PropertyPage PPStatusBarPanels
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   5925
+   LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4140
    ScaleWidth      =   5925
@@ -35,7 +36,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Height          =   285
       Left            =   3000
       TabIndex        =   38
-      Top             =   3390
+      Top             =   3360
       Width           =   1215
    End
    Begin VB.TextBox TextToolTipText 
