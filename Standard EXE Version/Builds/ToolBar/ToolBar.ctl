@@ -354,6 +354,8 @@ Private Declare PtrSafe Function UpdateWindow Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function BeginPaint Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPaint As PAINTSTRUCT) As LongPtr
 Private Declare PtrSafe Function EndPaint Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare PtrSafe Function WindowFromDC Lib "user32" (ByVal hDC As LongPtr) As LongPtr
+Private Declare PtrSafe Function OffsetWindowOrgEx Lib "gdi32" (ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare PtrSafe Function SetWindowOrgEx Lib "gdi32" (ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
@@ -370,6 +372,7 @@ Private Declare PtrSafe Function GetSysColorBrush Lib "user32" (ByVal nIndex As 
 Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
 Private Declare PtrSafe Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As LongPtr) As LongPtr
 Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, ByRef lpRect As RECT, ByVal hBrush As LongPtr) As Long
+Private Declare PtrSafe Function GetLayout Lib "gdi32" (ByVal hDC As LongPtr) As Long
 Private Declare PtrSafe Function SetLayout Lib "gdi32" (ByVal hDC As LongPtr, ByVal dwLayout As Long) As Long
 Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As LongPtr) As LongPtr
 Private Declare PtrSafe Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As LongPtr, ByVal nWidth As Long, ByVal nHeight As Long) As LongPtr
@@ -406,6 +409,8 @@ Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function BeginPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare Function EndPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare Function WindowFromDC Lib "user32" (ByVal hDC As Long) As Long
+Private Declare Function OffsetWindowOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare Function SetWindowOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -422,6 +427,7 @@ Private Declare Function GetSysColorBrush Lib "user32" (ByVal nIndex As Long) As
 Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function CreatePatternBrush Lib "gdi32" (ByVal hBitmap As Long) As Long
 Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
+Private Declare Function GetLayout Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function SetLayout Lib "gdi32" (ByVal hDC As Long, ByVal dwLayout As Long) As Long
 Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hDC As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
@@ -3485,6 +3491,7 @@ If ReInitButtonsCount > 0 Then
                 ReInitButtons(i).ButtonMenus(ii).Visible = .Visible
                 ReInitButtons(i).ButtonMenus(ii).Checked = .Checked
                 ReInitButtons(i).ButtonMenus(ii).Separator = .Separator
+                Set ReInitButtons(i).ButtonMenus(ii).Picture = .Picture
                 End With
             Next ii
         End If
@@ -3529,6 +3536,7 @@ If ReInitButtonsCount > 0 Then
                 If ReInitButtons(i).ButtonMenus(ii).Visible = False Then .Visible = False
                 If ReInitButtons(i).ButtonMenus(ii).Checked = True Then .Checked = True
                 If ReInitButtons(i).ButtonMenus(ii).Separator = True Then .Separator = True
+                If Not ReInitButtons(i).ButtonMenus(ii).Picture Is Nothing Then Set .Picture = ReInitButtons(i).ButtonMenus(ii).Picture
                 End With
             Next ii
         End If
@@ -4714,9 +4722,21 @@ Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wM
 Select Case wMsg
     Case WM_ERASEBKGND
         If ToolBarBackColorBrush <> NULL_PTR Then
-            Dim RC As RECT
+            Dim RC As RECT, P As POINTAPI, RestorePoint As Boolean
             GetClientRect hWnd, RC
+            If ToolBarHandle <> NULL_PTR Then
+                If (GetLayout(wParam) And LAYOUT_RTL) = LAYOUT_RTL Then
+                    ' The user control has no right-to-left layout in design mode.
+                    ' Thus it is necessary to reverse the X offset.
+                    P.X = 0
+                    P.Y = 0
+                    MapWindowPoints ToolBarHandle, hWnd, P, 1
+                    OffsetWindowOrgEx wParam, -P.X, 0, P
+                    RestorePoint = True
+                End If
+            End If
             FillRect wParam, RC, ToolBarBackColorBrush
+            If RestorePoint = True Then SetWindowOrgEx wParam, P.X, P.Y, P
             WindowProcUserControlDesignMode = 1
         Else
             WindowProcUserControlDesignMode = 0
