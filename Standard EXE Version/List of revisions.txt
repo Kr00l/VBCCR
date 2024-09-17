@@ -1,5 +1,12 @@
 List of revisions:
 
+17-Sep-2024
+- Bugfix that the Text property was not the default property in the SbrPanel object.
+- Included the PictureOnRight property of a Panel in the StatusBar control.
+- The Picture of a Panel will now be drawn embossed when the Enabled property is False in the StatusBar control.
+  Also the grayed text is now drawn using TextOut instead of DrawState for standard VB-ish appearance.
+- Bug in the internal ReCreateToolBar method that the button menus picture property was not restored.
+
 14-Sep-2024
 - Bugfix in the internal DrawPanel method in the StatusBar control.
 
@@ -1344,7 +1351,7 @@ List of revisions:
 - Bugfix in the RichTextBoxBase.bas module of the RichTextBox control.
 
 14-Apr-2017
-- Included the ShowTips property and ToolTipText property of a Band in the CoolBar control
+- Included the ShowTips property and ToolTipText property of a Band in the CoolBar control.
 
 12-Apr-2017
 - Bugfix that sub item info tips still being displayed when 'ShowInfoTips' is False in the ListView control.
