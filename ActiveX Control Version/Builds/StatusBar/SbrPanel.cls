@@ -80,6 +80,7 @@ End Property
 
 Public Property Get Text() As String
 Attribute Text.VB_Description = "Returns/sets the text of the panel."
+Attribute Text.VB_UserMemId = 0
 Text = ShadowStatusBar.FPanelText(PropIndex)
 End Property
 
@@ -197,6 +198,15 @@ End Property
 
 Public Property Let Bold(ByVal Value As Boolean)
 ShadowStatusBar.FPanelBold(PropIndex) = Value
+End Property
+
+Public Property Get PictureOnRight() As Boolean
+Attribute PictureOnRight.VB_Description = "Returns/sets a value that determines if the picture appears on the right of the panel."
+PictureOnRight = ShadowStatusBar.FPanelPictureOnRight(PropIndex)
+End Property
+
+Public Property Let PictureOnRight(ByVal Value As Boolean)
+ShadowStatusBar.FPanelPictureOnRight(PropIndex) = Value
 End Property
 
 Public Property Get Left() As Single

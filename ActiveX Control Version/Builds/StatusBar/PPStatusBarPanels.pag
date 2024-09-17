@@ -10,6 +10,15 @@ Begin VB.PropertyPage PPStatusBarPanels
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4140
    ScaleWidth      =   5925
+   Begin VB.CheckBox CheckPictureOnRight 
+      Caption         =   "&PictureOnRight"
+      Enabled         =   0   'False
+      Height          =   285
+      Left            =   3000
+      TabIndex        =   39
+      Top             =   3720
+      Width           =   2655
+   End
    Begin VB.ComboBox ComboDTFormat 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
@@ -429,6 +438,7 @@ Picture As IPictureDisp
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
+PictureOnRight As Boolean
 End Type
 #If VBA7 Then
 Private Declare PtrSafe Function OleCreatePropertyFrame Lib "oleaut32" (ByVal hWndOwner As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal lpszCaption As LongPtr, ByVal cObjects As Long, ByRef pUnk As IUnknown, ByVal cPages As Long, ByRef pPageCLSID As Any, ByVal LCID As Long, ByVal dwReserved As Long, ByVal pvReserved As LongPtr) As Long
@@ -528,6 +538,7 @@ If CurrIndex > 0 Then
     .Enabled = CBool(CheckEnabled.Value = vbChecked)
     .Visible = CBool(CheckVisible.Value = vbChecked)
     .Bold = CBool(CheckBold.Value = vbChecked)
+    .PictureOnRight = CBool(CheckPictureOnRight.Value = vbChecked)
     End With
     With PropertyPage.SelectedControls(0)
     .Panels.Remove CurrIndex
@@ -559,6 +570,7 @@ If CurrIndex > 0 Then
     .Enabled = PropShadowPanels(CurrIndex).Enabled
     .Visible = PropShadowPanels(CurrIndex).Visible
     .Bold = PropShadowPanels(CurrIndex).Bold
+    .PictureOnRight = PropShadowPanels(CurrIndex).PictureOnRight
     TextActualWidth.Text = CStr(.Width)
     End With
     End With
@@ -630,6 +642,7 @@ If .Panels.Count > 0 And CurrIndex = 0 Then
     CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
+    CheckPictureOnRight.Value = IIf(.PictureOnRight = True, vbChecked, vbUnchecked)
     FreezeChanged = False
     End With
 ElseIf CurrIndex = 0 Then
@@ -702,6 +715,7 @@ If CurrIndex > 1 Then
     CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
+    CheckPictureOnRight.Value = IIf(.PictureOnRight = True, vbChecked, vbUnchecked)
     FreezeChanged = False
     End With
 End If
@@ -772,6 +786,7 @@ If CurrIndex < .Panels.Count Then
     CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
+    CheckPictureOnRight.Value = IIf(.PictureOnRight = True, vbChecked, vbUnchecked)
     FreezeChanged = False
     End With
 End If
@@ -832,6 +847,7 @@ CommandPictureNo.Enabled = False
 CheckEnabled.Value = vbChecked
 CheckVisible.Value = vbChecked
 CheckBold.Value = vbUnchecked
+CheckPictureOnRight.Value = vbUnchecked
 FreezeChanged = False
 End With
 End With
@@ -903,6 +919,7 @@ If CurrIndex > 0 Then
         CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
         CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
+        CheckPictureOnRight.Value = IIf(.PictureOnRight = True, vbChecked, vbUnchecked)
         FreezeChanged = False
         End With
     Else
@@ -1089,6 +1106,11 @@ If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
 
+Private Sub CheckPictureOnRight_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
 Private Sub ApplyControlStates()
 With PropertyPage.SelectedControls(0)
 FreezeChanged = True
@@ -1145,6 +1167,7 @@ If .Panels.Count > 0 Then
     CheckEnabled.Enabled = True
     CheckVisible.Enabled = True
     CheckBold.Enabled = True
+    CheckPictureOnRight.Enabled = True
 Else
     TextIndex.Enabled = False
     CommandBack.Enabled = False
@@ -1194,6 +1217,8 @@ Else
     CheckVisible.Enabled = False
     CheckBold.Value = vbUnchecked
     CheckBold.Enabled = False
+    CheckPictureOnRight.Value = vbUnchecked
+    CheckPictureOnRight.Enabled = False
 End If
 FreezeChanged = False
 End With
@@ -1221,6 +1246,7 @@ For i = 0 To .Panels.Count
         PropShadowPanels(i).Enabled = .Enabled
         PropShadowPanels(i).Visible = .Visible
         PropShadowPanels(i).Bold = .Bold
+        PropShadowPanels(i).PictureOnRight = .PictureOnRight
         End With
     End If
 Next i

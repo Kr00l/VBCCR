@@ -195,6 +195,7 @@ Private Declare PtrSafe Function BitBlt Lib "gdi32" (ByVal hDestDC As LongPtr, B
 Private Declare PtrSafe Function SetTextColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
 Private Declare PtrSafe Function SetBkMode Lib "gdi32" (ByVal hDC As LongPtr, ByVal nBkMode As Long) As Long
 Private Declare PtrSafe Function SetTextAlign Lib "gdi32" (ByVal hDC As LongPtr, ByVal fMode As Long) As Long
+Private Declare PtrSafe Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal lpString As LongPtr, ByVal nCount As Long) As Long
 Private Declare PtrSafe Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As LongPtr, ByVal hBrush As LongPtr, ByVal lpDrawStateProc As LongPtr, ByVal lData As LongPtr, ByVal wData As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
@@ -232,6 +233,7 @@ Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As L
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
 Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
+Private Declare Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal lpString As Long, ByVal nCount As Long) As Long
 Private Declare Function DrawState Lib "user32" Alias "DrawStateW" (ByVal hDC As Long, ByVal hBrush As Long, ByVal lpDrawStateProc As Long, ByVal lData As Long, ByVal wData As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal fFlags As Long) As Long
 Private Declare Function InvalidateRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As Any, ByVal bErase As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
@@ -257,7 +259,8 @@ Private Const GWL_STYLE As Long = (-16)
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
 Private Const TA_RTLREADING As Long = &H100
 Private Const SM_CXVSCROLL As Long = 2
-Private Const DST_TEXT As Long = &H1
+Private Const DST_ICON As Long = &H3
+Private Const DST_BITMAP As Long = &H4
 Private Const DSS_DISABLED As Long = &H20
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
@@ -370,6 +373,7 @@ Picture As IPictureDisp
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
+PictureOnRight As Boolean
 End Type
 Private Type ShadowPanelStruct
 Text As String
@@ -388,6 +392,7 @@ PictureRenderFlag As Integer
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
+PictureOnRight As Boolean
 FixedWidth As Long
 Left As Long
 ActualWidth As Long
@@ -542,6 +547,7 @@ If InitPanelsCount > 0 Then
         InitPanels(i).Enabled = .ReadProperty("InitPanelsEnabled" & CStr(i), True)
         InitPanels(i).Visible = .ReadProperty("InitPanelsVisible" & CStr(i), True)
         InitPanels(i).Bold = .ReadProperty("InitPanelsBold" & CStr(i), False)
+        InitPanels(i).PictureOnRight = .ReadProperty("InitPanelsPictureOnRight" & CStr(i), False)
     Next i
 End If
 End With
@@ -578,6 +584,7 @@ If InitPanelsCount > 0 And StatusBarHandle <> NULL_PTR Then
         PropShadowPanels(i).Enabled = InitPanels(i).Enabled
         PropShadowPanels(i).Visible = InitPanels(i).Visible
         PropShadowPanels(i).Bold = InitPanels(i).Bold
+        PropShadowPanels(i).PictureOnRight = InitPanels(i).PictureOnRight
     Next i
     Call SetParts
     Call SetPanels
@@ -625,6 +632,7 @@ If Count > 0 Then
         .WriteProperty "InitPanelsEnabled" & CStr(i), Me.Panels(i).Enabled, True
         .WriteProperty "InitPanelsVisible" & CStr(i), Me.Panels(i).Visible, True
         .WriteProperty "InitPanelsBold" & CStr(i), Me.Panels(i).Bold, False
+        .WriteProperty "InitPanelsPictureOnRight" & CStr(i), Me.Panels(i).PictureOnRight, False
     Next i
 End If
 PropBag.WriteProperty "InitPanels", .Contents, 0
@@ -1523,6 +1531,20 @@ If StatusBarHandle <> NULL_PTR Then
 End If
 End Property
 
+Friend Property Get FPanelPictureOnRight(ByVal Index As Long) As Boolean
+If StatusBarHandle <> NULL_PTR Then FPanelPictureOnRight = PropShadowPanels(Index).PictureOnRight
+End Property
+
+Friend Property Let FPanelPictureOnRight(ByVal Index As Long, ByVal Value As Boolean)
+If StatusBarHandle <> NULL_PTR Then
+    PropShadowPanels(Index).PictureOnRight = Value
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+End If
+End Property
+
 Friend Property Get FPanelLeft(ByVal Index As Long) As Single
 If StatusBarHandle <> NULL_PTR Then FPanelLeft = UserControl.ScaleX(PropShadowPanels(Index).Left, vbPixels, vbContainerSize)
 End Property
@@ -1747,7 +1769,11 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
     .DisplayText = Text
     If StrPtr(Text) = NULL_PTR Then Text = ""
     OldBkMode = SetBkMode(hDC, 1)
-    OldTextColor = SetTextColor(hDC, WinColor(.ForeColor))
+    If .Enabled = True Then
+        OldTextColor = SetTextColor(hDC, WinColor(.ForeColor))
+    Else
+        OldTextColor = SetTextColor(hDC, WinColor(vbGrayText))
+    End If
     If .Bold = True And StatusBarBoldFontHandle <> NULL_PTR Then hFontOld = SelectObject(hDC, StatusBarBoldFontHandle)
     GetTextExtentPoint32 hDC, ByVal StrPtr(Text), Len(Text), Size
     Dim PictureWidth As Long, PictureHeight As Long
@@ -1763,25 +1789,48 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
     Select Case .Alignment
         Case SbrPanelAlignmentLeft
             RC.Left = RC.Left + 1
-            If PictureWidth > 0 And PictureHeight > 0 Then RC.Left = RC.Left + (PictureWidth + 4)
+            If PictureWidth > 0 And PictureHeight > 0 Then
+                If .PictureOnRight = False Then RC.Left = RC.Left + (PictureWidth + 4)
+            End If
         Case SbrPanelAlignmentCenter
             If PictureWidth > 0 And PictureHeight > 0 Then
-                RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4))) \ 2)
+                If .PictureOnRight = False Then
+                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4))) \ 2)
+                Else
+                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX + (PictureWidth + 4))) \ 2)
+                End If
             Else
                 RC.Left = RC.Left + (((RC.Right - RC.Left) - Size.CX) \ 2)
             End If
         Case SbrPanelAlignmentRight
             RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
+            If PictureWidth > 0 And PictureHeight > 0 Then
+                If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4)
+            End If
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
-        PictureLeft = RC.Left - (PictureWidth + 4)
-        Call RenderPicture(.Picture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, .PictureRenderFlag)
+        If .PictureOnRight = False Then
+            PictureLeft = RC.Left - (PictureWidth + 4)
+        Else
+            PictureLeft = RC.Left + Size.CX + 4
+        End If
+        If .Enabled = True Then
+            Call RenderPicture(.Picture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, .PictureRenderFlag)
+        Else
+            If .Picture.Type = vbPicTypeIcon Then
+                DrawState hDC, NULL_PTR, NULL_PTR, .Picture.Handle, 0, PictureLeft, PictureTop, PictureWidth, PictureHeight, DST_ICON Or DSS_DISABLED
+            Else
+                Dim hImage As LongPtr
+                hImage = BitmapHandleFromPicture(.Picture, vbWhite)
+                ' The DrawState API with DSS_DISABLED will draw white as transparent.
+                ' This will ensure GIF bitmaps or metafiles are better drawn.
+                DrawState hDC, NULL_PTR, NULL_PTR, hImage, 0, PictureLeft, PictureTop, PictureWidth, PictureHeight, DST_BITMAP Or DSS_DISABLED
+                DeleteObject hImage
+            End If
+        End If
     End If
-    Dim Flags As Long
-    Flags = DST_TEXT
-    If .Enabled = False Then Flags = Flags Or DSS_DISABLED
     If PropRightToLeft = True And PropRightToLeftLayout = False Then OldTextAlign = SetTextAlign(hDC, TA_RTLREADING)
-    DrawState hDC, NULL_PTR, NULL_PTR, StrPtr(Text), Len(Text), RC.Left, RC.Top, 0, 0, Flags
+    TextOut hDC, RC.Left, RC.Top, StrPtr(Text), Len(Text)
     If PropRightToLeft = True And PropRightToLeftLayout = False Then SetTextAlign hDC, OldTextAlign
     SetBkMode hDC, OldBkMode
     SetTextColor hDC, OldTextColor
