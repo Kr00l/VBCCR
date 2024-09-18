@@ -1,5 +1,10 @@
 List of revisions:
 
+18-Sep-2024
+- The picture of the panels now considered in the internal SetMinHeight method in the StatusBar control.
+  To "auto size" just set the .Height to 0. (e.g. after removing the pictures)
+  The same you would do when changing from a large to a small font.
+
 17-Sep-2024
 - Bugfix that the Text property was not the default property in the SbrPanel object.
 - Included the PictureOnRight property of a Panel in the StatusBar control.
