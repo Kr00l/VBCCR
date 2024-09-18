@@ -585,6 +585,7 @@ If InitPanelsCount > 0 And StatusBarHandle <> NULL_PTR Then
         PropShadowPanels(i).Visible = InitPanels(i).Visible
         PropShadowPanels(i).Bold = InitPanels(i).Bold
         PropShadowPanels(i).PictureOnRight = InitPanels(i).PictureOnRight
+        Call GetDisplayText(i, PropShadowPanels(i).DisplayText, PropShadowPanels(i).Enabled)
     Next i
     Call SetParts
     Call SetPanels
@@ -747,14 +748,23 @@ If PropShadowPanelsCount > 0 Then
     Dim i As Long, Text As String, Enabled As Boolean, RC As RECT
     For i = 1 To PropShadowPanelsCount
         With PropShadowPanels(i)
-        If .Visible = True Then
+        If .Visible = True And .Style <> SbrPanelStyleText Then
             Call GetDisplayText(i, Text, Enabled)
             If StrComp(Text, .DisplayText) <> 0 Then
-                InvalidateRect StatusBarHandle, ByVal NULL_PTR, 1
-                Call SetParts
+                .DisplayText = Text
+                .Enabled = Enabled
+                Call GetPanelRect(i, RC)
+                InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+                If .AutoSize = SbrPanelAutoSizeContent Then
+                    Select Case .Style
+                        Case SbrPanelStyleTime, SbrPanelStyleDate
+                            Call SetParts
+                            If PropShowTips = True Then Call UpdateToolTipRects
+                    End Select
+                End If
                 NeedUpdate = True
-                Exit For
-            ElseIf Enabled Xor .Enabled Then
+            ElseIf (Enabled Xor .Enabled) Then
+                .Enabled = Enabled
                 Call GetPanelRect(i, RC)
                 InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
                 NeedUpdate = True
@@ -1281,7 +1291,7 @@ Set .Picture = Nothing
 .Enabled = True
 .Visible = True
 .Bold = False
-Call GetDisplayText(PanelIndex, .DisplayText)
+Call GetDisplayText(PanelIndex, .DisplayText, .Enabled)
 End With
 Call SetParts
 Call SetPanels
@@ -1332,9 +1342,12 @@ Friend Property Let FPanelText(ByVal Index As Long, ByVal Value As String)
 If PropShadowPanels(Index).Text = Value Then Exit Property
 If StatusBarHandle <> NULL_PTR Then
     PropShadowPanels(Index).Text = Value
+    Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText, PropShadowPanels(Index).Enabled)
     Call SetPanelText(Index)
-    Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText)
-    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then Call SetParts
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
+    End If
 End If
 End Property
 
@@ -1361,11 +1374,15 @@ If StatusBarHandle <> NULL_PTR Then
         Case Else
             Err.Raise 380
     End Select
+    Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText, PropShadowPanels(Index).Enabled)
     Dim RC As RECT
     Call GetPanelRect(Index, RC)
     InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
     UpdateWindow StatusBarHandle
-    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then Call SetParts
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
+    End If
 End If
 End Property
 
@@ -1382,7 +1399,6 @@ If StatusBarHandle <> NULL_PTR Then
             Err.Raise 380
     End Select
     Call SetPanelText(Index)
-    Me.Refresh
 End If
 End Property
 
@@ -1434,6 +1450,7 @@ If StatusBarHandle <> NULL_PTR Then
         Case Else
             Err.Raise 380
     End Select
+    Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText, PropShadowPanels(Index).Enabled)
     Dim RC As RECT
     Call GetPanelRect(Index, RC)
     InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
@@ -1442,6 +1459,7 @@ If StatusBarHandle <> NULL_PTR Then
         Select Case PropShadowPanels(Index).Style
             Case SbrPanelStyleTime, SbrPanelStyleDate
                 Call SetParts
+                If PropShowTips = True Then Call UpdateToolTipRects
         End Select
     End If
 End If
@@ -1486,8 +1504,15 @@ Friend Property Set FPanelPicture(ByVal Index As Long, ByVal Value As IPictureDi
 If StatusBarHandle <> NULL_PTR Then
     Set PropShadowPanels(Index).Picture = Value
     PropShadowPanels(Index).PictureRenderFlag = 0
-    Call SetParts
-    Call SetPanels
+    Call SetMinHeight
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
+    End If
 End If
 End Property
 
@@ -1498,6 +1523,7 @@ End Property
 Friend Property Let FPanelEnabled(ByVal Index As Long, ByVal Value As Boolean)
 If StatusBarHandle <> NULL_PTR Then
     PropShadowPanels(Index).Enabled = Value
+    Call GetDisplayText(Index, PropShadowPanels(Index).DisplayText, PropShadowPanels(Index).Enabled)
     Dim RC As RECT
     Call GetPanelRect(Index, RC)
     InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
@@ -1689,7 +1715,7 @@ If StatusBarHandle <> NULL_PTR Then
 End If
 End Function
 
-Private Sub GetDisplayText(ByVal Index As Long, ByRef Text As String, Optional ByRef Enabled As Boolean)
+Private Sub GetDisplayText(ByVal Index As Long, ByRef Text As String, ByRef Enabled As Boolean)
 Static KeyState(0 To 255) As Byte
 Text = vbNullString
 Select Case PropShadowPanels(Index).Style
@@ -1844,14 +1870,14 @@ If StatusBarHandle <> NULL_PTR Then
     Dim Borders(0 To 2) As Long
     SendMessage StatusBarHandle, SB_GETBORDERS, 0, ByVal VarPtr(Borders(0))
     With UserControl
-    Dim Height As Long, FontHeight As Long
-    Dim hDC As LongPtr
-    Dim hFontOld As LongPtr
     Dim Size As SIZEAPI
-    Height = UserControl.ScaleHeight - Borders(SBB_VERTICAL)
+    Dim Height As Long, FontHeight As Long, PictureHeight As Long
+    Height = .ScaleHeight - Borders(SBB_VERTICAL)
     If StatusBarFontHandle <> NULL_PTR Then
+        Dim hDC As LongPtr
         hDC = GetDC(StatusBarHandle)
         If hDC <> NULL_PTR Then
+            Dim hFontOld As LongPtr
             hFontOld = SelectObject(hDC, StatusBarFontHandle)
             GetTextExtentPoint32 hDC, StrPtr("A"), 1, Size
             FontHeight = Size.CY + Borders(SBB_VERTICAL)
@@ -1860,14 +1886,25 @@ If StatusBarHandle <> NULL_PTR Then
         End If
     End If
     If Height < FontHeight Then Height = FontHeight
+    Dim Index As Long
+    For Index = 1 To PropShadowPanelsCount
+        With PropShadowPanels(Index)
+        If Not .Picture Is Nothing Then
+            If .Picture.Handle <> NULL_PTR Then
+                Size.CY = CHimetricToPixel_Y(.Picture.Height) + Borders(SBB_VERTICAL)
+                If PictureHeight < Size.CY Then PictureHeight = Size.CY
+            End If
+        End If
+        End With
+    Next Index
+    If Height < PictureHeight Then Height = PictureHeight
     SendMessage StatusBarHandle, SB_SETMINHEIGHT, Height, ByVal 0&
     SendMessage StatusBarHandle, WM_SIZE, 0, ByVal 0&
     Dim WndRect As RECT
     GetWindowRect StatusBarHandle, WndRect
-    On Error Resume Next
-    .Extender.Height = .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
-    On Error GoTo 0
-    MoveWindow StatusBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+    .Extender.Move .Extender.Left, .Extender.Top, .Extender.Width, .ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+    MoveWindow StatusBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
+    InvalidateRect StatusBarHandle, ByVal NULL_PTR, 1
     End With
 End If
 End Sub
@@ -1983,7 +2020,7 @@ End Sub
 Private Sub SetPanels()
 If StatusBarHandle <> NULL_PTR And PropShadowPanelsCount > 0 Then
     Dim i As Long
-    For i = 1 To UBound(PropShadowPanels())
+    For i = 1 To PropShadowPanelsCount
         Call SetPanelText(i)
         If PropShowTips = True Then Call SetPanelToolTipText(i)
     Next i
@@ -2037,7 +2074,7 @@ If StatusBarHandle <> NULL_PTR And StatusBarToolTipHandle <> NULL_PTR And PropSh
     .cbSize = LenB(TI)
     .hWnd = StatusBarHandle
     Dim i As Long
-    For i = 1 To UBound(PropShadowPanels())
+    For i = 1 To PropShadowPanelsCount
         .uId = PropShadowPanels(i).ToolTipID
         Call GetPanelRect(i, .RC)
         SendMessage StatusBarToolTipHandle, TTM_NEWTOOLRECT, 0, ByVal VarPtr(TI)

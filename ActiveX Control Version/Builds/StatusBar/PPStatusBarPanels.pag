@@ -16,7 +16,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Height          =   285
       Left            =   3000
       TabIndex        =   39
-      Top             =   3720
+      Top             =   3690
       Width           =   2655
    End
    Begin VB.ComboBox ComboDTFormat 
@@ -572,6 +572,7 @@ If CurrIndex > 0 Then
     .Bold = PropShadowPanels(CurrIndex).Bold
     .PictureOnRight = PropShadowPanels(CurrIndex).PictureOnRight
     TextActualWidth.Text = CStr(.Width)
+    CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     End With
     End With
 End If
