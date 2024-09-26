@@ -1,5 +1,8 @@
 List of revisions:
 
+26-Sep-2024
+- Bugfix in the Text property (vbNullString) in the ImageCombo control.
+
 18-Sep-2024
 - The picture of the panels now considered in the internal SetMinHeight method in the StatusBar control.
   To "auto size" just set the .Height to 0. (e.g. after removing the pictures)
