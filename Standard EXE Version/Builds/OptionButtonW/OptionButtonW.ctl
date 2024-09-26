@@ -2165,10 +2165,10 @@ Select Case wMsg
                         TextRect.Left = DIS.RCItem.Left
                         TextRect.Right = DIS.RCItem.Right
                         If ButtonPicture Is Nothing Then
-                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) \ 2) + (3 * PixelsPerDIP_Y())
+                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) \ 2) + 3
                             TextRect.Bottom = TextRect.Top + TextRect.Bottom
                         Else
-                            TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
+                            TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + 1
                             TextRect.Bottom = DIS.RCItem.Bottom
                         End If
                         If ComCtlsSupportLevel() >= 2 Then
@@ -2239,10 +2239,10 @@ Select Case wMsg
                         TextRect.Left = DIS.RCItem.Left
                         TextRect.Right = DIS.RCItem.Right
                         If ButtonPicture Is Nothing Then
-                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) \ 2) + (3 * PixelsPerDIP_Y())
+                            TextRect.Top = ((DIS.RCItem.Bottom - TextRect.Bottom) \ 2) + 3
                             TextRect.Bottom = TextRect.Top + TextRect.Bottom
                         Else
-                            TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
+                            TextRect.Top = (DIS.RCItem.Bottom - TextRect.Bottom) + 1
                             TextRect.Bottom = DIS.RCItem.Bottom
                         End If
                         If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Or PropValue = True Then Call OffsetRect(TextRect, 1, 1, 1, 1)

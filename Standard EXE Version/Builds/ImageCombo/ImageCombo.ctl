@@ -1337,12 +1337,13 @@ Select Case PropStyle
         If PropMaxLength > 0 Then Value = Left$(Value, PropMaxLength)
         PropText = Value
         If ImageComboHandle <> NULL_PTR Then
+            If StrPtr(Value) = NULL_PTR Then Value = ""
             Dim CBEI As COMBOBOXEXITEM
             With CBEI
             .Mask = CBEIF_TEXT
             .iItem = -1
-            .pszText = StrPtr(PropText)
-            .cchTextMax = Len(PropText)
+            .pszText = StrPtr(Value)
+            .cchTextMax = Len(Value)
             End With
             SendMessage ImageComboHandle, CBEM_SETITEM, 0, ByVal VarPtr(CBEI)
         End If
