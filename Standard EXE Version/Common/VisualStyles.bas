@@ -465,10 +465,10 @@ If Theme <> NULL_PTR Then
         TextRect.Left = ClientRect.Left
         TextRect.Right = ClientRect.Right
         If ButtonPicture Is Nothing Then
-            TextRect.Top = ((ClientRect.Bottom - TextRect.Bottom) \ 2) + (3 * PixelsPerDIP_Y())
+            TextRect.Top = ((ClientRect.Bottom - TextRect.Bottom) \ 2) + 3
             TextRect.Bottom = TextRect.Top + TextRect.Bottom
         Else
-            TextRect.Top = (ClientRect.Bottom - TextRect.Bottom) + (1 * PixelsPerDIP_Y())
+            TextRect.Top = (ClientRect.Bottom - TextRect.Bottom) + 1
             TextRect.Bottom = ClientRect.Bottom
         End If
         DrawThemeText Theme, hDC, ButtonPart, ButtonState, StrPtr(Button.Caption), -1, DT_CENTER Or DT_WORDBREAK Or CLng(IIf((UIState And UISF_HIDEACCEL) = UISF_HIDEACCEL, DT_HIDEPREFIX, 0)), 0, TextRect
