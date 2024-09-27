@@ -553,17 +553,20 @@ Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Lon
 Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 #End If
 If TabStripHandle <> NULL_PTR And wMsg = WM_SYSKEYDOWN Then
-    Dim Accel As Long, Count As Long, i As Long
+    Dim Count As Long
     Count = CLng(SendMessage(TabStripHandle, TCM_GETITEMCOUNT, 0, ByVal 0&))
     If Count > 0 Then
+        Dim i As Long, Accel As Integer
         For i = 1 To Count
             Accel = AccelCharCode(Me.FTabCaption(i))
-            If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
-                If i <> SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) - 1 Then Me.FTabSelected(i) = True
-                Exit For
+            If Accel <> 0 Then
+                If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
+                    If i <> (SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) - 1) Then Me.FTabSelected(i) = True
+                    Handled = True
+                    Exit For
+                End If
             End If
         Next i
-        Handled = True
     End If
 End If
 End Sub
