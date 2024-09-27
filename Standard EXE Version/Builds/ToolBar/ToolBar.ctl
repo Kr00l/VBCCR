@@ -3665,9 +3665,13 @@ If Count > 0 Then
         ID = GetButtonID(i)
         If ID > 0 Then
             SendMessage ToolBarHandle, TB_GETBUTTONINFO, ID, ByVal VarPtr(TBBI)
-            If (.fsState And TBSTATE_ENABLED) <> 0 And (.fsStyle And BTNS_NOPREFIX) = 0 Then
+            If (.fsState And TBSTATE_ENABLED) <> 0 And (.fsStyle And BTNS_SEP) = 0 And (.fsStyle And BTNS_NOPREFIX) = 0 Then
                 Accel = AccelCharCode(GetButtonText(ID))
-                If (VkKeyScan(Accel) And &HFF&) = (KeyCode And &HFF&) Then Exit For Else ID = 0
+                If Accel <> 0 Then
+                    If (VkKeyScan(Accel) And &HFF&) = (KeyCode And &HFF&) Then Exit For Else ID = 0
+                Else
+                    ID = 0
+                End If
             Else
                 ID = 0
             End If

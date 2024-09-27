@@ -532,18 +532,20 @@ Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Lon
 Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 #End If
 If CheckBoxHandle <> NULL_PTR And wMsg = WM_SYSKEYDOWN Then
-    Dim Accel As Long
+    Dim Accel As Integer
     Accel = AccelCharCode(Me.Caption)
-    If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
-        Select Case Me.Value
-            Case vbUnchecked
-                Me.Value = vbChecked
-            Case vbChecked
-                Me.Value = vbUnchecked
-            Case vbGrayed
-                Me.Value = vbUnchecked
-        End Select
-        Handled = True
+    If Accel <> 0 Then
+        If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
+            Select Case Me.Value
+                Case vbUnchecked
+                    Me.Value = vbChecked
+                Case vbChecked
+                    Me.Value = vbUnchecked
+                Case vbGrayed
+                    Me.Value = vbUnchecked
+            End Select
+            Handled = True
+        End If
     End If
 End If
 End Sub

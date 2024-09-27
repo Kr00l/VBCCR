@@ -579,13 +579,15 @@ Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Lon
 Private Sub IOleControlVB_OnMnemonic(ByRef Handled As Boolean, ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 #End If
 If CommandButtonHandle <> NULL_PTR And wMsg = WM_SYSKEYDOWN Then
-    Dim Accel As Long
+    Dim Accel As Integer
     Accel = AccelCharCode(Me.Caption)
-    If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
-        CommandButtonValue = True
-        RaiseEvent Click
-        CommandButtonValue = False
-        Handled = True
+    If Accel <> 0 Then
+        If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
+            CommandButtonValue = True
+            RaiseEvent Click
+            CommandButtonValue = False
+            Handled = True
+        End If
     End If
 End If
 End Sub
