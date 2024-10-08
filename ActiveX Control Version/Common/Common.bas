@@ -137,7 +137,6 @@ uCount As Long
 dwTimeout As Long
 End Type
 Private Const LF_FACESIZE As Long = 32
-Private Const DEFAULT_QUALITY As Long = 0
 Private Type LOGFONT
 LFHeight As Long
 LFWidth As Long
