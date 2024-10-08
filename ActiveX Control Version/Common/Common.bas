@@ -840,14 +840,15 @@ End If
 End Function
 
 #If VBA7 Then
-Public Function CreateGDIFontFromOLEFont(ByVal Font As IFont) As LongPtr
+Public Function CreateGDIFontFromOLEFont(ByVal Font As IFont, Optional ByVal Quality As Long) As LongPtr
 #Else
-Public Function CreateGDIFontFromOLEFont(ByVal Font As IFont) As Long
+Public Function CreateGDIFontFromOLEFont(ByVal Font As IFont, Optional ByVal Quality As Long) As Long
 #End If
 If Font Is Nothing Then Exit Function
 Dim LF As LOGFONT
 ' hFont will be cleared when the IFont reference goes out of scope or is set to nothing.
 GetObjectAPI Font.hFont, LenB(LF), LF
+LF.LFQuality = Quality
 CreateGDIFontFromOLEFont = CreateFontIndirect(LF)
 End Function
 
