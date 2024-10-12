@@ -7013,7 +7013,7 @@ End If
 End Property
 
 Public Property Get ColumnFilterChangedTimeout() As Long
-Attribute ColumnFilterChangedTimeout.VB_Description = "Returns/sets the time in milliseconds before the ColumnFilterChanged event is fired afer a filter was changed. A value of -1 indicates that the 'ColumnFilterChanged' is fired only when the filter edit is completed."
+Attribute ColumnFilterChangedTimeout.VB_Description = "Returns/sets the time in milliseconds before the ColumnFilterChanged event is fired afer a filter was changed. A value of -1 indicates that the ColumnFilterChanged event is fired only when the filter edit is completed."
 Attribute ColumnFilterChangedTimeout.VB_MemberFlags = "400"
 If ListViewHandle <> NULL_PTR Then
     If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader
