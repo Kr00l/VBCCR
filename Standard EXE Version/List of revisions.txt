@@ -1,5 +1,8 @@
 List of revisions:
 
+13-Oct-2024
+- Bugfix in the ListBoxW when Style is 1 - Checkbox or 2 - Option at higher DPI.
+
 26-Sep-2024
 - Bugfix in the Text property (vbNullString) in the ImageCombo control.
 
