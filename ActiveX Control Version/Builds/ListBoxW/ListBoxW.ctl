@@ -544,7 +544,7 @@ Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 #End If
 
 ReDim ListBoxItemChecked(0) As Byte
-ListBoxStateImageSize = (15 * PixelsPerDIP_X())
+ListBoxStateImageSize = (13 * PixelsPerDIP_X()) + 2
 End Sub
 
 Private Sub UserControl_InitProperties()
