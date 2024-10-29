@@ -2,7 +2,7 @@ List of revisions:
 
 29-Oct-2024
 - Bugfix in the .ContainerKeyDown function in the ToolBar control.
-  The function will now return Nothing when the popup menu is already present.
+  The function will now return Nothing when a popup menu is already present.
 
 13-Oct-2024
 - Bugfix in the ListBoxW when Style is 1 - Checkbox or 2 - Option at higher DPI.
