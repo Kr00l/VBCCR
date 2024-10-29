@@ -3653,6 +3653,7 @@ End Sub
 Public Function ContainerKeyDown(ByRef KeyCode As Integer, ByRef Shift As Integer) As TbrButton
 Attribute ContainerKeyDown.VB_Description = "Provides accelerator key access by forwarding the key down events of the container. The key preview property need to be set to true by a form container."
 If ToolBarHandle = NULL_PTR Or (Shift <> vbAltMask And Shift <> (vbAltMask Or vbShiftMask)) Then Exit Function
+If ToolBarPopupMenuHandle <> NULL_PTR Then Exit Function
 If IsWindowEnabled(ToolBarHandle) = 0 Then Exit Function
 Dim ID As Long, Accel As Integer, Count As Long, TBBI As TBBUTTONINFO
 Count = CLng(SendMessage(ToolBarHandle, TB_BUTTONCOUNT, 0, ByVal 0&))
@@ -3709,20 +3710,16 @@ If ID > 0 Then
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
                 RaiseEvent ButtonClick(Button)
             Else
-                If ToolBarPopupMenuHandle = NULL_PTR Then
-                    SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
-                    RaiseEvent ButtonDropDown(Button)
-                    Dim MenuItem As Long
-                    MenuItem = ShowButtonMenuItems(Button, True)
-                    If Button.hMenu = NULL_PTR Then
-                        If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
-                    Else
-                        If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
-                    End If
-                    SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
+                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
+                RaiseEvent ButtonDropDown(Button)
+                Dim MenuItem As Long
+                MenuItem = ShowButtonMenuItems(Button, True)
+                If Button.hMenu = NULL_PTR Then
+                    If MenuItem >= 1 And MenuItem <= Button.ButtonMenus.Count Then RaiseEvent ButtonMenuClick(Button.ButtonMenus(MenuItem))
                 Else
-                    SendMessage ToolBarHandle, WM_CANCELMODE, 0, ByVal 0&
+                    If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
                 End If
+                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
             End If
         End If
         Set ContainerKeyDown = Button
