@@ -386,6 +386,7 @@ Private Declare PtrSafe Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As LongPtr, ByRef CX As Long, ByRef CY As Long) As Long
+Private Declare PtrSafe Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As LongPtr, ByVal lParam As LongPtr) As Long
 Private Declare PtrSafe Function CreatePopupMenu Lib "user32" () As LongPtr
 Private Declare PtrSafe Function DestroyMenu Lib "user32" (ByVal hMenu As LongPtr) As Long
 Private Declare PtrSafe Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As LongPtr, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
@@ -441,6 +442,7 @@ Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal 
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As Long, ByRef CX As Long, ByRef CY As Long) As Long
+Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
 Private Declare Function CreatePopupMenu Lib "user32" () As Long
 Private Declare Function DestroyMenu Lib "user32" (ByVal hMenu As Long) As Long
 Private Declare Function InsertMenuItem Lib "user32" Alias "InsertMenuItemW" (ByVal hMenu As Long, ByVal uItem As Long, ByVal fByPosition As Long, ByRef lpMII As MENUITEMINFO) As Long
@@ -3678,6 +3680,9 @@ If Count > 0 Then
             End If
         End If
     Next i
+    If ID > 0 Then
+        If EnumThreadWindows(App.ThreadID, AddressOf ComCtlsTbrEnumThreadWndProc, 0) = 0 Then ID = 0
+    End If
 End If
 If ID > 0 Then
     .dwMask = TBIF_LPARAM Or TBIF_STYLE
