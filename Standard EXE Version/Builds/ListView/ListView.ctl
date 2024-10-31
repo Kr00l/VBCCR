@@ -917,6 +917,7 @@ Private Const LVNI_CUT As Long = &H4
 Private Const LVNI_DROPHILITED As Long = &H8
 Private Const LVNI_VISIBLEORDER As Long = &H10
 Private Const LVNI_VISIBLEONLY As Long = &H40
+Private Const LVNI_SAMEGROUPONLY As Long = &H80
 Private Const LVNI_ABOVE As Long = &H100
 Private Const LVNI_BELOW As Long = &H200
 Private Const LVNI_TOLEFT As Long = &H400
@@ -5715,22 +5716,49 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
 End If
 End Property
 
+Friend Property Get FGroupListItemCount(ByVal ID As Long) As Long
+If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
+    If IsGroupAvailable(ID) = True Then
+        Dim LVG_V61 As LVGROUP_V61
+        With LVG_V61
+        .LVG.cbSize = LenB(LVG_V61)
+        .LVG.Mask = LVGF_ITEMS
+        SendMessage ListViewHandle, LVM_GETGROUPINFO, ID, ByVal VarPtr(LVG_V61)
+        FGroupListItemCount = .cItems
+        End With
+    End If
+End If
+End Property
+
 Friend Property Get FGroupListItemIndices(ByVal ID As Long) As Collection
 Set FGroupListItemIndices = New Collection
 If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
     If IsGroupAvailable(ID) = True Then
         If SendMessage(ListViewHandle, LVM_GETITEMCOUNT, 0, ByVal 0&) > 0 Then
-            Dim LVI_V60 As LVITEM_V60
-            With LVI_V60
-            .LVI.Mask = LVIF_GROUPID
-            .LVI.iItem = 0
-            SendMessage ListViewHandle, LVM_GETITEM, 0, ByVal VarPtr(LVI_V60)
-            Do While .LVI.iItem > -1
-                If .iGroupId = ID Then FGroupListItemIndices.Add (.LVI.iItem + 1)
-                .LVI.iItem = CLng(SendMessage(ListViewHandle, LVM_GETNEXTITEM, .LVI.iItem, ByVal LVNI_ALL))
+            If ComCtlsSupportLevel() >= 2 Then
+                Dim LVG_V61 As LVGROUP_V61
+                With LVG_V61
+                .LVG.cbSize = LenB(LVG_V61)
+                .LVG.Mask = LVGF_ITEMS
+                SendMessage ListViewHandle, LVM_GETGROUPINFO, ID, ByVal VarPtr(LVG_V61)
+                While .iFirstItem > -1
+                    FGroupListItemIndices.Add (.iFirstItem + 1)
+                    .iFirstItem = CLng(SendMessage(ListViewHandle, LVM_GETNEXTITEM, .iFirstItem, ByVal LVNI_ALL Or LVNI_VISIBLEORDER Or LVNI_SAMEGROUPONLY))
+                Wend
+                End With
+            Else
+                Dim LVI_V60 As LVITEM_V60
+                With LVI_V60
+                .LVI.Mask = LVIF_GROUPID
+                .LVI.iItem = 0
                 SendMessage ListViewHandle, LVM_GETITEM, 0, ByVal VarPtr(LVI_V60)
-            Loop
-            End With
+                While .LVI.iItem > -1
+                    If .iGroupId = ID Then FGroupListItemIndices.Add (.LVI.iItem + 1)
+                    .LVI.iItem = CLng(SendMessage(ListViewHandle, LVM_GETNEXTITEM, .LVI.iItem, ByVal LVNI_ALL))
+                    SendMessage ListViewHandle, LVM_GETITEM, 0, ByVal VarPtr(LVI_V60)
+                Wend
+                End With
+            End If
         End If
     End If
 End If
