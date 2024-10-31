@@ -6407,7 +6407,12 @@ If ListViewHandle <> NULL_PTR Then
                                 SetRect RC, LVIR_BOUNDS, 0, 0, 0
                                 SendMessage ListViewHandle, LVM_GETITEMRECT, iItem, ByVal VarPtr(RC)
                                 If RC.Top >= (WndRect.Bottom - WndRect.Top) Then
-                                    Set TopItem = PtrToObj(Me.FListItemPtr(iItem + 1))
+                                    If PropVirtualMode = False Then
+                                        Set TopItem = PtrToObj(Me.FListItemPtr(iItem + 1))
+                                    Else
+                                        Set TopItem = New LvwListItem
+                                        TopItem.FInit ObjPtr(Me), iItem + 1, vbNullString, NULL_PTR, vbNullString, 0, 0, 0, 0
+                                    End If
                                     Exit Do
                                 End If
                             End If
@@ -6491,7 +6496,6 @@ If ListViewHandle <> NULL_PTR Then
                             End If
                             iItem = iItemTemp
                         Loop
-                        Set TopItem = PtrToObj(Me.FListItemPtr(iItemResult + 1))
                         If PropVirtualMode = False Then
                             Set TopItem = PtrToObj(Me.FListItemPtr(iItemResult + 1))
                         Else
