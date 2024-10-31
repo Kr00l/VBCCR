@@ -275,6 +275,11 @@ Public Property Let Height(ByVal Value As Single)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
+Public Property Get ListItemCount() As Long
+Attribute ListItemCount.VB_Description = "Returns the number of list items referring to this group. Requires comctl32.dll version 6.1 or higher."
+ListItemCount = ShadowListView.FGroupListItemCount(PropID)
+End Property
+
 Public Property Get ListItemIndices() As Collection
 Attribute ListItemIndices.VB_Description = "Returns a reference to a collection containing the indexes to the list items referring to this group. Requires comctl32.dll version 6.0 or higher."
 Set ListItemIndices = ShadowListView.FGroupListItemIndices(PropID)
