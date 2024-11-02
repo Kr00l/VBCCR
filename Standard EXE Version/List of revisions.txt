@@ -1,5 +1,8 @@
 List of revisions:
 
+02-Nov-2024
+- Bugfix for NULL StrPtr() on the .Header property in the LvwGroup class.
+
 31-Oct-2024
 - Major performance improvement of the .ListItemIndices property in the LvwGroup class. (comctl version 6.1 [Vista+]; 6.0 remains slow [XP])
 - Included the .ListItemCount property in the LvwGroup class. (comctl version 6.1 [Vista+] only)
