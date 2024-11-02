@@ -939,6 +939,8 @@ Private Const LVIS_SELECTED As Long = &H2
 Private Const LVIS_CUT As Long = &H4
 Private Const LVIS_DROPHILITED As Long = &H8
 Private Const LVIS_ACTIVATING As Long = &H20 ' Unsupported
+Private Const LVIS_UNCHECKED As Long = &H1000 ' Undocumented
+Private Const LVIS_CHECKED As Long = &H2000 ' Undocumented
 Private Const LVIS_OVERLAYMASK As Long = &HF00
 Private Const LVIS_STATEIMAGEMASK As Long = &HF000&
 Private Const LVFI_PARAM As Long = &H1
@@ -5113,14 +5115,12 @@ If ComCtlsSupportLevel() = 0 Then Exit Sub
 Dim LVG As LVGROUP
 With LVG
 .cbSize = LenB(LVG)
-.Mask = LVGF_GROUPID Or LVGF_ALIGN
+.Mask = LVGF_HEADER Or LVGF_GROUPID Or LVGF_ALIGN
+If StrPtr(Header) = NULL_PTR Then Header = ""
+.pszHeader = StrPtr(Header)
+.cchHeader = Len(Header) + 1
 .iGroupId = NextGroupID()
 NewGroup.ID = .iGroupId
-If Not Header = vbNullString Then
-    .Mask = .Mask Or LVGF_HEADER
-    .pszHeader = StrPtr(Header)
-    .cchHeader = Len(Header) + 1
-End If
 Select Case HeaderAlignment
     Case LvwGroupHeaderAlignmentLeft
         .uAlign = LVGA_HEADER_LEFT
@@ -5202,12 +5202,12 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
         With LVG
         .cbSize = LenB(LVG)
         .Mask = LVGF_HEADER
+        If StrPtr(Value) = NULL_PTR Then Value = ""
         .pszHeader = StrPtr(Value)
         .cchHeader = Len(Value) + 1
         End With
-        SendMessage ListViewHandle, WM_SETREDRAW, 0, ByVal 0&
         SendMessage ListViewHandle, LVM_SETGROUPINFO, ID, ByVal VarPtr(LVG)
-        If PropRedraw = True Then SendMessage ListViewHandle, WM_SETREDRAW, 1, ByVal 0&
+        InvalidateRect ListViewHandle, ByVal NULL_PTR, 1
     End If
 End If
 End Property
@@ -5254,9 +5254,8 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
                         .uAlign = .uAlign Or LVGA_HEADER_CENTER
                 End Select
                 End With
-                SendMessage ListViewHandle, WM_SETREDRAW, 0, ByVal 0&
                 SendMessage ListViewHandle, LVM_SETGROUPINFO, ID, ByVal VarPtr(LVG)
-                If PropRedraw = True Then SendMessage ListViewHandle, WM_SETREDRAW, 1, ByVal 0&
+                InvalidateRect ListViewHandle, ByVal NULL_PTR, 1
             Case Else
                 Err.Raise 380
         End Select
@@ -5341,9 +5340,8 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
                         .uAlign = .uAlign Or LVGA_FOOTER_CENTER
                 End Select
                 End With
-                SendMessage ListViewHandle, WM_SETREDRAW, 0, ByVal 0&
                 SendMessage ListViewHandle, LVM_SETGROUPINFO, ID, ByVal VarPtr(LVG)
-                If PropRedraw = True Then SendMessage ListViewHandle, WM_SETREDRAW, 1, ByVal 0&
+                InvalidateRect ListViewHandle, ByVal NULL_PTR, 1
             Case Else
                 Err.Raise 380
         End Select
@@ -5427,7 +5425,7 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
         Dim LVG_V61 As LVGROUP_V61
         With LVG_V61
         .LVG.cbSize = LenB(LVG_V61)
-        .LVG.Mask = LVGF_SUBSET Or LVGF_SUBSETITEMS
+        .LVG.Mask = LVGF_SUBSET
         Dim Buffer As String
         Buffer = String(260, vbNullChar)
         .pszSubsetTitle = StrPtr(Buffer)
@@ -5445,7 +5443,7 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
         Dim LVG_V61 As LVGROUP_V61
         With LVG_V61
         .LVG.cbSize = LenB(LVG_V61)
-        .LVG.Mask = LVGF_SUBSET Or LVGF_SUBSETITEMS
+        .LVG.Mask = LVGF_SUBSET
         .pszSubsetTitle = StrPtr(Value)
         .cchSubsetTitle = Len(Value) + 1
         End With
@@ -8317,7 +8315,9 @@ Select Case wMsg
                                 RaiseEvent ItemSelect(ListItem, CBool((.uNewState And LVIS_SELECTED) = LVIS_SELECTED))
                             End If
                             If PropVirtualMode = False Then
-                                If CBool((.uNewState And &H2000&) = &H2000&) Xor CBool((.uOldState And &H2000&) = &H2000&) Then RaiseEvent ItemCheck(ListItem, CBool((.uNewState And &H2000&) = &H2000&))
+                                If CBool((.uNewState And LVIS_CHECKED) = LVIS_CHECKED) Xor CBool((.uOldState And LVIS_CHECKED) = LVIS_CHECKED) Then
+                                    RaiseEvent ItemCheck(ListItem, CBool((.uNewState And LVIS_CHECKED) = LVIS_CHECKED))
+                                End If
                             End If
                         Else
                             ' The change has been applied to all items in the list view.
