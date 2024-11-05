@@ -155,6 +155,7 @@ LFFaceName(0 To ((LF_FACESIZE * 2) - 1)) As Byte
 End Type
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub GetSystemTime Lib "kernel32" (ByRef lpSystemTime As SYSTEMTIME)
 Private Declare PtrSafe Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As LongPtr
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As LongPtr
@@ -165,10 +166,14 @@ Private Declare PtrSafe Function GetFileAttributes Lib "kernel32" Alias "GetFile
 Private Declare PtrSafe Function SetFileAttributes Lib "kernel32" Alias "SetFileAttributesW" (ByVal lpFileName As LongPtr, ByVal dwFileAttributes As Long) As Long
 Private Declare PtrSafe Function GetFileAttributesEx Lib "kernel32" Alias "GetFileAttributesExW" (ByVal lpFileName As LongPtr, ByVal fInfoLevelId As Long, ByVal lpFileInformation As LongPtr) As Long
 Private Declare PtrSafe Function FileTimeToLocalFileTime Lib "kernel32" (ByVal lpFileTime As LongPtr, ByVal lpLocalFileTime As LongPtr) As Long
+Private Declare PtrSafe Function LocalFileTimeToFileTime Lib "kernel32" (ByVal lpLocalFileTime As LongPtr, ByVal lpFileTime As LongPtr) As Long
 Private Declare PtrSafe Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime As LongPtr, ByVal lpSystemTime As LongPtr) As Long
+Private Declare PtrSafe Function SystemTimeToFileTime Lib "kernel32" (ByVal lpSystemTime As LongPtr, ByVal lpFileTime As LongPtr) As Long
 Private Declare PtrSafe Function FindFirstFile Lib "kernel32" Alias "FindFirstFileW" (ByVal lpFileName As LongPtr, ByRef lpFindFileData As WIN32_FIND_DATA) As LongPtr
 Private Declare PtrSafe Function FindNextFile Lib "kernel32" Alias "FindNextFileW" (ByVal hFindFile As LongPtr, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare PtrSafe Function FindClose Lib "kernel32" (ByVal hFindFile As LongPtr) As Long
+Private Declare PtrSafe Function SystemTimeToTzSpecificLocalTime Lib "kernel32" (ByVal lpTimeZoneInformation As LongPtr, ByVal lpUniversalTime As LongPtr, ByVal lpLocalTime As LongPtr) As Long
+Private Declare PtrSafe Function TzSpecificLocalTimeToSystemTime Lib "kernel32" (ByVal lpTimeZoneInformation As LongPtr, ByVal lpLocalTime As LongPtr, ByVal lpUniversalTime As LongPtr) As Long
 Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function MonitorFromWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal dwFlags As Long) As LongPtr
 Private Declare PtrSafe Function GetMonitorInfo Lib "user32" Alias "GetMonitorInfoW" (ByVal hMonitor As LongPtr, ByRef lpMI As MONITORINFO) As Long
@@ -235,6 +240,7 @@ Private Declare PtrSafe Function WideCharToMultiByte Lib "kernel32" (ByVal CodeP
 Private Declare PtrSafe Function MultiByteToWideChar Lib "kernel32" (ByVal CodePage As Long, ByVal dwFlags As Long, ByVal lpMultiByteStr As LongPtr, ByVal cbMultiByte As Long, ByVal lpWideCharStr As LongPtr, ByVal cchWideChar As Long) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Sub GetSystemTime Lib "kernel32" (ByRef lpSystemTime As SYSTEMTIME)
 Private Declare Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
@@ -245,10 +251,14 @@ Private Declare Function GetFileAttributes Lib "kernel32" Alias "GetFileAttribut
 Private Declare Function SetFileAttributes Lib "kernel32" Alias "SetFileAttributesW" (ByVal lpFileName As Long, ByVal dwFileAttributes As Long) As Long
 Private Declare Function GetFileAttributesEx Lib "kernel32" Alias "GetFileAttributesExW" (ByVal lpFileName As Long, ByVal fInfoLevelId As Long, ByVal lpFileInformation As Long) As Long
 Private Declare Function FileTimeToLocalFileTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpLocalFileTime As Long) As Long
+Private Declare Function LocalFileTimeToFileTime Lib "kernel32" (ByVal lpLocalFileTime As Long, ByVal lpFileTime As Long) As Long
 Private Declare Function FileTimeToSystemTime Lib "kernel32" (ByVal lpFileTime As Long, ByVal lpSystemTime As Long) As Long
+Private Declare Function SystemTimeToFileTime Lib "kernel32" (ByVal lpSystemTime As Long, ByVal lpFileTime As Long) As Long
 Private Declare Function FindFirstFile Lib "kernel32" Alias "FindFirstFileW" (ByVal lpFileName As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare Function FindNextFile Lib "kernel32" Alias "FindNextFileW" (ByVal hFindFile As Long, ByRef lpFindFileData As WIN32_FIND_DATA) As Long
 Private Declare Function FindClose Lib "kernel32" (ByVal hFindFile As Long) As Long
+Private Declare Function SystemTimeToTzSpecificLocalTime Lib "kernel32" (ByVal lpTimeZoneInformation As Long, ByVal lpUniversalTime As Long, ByVal lpLocalTime As Long) As Long
+Private Declare Function TzSpecificLocalTimeToSystemTime Lib "kernel32" (ByVal lpTimeZoneInformation As Long, ByVal lpLocalTime As Long, ByVal lpUniversalTime As Long) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function MonitorFromWindow Lib "user32" (ByVal hWnd As Long, ByVal dwFlags As Long) As Long
 Private Declare Function GetMonitorInfo Lib "user32" Alias "GetMonitorInfoW" (ByVal hMonitor As Long, ByRef lpMI As MONITORINFO) As Long
@@ -873,6 +883,133 @@ End Function
 
 Public Function GetDecimalChar() As String
 GetDecimalChar = Mid$(CStr(1.1), 2, 1)
+End Function
+
+Public Function CurrentUTC() As Date
+Dim ST As SYSTEMTIME
+GetSystemTime ST
+CurrentUTC = DateSerial(ST.wYear, ST.wMonth, ST.wDay) + TimeSerial(ST.wHour, ST.wMinute, ST.wSecond)
+End Function
+
+Public Function FromUTC(ByVal UTCDate As Date) As Date
+Dim UT As SYSTEMTIME, LT As SYSTEMTIME
+UT.wYear = VBA.Year(UTCDate)
+UT.wMonth = VBA.Month(UTCDate)
+UT.wDay = VBA.Day(UTCDate)
+UT.wDayOfWeek = VBA.Weekday(UTCDate)
+UT.wHour = VBA.Hour(UTCDate)
+UT.wMinute = VBA.Minute(UTCDate)
+UT.wSecond = VBA.Second(UTCDate)
+UT.wMilliseconds = 0
+If SystemTimeToTzSpecificLocalTime(NULL_PTR, VarPtr(UT), VarPtr(LT)) <> 0 Then
+    FromUTC = DateSerial(LT.wYear, LT.wMonth, LT.wDay) + TimeSerial(LT.wHour, LT.wMinute, LT.wSecond)
+Else
+    FromUTC = UTCDate
+End If
+End Function
+
+Public Function ToUTC(ByVal LocalDate As Date) As Date
+Dim LT As SYSTEMTIME, UT As SYSTEMTIME
+LT.wYear = VBA.Year(LocalDate)
+LT.wMonth = VBA.Month(LocalDate)
+LT.wDay = VBA.Day(LocalDate)
+LT.wDayOfWeek = VBA.Weekday(LocalDate)
+LT.wHour = VBA.Hour(LocalDate)
+LT.wMinute = VBA.Minute(LocalDate)
+LT.wSecond = VBA.Second(LocalDate)
+LT.wMilliseconds = 0
+If TzSpecificLocalTimeToSystemTime(NULL_PTR, VarPtr(LT), VarPtr(UT)) <> 0 Then
+    ToUTC = DateSerial(UT.wYear, UT.wMonth, UT.wDay) + TimeSerial(UT.wHour, UT.wMinute, UT.wSecond)
+Else
+    ToUTC = LocalDate
+End If
+End Function
+
+Public Function FromJulianDay(ByVal JulianDay As Double) As Date
+Const JULIANDAY_OFFSET As Double = 2415018.5
+Const MIN_DATE As Double = -657434# + JULIANDAY_OFFSET ' 01/01/0100
+Const MAX_DATE As Double = 2958465# + JULIANDAY_OFFSET ' 12/31/9999
+If JulianDay >= MIN_DATE And JulianDay <= MAX_DATE Then
+    If JulianDay >= JULIANDAY_OFFSET Then
+        FromJulianDay = CDate(JulianDay - JULIANDAY_OFFSET)
+    Else
+        Dim DateValue As Double, Temp As Double
+        DateValue = JulianDay - JULIANDAY_OFFSET
+        Temp = Int(DateValue)
+        FromJulianDay = CDate(Temp + (Temp - DateValue))
+    End If
+Else
+    Err.Raise 5
+End If
+End Function
+
+Public Function ToJulianDay(ByVal OADate As Date) As Double
+Const JULIANDAY_OFFSET As Double = 2415018.5
+If CDbl(OADate) >= 0# Then
+    ToJulianDay = CDbl(OADate) + JULIANDAY_OFFSET
+Else
+    Dim Temp As Double
+    Temp = -Int(-CDbl(OADate))
+    ToJulianDay = Temp - (CDbl(OADate) - Temp) + JULIANDAY_OFFSET
+End If
+End Function
+
+Public Function FromUnixEpoch(ByVal UnixEpoch As Double) As Date
+Const UNIXEPOCH_OFFSET As Double = 25569#
+If UnixEpoch >= -59010681600# And UnixEpoch <= 253402214400# Then
+    Dim DateValue As Double
+    DateValue = (Int(UnixEpoch) / 86400#) + UNIXEPOCH_OFFSET
+    If DateValue >= 0# Then
+        FromUnixEpoch = CDate(DateValue)
+    Else
+        Dim Temp As Double
+        Temp = Int(DateValue)
+        FromUnixEpoch = CDate(Temp + (Temp - DateValue))
+    End If
+Else
+    Err.Raise 5
+End If
+End Function
+
+Public Function ToUnixEpoch(ByVal OADate As Date) As Variant
+Const UNIXEPOCH_OFFSET As Double = 25569#
+Dim Dbl As Double
+If CDbl(OADate) >= 0# Then
+    Dbl = Int((CDbl(OADate) - UNIXEPOCH_OFFSET) * 86400#)
+Else
+    Dim Temp As Double
+    Temp = -Int(-CDbl(OADate))
+    Dbl = Int((Temp - (CDbl(OADate) - Temp) - UNIXEPOCH_OFFSET) * 86400#)
+End If
+If Dbl >= -2147483648# And Dbl <= 2147483647# Then ToUnixEpoch = CLng(Dbl) Else ToUnixEpoch = CDec(Dbl)
+End Function
+
+Public Function FromUnixEpochMs(ByVal UnixEpochMs As Double) As Date
+Const UNIXEPOCH_OFFSET As Double = 25569#
+If UnixEpochMs >= -59010681600# And UnixEpochMs <= 253402214400# Then
+    Dim DateValue As Double
+    DateValue = (UnixEpochMs / 86400#) + UNIXEPOCH_OFFSET
+    If DateValue >= 0# Then
+        FromUnixEpochMs = CDate(DateValue)
+    Else
+        Dim Temp As Double
+        Temp = Int(DateValue)
+        FromUnixEpochMs = CDate(Temp + (Temp - DateValue))
+    End If
+Else
+    Err.Raise 5
+End If
+End Function
+
+Public Function ToUnixEpochMs(ByVal OADate As Date) As Double
+Const UNIXEPOCH_OFFSET As Double = 25569#
+If CDbl(OADate) >= 0# Then
+    ToUnixEpochMs = (CDbl(OADate) - UNIXEPOCH_OFFSET) * 86400#
+Else
+    Dim Temp As Double
+    Temp = -Int(-CDbl(OADate))
+    ToUnixEpochMs = (Temp - (CDbl(OADate) - Temp) - UNIXEPOCH_OFFSET) * 86400#
+End If
 End Function
 
 Public Function IsFormLoaded(ByVal FormName As String) As Boolean
