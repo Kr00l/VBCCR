@@ -543,10 +543,10 @@ Public Function AppPath() As String
 If InIDE() = False Then
     Const MAX_PATH_W As Long = 32767
     Dim Buffer As String, RetVal As Long
-    Buffer = String(MAX_PATH, vbNullChar)
+    Buffer = String$(MAX_PATH, vbNullChar)
     RetVal = GetModuleFileName(NULL_PTR, StrPtr(Buffer), MAX_PATH)
     If RetVal = MAX_PATH Then ' Path > MAX_PATH
-        Buffer = String(MAX_PATH_W, vbNullChar)
+        Buffer = String$(MAX_PATH_W, vbNullChar)
         RetVal = GetModuleFileName(NULL_PTR, StrPtr(Buffer), MAX_PATH_W)
     End If
     If RetVal > 0 Then
@@ -564,10 +564,10 @@ Public Function AppEXEName() As String
 If InIDE() = False Then
     Const MAX_PATH_W As Long = 32767
     Dim Buffer As String, RetVal As Long
-    Buffer = String(MAX_PATH, vbNullChar)
+    Buffer = String$(MAX_PATH, vbNullChar)
     RetVal = GetModuleFileName(NULL_PTR, StrPtr(Buffer), MAX_PATH)
     If RetVal = MAX_PATH Then ' Path > MAX_PATH
-        Buffer = String(MAX_PATH_W, vbNullChar)
+        Buffer = String$(MAX_PATH_W, vbNullChar)
         RetVal = GetModuleFileName(NULL_PTR, StrPtr(Buffer), MAX_PATH_W)
     End If
     If RetVal > 0 Then
@@ -617,10 +617,10 @@ Static Done As Boolean, Value As VS_FIXEDFILEINFO
 If Done = False Then
     Const MAX_PATH_W As Long = 32767
     Dim Buffer As String, RetVal As Long
-    Buffer = String(MAX_PATH, vbNullChar)
+    Buffer = String$(MAX_PATH, vbNullChar)
     RetVal = GetModuleFileName(NULL_PTR, StrPtr(Buffer), MAX_PATH)
     If RetVal = MAX_PATH Then ' Path > MAX_PATH
-        Buffer = String(MAX_PATH_W, vbNullChar)
+        Buffer = String$(MAX_PATH_W, vbNullChar)
         RetVal = GetModuleFileName(NULL_PTR, StrPtr(Buffer), MAX_PATH_W)
     End If
     If RetVal > 0 Then
@@ -662,7 +662,7 @@ If OpenClipboard(NULL_PTR) <> 0 Then
             If lpMem <> NULL_PTR Then
                 Length = lstrlen(lpMem)
                 If Length > 0 Then
-                    GetClipboardText = String(Length, vbNullChar)
+                    GetClipboardText = String$(Length, vbNullChar)
                     lstrcpy StrPtr(GetClipboardText), lpMem
                 End If
                 GlobalUnlock lpMem
@@ -1028,7 +1028,7 @@ Public Function GetWindowTitle(ByVal hWnd As LongPtr) As String
 Public Function GetWindowTitle(ByVal hWnd As Long) As String
 #End If
 Dim Buffer As String
-Buffer = String(GetWindowTextLength(hWnd) + 1, vbNullChar)
+Buffer = String$(GetWindowTextLength(hWnd) + 1, vbNullChar)
 GetWindowText hWnd, StrPtr(Buffer), Len(Buffer)
 GetWindowTitle = Left$(Buffer, Len(Buffer) - 1)
 End Function
@@ -1039,7 +1039,7 @@ Public Function GetWindowClassName(ByVal hWnd As LongPtr) As String
 Public Function GetWindowClassName(ByVal hWnd As Long) As String
 #End If
 Dim Buffer As String, RetVal As Long
-Buffer = String(256, vbNullChar)
+Buffer = String$(256, vbNullChar)
 RetVal = GetClassName(hWnd, StrPtr(Buffer), Len(Buffer))
 If RetVal > 0 Then GetWindowClassName = Left$(Buffer, RetVal)
 End Function
@@ -1121,7 +1121,7 @@ Public Function GetWindowsDir() As String
 Static Done As Boolean, Value As String
 If Done = False Then
     Dim Buffer As String
-    Buffer = String(MAX_PATH, vbNullChar)
+    Buffer = String$(MAX_PATH, vbNullChar)
     If GetSystemWindowsDirectory(StrPtr(Buffer), MAX_PATH) > 0 Then
         Value = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
         Value = Value & IIf(Right$(Value, 1) = "\", "", "\")
@@ -1135,7 +1135,7 @@ Public Function GetSystemDir() As String
 Static Done As Boolean, Value As String
 If Done = False Then
     Dim Buffer As String
-    Buffer = String(MAX_PATH, vbNullChar)
+    Buffer = String$(MAX_PATH, vbNullChar)
     If GetSystemDirectory(StrPtr(Buffer), MAX_PATH) > 0 Then
         Value = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
         Value = Value & IIf(Right$(Value, 1) = "\", "", "\")
@@ -1427,6 +1427,29 @@ If (VT And vbArray) = vbArray Then
 End If
 End Function
 #End If
+
+Public Function NaN() As Double
+CopyMemory ByVal UnsignedAdd(VarPtr(NaN), 6), &HFFF8, 2
+End Function
+
+Public Function NaN32() As Single
+CopyMemory ByVal VarPtr(NaN32), &HFFC00000, 4
+End Function
+
+Public Function IsNaN(ByRef VarName As Variant) As Boolean
+Select Case VarType(VarName)
+    Case vbDouble
+        Dim Dbl As Double, IntArr(0 To 3) As Integer
+        Dbl = VarName
+        CopyMemory IntArr(0), Dbl, 8
+        If (IntArr(3) And &H7FF0) = &H7FF0 And (IntArr(0) <> 0 Or IntArr(1) <> 0 Or IntArr(2) <> 0 Or (IntArr(3) And &HF) <> 0) Then IsNaN = True
+    Case vbSingle
+        Dim Sng As Single, Lng As Long
+        Sng = VarName
+        CopyMemory Lng, Sng, 4
+        If (Lng And &H7F800000) = &H7F800000 And (Lng And &H7FFFFF) <> 0 Then IsNaN = True
+End Select
+End Function
 
 Public Function DPI_X() As Long
 Const LOGPIXELSX As Long = 88
