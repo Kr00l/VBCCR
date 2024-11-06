@@ -1436,16 +1436,16 @@ Public Function NaN32() As Single
 CopyMemory ByVal VarPtr(NaN32), &HFFC00000, 4
 End Function
 
-Public Function IsNaN(ByRef VarName As Variant) As Boolean
-Select Case VarType(VarName)
+Public Function IsNaN(ByRef Expression As Variant) As Boolean
+Select Case VarType(Expression)
     Case vbDouble
         Dim Dbl As Double, IntArr(0 To 3) As Integer
-        Dbl = VarName
+        Dbl = Expression
         CopyMemory IntArr(0), Dbl, 8
         If (IntArr(3) And &H7FF0) = &H7FF0 And (IntArr(0) <> 0 Or IntArr(1) <> 0 Or IntArr(2) <> 0 Or (IntArr(3) And &HF) <> 0) Then IsNaN = True
     Case vbSingle
         Dim Sng As Single, Lng As Long
-        Sng = VarName
+        Sng = Expression
         CopyMemory Lng, Sng, 4
         If (Lng And &H7F800000) = &H7F800000 And (Lng And &H7FFFFF) <> 0 Then IsNaN = True
 End Select
