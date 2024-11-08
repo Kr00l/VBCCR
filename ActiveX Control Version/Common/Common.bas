@@ -927,9 +927,7 @@ End Function
 
 Public Function FromJulianDay(ByVal JulianDay As Double) As Date
 Const JULIANDAY_OFFSET As Double = 2415018.5
-Const MIN_DATE As Double = -657434# + JULIANDAY_OFFSET ' 01/01/0100
-Const MAX_DATE As Double = 2958465# + JULIANDAY_OFFSET ' 12/31/9999
-If JulianDay >= MIN_DATE And JulianDay <= MAX_DATE Then
+If JulianDay >= 1757584.5 And JulianDay < 5373484.5 Then
     If JulianDay >= JULIANDAY_OFFSET Then
         FromJulianDay = CDate(JulianDay - JULIANDAY_OFFSET)
     Else
@@ -956,7 +954,7 @@ End Function
 
 Public Function FromUnixEpoch(ByVal UnixEpoch As Double) As Date
 Const UNIXEPOCH_OFFSET As Double = 25569#
-If UnixEpoch >= -59010681600# And UnixEpoch <= 253402214400# Then
+If UnixEpoch >= -59010681600# And UnixEpoch < 253402300800# Then
     Dim DateValue As Double
     DateValue = (Int(UnixEpoch) / 86400#) + UNIXEPOCH_OFFSET
     If DateValue >= 0# Then
@@ -986,7 +984,7 @@ End Function
 
 Public Function FromUnixEpochMs(ByVal UnixEpochMs As Double) As Date
 Const UNIXEPOCH_OFFSET As Double = 25569#
-If UnixEpochMs >= -59010681600# And UnixEpochMs <= 253402214400# Then
+If UnixEpochMs >= -59010681600# And UnixEpochMs < 253402300800# Then
     Dim DateValue As Double
     DateValue = (UnixEpochMs / 86400#) + UNIXEPOCH_OFFSET
     If DateValue >= 0# Then
