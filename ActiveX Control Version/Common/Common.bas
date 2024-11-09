@@ -947,7 +947,7 @@ If CDbl(OADate) >= 0# Then
     ToJulianDay = CDbl(OADate) + JULIANDAY_OFFSET
 Else
     Dim Temp As Double
-    Temp = -Int(-CDbl(OADate))
+    Temp = Fix(CDbl(OADate))
     ToJulianDay = Temp - (CDbl(OADate) - Temp) + JULIANDAY_OFFSET
 End If
 End Function
@@ -956,7 +956,7 @@ Public Function FromUnixEpoch(ByVal UnixEpoch As Double) As Date
 Const UNIXEPOCH_OFFSET As Double = 25569#
 If UnixEpoch >= -59010681600# And UnixEpoch < 253402300800# Then
     Dim DateValue As Double
-    DateValue = (Int(UnixEpoch) / 86400#) + UNIXEPOCH_OFFSET
+    DateValue = (UnixEpoch / 86400#) + UNIXEPOCH_OFFSET
     If DateValue >= 0# Then
         FromUnixEpoch = CDate(DateValue)
     Else
@@ -969,44 +969,14 @@ Else
 End If
 End Function
 
-Public Function ToUnixEpoch(ByVal OADate As Date) As Variant
-Const UNIXEPOCH_OFFSET As Double = 25569#
-Dim Dbl As Double
-If CDbl(OADate) >= 0# Then
-    Dbl = Int((CDbl(OADate) - UNIXEPOCH_OFFSET) * 86400#)
-Else
-    Dim Temp As Double
-    Temp = -Int(-CDbl(OADate))
-    Dbl = Int((Temp - (CDbl(OADate) - Temp) - UNIXEPOCH_OFFSET) * 86400#)
-End If
-If Dbl >= -2147483648# And Dbl <= 2147483647# Then ToUnixEpoch = CLng(Dbl) Else ToUnixEpoch = CDec(Dbl)
-End Function
-
-Public Function FromUnixEpochMs(ByVal UnixEpochMs As Double) As Date
-Const UNIXEPOCH_OFFSET As Double = 25569#
-If UnixEpochMs >= -59010681600# And UnixEpochMs < 253402300800# Then
-    Dim DateValue As Double
-    DateValue = (UnixEpochMs / 86400#) + UNIXEPOCH_OFFSET
-    If DateValue >= 0# Then
-        FromUnixEpochMs = CDate(DateValue)
-    Else
-        Dim Temp As Double
-        Temp = Int(DateValue)
-        FromUnixEpochMs = CDate(Temp + (Temp - DateValue))
-    End If
-Else
-    Err.Raise 5
-End If
-End Function
-
-Public Function ToUnixEpochMs(ByVal OADate As Date) As Double
+Public Function ToUnixEpoch(ByVal OADate As Date) As Double
 Const UNIXEPOCH_OFFSET As Double = 25569#
 If CDbl(OADate) >= 0# Then
-    ToUnixEpochMs = (CDbl(OADate) - UNIXEPOCH_OFFSET) * 86400#
+    ToUnixEpoch = (CDbl(OADate) - UNIXEPOCH_OFFSET) * 86400#
 Else
     Dim Temp As Double
-    Temp = -Int(-CDbl(OADate))
-    ToUnixEpochMs = (Temp - (CDbl(OADate) - Temp) - UNIXEPOCH_OFFSET) * 86400#
+    Temp = Fix(CDbl(OADate))
+    ToUnixEpoch = (Temp - (CDbl(OADate) - Temp) - UNIXEPOCH_OFFSET) * 86400#
 End If
 End Function
 
