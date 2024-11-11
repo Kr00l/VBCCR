@@ -640,9 +640,7 @@ End Sub
 Private Sub DTPicker1_CalendarGetDayBold(ByVal StartDate As Date, ByVal Count As Long, State() As Boolean)
 Dim i As Long
 For i = 1 To Count
-    If Weekday(DateAdd("d", i, StartDate), vbMonday) = vbSunday Then
-        State(i) = True
-    End If
+    If Weekday(DateAdd("d", i - 1, StartDate)) = vbSunday Then State(i) = True
 Next i
 End Sub
 
@@ -666,9 +664,7 @@ End Sub
 Private Sub MonthView1_GetDayBold(ByVal StartDate As Date, ByVal Count As Long, State() As Boolean)
 Dim i As Long
 For i = 1 To Count
-    If Weekday(DateAdd("d", i, StartDate), vbMonday) = vbSunday Then
-        State(i) = True
-    End If
+    If Weekday(DateAdd("d", i - 1, StartDate)) = vbSunday Then State(i) = True
 Next i
 End Sub
 
