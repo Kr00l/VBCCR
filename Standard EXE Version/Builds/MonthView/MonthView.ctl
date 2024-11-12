@@ -489,8 +489,8 @@ PropTitleBackColor = vbActiveTitleBar
 PropTitleForeColor = vbActiveTitleBarText
 PropTrailingForeColor = vbGrayText
 PropBorderStyle = CCBorderStyleSingle
-PropMinDate = DateSerial(1900, 1, 1)
-PropMaxDate = DateSerial(9999, 12, 31)
+PropMinDate = #1/1/1900#
+PropMaxDate = #12/31/9999#
 PropValue = VBA.Date()
 PropShowToday = True
 PropShowTodayCircle = True
@@ -531,8 +531,8 @@ PropTitleBackColor = .ReadProperty("TitleBackColor", vbActiveTitleBar)
 PropTitleForeColor = .ReadProperty("TitleForeColor", vbActiveTitleBarText)
 PropTrailingForeColor = .ReadProperty("TrailingForeColor", vbGrayText)
 PropBorderStyle = .ReadProperty("BorderStyle", CCBorderStyleSingle)
-PropMinDate = .ReadProperty("MinDate", DateSerial(1900, 1, 1))
-PropMaxDate = .ReadProperty("MaxDate", DateSerial(9999, 12, 31))
+PropMinDate = .ReadProperty("MinDate", #1/1/1900#)
+PropMaxDate = .ReadProperty("MaxDate", #12/31/9999#)
 PropValue = .ReadProperty("Value", 0)
 PropShowToday = .ReadProperty("ShowToday", True)
 PropShowTodayCircle = .ReadProperty("ShowTodayCircle", True)
@@ -569,8 +569,8 @@ With PropBag
 .WriteProperty "TitleForeColor", PropTitleForeColor, vbActiveTitleBarText
 .WriteProperty "TrailingForeColor", PropTrailingForeColor, vbGrayText
 .WriteProperty "BorderStyle", PropBorderStyle, CCBorderStyleSingle
-.WriteProperty "MinDate", PropMinDate, DateSerial(1900, 1, 1)
-.WriteProperty "MaxDate", PropMaxDate, DateSerial(9999, 12, 31)
+.WriteProperty "MinDate", PropMinDate, #1/1/1900#
+.WriteProperty "MaxDate", PropMaxDate, #12/31/9999#
 .WriteProperty "Value", PropValue, 0
 .WriteProperty "ShowToday", PropShowToday, True
 .WriteProperty "ShowTodayCircle", PropShowTodayCircle, True
@@ -1102,8 +1102,8 @@ End Property
 
 Public Property Let MinDate(ByVal Value As Date)
 Select Case Value
-    Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
-        If Int(Value) > Me.MaxDate Then
+    Case #1/1/1900# To #12/31/9999 11:59:59 PM#
+        If Fix(Value) > Me.MaxDate Then
             If MonthViewDesignMode = True Then
                 MsgBox "A value was specified for the MinDate property that is higher than the current value of MaxDate", vbCritical + vbOKOnly
                 Exit Property
@@ -1111,7 +1111,7 @@ Select Case Value
                 Err.Raise 35775, Description:="A value was specified for the MinDate property that is higher than the current value of MaxDate"
             End If
         Else
-            PropMinDate = Int(Value)
+            PropMinDate = Fix(Value)
         End If
     Case Else
         If MonthViewDesignMode = True Then
@@ -1151,8 +1151,8 @@ End Property
 
 Public Property Let MaxDate(ByVal Value As Date)
 Select Case Value
-    Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
-        If Int(Value) < Me.MinDate Then
+    Case #1/1/1900# To #12/31/9999 11:59:59 PM#
+        If Fix(Value) < Me.MinDate Then
             If MonthViewDesignMode = True Then
                 MsgBox "A value was specified for the MaxDate property that is lower than the current value of MinDate", vbCritical + vbOKOnly
                 Exit Property
@@ -1160,7 +1160,7 @@ Select Case Value
                 Err.Raise 35774, Description:="A value was specified for the MaxDate property that is lower than the current value of MinDate"
             End If
         Else
-            PropMaxDate = Int(Value)
+            PropMaxDate = Fix(Value)
         End If
     Case Else
         If MonthViewDesignMode = True Then
@@ -1204,8 +1204,8 @@ End If
 End Property
 
 Public Property Let Value(ByVal NewValue As Date)
-If Int(NewValue) >= Me.MinDate And Int(NewValue) <= Me.MaxDate Then
-    PropValue = Int(NewValue)
+If Fix(NewValue) >= Me.MinDate And Fix(NewValue) <= Me.MaxDate Then
+    PropValue = Fix(NewValue)
 Else
     If MonthViewDesignMode = True Then
         MsgBox "A date was specified that does not fall within the MinDate and MaxDate properties", vbCritical + vbOKOnly
@@ -1750,11 +1750,11 @@ Dim Month As Byte, Day As Byte, LastDay As Byte
 Dim Cycle As Long, Bit As Byte
 RunningDate = StartDate
 For Month = 1 To ArraySize
-    LastDay = VBA.Day(DateSerial(VBA.Year(RunningDate), VBA.Month(RunningDate) + 1, 0))
+    If RunningDate < #12/1/9999# Then LastDay = VBA.Day(DateSerial(VBA.Year(RunningDate), VBA.Month(RunningDate) + 1, 0)) Else LastDay = 31
     For Day = 1 To 31
         If Day >= VBA.Day(RunningDate) And Day <= LastDay Then
             Cycle = Cycle + 1
-            RunningDate = VBA.DateAdd("d", 1, RunningDate)
+            If RunningDate < #12/31/9999# Then RunningDate = VBA.DateAdd("d", 1, RunningDate)
             If Cycle <= UBound(State()) Then
                 Bit = IIf(State(Cycle) = True, 1, 0)
                 DayState(Month) = DayState(Month) Or (Bit * (2 ^ (Day - 1)))
@@ -1823,13 +1823,13 @@ End Property
 
 Public Sub SetSelRange(ByVal StartDate As Date, ByVal EndDate As Date)
 Attribute SetSelRange.VB_Description = "Sets the start and end date for the current selection range."
-If Int(StartDate) >= Me.MinDate And Int(StartDate) <= Me.MaxDate And Int(EndDate) >= Me.MinDate And Int(EndDate) <= Me.MaxDate Then
+If Fix(StartDate) >= Me.MinDate And Fix(StartDate) <= Me.MaxDate And Fix(EndDate) >= Me.MinDate And Fix(EndDate) <= Me.MaxDate Then
     If PropMultiSelect = True Then
-        If DateDiff("d", Int(StartDate), Int(EndDate)) < PropMaxSelCount Then
-            If DateDiff("d", Int(StartDate), Int(EndDate)) >= 0 Then
-                PropValue = Int(StartDate)
+        If DateDiff("d", Fix(StartDate), Fix(EndDate)) < PropMaxSelCount Then
+            If DateDiff("d", Fix(StartDate), Fix(EndDate)) >= 0 Then
+                PropValue = Fix(StartDate)
                 Dim Changed As Boolean
-                Changed = CBool(Me.SelStart <> Int(StartDate) Or Me.SelEnd <> Int(EndDate))
+                Changed = CBool(Me.SelStart <> Fix(StartDate) Or Me.SelEnd <> Fix(EndDate))
                 If MonthViewHandle <> NULL_PTR Then
                     Dim ST(0 To 1) As SYSTEMTIME
                     With ST(0)
@@ -1859,20 +1859,20 @@ If Int(StartDate) >= Me.MinDate And Int(StartDate) <= Me.MaxDate And Int(EndDate
                     On Error Resume Next
                     UserControl.Extender.DataChanged = True
                     On Error GoTo 0
-                    RaiseEvent SelChange(Int(StartDate), Int(EndDate))
+                    RaiseEvent SelChange(Int(StartDate), Fix(EndDate))
                 End If
             Else
-                If Int(StartDate) > Me.Value Then
-                    Me.Value = Int(StartDate)
+                If Fix(StartDate) > Me.Value Then
+                    Me.Value = Fix(StartDate)
                 Else
-                    Me.Value = Int(EndDate)
+                    Me.Value = Fix(EndDate)
                 End If
             End If
         Else
             Err.Raise 35770, Description:="An invalid date range was specified"
         End If
     Else
-        Me.Value = Int(StartDate)
+        Me.Value = Fix(StartDate)
     End If
 Else
     Err.Raise 35770, Description:="An invalid date range was specified"
