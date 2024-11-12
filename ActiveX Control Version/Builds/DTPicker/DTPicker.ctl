@@ -540,8 +540,8 @@ PropCalendarShowTrailingDates = True
 PropCalendarAlignment = CCLeftRightAlignmentLeft
 PropCalendarDayState = False
 PropCalendarUseShortestDayNames = False
-PropMinDate = DateSerial(1900, 1, 1)
-PropMaxDate = DateSerial(9999, 12, 31)
+PropMinDate = #1/1/1900#
+PropMaxDate = #12/31/9999#
 PropValue = VBA.Date()
 PropFormat = DtpFormatShortDate
 PropCustomFormat = vbNullString
@@ -582,8 +582,8 @@ PropCalendarShowTrailingDates = .ReadProperty("CalendarShowTrailingDates", True)
 PropCalendarAlignment = .ReadProperty("CalendarAlignment", CCLeftRightAlignmentLeft)
 PropCalendarDayState = .ReadProperty("CalendarDayState", False)
 PropCalendarUseShortestDayNames = .ReadProperty("CalendarUseShortestDayNames", False)
-PropMinDate = .ReadProperty("MinDate", DateSerial(1900, 1, 1))
-PropMaxDate = .ReadProperty("MaxDate", DateSerial(9999, 12, 31))
+PropMinDate = .ReadProperty("MinDate", #1/1/1900#)
+PropMaxDate = .ReadProperty("MaxDate", #12/31/9999#)
 PropValue = .ReadProperty("Value", 0)
 PropFormat = .ReadProperty("Format", DtpFormatShortDate)
 PropCustomFormat = VarToStr(.ReadProperty("CustomFormat", vbNullString))
@@ -620,8 +620,8 @@ With PropBag
 .WriteProperty "CalendarAlignment", PropCalendarAlignment, CCLeftRightAlignmentLeft
 .WriteProperty "CalendarDayState", PropCalendarDayState, False
 .WriteProperty "CalendarUseShortestDayNames", PropCalendarUseShortestDayNames, False
-.WriteProperty "MinDate", PropMinDate, DateSerial(1900, 1, 1)
-.WriteProperty "MaxDate", PropMaxDate, DateSerial(9999, 12, 31)
+.WriteProperty "MinDate", PropMinDate, #1/1/1900#
+.WriteProperty "MaxDate", PropMaxDate, #12/31/9999#
 .WriteProperty "Value", PropValue, 0
 .WriteProperty "Format", PropFormat, DtpFormatShortDate
 .WriteProperty "CustomFormat", StrToVar(PropCustomFormat), vbNullString
@@ -1292,7 +1292,7 @@ End Property
 
 Public Property Let MinDate(ByVal Value As Date)
 Select Case Value
-    Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
+    Case #1/1/1900# To #12/31/9999 11:59:59 PM#
         If Value > Me.MaxDate Then
             If DTPickerDesignMode = True Then
                 MsgBox "A value was specified for the MinDate property that is higher than the current value of MaxDate", vbCritical + vbOKOnly
@@ -1351,7 +1351,7 @@ End Property
 
 Public Property Let MaxDate(ByVal Value As Date)
 Select Case Value
-    Case DateSerial(1900, 1, 1) To DateSerial(9999, 12, 31)
+    Case #1/1/1900# To #12/31/9999 11:59:59 PM#
         If Value < Me.MinDate Then
             If DTPickerDesignMode = True Then
                 MsgBox "A value was specified for the MaxDate property that is lower than the current value of MinDate", vbCritical + vbOKOnly
@@ -1933,11 +1933,11 @@ Dim Month As Byte, Day As Byte, LastDay As Byte
 Dim Cycle As Long, Bit As Byte
 RunningDate = StartDate
 For Month = 1 To ArraySize
-    LastDay = VBA.Day(DateSerial(VBA.Year(RunningDate), VBA.Month(RunningDate) + 1, 0))
+    If RunningDate < #12/1/9999# Then LastDay = VBA.Day(DateSerial(VBA.Year(RunningDate), VBA.Month(RunningDate) + 1, 0)) Else LastDay = 31
     For Day = 1 To 31
         If Day >= VBA.Day(RunningDate) And Day <= LastDay Then
             Cycle = Cycle + 1
-            RunningDate = VBA.DateAdd("d", 1, RunningDate)
+            If RunningDate < #12/31/9999# Then RunningDate = VBA.DateAdd("d", 1, RunningDate)
             If Cycle <= UBound(State()) Then
                 Bit = IIf(State(Cycle) = True, 1, 0)
                 DayState(Month) = DayState(Month) Or (Bit * (2 ^ (Day - 1)))
