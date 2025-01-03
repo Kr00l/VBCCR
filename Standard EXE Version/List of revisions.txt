@@ -1,5 +1,10 @@
 List of revisions:
 
+03-Jan-2025
+- Included enum value 'SbrPanelAlignmentLeftRight' for the Alignment property of a Panel in the StatusBar control.
+  The picture will be left-aligned and the text right-aligned. (instead of aligning both together)
+  If PictureOnRight property is true the logic is reversed. If no picture exists it behaves the same as 'SbrPanelAlignmentLeft'.
+
 02-Nov-2024
 - Bugfix for NULL StrPtr() on the .Header property in the LvwGroup class.
 
