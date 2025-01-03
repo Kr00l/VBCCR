@@ -507,6 +507,8 @@ With ComboAlignment
 .ItemData(.NewIndex) = SbrPanelAlignmentCenter
 .AddItem SbrPanelAlignmentRight & " - Right"
 .ItemData(.NewIndex) = SbrPanelAlignmentRight
+.AddItem SbrPanelAlignmentLeftRight & " - LeftRight"
+.ItemData(.NewIndex) = SbrPanelAlignmentLeftRight
 End With
 With ComboDTFormat
 .AddItem SbrPanelDTFormatShort & " - Short"
