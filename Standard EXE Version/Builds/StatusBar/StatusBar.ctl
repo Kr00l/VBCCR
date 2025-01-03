@@ -43,7 +43,7 @@ Private SbrStyleNormal, SbrStyleSimple
 Private SbrPanelStyleText, SbrPanelStyleCaps, SbrPanelStyleNum, SbrPanelStyleIns, SbrPanelStyleScrl, SbrPanelStyleTime, SbrPanelStyleDate, SbrPanelStyleKana, SbrPanelStyleHangul, SbrPanelStyleJunja, SbrPanelStyleFinal, SbrPanelStyleKanji, SbrPanelStyleHanja
 Private SbrPanelBevelFlat, SbrPanelBevelInset, SbrPanelBevelRaised
 Private SbrPanelAutoSizeNone, SbrPanelAutoSizeSpring, SbrPanelAutoSizeContent
-Private SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight
+Private SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight, SbrPanelAlignmentLeftRight
 Private SbrPanelDTFormatShort, SbrPanelDTFormatLong
 #End If
 Public Enum SbrStyleConstants
@@ -79,6 +79,7 @@ Public Enum SbrPanelAlignmentConstants
 SbrPanelAlignmentLeft = 0
 SbrPanelAlignmentCenter = 1
 SbrPanelAlignmentRight = 2
+SbrPanelAlignmentLeftRight = 3
 End Enum
 Public Enum SbrPanelDTFormatConstants
 SbrPanelDTFormatShort = 0
@@ -1426,7 +1427,7 @@ End Property
 Friend Property Let FPanelAlignment(ByVal Index As Long, ByVal Value As SbrPanelAlignmentConstants)
 If StatusBarHandle <> NULL_PTR Then
     Select Case Value
-        Case SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight
+        Case SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight, SbrPanelAlignmentLeftRight
             PropShadowPanels(Index).Alignment = Value
         Case Else
             Err.Raise 380
@@ -1833,13 +1834,32 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4)
             End If
+        Case SbrPanelAlignmentLeftRight
+            If PictureWidth > 0 And PictureHeight > 0 Then
+                If .PictureOnRight = False Then
+                    PictureLeft = RC.Left + 1
+                    RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
+                    If RC.Left < (PictureLeft + (PictureWidth + 4)) Then PictureLeft = RC.Left - (PictureWidth + 4)
+                Else
+                    PictureLeft = RC.Left + ((RC.Right - RC.Left) - PictureWidth) - 1
+                    RC.Left = RC.Left + 1
+                    If (RC.Left + (Size.CX + 4)) > PictureLeft Then PictureLeft = RC.Left + (Size.CX + 4)
+                End If
+            Else
+                RC.Left = RC.Left + 1
+            End If
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
-        If .PictureOnRight = False Then
-            PictureLeft = RC.Left - (PictureWidth + 4)
-        Else
-            PictureLeft = RC.Left + Size.CX + 4
-        End If
+        Select Case .Alignment
+            Case SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight
+                If .PictureOnRight = False Then
+                    PictureLeft = RC.Left - (PictureWidth + 4)
+                Else
+                    PictureLeft = RC.Left + (Size.CX + 4)
+                End If
+            Case SbrPanelAlignmentLeftRight
+                ' Void
+        End Select
         If .Enabled = True Then
             Call RenderPicture(.Picture, hDC, PictureLeft, PictureTop, PictureWidth, PictureHeight, .PictureRenderFlag)
         Else
