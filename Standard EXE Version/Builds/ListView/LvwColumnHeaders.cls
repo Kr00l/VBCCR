@@ -62,7 +62,7 @@ End If
 PropColumnHeader.Remove Index + 1
 End Sub
 
-Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Width As Single, Optional ByVal Alignment As LvwColumnHeaderAlignmentConstants, Optional ByVal Icon As Variant) As LvwColumnHeader
+Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Width As Variant, Optional ByVal Alignment As LvwColumnHeaderAlignmentConstants, Optional ByVal Icon As Variant) As LvwColumnHeader
 Attribute Add.VB_Description = "Adds a column header to the column headers collection."
 If Index > (PropColumnHeader.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 Dim IconIndex As Long

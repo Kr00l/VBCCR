@@ -4486,7 +4486,7 @@ End If
 Set ColumnHeaders = PropColumnHeaders
 End Property
 
-Friend Sub FColumnHeadersAdd(ByVal Index As Long, Optional ByVal Text As String, Optional ByVal Width As Single, Optional ByVal Alignment As LvwColumnHeaderAlignmentConstants, Optional ByVal IconIndex As Long)
+Friend Sub FColumnHeadersAdd(ByVal Index As Long, Optional ByVal Text As String, Optional ByVal Width As Variant, Optional ByVal Alignment As LvwColumnHeaderAlignmentConstants, Optional ByVal IconIndex As Long)
 Dim ColumnHeaderIndex As Long
 If Index = 0 Then
     ColumnHeaderIndex = Me.ColumnHeaders.Count + 1
@@ -4501,12 +4501,16 @@ If Not Text = vbNullString Then
     .pszText = StrPtr(Text)
     .cchTextMax = Len(Text) + 1
 End If
-If Width = 0 Then
+If IsMissing(Width) Then
     .CX = (96 * PixelsPerDIP_X())
-ElseIf Width > 0 Then
-    .CX = UserControl.ScaleX(Width, vbContainerSize, vbPixels)
 Else
-    Err.Raise 380
+    Dim SngValue As Single
+    SngValue = CSng(Width)
+    If SngValue >= 0 Then
+        .CX = UserControl.ScaleX(SngValue, vbContainerSize, vbPixels)
+    Else
+        Err.Raise 380
+    End If
 End If
 If (ColumnHeaderIndex - 1) = 0 Then
     .fmt = LVCFMT_LEFT
