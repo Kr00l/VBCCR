@@ -1225,6 +1225,24 @@ MakeDWord = (CLng(HiWord) * &H10000) Or (LoWord And &HFFFF&)
 End Function
 
 #If VBA7 Then
+Public Function Get_Wheel_Delta_wParam(ByVal wParam As LongPtr) As Long
+#Else
+Public Function Get_Wheel_Delta_wParam(ByVal wParam As Long) As Long
+#End If
+#If Win64 Then
+Dim LoDWord As Long
+If wParam And &H80000000^ Then
+    LoDWord = CLng(wParam Or &HFFFFFFFF00000000^)
+Else
+    LoDWord = CLng(wParam And &HFFFFFFFF^)
+End If
+Get_Wheel_Delta_wParam = HiWord(LoDWord)
+#Else
+Get_Wheel_Delta_wParam = HiWord(wParam)
+#End If
+End Function
+
+#If VBA7 Then
 Public Function Get_X_lParam(ByVal lParam As LongPtr) As Long
 #Else
 Public Function Get_X_lParam(ByVal lParam As Long) As Long
