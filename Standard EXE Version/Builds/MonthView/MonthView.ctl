@@ -2149,8 +2149,10 @@ Select Case wMsg
     Case WM_MOUSEWHEEL
         If ComCtlsSupportLevel() < 2 Then
             Static WheelDelta As Long, LastWheelDelta As Long
-            If Sgn(HiWord(CLng(wParam))) <> Sgn(LastWheelDelta) Then WheelDelta = 0
-            WheelDelta = WheelDelta + HiWord(CLng(wParam))
+            Dim CurrWheelDelta As Long
+            CurrWheelDelta = Get_Wheel_Delta_wParam(wParam)
+            If Sgn(CurrWheelDelta) <> Sgn(LastWheelDelta) Then WheelDelta = 0
+            WheelDelta = WheelDelta + CurrWheelDelta
             If Abs(WheelDelta) >= 120 Then
                 If PropMultiSelect = False Then
                     Me.Value = DateAdd("m", -Sgn(WheelDelta), Me.Value)
@@ -2159,7 +2161,7 @@ Select Case wMsg
                 End If
                 WheelDelta = 0
             End If
-            LastWheelDelta = HiWord(CLng(wParam))
+            LastWheelDelta = CurrWheelDelta
             WindowProcControl = 0
             Exit Function
         End If

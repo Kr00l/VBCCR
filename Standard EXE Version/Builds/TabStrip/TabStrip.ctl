@@ -1999,7 +1999,7 @@ If ReInitTabsCount > 0 Then
 End If
 If PropMultiRow = False Then Call SetVisualStylesUpDown
 If TabStripHandle <> NULL_PTR Then If CurrIndex <> 0 Then SendMessage TabStripHandle, TCM_SETCURSEL, CurrIndex - 1, ByVal 0&
-If Locked = True Then LockWindowUpdate 0
+If Locked = True Then LockWindowUpdate NULL_PTR
 .Refresh
 End With
 End Sub
@@ -2435,8 +2435,10 @@ Select Case wMsg
     Case WM_MOUSEWHEEL
         If PropTabScrollWheel = True Then
             Static WheelDelta As Long, LastWheelDelta As Long
-            If Sgn(HiWord(CLng(wParam))) <> Sgn(LastWheelDelta) Then WheelDelta = 0
-            WheelDelta = WheelDelta + HiWord(CLng(wParam))
+            Dim CurrWheelDelta As Long
+            CurrWheelDelta = Get_Wheel_Delta_wParam(wParam)
+            If Sgn(CurrWheelDelta) <> Sgn(LastWheelDelta) Then WheelDelta = 0
+            WheelDelta = WheelDelta + CurrWheelDelta
             If Abs(WheelDelta) >= 120 Then
                 Dim CurrIndex As Long
                 CurrIndex = CLng(SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&)) + 1
@@ -2447,7 +2449,7 @@ Select Case wMsg
                 End If
                 WheelDelta = 0
             End If
-            LastWheelDelta = HiWord(CLng(wParam))
+            LastWheelDelta = CurrWheelDelta
             WindowProcControl = 0
             Exit Function
         End If
