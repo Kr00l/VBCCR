@@ -1,5 +1,8 @@
 List of revisions:
 
+22-Mar-2025
+- Scroll wheel down was not working on 64-bit.
+
 25-Jan-2025
 - Bugfix in the Add method of LvwColumnHeaders in the ListView control.
   The Width argument is now Variant instead of Single which allows to apply 0.
