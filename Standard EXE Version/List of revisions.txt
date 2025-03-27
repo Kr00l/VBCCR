@@ -1,5 +1,8 @@
 List of revisions:
 
+27-Mar-2025
+- Bugfix in the FrameW control with issues on subframes. (removal of DrawThemeParentBackground as not necessary)
+
 22-Mar-2025
 - Scroll wheel down was not working on 64-bit.
 
