@@ -141,6 +141,15 @@ library OLEGuids
 		HRESULT ReactivateAndUndo();
 	};
 	[
+		uuid(1C2056CC-5EF4-101B-8BC8-00AA003E3B29),
+		odl
+	]
+	interface IOleInPlaceObjectWindowless : IOleInPlaceObject
+	{
+		LONG OnWindowMessage([in] LONG uMsg, [in] LONG wParam, [in] LONG lParam, [out] LONG *plResult);
+		LONG GetDropTarget([out] LONG *lppDropTarget);
+	};
+	[
 		uuid(B196B288-BAB4-101A-B69C-00AA00341D07),
 		odl
 	]
@@ -208,7 +217,7 @@ library OLEGuids
 		HRESULT OnInPlaceActivate();
 		HRESULT OnUIActivate();
 		HRESULT GetWindowContext([out] IOleInPlaceFrame **ppFrame, [out] IOleInPlaceUIWindow **ppDoc, [in] LONG lprcPosRect, [in] LONG lprcClipRect, [in] LONG lpFrameInfo);
-		HRESULT Scroll([in] CURRENCY scrollExtant);
+		HRESULT Scroll([in] CURRENCY ScrollExtant);
 		HRESULT OnUIDeactivate([in] LONG fUndoable);
 		HRESULT OnInPlaceDeactivate();
 		HRESULT DiscardUndoState();
