@@ -237,7 +237,7 @@ PropUseMnemonic = True
 PropAutoSize = False
 PropWordWrap = False
 PropSingleLine = False
-PropEllipsisFormat = LblEllipsisFormatNone
+PropEllipsisFormat = WlbEllipsisFormatNone
 PropMimicTextBox = False
 PropVerticalAlignment = CCVerticalAlignmentTop
 PropTransparent = False
@@ -271,7 +271,7 @@ PropUseMnemonic = .ReadProperty("UseMnemonic", True)
 PropAutoSize = .ReadProperty("AutoSize", False)
 PropWordWrap = .ReadProperty("WordWrap", False)
 PropSingleLine = .ReadProperty("SingleLine", False)
-PropEllipsisFormat = .ReadProperty("EllipsisFormat", LblEllipsisFormatNone)
+PropEllipsisFormat = .ReadProperty("EllipsisFormat", WlbEllipsisFormatNone)
 PropMimicTextBox = .ReadProperty("MimicTextBox", False)
 PropVerticalAlignment = .ReadProperty("VerticalAlignment", CCVerticalAlignmentTop)
 PropTransparent = .ReadProperty("Transparent", False)
@@ -304,7 +304,7 @@ With PropBag
 .WriteProperty "AutoSize", PropAutoSize, False
 .WriteProperty "WordWrap", PropWordWrap, False
 .WriteProperty "SingleLine", PropSingleLine, False
-.WriteProperty "EllipsisFormat", PropEllipsisFormat, LblEllipsisFormatNone
+.WriteProperty "EllipsisFormat", PropEllipsisFormat, WlbEllipsisFormatNone
 .WriteProperty "MimicTextBox", PropMimicTextBox, False
 .WriteProperty "VerticalAlignment", PropVerticalAlignment, CCVerticalAlignmentTop
 .WriteProperty "Transparent", PropTransparent, False
