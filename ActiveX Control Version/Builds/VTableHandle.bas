@@ -18,12 +18,13 @@ Private Const PTR_SIZE As Long = 4
 ' OLEGuids.tlb (in IDE only)
 
 #If False Then
-Private VTableInterfaceInPlaceActiveObject, VTableInterfaceControl, VTableInterfacePerPropertyBrowsing
+Private VTableInterfaceInPlaceActiveObject, VTableInterfaceControl, VTableInterfacePerPropertyBrowsing, VTableInterfaceInPlaceObjectWindowless
 #End If
 Public Enum VTableInterfaceConstants
 VTableInterfaceInPlaceActiveObject = 1
 VTableInterfaceControl = 2
 VTableInterfacePerPropertyBrowsing = 3
+VTableInterfaceInPlaceObjectWindowless = 4
 End Enum
 Private Type VTableIPAODataStruct
 VTable As LongPtr
@@ -70,6 +71,7 @@ Private Const S_OK As Long = &H0
 Private VTableIPAO(0 To 9) As LongPtr, VTableIPAOData As VTableIPAODataStruct
 Private VTableControl(0 To 6) As LongPtr, OriginalVTableControl As LongPtr
 Private VTablePPB(0 To 6) As LongPtr, OriginalVTablePPB As LongPtr, StringsOutArray() As String, CookiesOutArray() As Long
+Private VTableInPlaceObjectWindowless(0 To 10) As LongPtr, OriginalVTableInPlaceObjectWindowless As LongPtr
 Private VTableEnumVARIANT(0 To 6) As LongPtr
 
 Public Function SetVTableHandling(ByVal This As Object, ByVal OLEInterface As VTableInterfaceConstants) As Boolean
@@ -87,6 +89,11 @@ Select Case OLEInterface
     Case VTableInterfacePerPropertyBrowsing
         If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
             Call ReplaceIPPB(This)
+            SetVTableHandling = True
+        End If
+    Case VTableInterfaceInPlaceObjectWindowless
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceObjectWindowless) = True Then
+            Call ReplaceInPlaceObjectWindowless(This)
             SetVTableHandling = True
         End If
 End Select
@@ -107,6 +114,11 @@ Select Case OLEInterface
     Case VTableInterfacePerPropertyBrowsing
         If VTableHandlingSupported(This, VTableInterfacePerPropertyBrowsing) = True Then
             Call RestoreIPPB(This)
+            RemoveVTableHandling = True
+        End If
+    Case VTableInterfaceInPlaceObjectWindowless
+        If VTableHandlingSupported(This, VTableInterfaceInPlaceObjectWindowless) = True Then
+            Call RestoreInPlaceObjectWindowless(This)
             RemoveVTableHandling = True
         End If
 End Select
@@ -133,6 +145,12 @@ Select Case OLEInterface
         Set ShadowIPPB = This
         Set ShadowIPerPropertyBrowsingVB = This
         VTableHandlingSupported = Not CBool(ShadowIPPB Is Nothing Or ShadowIPerPropertyBrowsingVB Is Nothing)
+    Case VTableInterfaceInPlaceObjectWindowless
+        Dim ShadowIOleInPlaceObjectWindowless As OLEGuids.IOleInPlaceObjectWindowless
+        Dim ShadowIOleInPlaceObjectWindowlessVB As OLEGuids.IOleInPlaceObjectWindowlessVB
+        Set ShadowIOleInPlaceObjectWindowless = This
+        Set ShadowIOleInPlaceObjectWindowlessVB = This
+        VTableHandlingSupported = Not CBool(ShadowIOleInPlaceObjectWindowless Is Nothing Or ShadowIOleInPlaceObjectWindowlessVB Is Nothing)
 End Select
 CATCH_EXCEPTION:
 End Function
@@ -366,7 +384,7 @@ End Function
 
 Private Sub ReplaceIOleControl(ByVal This As OLEGuids.IOleControl)
 If OriginalVTableControl = NULL_PTR Then CopyMemory OriginalVTableControl, ByVal ObjPtr(This), PTR_SIZE
-CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTableControl()), PTR_SIZE
+If OriginalVTableControl <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTableControl()), PTR_SIZE
 End Sub
 
 Private Sub RestoreIOleControl(ByVal This As OLEGuids.IOleControl)
@@ -386,13 +404,7 @@ End Sub
 
 Private Function GetVTableControl() As LongPtr
 If VTableControl(0) = NULL_PTR Then
-    If OriginalVTableControl <> NULL_PTR Then
-        CopyMemory VTableControl(0), ByVal OriginalVTableControl, 3 * PTR_SIZE
-    Else
-        VTableControl(0) = ProcPtr(AddressOf IOleControl_QueryInterface)
-        VTableControl(1) = ProcPtr(AddressOf IOleControl_AddRef)
-        VTableControl(2) = ProcPtr(AddressOf IOleControl_Release)
-    End If
+    If OriginalVTableControl <> NULL_PTR Then CopyMemory VTableControl(0), ByVal OriginalVTableControl, 3 * PTR_SIZE
     VTableControl(3) = ProcPtr(AddressOf IOleControl_GetControlInfo)
     VTableControl(4) = ProcPtr(AddressOf IOleControl_OnMnemonic)
     VTableControl(5) = ProcPtr(AddressOf IOleControl_OnAmbientPropertyChange)
@@ -403,43 +415,6 @@ If VTableControl(0) = NULL_PTR Then
     End If
 End If
 GetVTableControl = VarPtr(VTableControl(0))
-End Function
-
-Private Function IOleControl_QueryInterface(ByRef This As LongPtr, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As LongPtr) As Long
-If VarPtr(pvObj) = NULL_PTR Then
-    IOleControl_QueryInterface = E_POINTER
-    Exit Function
-End If
-If OriginalVTableControl <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    This = OriginalVTableControl
-    CopyMemory IUnk, VarPtr(This), PTR_SIZE
-    IOleControl_QueryInterface = IUnk.QueryInterface(VarPtr(IID), pvObj)
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-    This = GetVTableControl()
-End If
-End Function
-
-Private Function IOleControl_AddRef(ByRef This As LongPtr) As Long
-If OriginalVTableControl <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    This = OriginalVTableControl
-    CopyMemory IUnk, VarPtr(This), PTR_SIZE
-    IOleControl_AddRef = IUnk.AddRef()
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-    This = GetVTableControl()
-End If
-End Function
-
-Private Function IOleControl_Release(ByRef This As LongPtr) As Long
-If OriginalVTableControl <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    This = OriginalVTableControl
-    CopyMemory IUnk, VarPtr(This), PTR_SIZE
-    IOleControl_Release = IUnk.Release()
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-    This = GetVTableControl()
-End If
 End Function
 
 Private Function IOleControl_GetControlInfo(ByRef This As LongPtr, ByRef CI As OLEGuids.OLECONTROLINFO) As Long
@@ -547,7 +522,7 @@ End Function
 
 Private Sub ReplaceIPPB(ByVal This As OLEGuids.IPerPropertyBrowsing)
 If OriginalVTablePPB = NULL_PTR Then CopyMemory OriginalVTablePPB, ByVal ObjPtr(This), PTR_SIZE
-CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTablePPB()), PTR_SIZE
+If OriginalVTablePPB <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTablePPB()), PTR_SIZE
 End Sub
 
 Private Sub RestoreIPPB(ByVal This As OLEGuids.IPerPropertyBrowsing)
@@ -556,13 +531,7 @@ End Sub
 
 Private Function GetVTablePPB() As LongPtr
 If VTablePPB(0) = NULL_PTR Then
-    If OriginalVTablePPB <> NULL_PTR Then
-        CopyMemory VTablePPB(0), ByVal OriginalVTablePPB, 3 * PTR_SIZE
-    Else
-        VTablePPB(0) = ProcPtr(AddressOf IPPB_QueryInterface)
-        VTablePPB(1) = ProcPtr(AddressOf IPPB_AddRef)
-        VTablePPB(2) = ProcPtr(AddressOf IPPB_Release)
-    End If
+    If OriginalVTablePPB <> NULL_PTR Then CopyMemory VTablePPB(0), ByVal OriginalVTablePPB, 3 * PTR_SIZE
     VTablePPB(3) = ProcPtr(AddressOf IPPB_GetDisplayString)
     If OriginalVTablePPB <> NULL_PTR Then
         CopyMemory VTablePPB(4), ByVal UnsignedAdd(OriginalVTablePPB, 4 * PTR_SIZE), PTR_SIZE
@@ -573,43 +542,6 @@ If VTablePPB(0) = NULL_PTR Then
     VTablePPB(6) = ProcPtr(AddressOf IPPB_GetPredefinedValue)
 End If
 GetVTablePPB = VarPtr(VTablePPB(0))
-End Function
-
-Private Function IPPB_QueryInterface(ByRef This As LongPtr, ByRef IID As OLEGuids.OLECLSID, ByRef pvObj As LongPtr) As Long
-If VarPtr(pvObj) = NULL_PTR Then
-    IPPB_QueryInterface = E_POINTER
-    Exit Function
-End If
-If OriginalVTablePPB <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    This = OriginalVTablePPB
-    CopyMemory IUnk, VarPtr(This), PTR_SIZE
-    IPPB_QueryInterface = IUnk.QueryInterface(VarPtr(IID), pvObj)
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-    This = GetVTablePPB()
-End If
-End Function
-
-Private Function IPPB_AddRef(ByRef This As LongPtr) As Long
-If OriginalVTablePPB <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    This = OriginalVTablePPB
-    CopyMemory IUnk, VarPtr(This), PTR_SIZE
-    IPPB_AddRef = IUnk.AddRef()
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-    This = GetVTablePPB()
-End If
-End Function
-
-Private Function IPPB_Release(ByRef This As LongPtr) As Long
-If OriginalVTablePPB <> NULL_PTR Then
-    Dim IUnk As OLEGuids.IUnknownUnrestricted
-    This = OriginalVTablePPB
-    CopyMemory IUnk, VarPtr(This), PTR_SIZE
-    IPPB_Release = IUnk.Release()
-    CopyMemory IUnk, NULL_PTR, PTR_SIZE
-    This = GetVTablePPB()
-End If
 End Function
 
 Private Function IPPB_GetDisplayString(ByRef This As LongPtr, ByVal DispId As Long, ByRef lpDisplayName As LongPtr) As Long
@@ -703,6 +635,8 @@ If OriginalVTablePPB <> NULL_PTR Then
     Original_IPPB_GetDisplayString = ShadowIPPB.GetDisplayString(DispId, lpDisplayName)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
+Else
+    Original_IPPB_GetDisplayString = E_NOTIMPL
 End If
 End Function
 
@@ -714,6 +648,8 @@ If OriginalVTablePPB <> NULL_PTR Then
     Original_IPPB_MapPropertyToPage = ShadowIPPB.MapPropertyToPage(DispId, pCLSID)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
+Else
+    Original_IPPB_MapPropertyToPage = E_NOTIMPL
 End If
 End Function
 
@@ -725,6 +661,8 @@ If OriginalVTablePPB <> NULL_PTR Then
     Original_IPPB_GetPredefinedStrings = ShadowIPPB.GetPredefinedStrings(DispId, pCaStringsOut, pCaCookiesOut)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
+Else
+    Original_IPPB_GetPredefinedStrings = E_NOTIMPL
 End If
 End Function
 
@@ -736,6 +674,79 @@ If OriginalVTablePPB <> NULL_PTR Then
     Original_IPPB_GetPredefinedValue = ShadowIPPB.GetPredefinedValue(DispId, dwCookie, pVarOut)
     CopyMemory ShadowIPPB, NULL_PTR, PTR_SIZE
     This = GetVTablePPB()
+Else
+    Original_IPPB_GetPredefinedValue = E_NOTIMPL
+End If
+End Function
+
+Private Sub ReplaceInPlaceObjectWindowless(ByRef This As OLEGuids.IOleInPlaceObjectWindowless)
+If OriginalVTableInPlaceObjectWindowless = NULL_PTR Then CopyMemory OriginalVTableInPlaceObjectWindowless, ByVal ObjPtr(This), PTR_SIZE
+If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTableInPlaceObjectWindowless()), PTR_SIZE
+End Sub
+
+Private Sub RestoreInPlaceObjectWindowless(ByVal This As OLEGuids.IOleInPlaceObjectWindowless)
+If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), OriginalVTableInPlaceObjectWindowless, PTR_SIZE
+End Sub
+
+Private Function GetVTableInPlaceObjectWindowless() As LongPtr
+If VTableInPlaceObjectWindowless(0) = NULL_PTR Then
+    If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then CopyMemory VTableInPlaceObjectWindowless(0), ByVal OriginalVTableInPlaceObjectWindowless, 9 * PTR_SIZE
+    VTableInPlaceObjectWindowless(9) = ProcPtr(AddressOf InPlaceObjectWindowless_OnWindowMessage)
+    If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then
+        CopyMemory VTableInPlaceObjectWindowless(10), ByVal UnsignedAdd(OriginalVTableInPlaceObjectWindowless, 10 * PTR_SIZE), PTR_SIZE
+    Else
+        VTableInPlaceObjectWindowless(10) = ProcPtr(AddressOf InPlaceObjectWindowless_GetDropTarget)
+    End If
+End If
+GetVTableInPlaceObjectWindowless = VarPtr(VTableInPlaceObjectWindowless(0))
+End Function
+
+Private Function InPlaceObjectWindowless_OnWindowMessage(ByRef This As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByRef Result As LongPtr) As Long
+If OriginalVTableInPlaceObjectWindowless = NULL_PTR Then
+    InPlaceObjectWindowless_OnWindowMessage = S_FALSE
+    Exit Function
+End If
+On Error GoTo CATCH_EXCEPTION
+Dim ShadowIOleInPlaceObjectWindowlessVB As OLEGuids.IOleInPlaceObjectWindowlessVB, Handled As Boolean
+Set ShadowIOleInPlaceObjectWindowlessVB = PtrToObj(VarPtr(This))
+ShadowIOleInPlaceObjectWindowlessVB.OnWindowMessage Handled, wMsg, wParam, lParam, Result
+If Handled = False Then
+    InPlaceObjectWindowless_OnWindowMessage = Original_InPlaceObjectWindowless_OnWindowMessage(This, wMsg, wParam, lParam, Result)
+Else
+    InPlaceObjectWindowless_OnWindowMessage = S_OK
+End If
+Exit Function
+CATCH_EXCEPTION:
+InPlaceObjectWindowless_OnWindowMessage = Original_InPlaceObjectWindowless_OnWindowMessage(This, wMsg, wParam, lParam, Result)
+End Function
+
+Private Function InPlaceObjectWindowless_GetDropTarget(ByRef This As LongPtr, ByRef lppDropTarget As LongPtr) As Long
+InPlaceObjectWindowless_GetDropTarget = Original_InPlaceObjectWindowless_GetDropTarget(This, lppDropTarget)
+End Function
+
+Private Function Original_InPlaceObjectWindowless_OnWindowMessage(ByRef This As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByRef Result As LongPtr) As Long
+If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then
+    Dim ShadowIOleInPlaceObjectWindowless As OLEGuids.IOleInPlaceObjectWindowless
+    This = OriginalVTableInPlaceObjectWindowless
+    CopyMemory ShadowIOleInPlaceObjectWindowless, VarPtr(This), PTR_SIZE
+    Original_InPlaceObjectWindowless_OnWindowMessage = ShadowIOleInPlaceObjectWindowless.OnWindowMessage(wMsg, wParam, lParam, Result)
+    CopyMemory ShadowIOleInPlaceObjectWindowless, NULL_PTR, PTR_SIZE
+    This = GetVTableInPlaceObjectWindowless()
+Else
+    Original_InPlaceObjectWindowless_OnWindowMessage = S_FALSE
+End If
+End Function
+
+Private Function Original_InPlaceObjectWindowless_GetDropTarget(ByRef This As LongPtr, ByRef lppDropTarget As LongPtr) As Long
+If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then
+    Dim ShadowIOleInPlaceObjectWindowless As OLEGuids.IOleInPlaceObjectWindowless
+    This = OriginalVTableInPlaceObjectWindowless
+    CopyMemory ShadowIOleInPlaceObjectWindowless, VarPtr(This), PTR_SIZE
+    Original_InPlaceObjectWindowless_GetDropTarget = ShadowIOleInPlaceObjectWindowless.GetDropTarget(lppDropTarget)
+    CopyMemory ShadowIOleInPlaceObjectWindowless, NULL_PTR, PTR_SIZE
+    This = GetVTableInPlaceObjectWindowless()
+Else
+    Original_InPlaceObjectWindowless_GetDropTarget = E_NOTIMPL
 End If
 End Function
 
