@@ -146,7 +146,7 @@ library OLEGuids
 	]
 	interface IOleInPlaceObjectWindowless : IOleInPlaceObject
 	{
-		LONG OnWindowMessage([in] LONG uMsg, [in] LONG wParam, [in] LONG lParam, [out] LONG *plResult);
+		LONG OnWindowMessage([in] LONG wMsg, [in] LONG wParam, [in] LONG lParam, [out] LONG *Result);
 		LONG GetDropTarget([out] LONG *lppDropTarget);
 	};
 	[
@@ -335,6 +335,19 @@ library OLEGuids
         	HRESULT GetPredefinedStrings([in, out] boolean *Handled, [in] LONG DispId, [in, out] SAFEARRAY(BSTR) *StringsOut, [in, out] SAFEARRAY(LONG) *CookiesOut);
 		[id(0x00000003)]
 		HRESULT GetPredefinedValue([in, out] boolean *Handled, [in] LONG DispId, [in] LONG Cookie, [in, out] VARIANT *Value);
+    	};
+	[
+		uuid(061D3A2F-A213-4016-9756-B89140604819),
+		odl,
+		version(1.0),
+		dual,
+		nonextensible,
+		oleautomation
+	]
+	interface IOleInPlaceObjectWindowlessVB : IDispatch
+	{
+        	[id(0x00000001)]
+        	HRESULT OnWindowMessage([in, out] boolean *Handled, [in] LONG wMsg, [in] LONG wParam, [in] LONG lParam, [in, out] LONG *Result);
     	};
 	[
 		uuid(00020D00-0000-0000-C000-000000000046),
