@@ -1109,6 +1109,7 @@ Select Case wMsg
         Dim ClientRect As RECT
         GetClientRect UserControl.hWnd, ClientRect
         BitBlt wParam, 0, 0, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top, UserControl.hDC, 0, 0, vbSrcCopy
+        UserControl.Cls
         WindowProcUserControl = 0
         Exit Function
     Case WM_GETTEXTLENGTH
