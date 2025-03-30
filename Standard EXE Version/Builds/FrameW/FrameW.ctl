@@ -1,6 +1,5 @@
 VERSION 5.00
 Begin VB.UserControl FrameW 
-   AutoRedraw      =   -1  'True
    CanGetFocus     =   0   'False
    ClientHeight    =   1800
    ClientLeft      =   0
@@ -903,6 +902,7 @@ End Property
 Private Sub DrawFrame()
 With UserControl
 .Cls
+.AutoRedraw = True
 Set .Picture = Nothing
 If PropTransparent = True Then
     Dim WndRect As RECT, P As POINTAPI
@@ -1136,6 +1136,7 @@ If PropBorderStyle <> vbBSNone Then
     SetBkMode .hDC, OldBkMode
 End If
 Set .Picture = .Image
+.AutoRedraw = False
 End With
 End Sub
 
@@ -1153,7 +1154,6 @@ Select Case wMsg
         Dim ClientRect As RECT
         GetClientRect UserControl.hWnd, ClientRect
         BitBlt wParam, 0, 0, ClientRect.Right - ClientRect.Left, ClientRect.Bottom - ClientRect.Top, UserControl.hDC, 0, 0, vbSrcCopy
-        UserControl.Cls
         WindowProcUserControl = 0
         Exit Function
     Case WM_GETTEXTLENGTH
