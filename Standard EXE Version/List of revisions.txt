@@ -1,8 +1,7 @@
 List of revisions:
 
 30-Mar-2025
-- Bugfix in the WM_PRINTCLIENT handler of FrameW/WindowedLabel to call UserControl.cls after BitBlt.
-  This fixes the black line appearing at the top.
+- Bugfix that a black line can appear at the top in the FrameW control.
 
 29-Mar-2025
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
