@@ -1,5 +1,14 @@
 List of revisions:
 
+30-Mar-2025
+- Bugfix in the WM_PRINTCLIENT handler of FrameW/WindowedLabel to call UserControl.cls after BitBlt.
+  This fixes the black line appearing at the top.
+
+29-Mar-2025
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - included IOleInPlaceObjectWindowless and IOleInPlaceObjectWindowlessVB interfaces.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
 27-Mar-2025
 - Bugfix in the FrameW control with issues on subframes. (removal of DrawThemeParentBackground as not necessary)
 
