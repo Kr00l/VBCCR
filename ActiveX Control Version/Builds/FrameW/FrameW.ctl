@@ -208,7 +208,7 @@ Private DispIdBorderStyle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
-Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
+Private PropMousePointer As Integer
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
@@ -269,7 +269,7 @@ On Error GoTo 0
 Set Me.Font = Ambient.Font
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
-PropMousePointer = 0: Set PropMouseIcon = Nothing
+PropMousePointer = 0
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftMode = CCRightToLeftModeVBAME
@@ -297,9 +297,8 @@ Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.ForeColor = .ReadProperty("ForeColor", vbButtonText)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
-PropMousePointer = .ReadProperty("MousePointer", 0)
-Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
-Me.MousePointer = PropMousePointer
+Me.MousePointer = .ReadProperty("MousePointer", 0)
+Set Me.MouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
 PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
@@ -330,7 +329,7 @@ With PropBag
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
-.WriteProperty "MouseIcon", PropMouseIcon, Nothing
+.WriteProperty "MouseIcon", Me.MouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
@@ -686,13 +685,8 @@ Select Case Value
 End Select
 If FrameDesignMode = False Then
     Select Case PropMousePointer
-        Case vbIconPointer, 16, vbCustom
-            If PropMousePointer = vbCustom Then
-                Set UserControl.MouseIcon = PropMouseIcon
-            Else
-                Set UserControl.MouseIcon = PictureFromHandle(LoadCursor(NULL_PTR, MousePointerID(PropMousePointer)), vbPicTypeIcon)
-            End If
-            UserControl.MousePointer = vbCustom
+        Case vbIconPointer, 16
+            UserControl.MousePointer = vbDefault
         Case Else
             UserControl.MousePointer = PropMousePointer
     End Select
@@ -702,7 +696,7 @@ End Property
 
 Public Property Get MouseIcon() As IPictureDisp
 Attribute MouseIcon.VB_Description = "Returns/sets a custom mouse icon."
-Set MouseIcon = PropMouseIcon
+Set MouseIcon = UserControl.MouseIcon
 End Property
 
 Public Property Let MouseIcon(ByVal Value As IPictureDisp)
@@ -711,10 +705,10 @@ End Property
 
 Public Property Set MouseIcon(ByVal Value As IPictureDisp)
 If Value Is Nothing Then
-    Set PropMouseIcon = Nothing
+    Set UserControl.MouseIcon = Nothing
 Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = NULL_PTR Then
-        Set PropMouseIcon = Value
+        Set UserControl.MouseIcon = Value
     Else
         If FrameDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
@@ -724,7 +718,6 @@ Else
         End If
     End If
 End If
-Me.MousePointer = PropMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 
