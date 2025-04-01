@@ -1,5 +1,9 @@
 List of revisions:
 
+01-Apr-2025
+- Improved the MousePointer property in the LabelW control. (e.g. properly show 4 - Hand cursor)
+- Bugfix in the WM_SETCURSOR handler in the ListView control when hot cursor is in place.
+
 30-Mar-2025
 - Bugfix that a black line can appear at the top in the FrameW control.
 
