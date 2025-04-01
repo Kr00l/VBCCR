@@ -679,7 +679,7 @@ Else
 End If
 End Function
 
-Private Sub ReplaceInPlaceObjectWindowless(ByRef This As OLEGuids.IOleInPlaceObjectWindowless)
+Private Sub ReplaceInPlaceObjectWindowless(ByVal This As OLEGuids.IOleInPlaceObjectWindowless)
 If OriginalVTableInPlaceObjectWindowless = NULL_PTR Then CopyMemory OriginalVTableInPlaceObjectWindowless, ByVal ObjPtr(This), PTR_SIZE
 If OriginalVTableInPlaceObjectWindowless <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTableInPlaceObjectWindowless()), PTR_SIZE
 End Sub
