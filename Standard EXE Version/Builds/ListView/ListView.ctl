@@ -7651,16 +7651,30 @@ Select Case wMsg
         PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, GetShiftStateFromParam(wParam)), ByVal lParam
     Case WM_SETCURSOR
         If LoWord(CLng(lParam)) = HTCLIENT Then
+            Dim hCursor As LongPtr
             If MousePointerID(PropMousePointer) <> 0 Then
-                SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
+                hCursor = LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
+            ElseIf PropMousePointer = 99 Then
+                If Not PropMouseIcon Is Nothing Then hCursor = PropMouseIcon.Handle
+            End If
+            ' According to MSDN:
+            ' The list view uses the hot cursor when the pointer is over an item while hot tracking is enabled.
+            If (SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, ByVal 0&) And LVS_EX_TRACKSELECT) = LVS_EX_TRACKSELECT Then
+                Dim LVHTI1 As LVHITTESTINFO, Pos1 As Long
+                With LVHTI1
+                Pos1 = GetMessagePos()
+                .PT.X = Get_X_lParam(Pos1)
+                .PT.Y = Get_Y_lParam(Pos1)
+                ScreenToClient hWnd, .PT
+                If SendMessage(hWnd, LVM_HITTEST, 0, ByVal VarPtr(LVHTI1)) > -1 Then
+                    If (.Flags And LVHT_ONITEM) <> 0 Then hCursor = NULL_PTR
+                End If
+                End With
+            End If
+            If hCursor <> NULL_PTR Then
+                SetCursor hCursor
                 WindowProcControl = 1
                 Exit Function
-            ElseIf PropMousePointer = 99 Then
-                If Not PropMouseIcon Is Nothing Then
-                    SetCursor PropMouseIcon.Handle
-                    WindowProcControl = 1
-                    Exit Function
-                End If
             End If
         End If
     Case WM_DROPFILES
@@ -7893,13 +7907,13 @@ Select Case wMsg
                     End If
                     ShowSubInfoTip = False
                     If PropView = LvwViewReport Then
-                        Dim LVHTI As LVHITTESTINFO, Pos As Long
-                        With LVHTI
-                        Pos = GetMessagePos()
-                        .PT.X = Get_X_lParam(Pos)
-                        .PT.Y = Get_Y_lParam(Pos)
+                        Dim LVHTI2 As LVHITTESTINFO, Pos2 As Long
+                        With LVHTI2
+                        Pos2 = GetMessagePos()
+                        .PT.X = Get_X_lParam(Pos2)
+                        .PT.Y = Get_Y_lParam(Pos2)
                         ScreenToClient hWnd, .PT
-                        If SendMessage(hWnd, LVM_SUBITEMHITTEST, 0, ByVal VarPtr(LVHTI)) > -1 Then
+                        If SendMessage(hWnd, LVM_SUBITEMHITTEST, 0, ByVal VarPtr(LVHTI2)) > -1 Then
                             If (.Flags And LVHT_ONITEM) <> 0 And .iSubItem > 0 Then
                                 Dim Text As String, Length As Long
                                 If (SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, ByVal 0&) And LVS_EX_LABELTIP) = LVS_EX_LABELTIP Then

@@ -109,6 +109,7 @@ Private Declare PtrSafe Function PeekMessage Lib "user32" Alias "PeekMessageW" (
 Private Declare PtrSafe Function DispatchMessage Lib "user32" Alias "DispatchMessageW" (ByRef lpMsg As TMSG) As LongPtr
 Private Declare PtrSafe Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
+Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetMessagePos Lib "user32" () As Long
 Private Declare PtrSafe Function GetCapture Lib "user32" () As LongPtr
 Private Declare PtrSafe Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As LongPtr
@@ -131,6 +132,7 @@ Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lp
 Private Declare Function DispatchMessage Lib "user32" Alias "DispatchMessageW" (ByRef lpMsg As TMSG) As Long
 Private Declare Function SetRect Lib "user32" (ByRef lpRect As RECT, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
+Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetMessagePos Lib "user32" () As Long
 Private Declare Function GetCapture Lib "user32" () As Long
 Private Declare Function WindowFromPoint Lib "user32" (ByVal XY As Currency) As Long
@@ -147,6 +149,7 @@ Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 A
 Private Declare Function GetClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long) As Long
 Private Declare Function SelectClipRgn Lib "gdi32" (ByVal hDC As Long, ByVal hRgn As Long) As Long
 #End If
+Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const DT_LEFT As Long = &H0
 Private Const DT_CENTER As Long = &H1
 Private Const DT_RIGHT As Long = &H2
@@ -179,14 +182,16 @@ Private Const BF_TOP As Long = &H2
 Private Const BF_BOTTOM As Long = &H8
 Private Const BF_RECT As Long = (BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM)
 Implements OLEGuids.IObjectSafety
+Implements OLEGuids.IOleInPlaceObjectWindowlessVB
 Private LabelAutoSizeFlag As Boolean
 Private LabelDisplayedCaption As String
 Private LabelPaintFrozen As Boolean
 Private LabelMouseOver As Boolean, LabelMouseOverPos As Long
+Private LabelOverrideSetCursor As Boolean
 Private LabelDesignMode As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
-Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
+Private PropMousePointer As Integer
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
@@ -210,6 +215,22 @@ End Sub
 Private Sub IObjectSafety_SetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByVal dwOptionsSetMask As Long, ByVal dwEnabledOptions As Long)
 End Sub
 
+#If VBA7 Then
+Private Sub IOleInPlaceObjectWindowlessVB_OnWindowMessage(ByRef Handled As Boolean, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByRef Result As LongPtr)
+#Else
+Private Sub IOleInPlaceObjectWindowlessVB_OnWindowMessage(ByRef Handled As Boolean, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByRef Result As Long)
+#End If
+If wMsg = WM_SETCURSOR Then
+    If LoWord(CLng(lParam)) = HTCLIENT Then
+        If MousePointerID(PropMousePointer) <> 0 Then
+            SetCursor LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
+            Result = 1
+            Handled = True
+        End If
+    End If
+End If
+End Sub
+
 Private Sub UserControl_Initialize()
 Call ComCtlsLoadShellMod
 End Sub
@@ -221,7 +242,7 @@ On Error GoTo 0
 Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
 Me.OLEDropMode = vbOLEDropNone
-PropMousePointer = 0: Set PropMouseIcon = Nothing
+PropMousePointer = 0
 PropMouseTrack = False
 PropRightToLeft = Ambient.RightToLeft
 PropRightToLeftMode = CCRightToLeftModeVBAME
@@ -251,9 +272,8 @@ Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.ForeColor = .ReadProperty("ForeColor", vbButtonText)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
-PropMousePointer = .ReadProperty("MousePointer", 0)
-Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
-Me.MousePointer = PropMousePointer
+Me.MousePointer = .ReadProperty("MousePointer", 0)
+Set Me.MouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
 PropRightToLeft = .ReadProperty("RightToLeft", False)
 PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
@@ -287,7 +307,7 @@ With PropBag
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "MousePointer", PropMousePointer, 0
-.WriteProperty "MouseIcon", PropMouseIcon, Nothing
+.WriteProperty "MouseIcon", Me.MouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
 .WriteProperty "RightToLeft", PropRightToLeft, False
 .WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
@@ -480,6 +500,10 @@ If HitResult = vbHitResultOutside Then HitResult = vbHitResultHit
 End Sub
 
 Private Sub UserControl_Terminate()
+If LabelOverrideSetCursor = True Then
+    Call RemoveVTableHandling(Me, VTableInterfaceInPlaceObjectWindowless)
+    LabelOverrideSetCursor = False
+End If
 Call ComCtlsReleaseShellMod
 End Sub
 
@@ -740,14 +764,17 @@ Select Case Value
 End Select
 If LabelDesignMode = False Then
     Select Case PropMousePointer
-        Case vbIconPointer, 16, vbCustom
-            If PropMousePointer = vbCustom Then
-                Set UserControl.MouseIcon = PropMouseIcon
-            Else
-                Set UserControl.MouseIcon = PictureFromHandle(LoadCursor(NULL_PTR, MousePointerID(PropMousePointer)), vbPicTypeIcon)
+        Case vbIconPointer, 16
+            If LabelOverrideSetCursor = False Then
+                Call SetVTableHandling(Me, VTableInterfaceInPlaceObjectWindowless)
+                LabelOverrideSetCursor = True
             End If
-            UserControl.MousePointer = vbCustom
+            UserControl.MousePointer = vbDefault
         Case Else
+            If LabelOverrideSetCursor = True Then
+                Call RemoveVTableHandling(Me, VTableInterfaceInPlaceObjectWindowless)
+                LabelOverrideSetCursor = False
+            End If
             UserControl.MousePointer = PropMousePointer
     End Select
 End If
@@ -756,7 +783,7 @@ End Property
 
 Public Property Get MouseIcon() As IPictureDisp
 Attribute MouseIcon.VB_Description = "Returns/sets a custom mouse icon."
-Set MouseIcon = PropMouseIcon
+Set MouseIcon = UserControl.MouseIcon
 End Property
 
 Public Property Let MouseIcon(ByVal Value As IPictureDisp)
@@ -765,10 +792,10 @@ End Property
 
 Public Property Set MouseIcon(ByVal Value As IPictureDisp)
 If Value Is Nothing Then
-    Set PropMouseIcon = Nothing
+    Set UserControl.MouseIcon = Nothing
 Else
     If Value.Type = vbPicTypeIcon Or Value.Handle = NULL_PTR Then
-        Set PropMouseIcon = Value
+        Set UserControl.MouseIcon = Value
     Else
         If LabelDesignMode = True Then
             MsgBox "Invalid property value", vbCritical + vbOKOnly
@@ -778,7 +805,6 @@ Else
         End If
     End If
 End If
-Me.MousePointer = PropMousePointer
 UserControl.PropertyChanged "MouseIcon"
 End Property
 

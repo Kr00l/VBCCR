@@ -1,7 +1,6 @@
 VERSION 5.00
 Begin VB.UserControl ProgressBar 
    Alignable       =   -1  'True
-   AutoRedraw      =   -1  'True
    CanGetFocus     =   0   'False
    ClientHeight    =   1800
    ClientLeft      =   0
