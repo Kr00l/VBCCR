@@ -685,8 +685,15 @@ Select Case Value
 End Select
 If FrameDesignMode = False Then
     Select Case PropMousePointer
+        #If TWINBASIC Then
+        Case vbIconPointer
+            UserControl.MousePointer = vbHand
+        Case 16
+            UserControl.MousePointer = vbArrowCD
+        #Else
         Case vbIconPointer, 16
             UserControl.MousePointer = vbDefault
+        #End If
         Case Else
             UserControl.MousePointer = PropMousePointer
     End Select
