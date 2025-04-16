@@ -1,5 +1,12 @@
 List of revisions:
 
+16-Apr-2025
+- Modified OLEGuids.tlb as following: (compiled with same uuid)
+  - renamed IDispatch to IDispatchUnrestricted. (used in VTableHandle.bas only which needs to be replaced too)
+    This allows all the *VB interfaces to use stdole.IDispatch. (better intellisense and just the correct way to do it)
+    MKTYPLIB expects 'IDispatch' and does not allow to use 'stdole.IDispatch' for OLEAutomation interfaces.
+  Unregister to old OLEGuids.tlb is not necessary, just overwrite the file.
+
 01-Apr-2025
 - Improved the MousePointer property in the LabelW control. (e.g. properly show 4 - Hand cursor)
 - Bugfix in the WM_SETCURSOR handler in the ListView control when hot cursor is in place.
