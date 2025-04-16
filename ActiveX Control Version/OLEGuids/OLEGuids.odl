@@ -228,9 +228,8 @@ library OLEGuids
 		uuid(00020400-0000-0000-C000-000000000046),
 		odl
 	]
-	interface IDispatch : IUnknown
+	interface IDispatchUnrestricted : IUnknown
 	{
-		typedef IDispatch *LPDISPATCH;
 		HRESULT GetTypeInfoCount([out] LONG *pctInfo);
     		HRESULT GetTypeInfo([in] LONG itinfo, [in] LONG lcid, [out] LONG *pptinfo);
     		HRESULT GetIDsOfNames([in] REFIID riid, [in] LONG *rgszNames, [in] LONG cNames, [in] LONG lcid, [in, out] LONG *rgDispId);
@@ -261,7 +260,7 @@ library OLEGuids
 	]
 	interface IEnumVARIANTUnrestricted : IDispatch
 	{
-		HRESULT Next([in] LONG cElt, [in, out] VARIANT *rgVar, [in] LONG pcEltFetched);
+		HRESULT Next([in] LONG cElt, [in, out] VARIANT *rgVar, [in] LONG lpcEltFetched);
 		HRESULT Skip([in] LONG cElt);
 		HRESULT Reset();
 		HRESULT Clone([in, out] IEnumVARIANT **ppEnum);
