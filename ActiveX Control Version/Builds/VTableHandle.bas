@@ -192,7 +192,7 @@ VTableInterfaceSupported = CBool(HResult = S_OK)
 End Function
 
 Public Function GetDispId(ByVal This As Object, ByRef MethodName As String) As Long
-Dim PropDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID
+Dim PropDispatch As OLEGuids.IDispatchUnrestricted, IID_NULL As OLEGuids.OLECLSID
 Set PropDispatch = This
 PropDispatch.GetIDsOfNames IID_NULL, StrPtr(MethodName), 1, 0, GetDispId
 End Function
@@ -200,7 +200,7 @@ End Function
 #If (TWINBASIC = 0) Then
 Public Function CallByDispId(ByVal This As Object, ByVal DispId As Long, ByVal CallType As VbCallType, ParamArray ArgList() As Variant) As Variant
 Const DISPID_PROPERTYPUT As Long = -3
-Dim PropDispatch As OLEGuids.IDispatch, IID_NULL As OLEGuids.OLECLSID, pDispParams As OLEGuids.OLEDISPPARAMS
+Dim PropDispatch As OLEGuids.IDispatchUnrestricted, IID_NULL As OLEGuids.OLECLSID, pDispParams As OLEGuids.OLEDISPPARAMS
 Set PropDispatch = This
 If UBound(ArgList) > -1 Then
     Dim i As Long, ArgListRev As Variant
