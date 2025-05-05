@@ -1,5 +1,8 @@
 List of revisions:
 
+05-May-2025
+- Regression in the WM_PRINTCLIENT handler on the FrameW control due to changes done on 30-Mar-2025.
+
 16-Apr-2025
 - Modified OLEGuids.tlb as following: (compiled with same uuid)
   - renamed IDispatch to IDispatchUnrestricted. (used in VTableHandle.bas only which needs to be replaced too)
