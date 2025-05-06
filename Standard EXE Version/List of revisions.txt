@@ -1,5 +1,8 @@
 List of revisions:
 
+06-May-2025
+- Bugfix in the ColumnHeaders.Add when passing a vbNullString text.
+
 05-May-2025
 - Regression in the WM_PRINTCLIENT handler on the FrameW control due to changes done on 30-Mar-2025.
 
