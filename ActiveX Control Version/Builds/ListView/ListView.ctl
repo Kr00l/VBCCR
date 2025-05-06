@@ -4495,12 +4495,10 @@ Else
 End If
 Dim LVC As LVCOLUMN
 With LVC
-.Mask = LVCF_FMT Or LVCF_WIDTH
-If Not Text = vbNullString Then
-    .Mask = .Mask Or LVCF_TEXT
-    .pszText = StrPtr(Text)
-    .cchTextMax = Len(Text) + 1
-End If
+.Mask = LVCF_FMT Or LVCF_WIDTH Or LVCF_TEXT
+If StrPtr(Text) = NULL_PTR Then Text = ""
+.pszText = StrPtr(Text)
+.cchTextMax = Len(Text) + 1
 If IsMissing(Width) Then
     .CX = (96 * PixelsPerDIP_X())
 Else
@@ -4599,7 +4597,9 @@ If ListViewHandle <> NULL_PTR Then
     Dim LVC As LVCOLUMN
     With LVC
     .Mask = LVCF_TEXT
+    If StrPtr(Value) = NULL_PTR Then Value = ""
     .pszText = StrPtr(Value)
+    .cchTextMax = Len(Value) + 1
     End With
     SendMessage ListViewHandle, LVM_SETCOLUMN, Index - 1, ByVal VarPtr(LVC)
 End If
@@ -5016,7 +5016,7 @@ If ListViewHandle <> NULL_PTR Then
                 Select Case VarType(Value)
                     Case vbString
                         HDTF.pszText = StrPtr(Value)
-                        HDTF.cchTextMax = Len(Value)
+                        HDTF.cchTextMax = Len(Value) + 1
                         .pvFilter = VarPtr(HDTF)
                     Case vbNull, vbEmpty
                         .FilterType = .FilterType Or HDFT_HASNOVALUE

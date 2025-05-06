@@ -1343,7 +1343,7 @@ Select Case PropStyle
             .Mask = CBEIF_TEXT
             .iItem = -1
             .pszText = StrPtr(Value)
-            .cchTextMax = Len(Value)
+            .cchTextMax = Len(Value) + 1
             End With
             SendMessage ImageComboHandle, CBEM_SETITEM, 0, ByVal VarPtr(CBEI)
         End If
@@ -1535,7 +1535,7 @@ With CBEI
 .Mask = CBEIF_TEXT Or CBEIF_IMAGE Or CBEIF_SELECTEDIMAGE Or CBEIF_LPARAM Or CBEIF_INDENT
 .iItem = Index - 1
 .pszText = StrPtr(Text)
-.cchTextMax = Len(Text)
+.cchTextMax = Len(Text) + 1
 .iImage = ImageIndex - 1
 .iSelectedImage = SelImageIndex - 1
 .lParam = 0
@@ -1598,7 +1598,7 @@ If ImageComboHandle <> NULL_PTR Then
     .Mask = CBEIF_TEXT
     .iItem = Index - 1
     .pszText = StrPtr(Value)
-    .cchTextMax = Len(Value)
+    .cchTextMax = Len(Value) + 1
     End With
     SendMessage ImageComboHandle, CBEM_SETITEM, 0, ByVal VarPtr(CBEI)
 End If
@@ -1769,7 +1769,7 @@ If ImageComboHandle <> NULL_PTR Then
         .Mask = CBEIF_TEXT
         .iItem = -1
         .pszText = StrPtr(PropText)
-        .cchTextMax = Len(PropText)
+        .cchTextMax = Len(PropText) + 1
         End With
         SendMessage ImageComboHandle, CBEM_SETITEM, 0, ByVal VarPtr(CBEI)
     ElseIf PropStyle = ImcStyleSimpleCombo Then

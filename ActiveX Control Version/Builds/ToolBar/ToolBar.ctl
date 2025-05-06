@@ -4116,7 +4116,7 @@ If ToolBarHandle <> NULL_PTR Then
                         MII.fType = 0
                         Text = .Text
                         MII.dwTypeData = StrPtr(Text)
-                        MII.cch = Len(Text)
+                        MII.cch = Len(Text) + 1
                         If .Picture Is Nothing Then
                             MII.hBmpItem = NULL_PTR
                         ElseIf .Picture.Handle = NULL_PTR Then

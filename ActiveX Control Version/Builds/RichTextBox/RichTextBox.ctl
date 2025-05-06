@@ -4678,7 +4678,7 @@ Else
         MII.fMask = MIIM_STATE Or MIIM_ID Or MIIM_STRING
         MII.fType = 0
         MII.dwTypeData = StrPtr(Text)
-        MII.cch = Len(Text)
+        MII.cch = Len(Text) + 1
         MII.hBmpItem = NULL_PTR
         Select Case i
             Case 1
