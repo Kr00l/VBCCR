@@ -1672,8 +1672,8 @@ With TCI
 .Mask = TCIF_TEXT Or TCIF_IMAGE Or TCIF_PARAM
 If PropRightToLeft = True And PropRightToLeftLayout = False Then .Mask = .Mask Or TCIF_RTLREADING
 .iImage = ImageIndex - 1
-.cchTextMax = Len(Caption)
 .pszText = StrPtr(Caption)
+.cchTextMax = Len(Caption) + 1
 .lParam = 0
 End With
 If Index = 0 Then
@@ -1725,7 +1725,7 @@ If TabStripHandle <> NULL_PTR Then
     .Mask = TCIF_TEXT
     If PropRightToLeft = True And PropRightToLeftLayout = False Then .Mask = .Mask Or TCIF_RTLREADING
     .pszText = StrPtr(Value)
-    .cchTextMax = Len(Value)
+    .cchTextMax = Len(Value) + 1
     SendMessage TabStripHandle, TCM_SETITEM, Index - 1, ByVal VarPtr(TCI)
     Call OnControlInfoChanged(Me)
     End With

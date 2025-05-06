@@ -1854,7 +1854,7 @@ With RBBI
 NewBand.ID = .wID
 .iImage = ImageIndex - 1
 .lpText = StrPtr(Caption)
-.cch = Len(Caption)
+.cch = Len(Caption) + 1
 .lParam = ObjPtr(NewBand)
 .fStyle = RBBS_FIXEDBMP
 If NewRow = True Then .fStyle = .fStyle Or RBBS_BREAK
@@ -1963,7 +1963,7 @@ If CoolBarHandle <> NULL_PTR Then
         .cbSize = LenB(RBBI)
         .fMask = RBBIM_TEXT
         .lpText = StrPtr(Value)
-        .cch = Len(Value)
+        .cch = Len(Value) + 1
         SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
         End With
     End If
