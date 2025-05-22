@@ -1,5 +1,8 @@
 List of revisions:
 
+22-May-2025
+- DroppedDown property improved in the CommandButtonW control to raise the DropDown event when set to True.
+
 06-May-2025
 - Bugfix in the ColumnHeaders.Add when passing a vbNullString text.
 
