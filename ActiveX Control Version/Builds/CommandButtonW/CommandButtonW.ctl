@@ -2064,7 +2064,19 @@ If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then DroppedDo
 End Property
 
 Public Property Let DroppedDown(ByVal Value As Boolean)
-If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then SendMessage CommandButtonHandle, BCM_SETDROPDOWNSTATE, IIf(Value = True, 1, 0), ByVal 0&
+If CommandButtonHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
+    If (GetWindowLong(CommandButtonHandle, GWL_STYLE) And BS_SPLITBUTTON) = BS_SPLITBUTTON Then
+        If Value = True And (SendMessage(CommandButtonHandle, BM_GETSTATE, 0, ByVal 0&) And BST_DROPDOWNPUSHED) = 0 Then
+            SendMessage CommandButtonHandle, BCM_SETDROPDOWNSTATE, 1, ByVal 0&
+            RedrawWindow CommandButtonHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+            RaiseEvent DropDown
+        End If
+        If (SendMessage(CommandButtonHandle, BM_GETSTATE, 0, ByVal 0&) And BST_DROPDOWNPUSHED) = BST_DROPDOWNPUSHED Then
+            SendMessage CommandButtonHandle, BCM_SETDROPDOWNSTATE, 0, ByVal 0&
+            RedrawWindow CommandButtonHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
+        End If
+    End If
+End If
 End Property
 
 Public Sub GetIdealSize(ByRef Width As Single, ByRef Height As Single)
