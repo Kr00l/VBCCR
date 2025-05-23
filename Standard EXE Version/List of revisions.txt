@@ -1,5 +1,13 @@
 List of revisions:
 
+23-May-2025
+- Removed BS_NOTIFY on CommandButtonW/OptionButtonW/CheckBoxW/CommandLink. (like native VB controls)
+  BN_DOUBLECLICKED therefore is not generated anymore, except for BS_RADIOBUTTON (OptionButtonW) even though BS_NOTIFY is not set.
+  But OptionButtonW has a DblClick event and therefore is wanted. (like native OptionButton)
+  A double click will then raise a Click event upon mouse up instead of immediately. (like native VB controls)
+  This resolves also a side-effect bug in the CommandButtonW control
+  which raised a Click event when doing a double click on the split button part. (BN_DOUBLECLICKED)
+
 22-May-2025
 - DroppedDown property improved in the CommandButtonW control to raise the DropDown event when set to True.
 
