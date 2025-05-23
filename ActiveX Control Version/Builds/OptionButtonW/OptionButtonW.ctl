@@ -1604,7 +1604,8 @@ End Property
 Private Sub CreateOptionButton()
 If OptionButtonHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE Or BS_RADIOBUTTON Or BS_TEXT Or BS_NOTIFY
+' The BS_NOTIFY style must not be set.
+dwStyle = WS_CHILD Or WS_VISIBLE Or BS_RADIOBUTTON Or BS_TEXT
 If Me.Appearance = CCAppearanceFlat Then dwStyle = dwStyle Or BS_FLAT
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING
 If PropAlignment = CCLeftRightAlignmentRight Then dwStyle = dwStyle Or BS_RIGHTBUTTON
@@ -1925,13 +1926,6 @@ Select Case wMsg
                 End If
             End If
         End If
-    Case WM_LBUTTONDBLCLK
-        If (GetWindowLong(hWnd, GWL_STYLE) And BS_OWNERDRAW) = BS_OWNERDRAW Then
-            ' Buttons having the BS_OWNERDRAW style will not respond to double click as normal buttons do.
-            ' Thus the default window procedure of the button will be called with WM_LBUTTONDOWN instead of the actual WM_LBUTTONDBLCLK.
-            WindowProcControl = ComCtlsDefaultProc(hWnd, WM_LBUTTONDOWN, wParam, lParam)
-            Exit Function
-        End If
     
     #If ImplementThemedGraphical = True Then
     
@@ -2022,6 +2016,7 @@ Select Case wMsg
                 Case BN_CLICKED
                     If PropValue = False Then Me.Value = True
                 Case BN_DOUBLECLICKED
+                    ' The BS_RADIOBUTTON style generates BN_DOUBLECLICKED even though the BS_NOTIFY style is not set.
                     RaiseEvent DblClick
             End Select
         End If

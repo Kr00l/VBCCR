@@ -1231,7 +1231,8 @@ End Property
 Private Sub CreateCommandLink()
 If CommandLinkHandle <> NULL_PTR Or ComCtlsSupportLevel() <= 1 Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE Or BS_COMMANDLINK Or BS_PUSHBUTTON Or BS_TEXT Or BS_NOTIFY
+' The BS_NOTIFY style must not be set.
+dwStyle = WS_CHILD Or WS_VISIBLE Or BS_COMMANDLINK Or BS_PUSHBUTTON Or BS_TEXT
 If CommandLinkDisplayAsDefault = True Then dwStyle = dwStyle Or BS_DEFPUSHBUTTON
 If PropRightToLeft = True Then
     If PropRightToLeftLayout = True Then
@@ -1570,7 +1571,7 @@ Select Case wMsg
     Case WM_COMMAND
         If lParam = CommandLinkHandle Then
             Select Case HiWord(CLng(wParam))
-                Case BN_CLICKED, BN_DOUBLECLICKED
+                Case BN_CLICKED
                     CommandLinkValue = True
                     RaiseEvent Click
                     CommandLinkValue = False

@@ -2371,7 +2371,7 @@ Select Case wMsg
                 End If
                 ' See UM_BUTTONDOWN
                 If ComCtlsSupportLevel() = 0 Then
-                    ' The WM_LBUTTONUP message is not sent if the comctl32.dll version is 5.8x. (bug?)
+                    ' The WM_LBUTTONUP message is not sent if the comctl32.dll version is 5.8x. (Bug?)
                     If SendMessage(hWnd, CB_GETDROPPEDSTATE, 0, ByVal 0&) <> 0 Then PostMessage hWnd, WM_LBUTTONUP, wParam, ByVal lParam
                 End If
             Case WM_MBUTTONDOWN
