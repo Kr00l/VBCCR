@@ -1725,7 +1725,8 @@ End Property
 Private Sub CreateCheckBox()
 If CheckBoxHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE Or BS_3STATE Or BS_TEXT Or BS_NOTIFY
+' The BS_NOTIFY style must not be set.
+dwStyle = WS_CHILD Or WS_VISIBLE Or BS_3STATE Or BS_TEXT
 If Me.Appearance = CCAppearanceFlat Then dwStyle = dwStyle Or BS_FLAT
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING
 If PropAlignment = CCLeftRightAlignmentRight Then dwStyle = dwStyle Or BS_RIGHTBUTTON
@@ -2050,7 +2051,7 @@ Select Case wMsg
         End If
     Case WM_LBUTTONDBLCLK
         If (GetWindowLong(hWnd, GWL_STYLE) And BS_OWNERDRAW) = BS_OWNERDRAW Then
-            ' Buttons having the BS_OWNERDRAW style will not respond to double click as normal buttons do.
+            ' The BS_OWNERDRAW style generates BN_DOUBLECLICKED even though the BS_NOTIFY style is not set.
             ' Thus the default window procedure of the button will be called with WM_LBUTTONDOWN instead of the actual WM_LBUTTONDBLCLK.
             WindowProcControl = ComCtlsDefaultProc(hWnd, WM_LBUTTONDOWN, wParam, lParam)
             Exit Function
@@ -2142,7 +2143,7 @@ Select Case wMsg
     Case WM_COMMAND
         If lParam = CheckBoxHandle Then
             Select Case HiWord(CLng(wParam))
-                Case BN_CLICKED, BN_DOUBLECLICKED
+                Case BN_CLICKED
                     Select Case Me.Value
                         Case vbUnchecked
                             Me.Value = vbChecked

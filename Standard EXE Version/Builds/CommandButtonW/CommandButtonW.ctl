@@ -173,6 +173,7 @@ Private Declare PtrSafe Function DestroyAcceleratorTable Lib "user32" (ByVal hAc
 Private Declare PtrSafe Function VkKeyScan Lib "user32" Alias "VkKeyScanW" (ByVal cChar As Integer) As Integer
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
+Private Declare PtrSafe Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
@@ -222,6 +223,7 @@ Private Declare Function DestroyAcceleratorTable Lib "user32" (ByVal hAccel As L
 Private Declare Function VkKeyScan Lib "user32" Alias "VkKeyScanW" (ByVal cChar As Integer) As Integer
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
@@ -1865,7 +1867,8 @@ End Property
 Private Sub CreateCommandButton()
 If CommandButtonHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE Or BS_PUSHBUTTON Or BS_TEXT Or BS_NOTIFY
+' The BS_NOTIFY style must not be set.
+dwStyle = WS_CHILD Or WS_VISIBLE Or BS_PUSHBUTTON Or BS_TEXT
 If CommandButtonDisplayAsDefault = True Then dwStyle = dwStyle Or BS_DEFPUSHBUTTON
 If Me.Appearance = CCAppearanceFlat Then dwStyle = dwStyle Or BS_FLAT
 If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING
@@ -2273,7 +2276,7 @@ Select Case wMsg
         End If
     Case WM_LBUTTONDBLCLK
         If (GetWindowLong(hWnd, GWL_STYLE) And BS_OWNERDRAW) = BS_OWNERDRAW Then
-            ' Buttons having the BS_OWNERDRAW style will not respond to double click as normal buttons do.
+            ' The BS_OWNERDRAW style generates BN_DOUBLECLICKED even though the BS_NOTIFY style is not set.
             ' Thus the default window procedure of the button will be called with WM_LBUTTONDOWN instead of the actual WM_LBUTTONDBLCLK.
             WindowProcControl = ComCtlsDefaultProc(hWnd, WM_LBUTTONDOWN, wParam, lParam)
             Exit Function
@@ -2365,7 +2368,7 @@ Select Case wMsg
     Case WM_COMMAND
         If lParam = CommandButtonHandle Then
             Select Case HiWord(CLng(wParam))
-                Case BN_CLICKED, BN_DOUBLECLICKED
+                Case BN_CLICKED
                     CommandButtonValue = True
                     RaiseEvent Click
                     CommandButtonValue = False
@@ -2386,6 +2389,10 @@ Select Case wMsg
                     End With
                 Case BCN_DROPDOWN
                     RaiseEvent DropDown
+                    ' Remove any left mouse button down or double-click messages so that we can get a toggle effect on the split button.
+                    Dim Msg As TMSG
+                    Const PM_REMOVE As Long = &H1
+                    While PeekMessage(Msg, CommandButtonHandle, WM_LBUTTONDOWN, WM_LBUTTONDOWN, PM_REMOVE) <> 0 Or PeekMessage(Msg, CommandButtonHandle, WM_LBUTTONDBLCLK, WM_LBUTTONDBLCLK, PM_REMOVE) <> 0: Wend
             End Select
         End If
     Case WM_CTLCOLORSTATIC, WM_CTLCOLORBTN
