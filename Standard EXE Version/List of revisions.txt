@@ -1,5 +1,9 @@
 List of revisions:
 
+30-May-2025
+- Use of IsObject() instead of VarType() = vbObject in the BuddyControl property in the FontComsbo/UpDown/Pager control.
+  This ensures to safely check for an object whereas VarType() can return the default property of the object.
+
 23-May-2025
 - Removed BS_NOTIFY on CommandButtonW/OptionButtonW/CheckBoxW/CommandLink. (like native VB controls)
   BN_DOUBLECLICKED therefore is not generated anymore, except for BS_RADIOBUTTON (OptionButtonW) even though BS_NOTIFY is not set.
