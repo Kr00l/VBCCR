@@ -799,53 +799,55 @@ Public Property Let BuddyControl(ByVal Value As Variant)
 If PagerDesignMode = False Then
     If PagerHandle <> NULL_PTR Then
         Dim Success As Boolean, Handle As LongPtr
-        Select Case VarType(Value)
-            Case vbObject
-                If Not Value Is Nothing Then
-                    If ControlIsValid(Value, Handle) = True Then
-                        Success = CBool(Handle <> NULL_PTR)
-                        If Success = True Then
-                            If PagerBuddyControlHandle <> NULL_PTR Then
-                                SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal 0&
-                                SetParent PagerBuddyControlHandle, PagerBuddyControlPrevParent
-                            End If
-                            PagerBuddyControlHandle = Handle
-                            PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
-                            SetParent Handle, PagerHandle
-                            SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
-                            PagerBuddyObjectPointer = ObjPtr(Value)
-                            PropBuddyName = ProperControlName(Value)
+        If IsObject(Value) Then
+            If Not Value Is Nothing Then
+                If ControlIsValid(Value, Handle) = True Then
+                    Success = CBool(Handle <> NULL_PTR)
+                    If Success = True Then
+                        If PagerBuddyControlHandle <> NULL_PTR Then
+                            SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal 0&
+                            SetParent PagerBuddyControlHandle, PagerBuddyControlPrevParent
                         End If
-                    Else
-                        Err.Raise Number:=35610, Description:="Invalid object"
+                        PagerBuddyControlHandle = Handle
+                        PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
+                        SetParent Handle, PagerHandle
+                        SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
+                        PagerBuddyObjectPointer = ObjPtr(Value)
+                        PropBuddyName = ProperControlName(Value)
                     End If
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
-            Case vbString
-                Dim ControlEnum As Object, CompareName As String
-                For Each ControlEnum In UserControl.ParentControls
-                    If ControlIsValid(ControlEnum, Handle) = True Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Success = CBool(Handle <> NULL_PTR)
-                            If Success = True Then
-                                If PagerBuddyControlHandle <> NULL_PTR Then
-                                    SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal 0&
-                                    SetParent PagerBuddyControlHandle, PagerBuddyControlPrevParent
+            End If
+        Else
+            Select Case VarType(Value)
+                Case vbString
+                    Dim ControlEnum As Object, CompareName As String
+                    For Each ControlEnum In UserControl.ParentControls
+                        If ControlIsValid(ControlEnum, Handle) = True Then
+                            CompareName = ProperControlName(ControlEnum)
+                            If CompareName = Value And Not CompareName = vbNullString Then
+                                Success = CBool(Handle <> NULL_PTR)
+                                If Success = True Then
+                                    If PagerBuddyControlHandle <> NULL_PTR Then
+                                        SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal 0&
+                                        SetParent PagerBuddyControlHandle, PagerBuddyControlPrevParent
+                                    End If
+                                    PagerBuddyControlHandle = Handle
+                                    PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
+                                    SetParent Handle, PagerHandle
+                                    SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
+                                    PagerBuddyObjectPointer = ObjPtr(ControlEnum)
+                                    PropBuddyName = Value
+                                    Exit For
                                 End If
-                                PagerBuddyControlHandle = Handle
-                                PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
-                                SetParent Handle, PagerHandle
-                                SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
-                                PagerBuddyObjectPointer = ObjPtr(ControlEnum)
-                                PropBuddyName = Value
-                                Exit For
                             End If
                         End If
-                    End If
-                Next ControlEnum
-            Case Else
-                Err.Raise 13
-        End Select
+                    Next ControlEnum
+                Case Else
+                    Err.Raise 13
+            End Select
+        End If
         If Success = False Then
             If PagerBuddyControlHandle <> NULL_PTR Then
                 SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal 0&
