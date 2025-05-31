@@ -2597,6 +2597,7 @@ Select Case wMsg
     Case UM_SETBUDDY
         FontComboBuddyShadowObjectPointer = lParam
         Me.RecentMax = PropRecentMax
+        PropText = Me.Text
         Call SetupFontComboItems
         If FontComboEditHandle <> NULL_PTR Then
             Dim dwStyle As Long
@@ -2607,20 +2608,6 @@ Select Case wMsg
                 If (dwStyle And ES_NUMBER) = ES_NUMBER Then dwStyle = dwStyle And Not ES_NUMBER
             End If
             SetWindowLong FontComboEditHandle, GWL_STYLE, dwStyle
-            If FontComboBuddyShadowObjectPointer <> NULL_PTR And PropStyle <> FtcStyleDropDownList Then
-                Dim Text As String
-                Text = Me.Text
-                If Not Text = vbNullString Then
-                    Dim i As Long, InvalidText As Boolean
-                    For i = 1 To Len(Text)
-                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
-                            InvalidText = True
-                            Exit For
-                        End If
-                    Next i
-                    If InvalidText = True Then Me.Text = vbNullString
-                End If
-            End If
         End If
         Exit Function
     Case UM_GETBUDDY
