@@ -810,6 +810,48 @@ Select Case MousePointer
     Case 16
         Const IDC_WAITCD As Long = 32663 ' Undocumented
         MousePointerID = IDC_WAITCD
+    Case 17
+        Const IDC_PIN As Long = 32671
+        MousePointerID = IDC_PIN
+    Case 18
+        Const IDC_PERSON As Long = 32672
+        MousePointerID = IDC_PERSON
+    Case 19
+        Const IDC_PEN As Long = 32631 ' Undocumented
+        MousePointerID = IDC_PEN
+    Case 20
+        Const IDC_SCROLLN As Long = 32655 ' Undocumented
+        MousePointerID = IDC_SCROLLN
+    Case 21
+        Const IDC_SCROLLS As Long = 32656 ' Undocumented
+        MousePointerID = IDC_SCROLLS
+    Case 22
+        Const IDC_SCROLLE As Long = 32658 ' Undocumented
+        MousePointerID = IDC_SCROLLE
+    Case 23
+        Const IDC_SCROLLW As Long = 32657 ' Undocumented
+        MousePointerID = IDC_SCROLLW
+    Case 24
+        Const IDC_SCROLLNS As Long = 32652 ' Undocumented
+        MousePointerID = IDC_SCROLLNS
+    Case 25
+        Const IDC_SCROLLWE As Long = 32653 ' Undocumented
+        MousePointerID = IDC_SCROLLWE
+    Case 26
+        Const IDC_SCROLLNW As Long = 32659 ' Undocumented
+        MousePointerID = IDC_SCROLLNW
+    Case 27
+        Const IDC_SCROLLNE As Long = 32660 ' Undocumented
+        MousePointerID = IDC_SCROLLNE
+    Case 28
+        Const IDC_SCROLLSW As Long = 32661 ' Undocumented
+        MousePointerID = IDC_SCROLLSW
+    Case 29
+        Const IDC_SCROLLSE As Long = 32662 ' Undocumented
+        MousePointerID = IDC_SCROLLSE
+    Case 30
+        Const IDC_SCROLLALL As Long = 32654 ' Undocumented
+        MousePointerID = IDC_SCROLLALL
 End Select
 End Function
 
