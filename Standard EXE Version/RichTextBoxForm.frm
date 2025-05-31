@@ -28,7 +28,6 @@ Begin VB.Form RichTextBoxForm
          _ExtentX        =   2355
          _ExtentY        =   556
          Style           =   0
-         Text            =   "FontCombo2"
          RecentMax       =   3
       End
       Begin ComCtlsDemo.ToolBar ToolBar1 
