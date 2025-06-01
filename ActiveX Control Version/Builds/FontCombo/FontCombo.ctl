@@ -696,7 +696,9 @@ PropRecentBackColor = .ReadProperty("RecentBackColor", vbInfoBackground)
 PropRecentForeColor = .ReadProperty("RecentForeColor", vbInfoText)
 End With
 Call CreateFontCombo
-If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = Ambient.UserMode
+If FontComboDesignMode = False Then
+    If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = True
+End If
 End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
@@ -1451,7 +1453,7 @@ Attribute Text.VB_MemberFlags = "200"
 Select Case PropStyle
     Case FtcStyleDropDownCombo, FtcStyleSimpleCombo
         If FontComboHandle <> NULL_PTR And FontComboEditHandle <> NULL_PTR Then
-            Text = String(CLng(SendMessage(FontComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&)), vbNullChar)
+            Text = String$(CLng(SendMessage(FontComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&)), vbNullChar)
             SendMessage FontComboEditHandle, WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
         Else
             Text = PropText
@@ -1737,7 +1739,7 @@ If FontComboHandle <> NULL_PTR Then
     Dim Length As Long
     Length = CLng(SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&))
     If Not Length = CB_ERR Then
-        List = String(Length, vbNullChar)
+        List = String$(Length, vbNullChar)
         SendMessage FontComboHandle, CB_GETLBTEXT, Index, ByVal StrPtr(List)
     Else
         Err.Raise 5
@@ -2077,7 +2079,7 @@ If FontComboHandle <> NULL_PTR And FontComboListHandle <> NULL_PTR Then
         For i = 0 To Count - 1
             Length = CLng(SendMessage(FontComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&))
             If Not Length = CB_ERR Then
-                Text = String(Length, vbNullChar)
+                Text = String$(Length, vbNullChar)
                 SendMessage FontComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Text)
                 FontName = Left$(Text, LF_FACESIZE)
                 With LF
@@ -2264,8 +2266,15 @@ If FontComboDesignMode = True Then
 End If
 If FontComboHandle <> NULL_PTR Then
     If SendMessage(FontComboHandle, CB_GETCOUNT, 0, ByVal 0&) > 0 Then
-        SendMessage FontComboHandle, CB_RESETCONTENT, 0, ByVal 0&
-        If PropStyle <> FtcStyleDropDownList And FontComboEditHandle <> NULL_PTR Then SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(PropText)
+        If PropStyle <> FtcStyleDropDownList And FontComboEditHandle <> NULL_PTR Then
+            Dim Text As String
+            Text = String$(CLng(SendMessage(FontComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&)), vbNullChar)
+            SendMessage FontComboEditHandle, WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
+            SendMessage FontComboHandle, CB_RESETCONTENT, 0, ByVal 0&
+            SendMessage FontComboEditHandle, WM_SETTEXT, 0, ByVal StrPtr(Text)
+        Else
+            SendMessage FontComboHandle, CB_RESETCONTENT, 0, ByVal 0&
+        End If
     End If
     Dim hDC As LongPtr, i As Long, LF As LOGFONT
     If FontComboBuddyShadowObjectPointer = NULL_PTR Then
@@ -2352,7 +2361,7 @@ If FontComboHandle <> NULL_PTR Then
         Dim Length As Long, Buffer As String, FontName As String
         Length = CLng(SendMessage(FontComboHandle, CB_GETLBTEXTLEN, Index, ByVal 0&))
         If Not Length = CB_ERR Then
-            Buffer = String(Length, vbNullChar)
+            Buffer = String$(Length, vbNullChar)
             SendMessage FontComboHandle, CB_GETLBTEXT, Index, ByVal StrPtr(Buffer)
             FontName = Left$(Buffer, LF_FACESIZE)
         End If
@@ -2597,6 +2606,7 @@ Select Case wMsg
     Case UM_SETBUDDY
         FontComboBuddyShadowObjectPointer = lParam
         Me.RecentMax = PropRecentMax
+        PropText = Me.Text
         Call SetupFontComboItems
         If FontComboEditHandle <> NULL_PTR Then
             Dim dwStyle As Long
@@ -2607,20 +2617,6 @@ Select Case wMsg
                 If (dwStyle And ES_NUMBER) = ES_NUMBER Then dwStyle = dwStyle And Not ES_NUMBER
             End If
             SetWindowLong FontComboEditHandle, GWL_STYLE, dwStyle
-            If FontComboBuddyShadowObjectPointer <> NULL_PTR And PropStyle <> FtcStyleDropDownList Then
-                Dim Text As String
-                Text = Me.Text
-                If Not Text = vbNullString Then
-                    Dim i As Long, InvalidText As Boolean
-                    For i = 1 To Len(Text)
-                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
-                            InvalidText = True
-                            Exit For
-                        End If
-                    Next i
-                    If InvalidText = True Then Me.Text = vbNullString
-                End If
-            End If
         End If
         Exit Function
     Case UM_GETBUDDY
@@ -3054,7 +3050,7 @@ Select Case wMsg
             Length = CLng(SendMessage(FontComboHandle, CB_GETLBTEXTLEN, DIS.ItemID, ByVal 0&))
             If Not Length = CB_ERR Then
                 Dim Text As String, LF As LOGFONT, FontName As String
-                Text = String(Length, vbNullChar)
+                Text = String$(Length, vbNullChar)
                 SendMessage FontComboHandle, CB_GETLBTEXT, DIS.ItemID, ByVal StrPtr(Text)
                 FontName = Left$(Text, LF_FACESIZE)
                 If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = NULL_PTR Then
