@@ -1413,6 +1413,7 @@ Select Case Value
     Case FtcFontTypeTrueType, FtcFontTypeBitmap, FtcFontTypeBitmapTrueType
         PropFontType = Value
         Call SetupFontComboItems
+        Call CheckDropDownHeight(False)
     Case Else
         Err.Raise 380
 End Select
@@ -1429,6 +1430,7 @@ Select Case Value
     Case FtcFontPitchAll, FtcFontPitchFixed, FtcFontPitchVariable
         PropFontPitch = Value
         Call SetupFontComboItems
+        Call CheckDropDownHeight(False)
     Case Else
         Err.Raise 380
 End Select
@@ -1669,6 +1671,7 @@ Select Case Value
                 SendMessage FontComboHandle, CB_DELETESTRING, (GetRecentMax() + 1) - 1, ByVal 0&
             Next i
             FontComboRecentCount = GetRecentMax()
+            Call CheckDropDownHeight(False)
         End If
         If GetRecentMax() > 0 Then
             ReDim Preserve FontComboRecentItems(1 To GetRecentMax()) As String
@@ -2177,6 +2180,7 @@ If FontComboHandle <> NULL_PTR Then
                     Next i
                     FontComboRecentCount = FontComboRecentCount - Offset
                 End If
+                Call CheckDropDownHeight(False)
             Else
                 Err.Raise Number:=5, Description:="Array must be single dimensioned"
             End If
@@ -2198,6 +2202,7 @@ For i = 1 To FontComboRecentCount
     If FontComboHandle <> NULL_PTR Then SendMessage FontComboHandle, CB_DELETESTRING, 0, ByVal 0&
 Next i
 FontComboRecentCount = 0
+Call CheckDropDownHeight(False)
 End Sub
 
 Private Sub CheckDropDownHeight(ByVal Calculate As Boolean)
@@ -2392,6 +2397,7 @@ If FontComboHandle <> NULL_PTR Then
                 If Overflow = True Then SendMessage FontComboHandle, CB_DELETESTRING, GetRecentMax() - 1, ByVal 0&
                 SendMessage FontComboHandle, CB_INSERTSTRING, 0, ByVal StrPtr(FontComboRecentItems(1))
             End If
+            Call CheckDropDownHeight(False)
         End If
     End If
 End If
@@ -2608,6 +2614,7 @@ Select Case wMsg
         Me.RecentMax = PropRecentMax
         PropText = Me.Text
         Call SetupFontComboItems
+        Call CheckDropDownHeight(False)
         If FontComboEditHandle <> NULL_PTR Then
             Dim dwStyle As Long
             dwStyle = GetWindowLong(FontComboEditHandle, GWL_STYLE)
@@ -2627,6 +2634,7 @@ Select Case wMsg
         Locked = CBool(LockWindowUpdate(UserControl.hWnd) <> 0)
         PropText = Me.Text
         Call SetupFontComboItems
+        Call CheckDropDownHeight(False)
         If PropStyle = FtcStyleDropDownList Then SendMessage hWnd, CB_SETCURSEL, SendMessage(hWnd, CB_FINDSTRINGEXACT, -1, ByVal StrPtr(PropText)), ByVal 0&
         If Locked = True Then LockWindowUpdate NULL_PTR
         Me.Refresh
