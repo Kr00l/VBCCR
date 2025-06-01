@@ -11,9 +11,7 @@ Begin VB.PropertyPage PPUpDownGeneral
    ScaleWidth      =   6075
    Begin VB.ComboBox ComboMousePointer 
       Height          =   315
-      ItemData        =   "PPUpDownGeneral.pgx":0000
       Left            =   1800
-      List            =   "PPUpDownGeneral.pgx":0002
       Style           =   2  'Dropdown List
       TabIndex        =   3
       Top             =   480
