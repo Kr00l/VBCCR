@@ -54,7 +54,6 @@ Begin VB.Form RichTextBoxForm
          BuddyControl    =   "FontCombo2"
          Style           =   0
          FontType        =   2
-         Text            =   "FontCombo1"
          RecentMax       =   3
       End
    End
@@ -157,7 +156,6 @@ CommonDialogPageSetup.PrinterDefaultInit = False
 Set CommonDialogFont = New CommonDialog
 Set CommonDialogFind = New CommonDialog
 CommonDialogFind.Flags = CdlFRDown
-If Not IsNull(RichTextBox1.SelFontName) Then FontCombo1.Text = RichTextBox1.SelFontName
 End Sub
 
 Private Sub Form_Resize()
