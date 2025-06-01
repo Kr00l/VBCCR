@@ -1,5 +1,8 @@
 List of revisions:
 
+01-Jun-2025
+- Internal improvement in the FontCombo control.
+
 30-May-2025
 - Use of IsObject() instead of VarType() = vbObject in the BuddyControl property in the FontComsbo/UpDown/Pager control.
   This ensures to safely check for an object whereas VarType() can return the default property of the object.
