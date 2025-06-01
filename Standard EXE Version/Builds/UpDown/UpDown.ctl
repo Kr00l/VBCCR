@@ -315,7 +315,9 @@ PropThousandsSeparator = .ReadProperty("ThousandsSeparator", True)
 PropNumberStyle = .ReadProperty("NumberStyle", UdnNumberStyleDecimal)
 End With
 Call CreateUpDown
-If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = Ambient.UserMode
+If UpDownDesignMode = False Then
+    If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = True
+End If
 End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)

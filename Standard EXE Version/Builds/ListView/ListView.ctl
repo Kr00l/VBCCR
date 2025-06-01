@@ -2459,57 +2459,59 @@ Public Property Let Icons(ByVal Value As Variant)
 If ListViewDesignMode = False Then
     If ListViewHandle <> NULL_PTR Then
         Dim Success As Boolean, Handle As LongPtr
-        Select Case VarType(Value)
-            Case vbObject
-                If Not Value Is Nothing Then
-                    If TypeName(Value) = "ImageList" Then
-                        On Error Resume Next
-                        Handle = Value.hImageList
-                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                        On Error GoTo 0
-                    Else
-                        Err.Raise Number:=35610, Description:="Invalid object"
-                    End If
+        If IsObject(Value) Then
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
-                If Success = True Then
-                    SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
-                    ListViewIconsObjectPointer = ObjPtr(Value)
-                    ListViewIconsHandle = NULL_PTR
-                    PropIconsName = ProperControlName(Value)
-                End If
-            Case vbString
-                On Error Resume Next
-                Dim ControlEnum As Object, CompareName As String
-                For Each ControlEnum In UserControl.ParentControls
-                    If TypeName(ControlEnum) = "ImageList" Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Err.Clear
-                            Handle = ControlEnum.hImageList
-                            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                            If Success = True Then
-                                SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
-                                ListViewIconsObjectPointer = ObjPtr(ControlEnum)
-                                ListViewIconsHandle = NULL_PTR
-                                PropIconsName = Value
-                                Exit For
+            End If
+            If Success = True Then
+                SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
+                ListViewIconsObjectPointer = ObjPtr(Value)
+                ListViewIconsHandle = NULL_PTR
+                PropIconsName = ProperControlName(Value)
+            End If
+        Else
+            Select Case VarType(Value)
+                Case vbString
+                    On Error Resume Next
+                    Dim ControlEnum As Object, CompareName As String
+                    For Each ControlEnum In UserControl.ParentControls
+                        If TypeName(ControlEnum) = "ImageList" Then
+                            CompareName = ProperControlName(ControlEnum)
+                            If CompareName = Value And Not CompareName = vbNullString Then
+                                Err.Clear
+                                Handle = ControlEnum.hImageList
+                                Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                                If Success = True Then
+                                    SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
+                                    ListViewIconsObjectPointer = ObjPtr(ControlEnum)
+                                    ListViewIconsHandle = NULL_PTR
+                                    PropIconsName = Value
+                                    Exit For
+                                End If
                             End If
                         End If
+                    Next ControlEnum
+                    On Error GoTo 0
+                Case vbLong, &H14 ' vbLongLong
+                    Handle = Value
+                    Success = CBool(Handle <> NULL_PTR)
+                    If Success = True Then
+                        SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
+                        ListViewIconsObjectPointer = NULL_PTR
+                        ListViewIconsHandle = Handle
+                        PropIconsName = "(None)"
                     End If
-                Next ControlEnum
-                On Error GoTo 0
-            Case vbLong, &H14 ' vbLongLong
-                Handle = Value
-                Success = CBool(Handle <> NULL_PTR)
-                If Success = True Then
-                    SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal Handle
-                    ListViewIconsObjectPointer = NULL_PTR
-                    ListViewIconsHandle = Handle
-                    PropIconsName = "(None)"
-                End If
-            Case Else
-                Err.Raise 13
-        End Select
+                Case Else
+                    Err.Raise 13
+            End Select
+        End If
         If Success = False Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_NORMAL, ByVal 0&
             ListViewIconsObjectPointer = NULL_PTR
@@ -2561,57 +2563,59 @@ If ListViewDesignMode = False Then
                 Handle = NULL_PTR
             End If
         End If
-        Select Case VarType(Value)
-            Case vbObject
-                If Not Value Is Nothing Then
-                    If TypeName(Value) = "ImageList" Then
-                        On Error Resume Next
-                        Handle = Value.hImageList
-                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                        On Error GoTo 0
-                    Else
-                        Err.Raise Number:=35610, Description:="Invalid object"
-                    End If
+        If IsObject(Value) Then
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
-                If Success = True Then
-                    SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
-                    ListViewSmallIconsObjectPointer = ObjPtr(Value)
-                    ListViewSmallIconsHandle = NULL_PTR
-                    PropSmallIconsName = ProperControlName(Value)
-                End If
-            Case vbString
-                On Error Resume Next
-                Dim ControlEnum As Object, CompareName As String
-                For Each ControlEnum In UserControl.ParentControls
-                    If TypeName(ControlEnum) = "ImageList" Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Err.Clear
-                            Handle = ControlEnum.hImageList
-                            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                            If Success = True Then
-                                SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
-                                ListViewSmallIconsObjectPointer = ObjPtr(ControlEnum)
-                                ListViewSmallIconsHandle = NULL_PTR
-                                PropSmallIconsName = Value
-                                Exit For
+            End If
+            If Success = True Then
+                SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
+                ListViewSmallIconsObjectPointer = ObjPtr(Value)
+                ListViewSmallIconsHandle = NULL_PTR
+                PropSmallIconsName = ProperControlName(Value)
+            End If
+        Else
+            Select Case VarType(Value)
+                Case vbString
+                    On Error Resume Next
+                    Dim ControlEnum As Object, CompareName As String
+                    For Each ControlEnum In UserControl.ParentControls
+                        If TypeName(ControlEnum) = "ImageList" Then
+                            CompareName = ProperControlName(ControlEnum)
+                            If CompareName = Value And Not CompareName = vbNullString Then
+                                Err.Clear
+                                Handle = ControlEnum.hImageList
+                                Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                                If Success = True Then
+                                    SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
+                                    ListViewSmallIconsObjectPointer = ObjPtr(ControlEnum)
+                                    ListViewSmallIconsHandle = NULL_PTR
+                                    PropSmallIconsName = Value
+                                    Exit For
+                                End If
                             End If
                         End If
+                    Next ControlEnum
+                    On Error GoTo 0
+                Case vbLong, &H14 ' vbLongLong
+                    Handle = Value
+                    Success = CBool(Handle <> NULL_PTR)
+                    If Success = True Then
+                        SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
+                        ListViewSmallIconsObjectPointer = NULL_PTR
+                        ListViewSmallIconsHandle = Handle
+                        PropSmallIconsName = "(None)"
                     End If
-                Next ControlEnum
-                On Error GoTo 0
-            Case vbLong, &H14 ' vbLongLong
-                Handle = Value
-                Success = CBool(Handle <> NULL_PTR)
-                If Success = True Then
-                    SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal Handle
-                    ListViewSmallIconsObjectPointer = NULL_PTR
-                    ListViewSmallIconsHandle = Handle
-                    PropSmallIconsName = "(None)"
-                End If
-            Case Else
-                Err.Raise 13
-        End Select
+                Case Else
+                    Err.Raise 13
+            End Select
+        End If
         If Success = False Then
             SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_SMALL, ByVal 0&
             ListViewSmallIconsObjectPointer = NULL_PTR
@@ -2677,57 +2681,59 @@ If ListViewDesignMode = False Then
     If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader
     If ListViewHandle <> NULL_PTR And ListViewHeaderHandle <> NULL_PTR Then
         Dim Success As Boolean, Handle As LongPtr
-        Select Case VarType(Value)
-            Case vbObject
-                If Not Value Is Nothing Then
-                    If TypeName(Value) = "ImageList" Then
-                        On Error Resume Next
-                        Handle = Value.hImageList
-                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                        On Error GoTo 0
-                    Else
-                        Err.Raise Number:=35610, Description:="Invalid object"
-                    End If
+        If IsObject(Value) Then
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
-                If Success = True Then
-                    SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
-                    ListViewColumnHeaderIconsObjectPointer = ObjPtr(Value)
-                    ListViewColumnHeaderIconsHandle = NULL_PTR
-                    PropColumnHeaderIconsName = ProperControlName(Value)
-                End If
-            Case vbString
-                On Error Resume Next
-                Dim ControlEnum As Object, CompareName As String
-                For Each ControlEnum In UserControl.ParentControls
-                    If TypeName(ControlEnum) = "ImageList" Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Err.Clear
-                            Handle = ControlEnum.hImageList
-                            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                            If Success = True Then
-                                SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
-                                ListViewColumnHeaderIconsObjectPointer = ObjPtr(ControlEnum)
-                                ListViewColumnHeaderIconsHandle = NULL_PTR
-                                PropColumnHeaderIconsName = Value
-                                Exit For
+            End If
+            If Success = True Then
+                SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
+                ListViewColumnHeaderIconsObjectPointer = ObjPtr(Value)
+                ListViewColumnHeaderIconsHandle = NULL_PTR
+                PropColumnHeaderIconsName = ProperControlName(Value)
+            End If
+        Else
+            Select Case VarType(Value)
+                Case vbString
+                    On Error Resume Next
+                    Dim ControlEnum As Object, CompareName As String
+                    For Each ControlEnum In UserControl.ParentControls
+                        If TypeName(ControlEnum) = "ImageList" Then
+                            CompareName = ProperControlName(ControlEnum)
+                            If CompareName = Value And Not CompareName = vbNullString Then
+                                Err.Clear
+                                Handle = ControlEnum.hImageList
+                                Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                                If Success = True Then
+                                    SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
+                                    ListViewColumnHeaderIconsObjectPointer = ObjPtr(ControlEnum)
+                                    ListViewColumnHeaderIconsHandle = NULL_PTR
+                                    PropColumnHeaderIconsName = Value
+                                    Exit For
+                                End If
                             End If
                         End If
+                    Next ControlEnum
+                    On Error GoTo 0
+                Case vbLong, &H14 ' vbLongLong
+                    Handle = Value
+                    Success = CBool(Handle <> NULL_PTR)
+                    If Success = True Then
+                        SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
+                        ListViewColumnHeaderIconsObjectPointer = NULL_PTR
+                        ListViewColumnHeaderIconsHandle = Handle
+                        PropColumnHeaderIconsName = "(None)"
                     End If
-                Next ControlEnum
-                On Error GoTo 0
-            Case vbLong, &H14 ' vbLongLong
-                Handle = Value
-                Success = CBool(Handle <> NULL_PTR)
-                If Success = True Then
-                    SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal Handle
-                    ListViewColumnHeaderIconsObjectPointer = NULL_PTR
-                    ListViewColumnHeaderIconsHandle = Handle
-                    PropColumnHeaderIconsName = "(None)"
-                End If
-            Case Else
-                Err.Raise 13
-        End Select
+                Case Else
+                    Err.Raise 13
+            End Select
+        End If
         If Success = False Then
             SendMessage ListViewHeaderHandle, HDM_SETIMAGELIST, HDSIL_NORMAL, ByVal 0&
             ListViewColumnHeaderIconsObjectPointer = NULL_PTR
@@ -2780,57 +2786,59 @@ Public Property Let GroupIcons(ByVal Value As Variant)
 If ListViewDesignMode = False Then
     If ListViewHandle <> NULL_PTR Then
         Dim Success As Boolean, Handle As LongPtr
-        Select Case VarType(Value)
-            Case vbObject
-                If Not Value Is Nothing Then
-                    If TypeName(Value) = "ImageList" Then
-                        On Error Resume Next
-                        Handle = Value.hImageList
-                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                        On Error GoTo 0
-                    Else
-                        Err.Raise Number:=35610, Description:="Invalid object"
-                    End If
+        If IsObject(Value) Then
+            If Not Value Is Nothing Then
+                If TypeName(Value) = "ImageList" Then
+                    On Error Resume Next
+                    Handle = Value.hImageList
+                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                    On Error GoTo 0
+                Else
+                    Err.Raise Number:=35610, Description:="Invalid object"
                 End If
-                If Success = True Then
-                    If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
-                    ListViewGroupIconsObjectPointer = ObjPtr(Value)
-                    ListViewGroupIconsHandle = NULL_PTR
-                    PropGroupIconsName = ProperControlName(Value)
-                End If
-            Case vbString
-                On Error Resume Next
-                Dim ControlEnum As Object, CompareName As String
-                For Each ControlEnum In UserControl.ParentControls
-                    If TypeName(ControlEnum) = "ImageList" Then
-                        CompareName = ProperControlName(ControlEnum)
-                        If CompareName = Value And Not CompareName = vbNullString Then
-                            Err.Clear
-                            Handle = ControlEnum.hImageList
-                            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                            If Success = True Then
-                                If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
-                                ListViewGroupIconsObjectPointer = ObjPtr(ControlEnum)
-                                ListViewGroupIconsHandle = NULL_PTR
-                                PropGroupIconsName = Value
-                                Exit For
+            End If
+            If Success = True Then
+                If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
+                ListViewGroupIconsObjectPointer = ObjPtr(Value)
+                ListViewGroupIconsHandle = NULL_PTR
+                PropGroupIconsName = ProperControlName(Value)
+            End If
+        Else
+            Select Case VarType(Value)
+                Case vbString
+                    On Error Resume Next
+                    Dim ControlEnum As Object, CompareName As String
+                    For Each ControlEnum In UserControl.ParentControls
+                        If TypeName(ControlEnum) = "ImageList" Then
+                            CompareName = ProperControlName(ControlEnum)
+                            If CompareName = Value And Not CompareName = vbNullString Then
+                                Err.Clear
+                                Handle = ControlEnum.hImageList
+                                Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                                If Success = True Then
+                                    If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
+                                    ListViewGroupIconsObjectPointer = ObjPtr(ControlEnum)
+                                    ListViewGroupIconsHandle = NULL_PTR
+                                    PropGroupIconsName = Value
+                                    Exit For
+                                End If
                             End If
                         End If
+                    Next ControlEnum
+                    On Error GoTo 0
+                Case vbLong, &H14 ' vbLongLong
+                    Handle = Value
+                    Success = CBool(Handle <> NULL_PTR)
+                    If Success = True Then
+                        If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
+                        ListViewGroupIconsObjectPointer = NULL_PTR
+                        ListViewGroupIconsHandle = Handle
+                        PropGroupIconsName = "(None)"
                     End If
-                Next ControlEnum
-                On Error GoTo 0
-            Case vbLong, &H14 ' vbLongLong
-                Handle = Value
-                Success = CBool(Handle <> NULL_PTR)
-                If Success = True Then
-                    If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal Handle
-                    ListViewGroupIconsObjectPointer = NULL_PTR
-                    ListViewGroupIconsHandle = Handle
-                    PropGroupIconsName = "(None)"
-                End If
-            Case Else
-                Err.Raise 13
-        End Select
+                Case Else
+                    Err.Raise 13
+            End Select
+        End If
         If Success = False Then
             If ComCtlsSupportLevel() >= 2 Then SendMessage ListViewHandle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, ByVal 0&
             ListViewGroupIconsObjectPointer = NULL_PTR

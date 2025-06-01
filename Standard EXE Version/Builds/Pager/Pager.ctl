@@ -362,7 +362,9 @@ PropAutoScroll = .ReadProperty("AutoScroll", False)
 PropButtonSize = .ReadProperty("ButtonSize", -1)
 End With
 Call CreatePager
-If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = Ambient.UserMode
+If PagerDesignMode = False Then
+    If Not PropBuddyName = "(None)" Then TimerBuddyControl.Enabled = True
+End If
 End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)

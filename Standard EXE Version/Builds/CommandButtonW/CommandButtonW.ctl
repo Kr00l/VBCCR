@@ -1315,63 +1315,65 @@ If CommandButtonHandle <> NULL_PTR Then
     ' PBS_DEFAULTED = 5
     ' PBS_STYLUSHOT = 6
     Dim Success As Boolean, Handle As LongPtr
-    Select Case VarType(Value)
-        Case vbObject
-            If Not Value Is Nothing Then
-                If TypeName(Value) = "ImageList" Then
-                    On Error Resume Next
-                    Handle = Value.hImageList
-                    Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                    On Error GoTo 0
-                Else
-                    Err.Raise Number:=35610, Description:="Invalid object"
-                End If
+    If IsObject(Value) Then
+        If Not Value Is Nothing Then
+            If TypeName(Value) = "ImageList" Then
+                On Error Resume Next
+                Handle = Value.hImageList
+                Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                On Error GoTo 0
+            Else
+                Err.Raise Number:=35610, Description:="Invalid object"
             End If
-            If Success = True Then
-                Call SetImageList(Handle)
-                CommandButtonImageListObjectPointer = ObjPtr(Value)
-                CommandButtonImageListHandle = NULL_PTR
-                PropImageListName = ProperControlName(Value)
-            End If
-        Case vbString
-            On Error Resume Next
-            Dim ControlEnum As Object, CompareName As String
-            For Each ControlEnum In UserControl.ParentControls
-                If TypeName(ControlEnum) = "ImageList" Then
-                    CompareName = ProperControlName(ControlEnum)
-                    If CompareName = Value And Not CompareName = vbNullString Then
-                        Err.Clear
-                        Handle = ControlEnum.hImageList
-                        Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
-                        If Success = True Then
-                            Call SetImageList(Handle)
-                            If CommandButtonDesignMode = False Then
-                                CommandButtonImageListObjectPointer = ObjPtr(ControlEnum)
-                                CommandButtonImageListHandle = NULL_PTR
+        End If
+        If Success = True Then
+            Call SetImageList(Handle)
+            CommandButtonImageListObjectPointer = ObjPtr(Value)
+            CommandButtonImageListHandle = NULL_PTR
+            PropImageListName = ProperControlName(Value)
+        End If
+    Else
+        Select Case VarType(Value)
+            Case vbString
+                On Error Resume Next
+                Dim ControlEnum As Object, CompareName As String
+                For Each ControlEnum In UserControl.ParentControls
+                    If TypeName(ControlEnum) = "ImageList" Then
+                        CompareName = ProperControlName(ControlEnum)
+                        If CompareName = Value And Not CompareName = vbNullString Then
+                            Err.Clear
+                            Handle = ControlEnum.hImageList
+                            Success = CBool(Err.Number = 0 And Handle <> NULL_PTR)
+                            If Success = True Then
+                                Call SetImageList(Handle)
+                                If CommandButtonDesignMode = False Then
+                                    CommandButtonImageListObjectPointer = ObjPtr(ControlEnum)
+                                    CommandButtonImageListHandle = NULL_PTR
+                                End If
+                                PropImageListName = Value
+                                Exit For
+                            ElseIf CommandButtonDesignMode = True Then
+                                PropImageListName = Value
+                                Success = True
+                                Exit For
                             End If
-                            PropImageListName = Value
-                            Exit For
-                        ElseIf CommandButtonDesignMode = True Then
-                            PropImageListName = Value
-                            Success = True
-                            Exit For
                         End If
                     End If
+                Next ControlEnum
+                On Error GoTo 0
+            Case vbLong, &H14 ' vbLongLong
+                Handle = Value
+                Success = CBool(Handle <> NULL_PTR)
+                If Success = True Then
+                    Call SetImageList(Handle)
+                    CommandButtonImageListObjectPointer = NULL_PTR
+                    CommandButtonImageListHandle = Handle
+                    PropImageListName = "(None)"
                 End If
-            Next ControlEnum
-            On Error GoTo 0
-        Case vbLong, &H14 ' vbLongLong
-            Handle = Value
-            Success = CBool(Handle <> NULL_PTR)
-            If Success = True Then
-                Call SetImageList(Handle)
-                CommandButtonImageListObjectPointer = NULL_PTR
-                CommandButtonImageListHandle = Handle
-                PropImageListName = "(None)"
-            End If
-        Case Else
-            Err.Raise 13
-    End Select
+            Case Else
+                Err.Raise 13
+        End Select
+    End If
     If Success = False Then
         Call SetImageList(BCCL_NOGLYPH)
         CommandButtonImageListObjectPointer = NULL_PTR
