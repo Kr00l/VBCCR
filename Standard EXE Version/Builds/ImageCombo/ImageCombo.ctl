@@ -1300,7 +1300,7 @@ Select Case PropStyle
     Case ImcStyleDropDownCombo
         If ImageComboHandle <> NULL_PTR Then
             Dim CBEI As COMBOBOXEXITEM, Buffer As String
-            Buffer = String(CBEMAXSTRLEN, vbNullChar) & vbNullChar
+            Buffer = String$(CBEMAXSTRLEN, vbNullChar) & vbNullChar
             With CBEI
             .Mask = CBEIF_TEXT
             .iItem = -1
@@ -1314,18 +1314,18 @@ Select Case PropStyle
         End If
     Case ImcStyleSimpleCombo
         If ImageComboHandle <> NULL_PTR And ImageComboEditHandle <> NULL_PTR Then
-            Text = String(CLng(SendMessage(ImageComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&)), vbNullChar)
+            Text = String$(CLng(SendMessage(ImageComboEditHandle, WM_GETTEXTLENGTH, 0, ByVal 0&)), vbNullChar)
             SendMessage ImageComboEditHandle, WM_GETTEXT, Len(Text) + 1, ByVal StrPtr(Text)
         Else
             Text = PropText
         End If
     Case ImcStyleDropDownList
-        If ImageComboComboHandle <> NULL_PTR And ImageComboDesignMode = False Then
+        If ImageComboHandle <> NULL_PTR And ImageComboDesignMode = False Then
             Dim iItem As Long
-            iItem = CLng(SendMessage(ImageComboComboHandle, CB_GETCURSEL, 0, ByVal 0&))
+            iItem = CLng(SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&))
             If Not iItem = CB_ERR Then
-                Text = String(CLng(SendMessage(ImageComboComboHandle, CB_GETLBTEXTLEN, iItem, ByVal 0&)), vbNullChar)
-                SendMessage ImageComboComboHandle, CB_GETLBTEXT, iItem, ByVal StrPtr(Text)
+                Text = String$(CLng(SendMessage(ImageComboHandle, CB_GETLBTEXTLEN, iItem, ByVal 0&)), vbNullChar)
+                SendMessage ImageComboHandle, CB_GETLBTEXT, iItem, ByVal StrPtr(Text)
             End If
         Else
             Text = Ambient.DisplayName
@@ -1581,7 +1581,7 @@ End Sub
 Friend Property Get FComboItemText(ByVal Index As Long) As String
 If ImageComboHandle <> NULL_PTR Then
     Dim CBEI As COMBOBOXEXITEM, Buffer As String
-    Buffer = String(CBEMAXSTRLEN, vbNullChar) & vbNullChar
+    Buffer = String$(CBEMAXSTRLEN, vbNullChar) & vbNullChar
     With CBEI
     .Mask = CBEIF_TEXT
     .iItem = Index - 1
@@ -2014,18 +2014,18 @@ End Property
 
 Public Function FindItem(ByVal Text As String, Optional ByVal Index As Long, Optional ByVal Partial As Boolean, Optional ByVal Wrap As Boolean) As ImcComboItem
 Attribute FindItem.VB_Description = "Finds an item in the list and returns a reference to that item."
-If ImageComboComboHandle <> NULL_PTR Then
+If ImageComboHandle <> NULL_PTR Then
     If Index >= 0 Then
         Dim Count As Long
-        Count = CLng(SendMessage(ImageComboComboHandle, CB_GETCOUNT, 0, ByVal 0&))
+        Count = CLng(SendMessage(ImageComboHandle, CB_GETCOUNT, 0, ByVal 0&))
         If Count > 0 Then
             If Index <= Count Then
                 If Index > 0 Then Index = Index - 1
                 Dim Result As Long, Buffer As String, i As Long
                 Result = CB_ERR
                 For i = Index To (Count - 1)
-                    Buffer = String(CLng(SendMessage(ImageComboComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
-                    SendMessage ImageComboComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
+                    Buffer = String$(CLng(SendMessage(ImageComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
+                    SendMessage ImageComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
                     If Len(Buffer) > 0 Then
                         If Partial = True Then
                             If InStr(1, Buffer, Text, vbTextCompare) <> 0 Then
@@ -2042,8 +2042,8 @@ If ImageComboComboHandle <> NULL_PTR Then
                 Next i
                 If Wrap = True And Result = CB_ERR And Index > 0 Then
                     For i = 0 To (Index - 1)
-                        Buffer = String(CLng(SendMessage(ImageComboComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
-                        SendMessage ImageComboComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
+                        Buffer = String$(CLng(SendMessage(ImageComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
+                        SendMessage ImageComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
                         If Len(Buffer) > 0 Then
                             If Partial = True Then
                                 If InStr(1, Buffer, Text, vbTextCompare) <> 0 Then
@@ -2303,14 +2303,14 @@ Select Case wMsg
     Case WM_CHARTOITEM
         Dim CharCode As Integer, Count As Long, Result As Long
         CharCode = LoWord(CLng(wParam))
-        Count = CLng(SendMessage(hWnd, CB_GETCOUNT, 0, ByVal 0&))
+        Count = CLng(SendMessage(ImageComboHandle, CB_GETCOUNT, 0, ByVal 0&))
         Result = CB_ERR
         If Count > 0 Then
             Dim CurrIndex As Long, Buffer As String, i As Long
-            CurrIndex = CLng(SendMessage(hWnd, CB_GETCURSEL, 0, ByVal 0&))
+            CurrIndex = CLng(SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&))
             For i = (CurrIndex + 1) To (Count - 1)
-                Buffer = String(CLng(SendMessage(hWnd, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
-                SendMessage hWnd, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
+                Buffer = String$(CLng(SendMessage(ImageComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
+                SendMessage ImageComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
                 If Len(Buffer) > 0 Then
                     If StrComp(Left$(Buffer, 1), ChrW(CharCode), vbTextCompare) = 0 Then
                         Result = i
@@ -2320,8 +2320,8 @@ Select Case wMsg
             Next i
             If Result = CB_ERR And CurrIndex > -1 Then
                 For i = 0 To CurrIndex
-                    Buffer = String(CLng(SendMessage(hWnd, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
-                    SendMessage hWnd, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
+                    Buffer = String$(CLng(SendMessage(ImageComboHandle, CB_GETLBTEXTLEN, i, ByVal 0&)), vbNullChar)
+                    SendMessage ImageComboHandle, CB_GETLBTEXT, i, ByVal StrPtr(Buffer)
                     If Len(Buffer) > 0 Then
                         If StrComp(Left$(Buffer, 1), ChrW(CharCode), vbTextCompare) = 0 Then
                             Result = i
@@ -2374,7 +2374,7 @@ Select Case wMsg
                 ' See UM_BUTTONDOWN
                 If ComCtlsSupportLevel() = 0 Then
                     ' The WM_LBUTTONUP message is not sent if the comctl32.dll version is 5.8x. (Bug?)
-                    If SendMessage(hWnd, CB_GETDROPPEDSTATE, 0, ByVal 0&) <> 0 Then PostMessage hWnd, WM_LBUTTONUP, wParam, ByVal lParam
+                    If SendMessage(ImageComboHandle, CB_GETDROPPEDSTATE, 0, ByVal 0&) <> 0 Then PostMessage hWnd, WM_LBUTTONUP, wParam, ByVal lParam
                 End If
             Case WM_MBUTTONDOWN
                 RaiseEvent MouseDown(vbMiddleButton, GetShiftStateFromParam(wParam), X, Y)
