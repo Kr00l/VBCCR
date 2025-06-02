@@ -1,5 +1,10 @@
 List of revisions:
 
+02-Jun-2025
+- Various bugfixes in the ImageCombo control.
+  Some CB_ messages need to be sent to the superclass window and not to the inner combo handle.
+  comctl version 5.8x and 6.0 [XP] are not affected.
+
 01-Jun-2025
 - Internal improvement in the FontCombo control.
 
