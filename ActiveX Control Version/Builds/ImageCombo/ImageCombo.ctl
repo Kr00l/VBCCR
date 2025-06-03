@@ -1300,12 +1300,12 @@ Select Case PropStyle
     Case ImcStyleDropDownCombo
         If ImageComboHandle <> NULL_PTR Then
             Dim CBEI As COMBOBOXEXITEM, Buffer As String
-            Buffer = String$(CBEMAXSTRLEN, vbNullChar) & vbNullChar
+            Buffer = String$(CBEMAXSTRLEN, vbNullChar)
             With CBEI
             .Mask = CBEIF_TEXT
             .iItem = -1
             .pszText = StrPtr(Buffer)
-            .cchTextMax = Len(Buffer)
+            .cchTextMax = CBEMAXSTRLEN
             SendMessage ImageComboHandle, CBEM_GETITEM, 0, ByVal VarPtr(CBEI)
             Text = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
             End With
@@ -1581,12 +1581,12 @@ End Sub
 Friend Property Get FComboItemText(ByVal Index As Long) As String
 If ImageComboHandle <> NULL_PTR Then
     Dim CBEI As COMBOBOXEXITEM, Buffer As String
-    Buffer = String$(CBEMAXSTRLEN, vbNullChar) & vbNullChar
+    Buffer = String$(CBEMAXSTRLEN, vbNullChar)
     With CBEI
     .Mask = CBEIF_TEXT
     .iItem = Index - 1
     .pszText = StrPtr(Buffer)
-    .cchTextMax = Len(Buffer)
+    .cchTextMax = CBEMAXSTRLEN
     SendMessage ImageComboHandle, CBEM_GETITEM, 0, ByVal VarPtr(CBEI)
     FComboItemText = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
     End With
