@@ -3092,11 +3092,6 @@ If ListViewHandle <> NULL_PTR Then
         If Not (dwStyle And LVS_SINGLESEL) = LVS_SINGLESEL Then dwStyle = dwStyle Or LVS_SINGLESEL
     End If
     SetWindowLong ListViewHandle, GWL_STYLE, dwStyle
-    If PropMultiSelect = False Then
-        Dim ListItem As LvwListItem
-        Set ListItem = Me.SelectedItem
-        If Not ListItem Is Nothing Then ListItem.Selected = True
-    End If
 End If
 UserControl.PropertyChanged "MultiSelect"
 End Property
