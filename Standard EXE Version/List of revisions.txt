@@ -1,5 +1,8 @@
 List of revisions:
 
+05-Jun-2025
+- MultiSelect property does not enforce anymore possible selection change in the ListView control. (like MS ListView)
+
 02-Jun-2025
 - Various bugfixes in the ImageCombo control.
   Some CB_ messages need to be sent to the superclass window and not to the inner combo handle.
