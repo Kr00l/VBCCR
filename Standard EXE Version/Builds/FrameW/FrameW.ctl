@@ -676,7 +676,7 @@ End Property
 
 Public Property Let MousePointer(ByVal Value As CCMousePointerConstants)
 Select Case Value
-    Case 0 To 16, 99
+    Case 0 To 30, 99
         PropMousePointer = Value
     Case Else
         Err.Raise 380
@@ -688,8 +688,10 @@ If FrameDesignMode = False Then
             UserControl.MousePointer = vbHand
         Case 16
             UserControl.MousePointer = vbArrowCD
+        Case 19
+            UserControl.MousePointer = vbPen
         #Else
-        Case vbIconPointer, 16
+        Case vbIconPointer, 16 To 30
             UserControl.MousePointer = vbDefault
         #End If
         Case Else
