@@ -14,7 +14,7 @@ Attribute VB_Exposed = True
 Option Explicit
 #If False Then
 Private OLEDropModeNone, OLEDropModeManual
-Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerCustom
+Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerPin, CCMousePointerPerson, CCMousePointerPen, CCMousePointerScrollN, CCMousePointerScrollS, CCMousePointerScrollE, CCMousePointerScrollW, CCMousePointerScrollNS, CCMousePointerScrollWE, CCMousePointerScrollNW, CCMousePointerScrollNE, CCMousePointerScrollSW, CCMousePointerScrollSE, CCMousePointerScrollAll, CCMousePointerCustom
 Private CCAppearanceFlat, CCAppearance3D
 Private CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
 Private CCBackStyleTransparent, CCBackStyleOpaque
@@ -46,6 +46,20 @@ CCMousePointerArrowHourglass = 13
 CCMousePointerArrowQuestion = 14
 CCMousePointerSizeAll = 15
 CCMousePointerArrowCD = 16
+CCMousePointerPin = 17
+CCMousePointerPerson = 18
+CCMousePointerPen = 19
+CCMousePointerScrollN = 20
+CCMousePointerScrollS = 21
+CCMousePointerScrollE = 22
+CCMousePointerScrollW = 23
+CCMousePointerScrollNS = 24
+CCMousePointerScrollWE = 25
+CCMousePointerScrollNW = 26
+CCMousePointerScrollNE = 27
+CCMousePointerScrollSW = 28
+CCMousePointerScrollSE = 29
+CCMousePointerScrollAll = 30
 CCMousePointerCustom = 99
 End Enum
 Public Enum CCAppearanceConstants

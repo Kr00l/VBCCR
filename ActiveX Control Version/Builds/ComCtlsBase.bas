@@ -556,6 +556,34 @@ With ComboBox
 .ItemData(.NewIndex) = CCMousePointerSizeAll
 .AddItem CCMousePointerArrowCD & " - Arrow and CD"
 .ItemData(.NewIndex) = CCMousePointerArrowCD
+.AddItem CCMousePointerPin & " - Pin"
+.ItemData(.NewIndex) = CCMousePointerPin
+.AddItem CCMousePointerPerson & " - Person"
+.ItemData(.NewIndex) = CCMousePointerPerson
+.AddItem CCMousePointerPen & " - Pen"
+.ItemData(.NewIndex) = CCMousePointerPen
+.AddItem CCMousePointerScrollN & " - Scroll N"
+.ItemData(.NewIndex) = CCMousePointerScrollN
+.AddItem CCMousePointerScrollS & " - Scroll S"
+.ItemData(.NewIndex) = CCMousePointerScrollS
+.AddItem CCMousePointerScrollE & " - Scroll E"
+.ItemData(.NewIndex) = CCMousePointerScrollE
+.AddItem CCMousePointerScrollW & " - Scroll W"
+.ItemData(.NewIndex) = CCMousePointerScrollW
+.AddItem CCMousePointerScrollNS & " - Scroll N S"
+.ItemData(.NewIndex) = CCMousePointerScrollNS
+.AddItem CCMousePointerScrollWE & " - Scroll W E"
+.ItemData(.NewIndex) = CCMousePointerScrollWE
+.AddItem CCMousePointerScrollNW & " - Scroll NW"
+.ItemData(.NewIndex) = CCMousePointerScrollNW
+.AddItem CCMousePointerScrollNE & " - Scroll NE"
+.ItemData(.NewIndex) = CCMousePointerScrollNE
+.AddItem CCMousePointerScrollSW & " - Scroll SW"
+.ItemData(.NewIndex) = CCMousePointerScrollSW
+.AddItem CCMousePointerScrollSE & " - Scroll SE"
+.ItemData(.NewIndex) = CCMousePointerScrollSE
+.AddItem CCMousePointerScrollAll & " - Scroll All"
+.ItemData(.NewIndex) = CCMousePointerScrollAll
 .AddItem CCMousePointerCustom & " - Custom"
 .ItemData(.NewIndex) = CCMousePointerCustom
 End With
