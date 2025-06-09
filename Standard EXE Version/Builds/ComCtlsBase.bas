@@ -17,7 +17,7 @@ Private Const PTR_SIZE As Long = 4
 
 #If False Then
 Private OLEDropModeNone, OLEDropModeManual
-Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerCustom
+Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerPin, CCMousePointerPerson, CCMousePointerPen, CCMousePointerScrollN, CCMousePointerScrollS, CCMousePointerScrollE, CCMousePointerScrollW, CCMousePointerScrollNS, CCMousePointerScrollWE, CCMousePointerScrollNW, CCMousePointerScrollNE, CCMousePointerScrollSW, CCMousePointerScrollSE, CCMousePointerScrollAll, CCMousePointerCustom
 Private CCAppearanceFlat, CCAppearance3D
 Private CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
 Private CCBackStyleTransparent, CCBackStyleOpaque
@@ -49,6 +49,20 @@ CCMousePointerArrowHourglass = 13
 CCMousePointerArrowQuestion = 14
 CCMousePointerSizeAll = 15
 CCMousePointerArrowCD = 16
+CCMousePointerPin = 17
+CCMousePointerPerson = 18
+CCMousePointerPen = 19
+CCMousePointerScrollN = 20
+CCMousePointerScrollS = 21
+CCMousePointerScrollE = 22
+CCMousePointerScrollW = 23
+CCMousePointerScrollNS = 24
+CCMousePointerScrollWE = 25
+CCMousePointerScrollNW = 26
+CCMousePointerScrollNE = 27
+CCMousePointerScrollSW = 28
+CCMousePointerScrollSE = 29
+CCMousePointerScrollAll = 30
 CCMousePointerCustom = 99
 End Enum
 Public Enum CCAppearanceConstants
@@ -641,6 +655,34 @@ With ComboBox
 .ItemData(.NewIndex) = CCMousePointerSizeAll
 .AddItem CCMousePointerArrowCD & " - Arrow and CD"
 .ItemData(.NewIndex) = CCMousePointerArrowCD
+.AddItem CCMousePointerPin & " - Pin"
+.ItemData(.NewIndex) = CCMousePointerPin
+.AddItem CCMousePointerPerson & " - Person"
+.ItemData(.NewIndex) = CCMousePointerPerson
+.AddItem CCMousePointerPen & " - Pen"
+.ItemData(.NewIndex) = CCMousePointerPen
+.AddItem CCMousePointerScrollN & " - Scroll N"
+.ItemData(.NewIndex) = CCMousePointerScrollN
+.AddItem CCMousePointerScrollS & " - Scroll S"
+.ItemData(.NewIndex) = CCMousePointerScrollS
+.AddItem CCMousePointerScrollE & " - Scroll E"
+.ItemData(.NewIndex) = CCMousePointerScrollE
+.AddItem CCMousePointerScrollW & " - Scroll W"
+.ItemData(.NewIndex) = CCMousePointerScrollW
+.AddItem CCMousePointerScrollNS & " - Scroll N S"
+.ItemData(.NewIndex) = CCMousePointerScrollNS
+.AddItem CCMousePointerScrollWE & " - Scroll W E"
+.ItemData(.NewIndex) = CCMousePointerScrollWE
+.AddItem CCMousePointerScrollNW & " - Scroll NW"
+.ItemData(.NewIndex) = CCMousePointerScrollNW
+.AddItem CCMousePointerScrollNE & " - Scroll NE"
+.ItemData(.NewIndex) = CCMousePointerScrollNE
+.AddItem CCMousePointerScrollSW & " - Scroll SW"
+.ItemData(.NewIndex) = CCMousePointerScrollSW
+.AddItem CCMousePointerScrollSE & " - Scroll SE"
+.ItemData(.NewIndex) = CCMousePointerScrollSE
+.AddItem CCMousePointerScrollAll & " - Scroll All"
+.ItemData(.NewIndex) = CCMousePointerScrollAll
 .AddItem CCMousePointerCustom & " - Custom"
 .ItemData(.NewIndex) = CCMousePointerCustom
 End With
