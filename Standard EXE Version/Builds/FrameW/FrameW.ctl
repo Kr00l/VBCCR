@@ -206,6 +206,7 @@ Private DispIdBorderStyle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
+Private PropEnabled As Boolean
 Private PropMousePointer As Integer
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
@@ -266,6 +267,7 @@ FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set Me.Font = Ambient.Font
 PropVisualStyles = True
+Me.Enabled = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0
 PropMouseTrack = False
@@ -637,11 +639,12 @@ End Property
 Public Property Get Enabled() As Boolean
 Attribute Enabled.VB_Description = "Returns/sets a value that determines whether an object can respond to user-generated events."
 Attribute Enabled.VB_UserMemId = -514
-Enabled = UserControl.Enabled
+Enabled = PropEnabled
 End Property
 
 Public Property Let Enabled(ByVal Value As Boolean)
-UserControl.Enabled = Value
+PropEnabled = Value
+If FrameDesignMode = False Then UserControl.Enabled = PropEnabled
 Call DrawFrame
 UserControl.PropertyChanged "Enabled"
 End Property
@@ -950,7 +953,7 @@ If PropBorderStyle <> vbBSNone Then
     If Theme <> NULL_PTR Then
         Dim ButtonPart As Long, GroupBoxState As Long
         ButtonPart = BP_GROUPBOX
-        If .Enabled = True Then
+        If PropEnabled = True Then
             GroupBoxState = GBS_NORMAL
         Else
             GroupBoxState = GBS_DISABLED
@@ -984,7 +987,7 @@ If PropBorderStyle <> vbBSNone Then
                 Dim DTTO As DTTOPTS
                 DTTO.dwSize = LenB(DTTO)
                 DTTO.dwFlags = DTT_TEXTCOLOR
-                If .Enabled = True Then
+                If PropEnabled = True Then
                     DTTO.crText = WinColor(.ForeColor)
                 Else
                     DTTO.crText = WinColor(vbGrayText)
@@ -1077,7 +1080,7 @@ If PropBorderStyle <> vbBSNone Then
                 End Select
             End If
             Dim OldTextColor As Long
-            If .Enabled = True Then
+            If PropEnabled = True Then
                 OldTextColor = SetTextColor(.hDC, WinColor(.ForeColor))
             Else
                 OldTextColor = SetTextColor(.hDC, WinColor(vbGrayText))
