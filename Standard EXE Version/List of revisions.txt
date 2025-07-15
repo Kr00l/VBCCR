@@ -1,5 +1,8 @@
 List of revisions:
 
+15-Jul-2025
+- FrameW control would not let you edit controls at design-time when Enabled property is False.
+
 05-Jun-2025
 - MultiSelect property does not enforce anymore possible selection change in the ListView control. (like MS ListView)
 
