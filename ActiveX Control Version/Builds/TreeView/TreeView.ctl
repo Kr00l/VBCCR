@@ -1224,6 +1224,16 @@ hWndUserControl = UserControl.hWnd
 End Property
 
 #If VBA7 Then
+Public Property Get hWndToolTip() As LongPtr
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#Else
+Public Property Get hWndToolTip() As Long
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#End If
+If TreeViewHandle <> NULL_PTR Then hWndToolTip = SendMessage(TreeViewHandle, TVM_GETTOOLTIPS, 0, ByVal 0&)
+End Property
+
+#If VBA7 Then
 Public Property Get hWndLabelEdit() As LongPtr
 Attribute hWndLabelEdit.VB_Description = "Returns a handle to a control."
 #Else
