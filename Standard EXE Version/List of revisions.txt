@@ -1,5 +1,9 @@
 List of revisions:
 
+01-Nov-2025
+- Included hWndToolTip read-only run-time property all controls where applicable.
+  ListView has in addition also the hWndHeaderToolTip read-only run-time property.
+
 15-Jul-2025
 - FrameW control would not let you edit controls at design-time when Enabled property is False.
 
