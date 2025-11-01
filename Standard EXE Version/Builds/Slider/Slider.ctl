@@ -772,6 +772,16 @@ Attribute hWndUserControl.VB_Description = "Returns a handle to a control."
 hWndUserControl = UserControl.hWnd
 End Property
 
+#If VBA7 Then
+Public Property Get hWndToolTip() As LongPtr
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#Else
+Public Property Get hWndToolTip() As Long
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#End If
+If SliderHandle <> NULL_PTR Then hWndToolTip = SendMessage(SliderHandle, TBM_GETTOOLTIPS, 0, ByVal 0&)
+End Property
+
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
 VisualStyles = PropVisualStyles

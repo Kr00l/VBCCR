@@ -1992,6 +1992,26 @@ hWndUserControl = UserControl.hWnd
 End Property
 
 #If VBA7 Then
+Public Property Get hWndToolTip() As LongPtr
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#Else
+Public Property Get hWndToolTip() As Long
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#End If
+If ListViewHandle <> NULL_PTR Then hWndToolTip = SendMessage(ListViewHandle, LVM_GETTOOLTIPS, 0, ByVal 0&)
+End Property
+
+#If VBA7 Then
+Public Property Get hWndHeaderToolTip() As LongPtr
+Attribute hWndHeaderToolTip.VB_Description = "Returns a handle to a control."
+#Else
+Public Property Get hWndHeaderToolTip() As Long
+Attribute hWndHeaderToolTip.VB_Description = "Returns a handle to a control."
+#End If
+hWndHeaderToolTip = ListViewHeaderToolTipHandle
+End Property
+
+#If VBA7 Then
 Public Property Get hWndHeader() As LongPtr
 Attribute hWndHeader.VB_Description = "Returns a handle to a control."
 #Else

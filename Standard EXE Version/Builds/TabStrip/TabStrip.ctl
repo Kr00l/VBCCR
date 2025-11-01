@@ -1041,6 +1041,16 @@ Attribute hWndUserControl.VB_Description = "Returns a handle to a control."
 hWndUserControl = UserControl.hWnd
 End Property
 
+#If VBA7 Then
+Public Property Get hWndToolTip() As LongPtr
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#Else
+Public Property Get hWndToolTip() As Long
+Attribute hWndToolTip.VB_Description = "Returns a handle to a control."
+#End If
+If TabStripHandle <> NULL_PTR Then hWndToolTip = SendMessage(TabStripHandle, TCM_GETTOOLTIPS, 0, ByVal 0&)
+End Property
+
 Public Property Get Font() As StdFont
 Attribute Font.VB_Description = "Returns a Font object."
 Attribute Font.VB_UserMemId = -512
