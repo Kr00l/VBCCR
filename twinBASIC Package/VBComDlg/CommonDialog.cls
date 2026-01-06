@@ -1,10 +1,10 @@
 VERSION 1.0 CLASS
 BEGIN
-    MultiUse = -1  'True
-    Persistable = 0  'NotPersistable
-    DataBindingBehavior = 0  'vbNone
-    DataSourceBehavior  = 0  'vbNone
-    MTSTransactionMode  = 0  'NotAnMTSObject
+  MultiUse = -1  'True
+  Persistable = 0  'NotPersistable
+  DataBindingBehavior = 0  'vbNone
+  DataSourceBehavior  = 0  'vbNone
+  MTSTransactionMode  = 0  'NotAnMTSObject
 END
 Attribute VB_Name = "CommonDialog"
 Attribute VB_GlobalNameSpace = False
@@ -2487,7 +2487,7 @@ If OpenPrinter(StrPtr(DeviceName), hPrinter, NULL_PTR) <> 0 Then
     RetVal = DocumentProperties(NULL_PTR, hPrinter, StrPtr(DeviceName), NULL_PTR, NULL_PTR, 0)
     If RetVal > 0 Then
         ReDim DMODE_B(0 To (RetVal - 1)) As Byte
-        If DocumentProperties(0, hPrinter, StrPtr(DeviceName), VarPtr(DMODE_B(0)), 0, DM_OUT_BUFFER) = IDOK Then
+        If DocumentProperties(NULL_PTR, hPrinter, StrPtr(DeviceName), VarPtr(DMODE_B(0)), NULL_PTR, DM_OUT_BUFFER) = IDOK Then
             PrepareDevModeBuffer = RetVal
         Else
             Erase DMODE_B()
