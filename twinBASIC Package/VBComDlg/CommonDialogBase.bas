@@ -322,7 +322,7 @@ VTableData(0) = GetVTableIPDCB()
 VTableData(1) = 0 ' RefCount is uninstantiated
 VTableData(2) = ObjPtr(This)
 Dim hMem As LongPtr
-hMem = CoTaskMemAlloc(12)
+hMem = CoTaskMemAlloc(3 * PTR_SIZE)
 If hMem <> NULL_PTR Then
     CopyMemory ByVal hMem, VTableData(0), 3 * PTR_SIZE
     CdlPDEXCallbackPtr = hMem
@@ -568,3 +568,4 @@ CopyMemory TempObj, ObjectPointer, PTR_SIZE
 Set PtrToObj = TempObj
 CopyMemory TempObj, NULL_PTR, PTR_SIZE
 End Function
+
