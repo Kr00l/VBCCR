@@ -705,7 +705,7 @@ If InitTabsCount > 0 Then
         InitTabs(i).Tag = .ReadProperty("InitTabsTag" & CStr(i), vbNullString)
         InitTabs(i).ToolTipText = .ReadProperty("InitTabsToolTipText" & CStr(i), vbNullString)
         VarValue = .ReadProperty("InitTabsImage" & CStr(i), 0)
-        If VarType(VarValue) = vbArray + vbByte Then
+        If VarType(VarValue) = (vbArray + vbByte) Then
             InitTabs(i).Image = VarToStr(VarValue)
             InitTabs(i).ImageIndex = .ReadProperty("InitTabsImageIndex" & CStr(i), 0)
         Else

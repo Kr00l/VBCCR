@@ -963,7 +963,7 @@ If InitButtonsCount > 0 Then
         InitButtons(i).Caption = VarToStr(.ReadProperty("InitButtonsCaption" & CStr(i), vbNullString))
         InitButtons(i).Style = .ReadProperty("InitButtonsStyle" & CStr(i), TbrButtonStyleDefault)
         VarValue = .ReadProperty("InitButtonsImage" & CStr(i), 0)
-        If VarType(VarValue) = vbArray + vbByte Then
+        If VarType(VarValue) = (vbArray + vbByte) Then
             InitButtons(i).Image = VarToStr(VarValue)
             InitButtons(i).ImageIndex = .ReadProperty("InitButtonsImageIndex" & CStr(i), 0)
         Else
