@@ -1506,29 +1506,12 @@ Attribute AddItem.VB_Description = "Adds an item to the combo box."
 If ComboBoxHandle <> NULL_PTR Then
     If StrPtr(Item) = NULL_PTR Then Item = ""
     Dim RetVal As Long
-    If IsMissing(Index) = True Then
+    If IsMissing(Index) Then
         RetVal = CLng(SendMessage(ComboBoxHandle, CB_ADDSTRING, 0, ByVal StrPtr(Item)))
     Else
         Dim IndexLong As Long
-        Select Case VarType(Index)
-            Case vbLong, vbInteger, vbByte
-                If Index >= 0 Then
-                    IndexLong = Index
-                Else
-                    Err.Raise 5
-                End If
-            Case vbDouble, vbSingle
-                If CLng(Index) >= 0 Then
-                    IndexLong = CLng(Index)
-                Else
-                    Err.Raise 5
-                End If
-            Case vbString
-                IndexLong = CLng(Index)
-                If IndexLong < 0 Then Err.Raise 5
-            Case Else
-                Err.Raise 13
-        End Select
+        IndexLong = Index
+        If IndexLong < 0 Then Err.Raise 5
         RetVal = CLng(SendMessage(ComboBoxHandle, CB_INSERTSTRING, IndexLong, ByVal StrPtr(Item)))
     End If
     If Not RetVal = CB_ERR Then
