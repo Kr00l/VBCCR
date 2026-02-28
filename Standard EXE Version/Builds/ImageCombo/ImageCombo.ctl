@@ -1541,27 +1541,13 @@ With CBEI
 .iImage = ImageIndex - 1
 .iSelectedImage = SelImageIndex - 1
 .lParam = 0
-If IsMissing(Indentation) = True Then
+If IsMissing(Indentation) Then
     .iIndent = PropIndentation
 Else
-    Select Case VarType(Indentation)
-        Case vbLong, vbInteger, vbByte
-            If Indentation >= 0 Then
-                .iIndent = Indentation
-            Else
-                Err.Raise 380
-            End If
-        Case vbDouble, vbSingle
-            If CLng(Indentation) >= 0 Then
-                .iIndent = CLng(Indentation)
-            Else
-                Err.Raise 380
-            End If
-        Case vbEmpty
-            .iIndent = 0
-        Case Else
-            Err.Raise 13
-    End Select
+    Dim IndentationLong As Long
+    IndentationLong = Indentation
+    If IndentationLong < 0 Then Err.Raise 380
+    .iIndent = IndentationLong
 End If
 End With
 If ImageComboHandle <> NULL_PTR Then SendMessage ImageComboHandle, CBEM_INSERTITEM, 0, ByVal VarPtr(CBEI)

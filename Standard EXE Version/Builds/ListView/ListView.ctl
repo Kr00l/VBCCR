@@ -975,6 +975,7 @@ Private Const LVHT_ABOVE As Long = &H8
 Private Const LVHT_BELOW As Long = &H10
 Private Const LVHT_TORIGHT As Long = &H20
 Private Const LVHT_TOLEFT As Long = &H40
+Private Const LVHT_EX_GROUP_SUBSETLINK As Long = &H2000000
 Private Const LV_MAX_WORKAREAS As Long = 16
 Private Const EMF_CENTERED As Long = 1
 Private Const HDM_FIRST As Long = &H1200
@@ -6145,7 +6146,7 @@ If ListViewHandle <> NULL_PTR Then
     With LVHTI
     .PT.X = UserControl.ScaleX(X, vbContainerPosition, vbPixels)
     .PT.Y = UserControl.ScaleY(Y, vbContainerPosition, vbPixels)
-    If IsMissing(SubItemIndex) = True Then
+    If IsMissing(SubItemIndex) Then
         If SendMessage(ListViewHandle, LVM_HITTEST, 0, ByVal VarPtr(LVHTI)) > -1 Then
             If (.Flags And LVHT_ONITEM) <> 0 Then
                 If PropVirtualMode = False Then
