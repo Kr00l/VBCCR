@@ -771,7 +771,7 @@ If InitBandsCount > 0 Then
         If Not InitBands(i).ChildName = vbNullString Then InitChildren = True
         InitBands(i).Style = .ReadProperty("InitBandsStyle" & CStr(i), CbrBandStyleNormal)
         VarValue = .ReadProperty("InitBandsImage" & CStr(i), 0)
-        If VarType(VarValue) = vbArray + vbByte Then
+        If VarType(VarValue) = (vbArray + vbByte) Then
             InitBands(i).Image = VarToStr(VarValue)
             InitBands(i).ImageIndex = .ReadProperty("InitBandsImageIndex" & CStr(i), 0)
         Else
