@@ -98,6 +98,9 @@ Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongP
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
+Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
+Private Declare PtrSafe Function GetMessagePos Lib "user32" () As Long
+Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function DrawEdge Lib "user32" (ByVal hDC As LongPtr, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare PtrSafe Function RevokeDragDrop Lib "ole32" (ByVal hWnd As LongPtr) As Long
 #Else
@@ -117,6 +120,9 @@ Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef l
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function SetViewportOrgEx Lib "gdi32" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
+Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
+Private Declare Function GetMessagePos Lib "user32" () As Long
+Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function DrawEdge Lib "user32" (ByVal hDC As Long, ByRef qRC As RECT, ByVal Edge As Long, ByVal grfFlags As Long) As Long
 Private Declare Function RevokeDragDrop Lib "ole32" (ByVal hWnd As Long) As Long
 #End If
@@ -174,12 +180,14 @@ Private Const HWND_DESKTOP As LongPtr = &H0
 #Else
 Private Const HWND_DESKTOP As Long = &H0
 #End If
+Private Const DISPID_HWND As Long = -515
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const DT_LEFT As Long = &H0
 Private Const DT_CENTER As Long = &H1
 Private Const DT_RIGHT As Long = &H2
@@ -1153,6 +1161,56 @@ End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
+    #If (TWINBASIC = 0) Then
+    Case WM_SETCURSOR
+        If LoWord(CLng(lParam)) = HTCLIENT Then
+            Dim hCursor As LongPtr
+            Select Case PropMousePointer
+                Case vbIconPointer, 16 To 30
+                    If MousePointerID(PropMousePointer) <> 0 Then hCursor = LoadCursor(NULL_PTR, MousePointerID(PropMousePointer))
+            End Select
+            If hCursor <> NULL_PTR Then
+                Dim Pos As Long, P As POINTAPI
+                Pos = GetMessagePos()
+                P.X = Get_X_lParam(Pos)
+                P.Y = Get_Y_lParam(Pos)
+                ScreenToClient hWnd, P
+                Dim X As Single, Y As Single
+                X = UserControl.ScaleX(P.X, vbPixels, vbTwips)
+                Y = UserControl.ScaleY(P.Y, vbPixels, vbTwips)
+                Dim ControlEnum As Object, Handle As LongPtr
+                For Each ControlEnum In UserControl.ContainedControls
+                    ' No cursor if the mouse is under a windowless control which has a mouse pointer property.
+                    ' The enumeration is sorted by the ZOrder.
+                    With ControlEnum
+                    If X >= .Left And X < (.Left + .Width) And Y >= .Top And Y < (.Top + .Height) Then
+                        On Error Resume Next
+                        Handle = .hWnd
+                        On Error GoTo 0
+                        If Handle = NULL_PTR Then
+                            On Error Resume Next
+                            Handle = CallByDispId(ControlEnum, DISPID_HWND, VbGet Or VbMethod)
+                            On Error GoTo 0
+                        End If
+                        If Handle = NULL_PTR Then
+                            On Error Resume Next
+                            CallByName ControlEnum, "MousePointer", VbGet
+                            If Err.Number = 0 Then hCursor = NULL_PTR
+                            On Error GoTo 0
+                            Exit For
+                        End If
+                        Handle = NULL_PTR
+                    End If
+                    End With
+                Next ControlEnum
+            End If
+            If hCursor <> NULL_PTR Then
+                SetCursor hCursor
+                WindowProcUserControl = 1
+                Exit Function
+            End If
+        End If
+    #End If
     Case WM_PRINTCLIENT
         SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
         WindowProcUserControl = 0
