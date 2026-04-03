@@ -3726,13 +3726,7 @@ If ID > 0 Then
             End If
         Else
             KeyCode = 0
-            If (.fsStyle And BTNS_WHOLEDROPDOWN) = 0 Then
-                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
-                UpdateWindow ToolBarHandle
-                Sleep 50
-                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
-                RaiseEvent ButtonClick(Button)
-            Else
+            If (.fsStyle And BTNS_WHOLEDROPDOWN) <> 0 Or ((.fsStyle And BTNS_DROPDOWN) <> 0 And (Shift And vbShiftMask) <> 0) Then
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
                 RaiseEvent ButtonDropDown(Button)
                 Dim MenuItem As Long
@@ -3743,6 +3737,12 @@ If ID > 0 Then
                     If MenuItem <> 0 Then RaiseEvent ButtonMenuClick2(Button, MenuItem)
                 End If
                 SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
+            Else
+                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 1&
+                UpdateWindow ToolBarHandle
+                Sleep 50
+                SendMessage ToolBarHandle, TB_PRESSBUTTON, ID, ByVal 0&
+                RaiseEvent ButtonClick(Button)
             End If
         End If
         Set ContainerKeyDown = Button
