@@ -1,5 +1,9 @@
 List of revisions:
 
+09-Apr-2026
+- Improved the ContainerKeyDown function to remove any WM_LBUTTONDOWN/WM_LBUTTONDBLCLK message
+  after the button dropdown menu so that we can get a toggle effect in the ToolBar control.
+
 03-Apr-2026
 - Improvement in the ContainerKeyDown function in the ToolBar control.
   When holding the shift key a 4 - DropDown button will show the button menus instead of clicking the button.
