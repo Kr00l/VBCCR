@@ -1,5 +1,10 @@
 List of revisions:
 
+22-Apr-2026
+- The StatusBar control is now a ControlContainer like the ToolBar/CoolBar control.
+  This makes it easier to place a control onto a panel via "Set MyControl.Container = StatusBar".
+  The MS StatusBar is not a ControlContainer which is a unnecessary limitation.
+
 09-Apr-2026
 - Improved the ContainerKeyDown function to remove any WM_LBUTTONDOWN/WM_LBUTTONDBLCLK message
   after the button dropdown menu so that we can get a toggle effect in the ToolBar control.
