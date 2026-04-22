@@ -26,6 +26,7 @@ Private CCVerticalAlignmentTop, CCVerticalAlignmentCenter, CCVerticalAlignmentBo
 Private CCIMEModeNoControl, CCIMEModeOn, CCIMEModeOff, CCIMEModeDisable, CCIMEModeHiragana, CCIMEModeKatakana, CCIMEModeKatakanaHalf, CCIMEModeAlphaFull, CCIMEModeAlpha, CCIMEModeHangulFull, CCIMEModeHangul
 Private CCRightToLeftModeNoControl, CCRightToLeftModeVBAME, CCRightToLeftModeSystemLocale, CCRightToLeftModeUserLocale, CCRightToLeftModeOSLanguage
 Private CCScrollOrientationHorizontal, CCScrollOrientationVertical, CCScrollOrientationBoth
+Private CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
 #End If
 Public Enum OLEDropModeConstants
 OLEDropModeNone = vbOLEDropNone
@@ -113,6 +114,15 @@ Public Enum CCScrollOrientationConstants
 CCScrollOrientationHorizontal = 0
 CCScrollOrientationVertical = 1
 CCScrollOrientationBoth = 2
+End Enum
+Public Enum CCFontQualityConstants
+CCFontQualityDefault = 0
+CCFontQualityDraft = 1
+CCFontQualityProof = 2
+CCFontQualityNonAntiAliased = 3
+CCFontQualityAntiAliased = 4
+CCFontQualityClearType = 5
+CCFontQualityClearTypeNatural = 6
 End Enum
 Private Type TINITCOMMONCONTROLSEX
 dwSize As Long
