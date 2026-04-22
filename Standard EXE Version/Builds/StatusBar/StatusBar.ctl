@@ -6,6 +6,7 @@ Begin VB.UserControl StatusBar
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
+   ControlContainer=   -1  'True
    DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "StatusBar.ctx":0000
@@ -1704,6 +1705,11 @@ Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
 RedrawWindow UserControl.hWnd, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
+
+Public Property Get ContainedControls() As VBRUN.ContainedControls
+Attribute ContainedControls.VB_Description = "Returns a collection that allows access to the controls contained within the control that were added to the control by the developer who uses the control."
+Set ContainedControls = UserControl.ContainedControls
+End Property
 
 Public Function IncludesSizeGrip() As Boolean
 Attribute IncludesSizeGrip.VB_Description = "Returns a value indicating if the control includes a size grip at the right end."
