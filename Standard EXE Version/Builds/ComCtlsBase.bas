@@ -17,6 +17,7 @@ Private Const PTR_SIZE As Long = 4
 
 #If False Then
 Private OLEDropModeNone, OLEDropModeManual
+Private CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
 Private CCMousePointerDefault, CCMousePointerArrow, CCMousePointerCrosshair, CCMousePointerIbeam, CCMousePointerHand, CCMousePointerSizePointer, CCMousePointerSizeNESW, CCMousePointerSizeNS, CCMousePointerSizeNWSE, CCMousePointerSizeWE, CCMousePointerUpArrow, CCMousePointerHourglass, CCMousePointerNoDrop, CCMousePointerArrowHourglass, CCMousePointerArrowQuestion, CCMousePointerSizeAll, CCMousePointerArrowCD, CCMousePointerPin, CCMousePointerPerson, CCMousePointerPen, CCMousePointerScrollN, CCMousePointerScrollS, CCMousePointerScrollE, CCMousePointerScrollW, CCMousePointerScrollNS, CCMousePointerScrollWE, CCMousePointerScrollNW, CCMousePointerScrollNE, CCMousePointerScrollSW, CCMousePointerScrollSE, CCMousePointerScrollAll, CCMousePointerCustom
 Private CCAppearanceFlat, CCAppearance3D
 Private CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
@@ -26,11 +27,19 @@ Private CCVerticalAlignmentTop, CCVerticalAlignmentCenter, CCVerticalAlignmentBo
 Private CCIMEModeNoControl, CCIMEModeOn, CCIMEModeOff, CCIMEModeDisable, CCIMEModeHiragana, CCIMEModeKatakana, CCIMEModeKatakanaHalf, CCIMEModeAlphaFull, CCIMEModeAlpha, CCIMEModeHangulFull, CCIMEModeHangul
 Private CCRightToLeftModeNoControl, CCRightToLeftModeVBAME, CCRightToLeftModeSystemLocale, CCRightToLeftModeUserLocale, CCRightToLeftModeOSLanguage
 Private CCScrollOrientationHorizontal, CCScrollOrientationVertical, CCScrollOrientationBoth
-Private CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
 #End If
 Public Enum OLEDropModeConstants
 OLEDropModeNone = vbOLEDropNone
 OLEDropModeManual = vbOLEDropManual
+End Enum
+Public Enum CCFontQualityConstants
+CCFontQualityDefault = 0
+CCFontQualityDraft = 1
+CCFontQualityProof = 2
+CCFontQualityNonAntiAliased = 3
+CCFontQualityAntiAliased = 4
+CCFontQualityClearType = 5
+CCFontQualityClearTypeNatural = 6
 End Enum
 Public Enum CCMousePointerConstants
 CCMousePointerDefault = 0
@@ -114,15 +123,6 @@ Public Enum CCScrollOrientationConstants
 CCScrollOrientationHorizontal = 0
 CCScrollOrientationVertical = 1
 CCScrollOrientationBoth = 2
-End Enum
-Public Enum CCFontQualityConstants
-CCFontQualityDefault = 0
-CCFontQualityDraft = 1
-CCFontQualityProof = 2
-CCFontQualityNonAntiAliased = 3
-CCFontQualityAntiAliased = 4
-CCFontQualityClearType = 5
-CCFontQualityClearTypeNatural = 6
 End Enum
 Private Type TINITCOMMONCONTROLSEX
 dwSize As Long
