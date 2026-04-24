@@ -305,8 +305,8 @@ On Error Resume Next
 FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
-Set Me.Font = .ReadProperty("Font", Nothing)
 PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
+Set Me.Font = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Appearance = .ReadProperty("Appearance", CCAppearance3D)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)

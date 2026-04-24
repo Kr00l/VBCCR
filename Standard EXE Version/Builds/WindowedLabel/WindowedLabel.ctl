@@ -180,12 +180,14 @@ Private Const BF_BOTTOM As Long = &H8
 Private Const BF_RECT As Long = (BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM)
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
+Private WindowedLabelFontHandle As LongPtr
 Private WindowedLabelAutoSizeFlag As Boolean
 Private WindowedLabelDisplayedCaption As String
 Private WindowedLabelMouseOver As Boolean
 Private WindowedLabelDesignMode As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
@@ -221,6 +223,7 @@ WindowedLabelDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
+PropFontQuality = CCFontQualityDefault
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -249,6 +252,8 @@ With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 If PropFont Is Nothing Then Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
+If PropFontQuality <> CCFontQualityDefault Then WindowedLabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Me.Appearance = .ReadProperty("Appearance", CCAppearance3D)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.ForeColor = .ReadProperty("ForeColor", vbButtonText)
@@ -284,6 +289,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "Appearance", Me.Appearance, CCAppearance3D
 .WriteProperty "BackColor", Me.BackColor, vbButtonFace
 .WriteProperty "ForeColor", Me.ForeColor, vbButtonText
@@ -373,6 +379,10 @@ End Sub
 
 Private Sub UserControl_Terminate()
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If WindowedLabelFontHandle <> NULL_PTR Then
+    DeleteObject WindowedLabelFontHandle
+    WindowedLabelFontHandle = NULL_PTR
+End If
 Call ComCtlsReleaseShellMod
 End Sub
 
@@ -527,19 +537,53 @@ End Property
 
 Public Property Set Font(ByVal NewFont As StdFont)
 If NewFont Is Nothing Then Set NewFont = Ambient.Font
+Dim OldFontHandle As LongPtr
 Set PropFont = NewFont
+If PropFontQuality <> CCFontQualityDefault Then
+    OldFontHandle = WindowedLabelFontHandle
+    WindowedLabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
+ElseIf WindowedLabelFontHandle <> NULL_PTR Then
+    DeleteObject WindowedLabelFontHandle
+    WindowedLabelFontHandle = NULL_PTR
+End If
 Set UserControl.Font = PropFont
 WindowedLabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
+If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Property
 
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
+Dim OldFontHandle As LongPtr
+If PropFontQuality <> CCFontQualityDefault Then
+    OldFontHandle = WindowedLabelFontHandle
+    WindowedLabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
+ElseIf WindowedLabelFontHandle <> NULL_PTR Then
+    DeleteObject WindowedLabelFontHandle
+    WindowedLabelFontHandle = NULL_PTR
+End If
 Set UserControl.Font = PropFont
 WindowedLabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
+If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get Appearance() As CCAppearanceConstants
 Attribute Appearance.VB_Description = "Returns/sets a value that determines whether an object is painted two-dimensional or with 3-D effects."
@@ -913,6 +957,8 @@ If PropTransparent = True Then
     SendMessage GetParent(.hWnd), WM_PAINT, .hDC, ByVal 0&
     SetViewportOrgEx .hDC, P.X, P.Y, P
 End If
+Dim hFontOld As LongPtr
+If WindowedLabelFontHandle <> NULL_PTR Then hFontOld = SelectObject(.hDC, WindowedLabelFontHandle)
 Dim OldBkMode As Long, OldTextColor As Long
 OldBkMode = SetBkMode(.hDC, 1)
 If .Enabled = True Then
@@ -980,6 +1026,7 @@ Else
 End If
 SetBkMode .hDC, OldBkMode
 SetTextColor .hDC, OldTextColor
+If hFontOld <> NULL_PTR Then SelectObject .hDC, hFontOld
 Set .Picture = .Image
 .AutoRedraw = False
 End With
@@ -1053,22 +1100,23 @@ Select Case PropVerticalAlignment
     Case CCVerticalAlignmentBottom
         If .Extender.Top <> (OldBottom - .Extender.Height) Then .Extender.Top = (OldBottom - .Extender.Height)
 End Select
-Call DrawLabel
 End With
 End Sub
 
 Private Sub RedrawLabel()
-If WindowedLabelAutoSizeFlag = False Then
-    Call DrawLabel
-Else
+If WindowedLabelAutoSizeFlag = True Then
     Dim hDCScreen As LongPtr, hDC As LongPtr
     hDCScreen = GetDC(NULL_PTR)
     If hDCScreen <> NULL_PTR Then
         hDC = CreateCompatibleDC(hDCScreen)
         If hDC <> NULL_PTR Then
             Dim Font As IFont, hFontOld As LongPtr
-            Set Font = PropFont
-            If Not Font Is Nothing Then hFontOld = SelectObject(hDC, Font.hFont)
+            If WindowedLabelFontHandle = NULL_PTR Then
+                Set Font = PropFont
+                If Not Font Is Nothing Then hFontOld = SelectObject(hDC, Font.hFont)
+            Else
+                hFontOld = SelectObject(hDC, WindowedLabelFontHandle)
+            End If
             Call DoAutoSize(hDC)
             If hFontOld <> NULL_PTR Then SelectObject hDC, hFontOld
             Set Font = Nothing
@@ -1078,6 +1126,7 @@ Else
     End If
     WindowedLabelAutoSizeFlag = False
 End If
+Call DrawLabel
 End Sub
 
 #If VBA7 Then
