@@ -318,6 +318,7 @@ End Type
 ' Must be declared at the beginning so that conditional compilation will not bug the events.
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -1097,6 +1098,7 @@ On Error Resume Next
 RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 PropAllowDropFiles = False
 PropOLEDragDropRTF = True
@@ -1140,6 +1142,7 @@ RichTextBoxDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
 PropAllowDropFiles = .ReadProperty("AllowDropFiles", False)
@@ -1193,6 +1196,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "AllowDropFiles", PropAllowDropFiles, False
@@ -1528,7 +1532,7 @@ If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As LongPtr
 Set PropFont = NewFont
 OldFontHandle = RichTextBoxFontHandle
-RichTextBoxFontHandle = CreateGDIFontFromOLEFont(PropFont)
+RichTextBoxFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 If RichTextBoxHandle <> NULL_PTR Then SendMessage RichTextBoxHandle, WM_SETFONT, RichTextBoxFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -1537,11 +1541,27 @@ End Property
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As LongPtr
 OldFontHandle = RichTextBoxFontHandle
-RichTextBoxFontHandle = CreateGDIFontFromOLEFont(PropFont)
+RichTextBoxFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 If RichTextBoxHandle <> NULL_PTR Then SendMessage RichTextBoxHandle, WM_SETFONT, RichTextBoxFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
@@ -4636,7 +4656,7 @@ Else
             Case &H5 ' Czech
                 Text = VBA.Choose(i, "&Zp" & ChrW(&H11B&) & "t" & vbTab & "Ctrl+Z", "Z&novu" & vbTab & "Ctrl+Y", "Vyjmou&t" & vbTab & "Ctrl+X", "&Kop" & ChrW(&HED&) & "rovat" & vbTab & "Ctrl+C", "&Vlo" & ChrW(&H17E&) & "it" & vbTab & "Ctrl+V", "Vlo" & ChrW(&H17E&) & "it &jako prost" & ChrW(&HFD&) & " text" & vbTab & "Ctrl+Shift+V", "Vlo" & ChrW(&H17E&) & "it jinak" & vbTab & "Ctrl+Alt+V", "&Odstranit" & vbTab & "Del")
             Case &H6 ' Danish
-                Text = VBA.Choose(i, "&Fortryd" & vbTab & "Ctrl+Z", "&Annuller fortryd" & vbTab & "Ctrl+Y", "&Klip" & vbTab & "Ctrl+X", "K&opier" & vbTab & "Ctrl+C", "Sæt &ind" & vbTab & "Ctrl+V", "Inds" & ChrW(&HE6&) & "t som almindelig &tekst" & vbTab & "Ctrl+Shift+V", "Inds" & ChrW(&HE6&) & "t speciel" & vbTab & "Ctrl+Alt+V", "&Slet" & vbTab & "Del")
+                Text = VBA.Choose(i, "&Fortryd" & vbTab & "Ctrl+Z", "&Annuller fortryd" & vbTab & "Ctrl+Y", "&Klip" & vbTab & "Ctrl+X", "K&opier" & vbTab & "Ctrl+C", "S t &ind" & vbTab & "Ctrl+V", "Inds" & ChrW(&HE6&) & "t som almindelig &tekst" & vbTab & "Ctrl+Shift+V", "Inds" & ChrW(&HE6&) & "t speciel" & vbTab & "Ctrl+Alt+V", "&Slet" & vbTab & "Del")
             Case &H7 ' German
                 Text = VBA.Choose(i, "&R" & ChrW(&HFC&) & "ckg" & ChrW(&HE4&) & "ngig" & vbTab & "Strg+Z", "&Wiederholen" & vbTab & "Strg+Y", "&Ausschneiden" & vbTab & "Strg+X", "&Kopieren" & vbTab & "Strg+C", "&Einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+V", "Nur &Text einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+Umschalt+V", "&Inhalte einf" & ChrW(&HFC&) & "gen" & vbTab & "Strg+Alt+V", "&L" & ChrW(&HF6&) & "schen" & vbTab & "Entf")
             Case &H8 ' Greek

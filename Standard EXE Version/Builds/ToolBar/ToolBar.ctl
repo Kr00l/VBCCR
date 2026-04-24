@@ -283,6 +283,7 @@ End Type
 ' Must be declared at the beginning so that conditional compilation will not bug the events.
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -876,6 +877,7 @@ ToolBarDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 If ToolBarAlignable = True Then Extender.Align = vbAlignTop
 Set PropFont = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -922,6 +924,7 @@ ToolBarDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -1054,6 +1057,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -1511,7 +1515,7 @@ If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As LongPtr
 Set PropFont = NewFont
 OldFontHandle = ToolBarFontHandle
-ToolBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
+ToolBarFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 If ToolBarHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 Call ReCreateButtons
@@ -1522,13 +1526,29 @@ End Property
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As LongPtr
 OldFontHandle = ToolBarFontHandle
-ToolBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
+ToolBarFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 If ToolBarHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 Call ReCreateButtons
 Call UserControl_Resize
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
