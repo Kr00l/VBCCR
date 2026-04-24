@@ -416,6 +416,7 @@ Private StatusBarDoubleBufferEraseBkgDC As LongPtr
 Private StatusBarAlignable As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Private PropPanels As SbrPanels
 Private PropShadowPanelsCount As Long
 Private PropShadowPanels() As ShadowPanelStruct
@@ -468,6 +469,7 @@ StatusBarDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 If StatusBarAlignable = True Then Extender.Align = vbAlignBottom
 Set PropFont = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -509,6 +511,7 @@ StatusBarDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -599,6 +602,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -974,10 +978,10 @@ Dim TempFont As StdFont
 Set PropFont = NewFont
 OldFontHandle = StatusBarFontHandle
 OldBoldFontHandle = StatusBarBoldFontHandle
-StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
+StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
-StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont)
+StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont, PropFontQuality)
 If StatusBarHandle <> NULL_PTR Then SendMessage StatusBarHandle, WM_SETFONT, StatusBarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 If OldBoldFontHandle <> NULL_PTR Then DeleteObject OldBoldFontHandle
@@ -990,16 +994,32 @@ Dim OldFontHandle As LongPtr, OldBoldFontHandle As LongPtr
 Dim TempFont As StdFont
 OldFontHandle = StatusBarFontHandle
 OldBoldFontHandle = StatusBarBoldFontHandle
-StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
+StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
-StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont)
+StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont, PropFontQuality)
 If StatusBarHandle <> NULL_PTR Then SendMessage StatusBarHandle, WM_SETFONT, StatusBarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 If OldBoldFontHandle <> NULL_PTR Then DeleteObject OldBoldFontHandle
 Call SetMinHeight
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
