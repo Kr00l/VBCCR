@@ -90,6 +90,8 @@ Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (
 Private Declare PtrSafe Function GetParent Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
 Private Declare PtrSafe Function SetBkMode Lib "gdi32" (ByVal hDC As LongPtr, ByVal nBkMode As Long) As Long
+Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
+Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
 Private Declare PtrSafe Function GetClientRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As LongPtr, ByVal lpsz As LongPtr, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare PtrSafe Function ExcludeClipRect Lib "gdi32" (ByVal hDC As LongPtr, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
@@ -112,6 +114,8 @@ Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hW
 Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function SetBkMode Lib "gdi32" (ByVal hDC As Long, ByVal nBkMode As Long) As Long
+Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
+Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 Private Declare Function ExcludeClipRect Lib "gdi32" (ByVal hDC As Long, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
@@ -207,12 +211,14 @@ Private Const BF_MONO As Long = &H8000&
 Implements ISubclass
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
+Private FrameFontHandle As LongPtr
 Private FrameMouseOver As Boolean
 Private FrameDesignMode As Boolean
 Private FramePictureRenderFlag As Integer
 Private DispIdBorderStyle As Long
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Private PropVisualStyles As Boolean
 Private PropEnabled As Boolean
 Private PropMousePointer As Integer
@@ -274,6 +280,7 @@ On Error Resume Next
 FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set Me.Font = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 Me.Enabled = True
 Me.OLEDropMode = vbOLEDropNone
@@ -299,6 +306,7 @@ FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set Me.Font = .ReadProperty("Font", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Appearance = .ReadProperty("Appearance", CCAppearance3D)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
@@ -330,6 +338,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Appearance", Me.Appearance, CCAppearance3D
 .WriteProperty "BackColor", Me.BackColor, vbButtonFace
@@ -425,6 +434,10 @@ End Sub
 Private Sub UserControl_Terminate()
 Call RemoveVTableHandling(Me, VTableInterfacePerPropertyBrowsing)
 Call ComCtlsRemoveSubclass(UserControl.hWnd)
+If FrameFontHandle <> NULL_PTR Then
+    DeleteObject FrameFontHandle
+    FrameFontHandle = NULL_PTR
+End If
 Call ComCtlsReleaseShellMod
 End Sub
 
@@ -579,17 +592,51 @@ End Property
 
 Public Property Set Font(ByVal NewFont As StdFont)
 If NewFont Is Nothing Then Set NewFont = Ambient.Font
+Dim OldFontHandle As LongPtr
 Set PropFont = NewFont
+If PropFontQuality <> CCFontQualityDefault Then
+    OldFontHandle = FrameFontHandle
+    FrameFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
+ElseIf FrameFontHandle <> NULL_PTR Then
+    DeleteObject FrameFontHandle
+    FrameFontHandle = NULL_PTR
+End If
 Set UserControl.Font = PropFont
 Call DrawFrame
+If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Property
 
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
+Dim OldFontHandle As LongPtr
+If PropFontQuality <> CCFontQualityDefault Then
+    OldFontHandle = FrameFontHandle
+    FrameFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
+ElseIf FrameFontHandle <> NULL_PTR Then
+    DeleteObject FrameFontHandle
+    FrameFontHandle = NULL_PTR
+End If
 Set UserControl.Font = PropFont
 Call DrawFrame
+If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
@@ -926,6 +973,8 @@ If PropTransparent = True Then
     SetViewportOrgEx .hDC, P.X, P.Y, P
 End If
 If PropBorderStyle <> vbBSNone Then
+    Dim hFontOld As LongPtr
+    If FrameFontHandle <> NULL_PTR Then hFontOld = SelectObject(.hDC, FrameFontHandle)
     Dim ClientRect As RECT, BoundingRect As RECT, ExtentRect As RECT, DrawFlags As Long, OldBkMode As Long
     Dim TextRect As RECT, CX As Long
     GetClientRect .hWnd, ClientRect
@@ -1145,6 +1194,7 @@ If PropBorderStyle <> vbBSNone Then
         SelectClipRgn .hDC, NULL_PTR
     End If
     SetBkMode .hDC, OldBkMode
+    If hFontOld <> NULL_PTR Then SelectObject .hDC, hFontOld
 End If
 Set .Picture = .Image
 .AutoRedraw = False
