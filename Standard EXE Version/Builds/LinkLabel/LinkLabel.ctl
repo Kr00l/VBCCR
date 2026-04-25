@@ -357,6 +357,7 @@ Private UsePreTranslateMsg As Boolean
 
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Private PropLinks As LlbLinks
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
@@ -438,6 +439,7 @@ On Error Resume Next
 LinkLabelDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -468,6 +470,7 @@ LinkLabelDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.ForeColor = .ReadProperty("ForeColor", vbButtonText)
@@ -495,6 +498,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "BackColor", Me.BackColor, vbButtonFace
 .WriteProperty "ForeColor", Me.ForeColor, vbButtonText
@@ -796,10 +800,10 @@ Dim TempFont As StdFont
 Set PropFont = NewFont
 OldFontHandle = LinkLabelFontHandle
 OldUnderlineFontHandle = LinkLabelUnderlineFontHandle
-LinkLabelFontHandle = CreateGDIFontFromOLEFont(PropFont)
+LinkLabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Set TempFont = CloneOLEFont(PropFont)
 TempFont.Underline = True
-LinkLabelUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont)
+LinkLabelUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont, PropFontQuality)
 If LinkLabelHandle <> NULL_PTR Then
     SendMessage LinkLabelHandle, WM_SETFONT, LinkLabelFontHandle, ByVal 0&
     RedrawWindow LinkLabelHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
@@ -814,10 +818,10 @@ Dim OldFontHandle As LongPtr, OldUnderlineFontHandle As LongPtr
 Dim TempFont As StdFont
 OldFontHandle = LinkLabelFontHandle
 OldUnderlineFontHandle = LinkLabelUnderlineFontHandle
-LinkLabelFontHandle = CreateGDIFontFromOLEFont(PropFont)
+LinkLabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Set TempFont = CloneOLEFont(PropFont)
 TempFont.Underline = True
-LinkLabelUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont)
+LinkLabelUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont, PropFontQuality)
 If LinkLabelHandle <> NULL_PTR Then
     SendMessage LinkLabelHandle, WM_SETFONT, LinkLabelFontHandle, ByVal 0&
     RedrawWindow LinkLabelHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE
@@ -826,6 +830,22 @@ If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 If OldUnderlineFontHandle <> NULL_PTR Then DeleteObject OldUnderlineFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not."
