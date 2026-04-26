@@ -1920,9 +1920,9 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
         Case SbrPanelAlignmentCenter
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = False Then
-                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4))) \ 2)
+                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4)) + .PictureIndent) \ 2)
                 Else
-                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX + (PictureWidth + 4))) \ 2)
+                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX + (PictureWidth + 4)) - .PictureIndent) \ 2)
                 End If
             Else
                 RC.Left = RC.Left + (((RC.Right - RC.Left) - Size.CX) \ 2)
@@ -1957,9 +1957,9 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
                 End If
             Case SbrPanelAlignmentCenter
                 If .PictureOnRight = False Then
-                    PictureLeft = RC.Left - (PictureWidth + 4)
+                    PictureLeft = RC.Left - (PictureWidth + 4) - .PictureIndent
                 Else
-                    PictureLeft = RC.Left + (Size.CX + 4)
+                    PictureLeft = RC.Left + (Size.CX + 4) + .PictureIndent
                 End If
             Case SbrPanelAlignmentRight
                 If .PictureOnRight = False Then
@@ -2104,7 +2104,12 @@ If StatusBarHandle <> NULL_PTR Then
                 If .FixedWidth > -1 Then GetGoodWidth = .FixedWidth
             Case SbrPanelAutoSizeContent
                 Dim Width As Long
-                Width = GetTextWidth(Index) + .TextIndent + 4 ' Left and right edge
+                Width = GetTextWidth(Index) + 4 ' Left and right edge
+                If .Alignment <> SbrPanelAlignmentCenter Then
+                    ' The text indent will have no effect when the alignment is centered.
+                    ' The picture indent can be used to increase the distance between text and picture in that case.
+                    Width = Width + .TextIndent
+                End If
                 If Not .Picture Is Nothing Then
                     If .Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(.Picture.Width) + .PictureIndent + 4
                 End If
