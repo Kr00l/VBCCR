@@ -1297,11 +1297,13 @@ End Select
 .Bevel = SbrPanelBevelInset
 .AutoSize = SbrPanelAutoSizeNone
 .Alignment = SbrPanelAlignmentLeft
+.DTFormat = SbrPanelDTFormatShort
 .ForeColor = vbButtonText
 Set .Picture = Nothing
 .Enabled = True
 .Visible = True
 .Bold = False
+.PictureOnRight = False
 Call GetDisplayText(PanelIndex, .DisplayText, .Enabled)
 End With
 Call SetParts
