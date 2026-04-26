@@ -1,7 +1,7 @@
 List of revisions:
 
 26-Apr-2026
-- Included the TextIndent property of a Panel in the StatusBar control.
+- Included the TextIndent/PictureIndent property of a Panel in the StatusBar control.
 
 25-Apr-2026
 - Included the FontQuality property for all controls where applicable.
