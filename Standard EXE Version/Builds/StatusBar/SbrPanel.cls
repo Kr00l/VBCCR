@@ -182,6 +182,15 @@ Public Property Set Picture(ByVal Value As IPictureDisp)
 Set ShadowStatusBar.FPanelPicture(PropIndex) = Value
 End Property
 
+Public Property Get PictureIndent() As Single
+Attribute PictureIndent.VB_Description = "Returns/sets the picture indent of the panel."
+PictureIndent = ShadowStatusBar.FPanelPictureIndent(PropIndex)
+End Property
+
+Public Property Let PictureIndent(ByVal Value As Single)
+ShadowStatusBar.FPanelPictureIndent(PropIndex) = Value
+End Property
+
 Public Property Get Enabled() As Boolean
 Attribute Enabled.VB_Description = "Returns/sets a value that determines whether the panel text appears as enabled or not."
 Enabled = ShadowStatusBar.FPanelEnabled(PropIndex)

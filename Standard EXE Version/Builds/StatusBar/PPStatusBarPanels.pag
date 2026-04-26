@@ -10,6 +10,15 @@ Begin VB.PropertyPage PPStatusBarPanels
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4500
    ScaleWidth      =   5925
+   Begin VB.TextBox TextPictureIndent 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
+      Height          =   315
+      Left            =   4080
+      TabIndex        =   39
+      Top             =   3000
+      Width           =   1575
+   End
    Begin VB.TextBox TextTextIndent 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
@@ -24,8 +33,8 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   41
-      Top             =   3690
+      TabIndex        =   43
+      Top             =   4050
       Width           =   2655
    End
    Begin VB.ComboBox ComboDTFormat 
@@ -53,8 +62,8 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   40
-      Top             =   3360
+      TabIndex        =   42
+      Top             =   3720
       Width           =   1215
    End
    Begin VB.TextBox TextToolTipText 
@@ -144,8 +153,8 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   38
-      Top             =   3030
+      TabIndex        =   40
+      Top             =   3390
       Width           =   1215
    End
    Begin VB.CheckBox CheckVisible 
@@ -153,8 +162,8 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   4440
-      TabIndex        =   39
-      Top             =   3030
+      TabIndex        =   41
+      Top             =   3390
       Width           =   1215
    End
    Begin VB.TextBox TextActualWidth 
@@ -308,6 +317,14 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   120
       Width           =   1035
    End
+   Begin VB.Label LabelPictureIndent 
+      Caption         =   "Picture&Indent:"
+      Height          =   240
+      Left            =   3000
+      TabIndex        =   38
+      Top             =   3000
+      Width           =   975
+   End
    Begin VB.Label LabelTextIndent 
       Caption         =   "Text&Indent:"
       Height          =   240
@@ -453,6 +470,7 @@ TextIndent As Single
 ForeColor As OLE_COLOR
 MinWidth As Single
 Picture As IPictureDisp
+PictureIndent As Single
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
@@ -556,6 +574,7 @@ If CurrIndex > 0 Then
     .ForeColor = CommandForeColor.BackColor
     .MinWidth = CSng(TextMinWidth.Text)
     Set .Picture = ImagePicture.Picture
+    .PictureIndent = CSng(TextPictureIndent.Text)
     .Enabled = CBool(CheckEnabled.Value = vbChecked)
     .Visible = CBool(CheckVisible.Value = vbChecked)
     .Bold = CBool(CheckBold.Value = vbChecked)
@@ -590,6 +609,8 @@ If CurrIndex > 0 Then
     .MinWidth = PropShadowPanels(CurrIndex).MinWidth
     TextMinWidth.Text = CStr(.MinWidth)
     Set .Picture = PropShadowPanels(CurrIndex).Picture
+    .PictureIndent = PropShadowPanels(CurrIndex).PictureIndent
+    TextPictureIndent.Text = CStr(.PictureIndent)
     .Enabled = PropShadowPanels(CurrIndex).Enabled
     .Visible = PropShadowPanels(CurrIndex).Visible
     .Bold = PropShadowPanels(CurrIndex).Bold
@@ -664,6 +685,7 @@ If .Panels.Count > 0 And CurrIndex = 0 Then
         PictureCommandPictureNo.Enabled = False
         CommandPictureNo.Enabled = False
     End If
+    TextPictureIndent.Text = CStr(.PictureIndent)
     CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
@@ -738,6 +760,7 @@ If CurrIndex > 1 Then
         PictureCommandPictureNo.Enabled = False
         CommandPictureNo.Enabled = False
     End If
+    TextPictureIndent.Text = CStr(.PictureIndent)
     CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
@@ -810,6 +833,7 @@ If CurrIndex < .Panels.Count Then
         PictureCommandPictureNo.Enabled = False
         CommandPictureNo.Enabled = False
     End If
+    TextPictureIndent.Text = CStr(.PictureIndent)
     CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
     CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
     CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
@@ -872,6 +896,7 @@ Set ImagePicture.Picture = Nothing
 PictureDraw.Refresh
 PictureCommandPictureNo.Enabled = False
 CommandPictureNo.Enabled = False
+TextPictureIndent.Text = CStr(.PictureIndent)
 CheckEnabled.Value = vbChecked
 CheckVisible.Value = vbChecked
 CheckBold.Value = vbUnchecked
@@ -945,6 +970,7 @@ If CurrIndex > 0 Then
             PictureCommandPictureNo.Enabled = False
             CommandPictureNo.Enabled = False
         End If
+        TextPictureIndent.Text = CStr(.PictureIndent)
         CheckEnabled.Value = IIf(.Enabled = True, vbChecked, vbUnchecked)
         CheckVisible.Value = IIf(.Visible = True, vbChecked, vbUnchecked)
         CheckBold.Value = IIf(.Bold = True, vbChecked, vbUnchecked)
@@ -1171,6 +1197,57 @@ If CurrIndex > 0 Then
 End If
 End Sub
 
+Private Sub TextPictureIndent_GotFocus()
+If Not TextPictureIndent.SelStart = 0 Then Exit Sub
+TextPictureIndent.SelLength = Len(TextPictureIndent.Text)
+End Sub
+
+Private Sub TextPictureIndent_LostFocus()
+TextPictureIndent.SelStart = 0
+End Sub
+
+Private Sub TextPictureIndent_Change()
+If FreezeChanged = True Then Exit Sub
+If TextPictureIndent.Text = vbNullString Then
+    TextPictureIndent.Text = "0"
+    TextPictureIndent.SelStart = 0
+    TextPictureIndent.SelLength = 1
+End If
+PropertyPage.Changed = True
+End Sub
+
+Private Sub TextPictureIndent_Validate(Cancel As Boolean)
+If TextPictureIndent.Text = vbNullString Then Exit Sub
+If Not IsNumeric(TextPictureIndent.Text) Then
+    MsgBox "Invalid property value", vbCritical + vbOKOnly
+    If CurrIndex > 0 Then
+        TextPictureIndent.Text = PropertyPage.SelectedControls(0).Panels(CurrIndex).PictureIndent
+    Else
+        TextPictureIndent.Text = "0"
+    End If
+    If TextPictureIndent.Enabled = True Then TextPictureIndent.SetFocus
+    Cancel = True
+Else
+    Dim SngValue As Single
+    On Error Resume Next
+    SngValue = CSng(TextPictureIndent.Text)
+    Cancel = CBool(Err.Number <> 0)
+    On Error GoTo 0
+    If SngValue < 0 Then Cancel = True
+    If Cancel = False Then
+        TextPictureIndent.Text = SngValue
+    Else
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        If CurrIndex > 0 Then
+            TextPictureIndent.Text = PropertyPage.SelectedControls(0).Panels(CurrIndex).PictureIndent
+        Else
+            TextPictureIndent.Text = "0"
+        End If
+        If TextPictureIndent.Enabled = True Then TextPictureIndent.SetFocus
+    End If
+End If
+End Sub
+
 Private Sub CheckEnabled_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
@@ -1246,6 +1323,8 @@ If .Panels.Count > 0 Then
         PictureCommandPictureNo.Enabled = False
         CommandPictureNo.Enabled = False
     End If
+    TextPictureIndent.BackColor = vbWindowBackground
+    TextPictureIndent.Enabled = True
     CheckEnabled.Enabled = True
     CheckVisible.Enabled = True
     CheckBold.Enabled = True
@@ -1296,6 +1375,9 @@ Else
     CommandPictureBrowse.Enabled = False
     PictureCommandPictureNo.Enabled = False
     CommandPictureNo.Enabled = False
+    TextPictureIndent.Text = vbNullString
+    TextPictureIndent.BackColor = vbButtonFace
+    TextPictureIndent.Enabled = False
     CheckEnabled.Value = vbUnchecked
     CheckEnabled.Enabled = False
     CheckVisible.Value = vbUnchecked
@@ -1329,6 +1411,7 @@ For i = 0 To .Panels.Count
         PropShadowPanels(i).ForeColor = .ForeColor
         PropShadowPanels(i).MinWidth = .MinWidth
         Set PropShadowPanels(i).Picture = .Picture
+        PropShadowPanels(i).PictureIndent = .PictureIndent
         PropShadowPanels(i).Enabled = .Enabled
         PropShadowPanels(i).Visible = .Visible
         PropShadowPanels(i).Bold = .Bold

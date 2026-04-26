@@ -375,6 +375,7 @@ TextIndent As Long
 ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
+PictureIndent As Long
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
@@ -395,6 +396,7 @@ ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
 PictureRenderFlag As Integer
+PictureIndent As Long
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
@@ -554,6 +556,7 @@ If InitPanelsCount > 0 Then
         InitPanels(i).ForeColor = .ReadProperty("InitPanelsForeColor" & CStr(i), vbButtonText)
         InitPanels(i).MinWidth = (.ReadProperty("InitPanelsMinWidth" & CStr(i), 96) * PixelsPerDIP_X())
         Set InitPanels(i).Picture = .ReadProperty("InitPanelsPicture" & CStr(i), Nothing)
+        InitPanels(i).PictureIndent = (.ReadProperty("InitPanelsPictureIndent" & CStr(i), 0) * PixelsPerDIP_X())
         InitPanels(i).Enabled = .ReadProperty("InitPanelsEnabled" & CStr(i), True)
         InitPanels(i).Visible = .ReadProperty("InitPanelsVisible" & CStr(i), True)
         InitPanels(i).Bold = .ReadProperty("InitPanelsBold" & CStr(i), False)
@@ -592,6 +595,7 @@ If InitPanelsCount > 0 And StatusBarHandle <> NULL_PTR Then
         PropShadowPanels(i).ForeColor = InitPanels(i).ForeColor
         PropShadowPanels(i).MinWidth = InitPanels(i).MinWidth
         Set PropShadowPanels(i).Picture = InitPanels(i).Picture
+        PropShadowPanels(i).PictureIndent = InitPanels(i).PictureIndent
         PropShadowPanels(i).Enabled = InitPanels(i).Enabled
         PropShadowPanels(i).Visible = InitPanels(i).Visible
         PropShadowPanels(i).Bold = InitPanels(i).Bold
@@ -643,6 +647,7 @@ If Count > 0 Then
         .WriteProperty "InitPanelsForeColor" & CStr(i), Me.Panels(i).ForeColor, vbButtonFace
         .WriteProperty "InitPanelsMinWidth" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).MinWidth, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 96
         .WriteProperty "InitPanelsPicture" & CStr(i), PropShadowPanels(i).Picture, Nothing
+        .WriteProperty "InitPanelsPictureIndent" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).PictureIndent, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 0
         .WriteProperty "InitPanelsEnabled" & CStr(i), Me.Panels(i).Enabled, True
         .WriteProperty "InitPanelsVisible" & CStr(i), Me.Panels(i).Visible, True
         .WriteProperty "InitPanelsBold" & CStr(i), Me.Panels(i).Bold, False
@@ -1337,6 +1342,7 @@ End Select
 .TextIndent = 0
 .ForeColor = vbButtonText
 Set .Picture = Nothing
+.PictureIndent = 0
 .Enabled = True
 .Visible = True
 .Bold = False
@@ -1574,6 +1580,25 @@ If StatusBarHandle <> NULL_PTR Then
     Set PropShadowPanels(Index).Picture = Value
     PropShadowPanels(Index).PictureRenderFlag = 0
     Call SetMinHeight
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
+    End If
+End If
+End Property
+
+Friend Property Get FPanelPictureIndent(ByVal Index As Long) As Single
+If StatusBarHandle <> NULL_PTR Then FPanelPictureIndent = UserControl.ScaleX(PropShadowPanels(Index).PictureIndent, vbPixels, vbContainerSize)
+End Property
+
+Friend Property Let FPanelPictureIndent(ByVal Index As Long, ByVal Value As Single)
+If Value < 0 Then Err.Raise 380
+If StatusBarHandle <> NULL_PTR Then
+    PropShadowPanels(Index).PictureIndent = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
     Dim RC As RECT
     Call GetPanelRect(Index, RC)
     InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
@@ -1890,7 +1915,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
         Case SbrPanelAlignmentLeft
             RC.Left = RC.Left + 1 + .TextIndent
             If PictureWidth > 0 And PictureHeight > 0 Then
-                If .PictureOnRight = False Then RC.Left = RC.Left + (PictureWidth + 4)
+                If .PictureOnRight = False Then RC.Left = RC.Left + (PictureWidth + 4) + .PictureIndent
             End If
         Case SbrPanelAlignmentCenter
             If PictureWidth > 0 And PictureHeight > 0 Then
@@ -1905,16 +1930,16 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
         Case SbrPanelAlignmentRight
             RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1 - .TextIndent
             If PictureWidth > 0 And PictureHeight > 0 Then
-                If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4)
+                If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4) - .PictureIndent
             End If
         Case SbrPanelAlignmentLeftRight
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = False Then
-                    PictureLeft = RC.Left + 1
+                    PictureLeft = RC.Left + 1 + .PictureIndent
                     RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1 - .TextIndent
                     If RC.Left < (PictureLeft + (PictureWidth + 4)) Then PictureLeft = RC.Left - (PictureWidth + 4)
                 Else
-                    PictureLeft = RC.Left + ((RC.Right - RC.Left) - PictureWidth) - 1
+                    PictureLeft = RC.Left + ((RC.Right - RC.Left) - PictureWidth) - 1 - .PictureIndent
                     RC.Left = RC.Left + 1 + .TextIndent
                     If (RC.Left + (Size.CX + 4)) > PictureLeft Then PictureLeft = RC.Left + (Size.CX + 4)
                 End If
@@ -1924,13 +1949,23 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
         Select Case .Alignment
-            Case SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight
+            Case SbrPanelAlignmentLeft
+                If .PictureOnRight = False Then
+                    PictureLeft = RC.Left - (PictureWidth + 4) - .TextIndent
+                Else
+                    PictureLeft = RC.Left + (Size.CX + 4) + .PictureIndent
+                End If
+            Case SbrPanelAlignmentCenter
                 If .PictureOnRight = False Then
                     PictureLeft = RC.Left - (PictureWidth + 4)
-                    If .Alignment = SbrPanelAlignmentLeft Then PictureLeft = PictureLeft - .TextIndent
                 Else
                     PictureLeft = RC.Left + (Size.CX + 4)
-                    If .Alignment = SbrPanelAlignmentRight Then PictureLeft = PictureLeft + .TextIndent
+                End If
+            Case SbrPanelAlignmentRight
+                If .PictureOnRight = False Then
+                    PictureLeft = RC.Left - (PictureWidth + 4) - .PictureIndent
+                Else
+                    PictureLeft = RC.Left + (Size.CX + 4) + .TextIndent
                 End If
             Case SbrPanelAlignmentLeftRight
                 ' Void
@@ -2071,7 +2106,7 @@ If StatusBarHandle <> NULL_PTR Then
                 Dim Width As Long
                 Width = GetTextWidth(Index) + .TextIndent + 4 ' Left and right edge
                 If Not .Picture Is Nothing Then
-                    If .Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(.Picture.Width) + 4
+                    If .Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(.Picture.Width) + .PictureIndent + 4
                 End If
                 If Width > GetGoodWidth Then GetGoodWidth = Width
         End Select
