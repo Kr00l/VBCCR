@@ -29,9 +29,9 @@ Begin VB.Form MainForm
       _ExtentY        =   1588
       ImageList       =   "ImageList1"
       ShowTips        =   -1  'True
-      InitBands       =   "MainForm.frx":065C
+      InitBands       =   "MainForm.frx":0620
       Begin ComCtlsDemo.ImageCombo ImageCombo1 
-         Bindings        =   "MainForm.frx":0A3C
+         Bindings        =   "MainForm.frx":0A00
          Height          =   330
          Left            =   195
          TabIndex        =   20
@@ -42,7 +42,7 @@ Begin VB.Form MainForm
          OLEDragMode     =   1
          ImageList       =   "ImageList1"
          Style           =   2
-         Text            =   "MainForm.frx":0A47
+         Text            =   "MainForm.frx":0A0B
       End
       Begin VB.CommandButton Command4 
          Caption         =   "Pager Demo"
@@ -53,7 +53,7 @@ Begin VB.Form MainForm
          Width           =   1410
       End
       Begin ComCtlsDemo.CheckBoxW CheckBoxW1 
-         Bindings        =   "MainForm.frx":0A7D
+         Bindings        =   "MainForm.frx":0A41
          Height          =   360
          Left            =   495
          TabIndex        =   21
@@ -73,7 +73,7 @@ Begin VB.Form MainForm
       ImageWidth      =   16
       ImageHeight     =   16
       BackColor       =   16777215
-      InitListImages  =   "MainForm.frx":0A88
+      InitListImages  =   "MainForm.frx":0A4C
    End
    Begin ComCtlsDemo.ComboBoxW ComboBoxW1 
       Height          =   315
@@ -96,7 +96,7 @@ Begin VB.Form MainForm
       _ExtentY        =   556
       OLEDragMode     =   1
       OLEDropMode     =   2
-      Text            =   "MainForm.frx":0F98
+      Text            =   "MainForm.frx":0F5C
    End
    Begin ComCtlsDemo.CommandButtonW CommandButtonW1 
       Height          =   375
@@ -128,7 +128,7 @@ Begin VB.Form MainForm
       _ExtentY        =   556
       MouseTrack      =   -1  'True
       Caption         =   "&OptionButtonW1"
-      Picture         =   "MainForm.frx":0FCA
+      Picture         =   "MainForm.frx":0F8E
    End
    Begin ComCtlsDemo.UpDown UpDown1 
       Height          =   255
@@ -138,7 +138,7 @@ Begin VB.Form MainForm
       _ExtentX        =   5953
       _ExtentY        =   450
       BuddyControl    =   "Slider1"
-      BuddyProperty   =   "MainForm.frx":0FE6
+      BuddyProperty   =   "MainForm.frx":0FAA
       Value           =   5
       Wrap            =   -1  'True
       Orientation     =   1
@@ -168,7 +168,7 @@ Begin VB.Form MainForm
       Wrappable       =   0   'False
       ButtonHeight    =   30
       ButtonWidth     =   114
-      InitButtons     =   "MainForm.frx":1016
+      InitButtons     =   "MainForm.frx":0FDA
    End
    Begin ComCtlsDemo.TreeView TreeView1 
       Height          =   2415
@@ -252,7 +252,7 @@ Begin VB.Form MainForm
       SelStart        =   5
    End
    Begin ComCtlsDemo.MonthView MonthView1 
-      Bindings        =   "MainForm.frx":1DEE
+      Bindings        =   "MainForm.frx":1DB2
       Height          =   2340
       Left            =   120
       TabIndex        =   2
@@ -276,7 +276,7 @@ Begin VB.Form MainForm
       CalendarDayState=   -1  'True
       Value           =   44012
       Format          =   3
-      CustomFormat    =   "MainForm.frx":1DF9
+      CustomFormat    =   "MainForm.frx":1DBD
    End
    Begin VB.PictureBox Picture2 
       AutoRedraw      =   -1  'True
@@ -292,7 +292,7 @@ Begin VB.Form MainForm
    Begin VB.PictureBox Picture1 
       Height          =   495
       Left            =   1440
-      Picture         =   "MainForm.frx":1E33
+      Picture         =   "MainForm.frx":1DF7
       ScaleHeight     =   435
       ScaleWidth      =   555
       TabIndex        =   11
@@ -335,7 +335,7 @@ Begin VB.Form MainForm
       _ExtentY        =   1005
       ImageWidth      =   8
       ImageHeight     =   7
-      InitListImages  =   "MainForm.frx":2177
+      InitListImages  =   "MainForm.frx":213B
    End
    Begin ComCtlsDemo.ImageList ImageList3 
       Left            =   3000
@@ -345,7 +345,7 @@ Begin VB.Form MainForm
       ImageWidth      =   32
       ImageHeight     =   32
       BackColor       =   16777215
-      InitListImages  =   "MainForm.frx":23E7
+      InitListImages  =   "MainForm.frx":23AB
    End
    Begin ComCtlsDemo.ListView ListView3 
       Height          =   2895
@@ -392,7 +392,7 @@ Begin VB.Form MainForm
       TabFixedWidth   =   133
       TabMinWidth     =   7
       ShowTips        =   -1  'True
-      InitTabs        =   "MainForm.frx":28CF
+      InitTabs        =   "MainForm.frx":2893
    End
    Begin VB.PictureBox Picture3 
       AutoRedraw      =   -1  'True

@@ -1,5 +1,16 @@
 List of revisions:
 
+26-Apr-2026
+- Included the TextIndent property of a Panel in the StatusBar control.
+
+25-Apr-2026
+- Included the FontQuality property for all controls where applicable.
+  This can be convenient when using 'Microsoft Sans Serif' to have more unicode chars supported but to exactly look like 'MS Sans Serif'.
+
+23-Apr-2026
+- Included the Resize event in the StatusBar control.
+  A control container should have such event to re-arrange it's contained controls.
+
 22-Apr-2026
 - The StatusBar control is now a ControlContainer like the ToolBar/CoolBar control.
   This makes it easier to place a control onto a panel via "Set MyControl.Container = StatusBar".
