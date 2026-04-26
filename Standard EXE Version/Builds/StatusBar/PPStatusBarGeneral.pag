@@ -1,13 +1,13 @@
 VERSION 5.00
 Begin VB.PropertyPage PPStatusBarGeneral 
    Caption         =   "General"
-   ClientHeight    =   4140
+   ClientHeight    =   4500
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   5925
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4140
+   ScaleHeight     =   4500
    ScaleWidth      =   5925
    Begin VB.CheckBox CheckDoubleBuffer 
       Caption         =   "DoubleBuffer"

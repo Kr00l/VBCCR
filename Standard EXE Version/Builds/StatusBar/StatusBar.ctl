@@ -371,6 +371,7 @@ Bevel As SbrPanelBevelConstants
 AutoSize As SbrPanelAutoSizeConstants
 Alignment As SbrPanelAlignmentConstants
 DTFormat As SbrPanelDTFormatConstants
+TextIndent As Long
 ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
@@ -389,6 +390,7 @@ Bevel As SbrPanelBevelConstants
 AutoSize As SbrPanelAutoSizeConstants
 Alignment As SbrPanelAlignmentConstants
 DTFormat As SbrPanelDTFormatConstants
+TextIndent As Long
 ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
@@ -548,6 +550,7 @@ If InitPanelsCount > 0 Then
         InitPanels(i).AutoSize = .ReadProperty("InitPanelsAutoSize" & CStr(i), SbrPanelAutoSizeNone)
         InitPanels(i).Alignment = .ReadProperty("InitPanelsAlignment" & CStr(i), SbrPanelAlignmentLeft)
         InitPanels(i).DTFormat = .ReadProperty("InitPanelsDTFormat" & CStr(i), SbrPanelDTFormatShort)
+        InitPanels(i).TextIndent = (.ReadProperty("InitPanelsTextIndent" & CStr(i), 0) * PixelsPerDIP_X())
         InitPanels(i).ForeColor = .ReadProperty("InitPanelsForeColor" & CStr(i), vbButtonText)
         InitPanels(i).MinWidth = (.ReadProperty("InitPanelsMinWidth" & CStr(i), 96) * PixelsPerDIP_X())
         Set InitPanels(i).Picture = .ReadProperty("InitPanelsPicture" & CStr(i), Nothing)
@@ -585,6 +588,7 @@ If InitPanelsCount > 0 And StatusBarHandle <> NULL_PTR Then
         PropShadowPanels(i).AutoSize = InitPanels(i).AutoSize
         PropShadowPanels(i).Alignment = InitPanels(i).Alignment
         PropShadowPanels(i).DTFormat = InitPanels(i).DTFormat
+        PropShadowPanels(i).TextIndent = InitPanels(i).TextIndent
         PropShadowPanels(i).ForeColor = InitPanels(i).ForeColor
         PropShadowPanels(i).MinWidth = InitPanels(i).MinWidth
         Set PropShadowPanels(i).Picture = InitPanels(i).Picture
@@ -635,6 +639,7 @@ If Count > 0 Then
         .WriteProperty "InitPanelsAutoSize" & CStr(i), Me.Panels(i).AutoSize, SbrPanelAutoSizeNone
         .WriteProperty "InitPanelsAlignment" & CStr(i), Me.Panels(i).Alignment, SbrPanelAlignmentLeft
         .WriteProperty "InitPanelsDTFormat" & CStr(i), Me.Panels(i).DTFormat, SbrPanelDTFormatShort
+        .WriteProperty "InitPanelsTextIndent" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).TextIndent, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 0
         .WriteProperty "InitPanelsForeColor" & CStr(i), Me.Panels(i).ForeColor, vbButtonFace
         .WriteProperty "InitPanelsMinWidth" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).MinWidth, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 96
         .WriteProperty "InitPanelsPicture" & CStr(i), PropShadowPanels(i).Picture, Nothing
@@ -1328,11 +1333,14 @@ End Select
 .Bevel = SbrPanelBevelInset
 .AutoSize = SbrPanelAutoSizeNone
 .Alignment = SbrPanelAlignmentLeft
+.DTFormat = SbrPanelDTFormatShort
+.TextIndent = 0
 .ForeColor = vbButtonText
 Set .Picture = Nothing
 .Enabled = True
 .Visible = True
 .Bold = False
+.PictureOnRight = False
 Call GetDisplayText(PanelIndex, .DisplayText, .Enabled)
 End With
 Call SetParts
@@ -1503,6 +1511,25 @@ If StatusBarHandle <> NULL_PTR Then
                 Call SetParts
                 If PropShowTips = True Then Call UpdateToolTipRects
         End Select
+    End If
+End If
+End Property
+
+Friend Property Get FPanelTextIndent(ByVal Index As Long) As Single
+If StatusBarHandle <> NULL_PTR Then FPanelTextIndent = UserControl.ScaleX(PropShadowPanels(Index).TextIndent, vbPixels, vbContainerSize)
+End Property
+
+Friend Property Let FPanelTextIndent(ByVal Index As Long, ByVal Value As Single)
+If Value < 0 Then Err.Raise 380
+If StatusBarHandle <> NULL_PTR Then
+    PropShadowPanels(Index).TextIndent = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
     End If
 End If
 End Property
@@ -1861,7 +1888,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
     RC.Top = RC.Top + ((RC.Bottom - RC.Top) \ 2) - (Size.CY \ 2)
     Select Case .Alignment
         Case SbrPanelAlignmentLeft
-            RC.Left = RC.Left + 1
+            RC.Left = RC.Left + 1 + .TextIndent
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = False Then RC.Left = RC.Left + (PictureWidth + 4)
             End If
@@ -1876,7 +1903,7 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
                 RC.Left = RC.Left + (((RC.Right - RC.Left) - Size.CX) \ 2)
             End If
         Case SbrPanelAlignmentRight
-            RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
+            RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1 - .TextIndent
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4)
             End If
@@ -1884,15 +1911,15 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = False Then
                     PictureLeft = RC.Left + 1
-                    RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
+                    RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1 - .TextIndent
                     If RC.Left < (PictureLeft + (PictureWidth + 4)) Then PictureLeft = RC.Left - (PictureWidth + 4)
                 Else
                     PictureLeft = RC.Left + ((RC.Right - RC.Left) - PictureWidth) - 1
-                    RC.Left = RC.Left + 1
+                    RC.Left = RC.Left + 1 + .TextIndent
                     If (RC.Left + (Size.CX + 4)) > PictureLeft Then PictureLeft = RC.Left + (Size.CX + 4)
                 End If
             Else
-                RC.Left = RC.Left + 1
+                RC.Left = RC.Left + 1 + .TextIndent
             End If
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
@@ -1900,8 +1927,10 @@ If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
             Case SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight
                 If .PictureOnRight = False Then
                     PictureLeft = RC.Left - (PictureWidth + 4)
+                    If .Alignment = SbrPanelAlignmentLeft Then PictureLeft = PictureLeft - .TextIndent
                 Else
                     PictureLeft = RC.Left + (Size.CX + 4)
+                    If .Alignment = SbrPanelAlignmentRight Then PictureLeft = PictureLeft + .TextIndent
                 End If
             Case SbrPanelAlignmentLeftRight
                 ' Void
@@ -2032,20 +2061,22 @@ End Sub
 
 Private Function GetGoodWidth(ByVal Index As Long) As Long
 If StatusBarHandle <> NULL_PTR Then
-    If PropShadowPanels(Index).Visible = True Then
-        GetGoodWidth = PropShadowPanels(Index).MinWidth
-        Select Case PropShadowPanels(Index).AutoSize
+    With PropShadowPanels(Index)
+    If .Visible = True Then
+        GetGoodWidth = .MinWidth
+        Select Case .AutoSize
             Case SbrPanelAutoSizeNone
-                If PropShadowPanels(Index).FixedWidth > -1 Then GetGoodWidth = PropShadowPanels(Index).FixedWidth
+                If .FixedWidth > -1 Then GetGoodWidth = .FixedWidth
             Case SbrPanelAutoSizeContent
                 Dim Width As Long
-                Width = GetTextWidth(Index) + 4 ' Left and right edge
-                If Not PropShadowPanels(Index).Picture Is Nothing Then
-                    If PropShadowPanels(Index).Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 4
+                Width = GetTextWidth(Index) + .TextIndent + 4 ' Left and right edge
+                If Not .Picture Is Nothing Then
+                    If .Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(.Picture.Width) + 4
                 End If
                 If Width > GetGoodWidth Then GetGoodWidth = Width
         End Select
     End If
+    End With
 End If
 End Function
 

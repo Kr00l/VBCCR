@@ -2,20 +2,29 @@ VERSION 5.00
 Begin VB.PropertyPage PPStatusBarPanels 
    AutoRedraw      =   -1  'True
    Caption         =   "Panels"
-   ClientHeight    =   4140
+   ClientHeight    =   4500
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   5925
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   4140
+   ScaleHeight     =   4500
    ScaleWidth      =   5925
+   Begin VB.TextBox TextTextIndent 
+      BackColor       =   &H8000000F&
+      Enabled         =   0   'False
+      Height          =   315
+      Left            =   1200
+      TabIndex        =   25
+      Top             =   3720
+      Width           =   1575
+   End
    Begin VB.CheckBox CheckPictureOnRight 
       Caption         =   "&PictureOnRight"
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   39
+      TabIndex        =   41
       Top             =   3690
       Width           =   2655
    End
@@ -35,8 +44,8 @@ Begin VB.PropertyPage PPStatusBarPanels
       Height          =   225
       Left            =   1200
       Style           =   1  'Graphical
-      TabIndex        =   25
-      Top             =   3720
+      TabIndex        =   27
+      Top             =   4080
       Width           =   495
    End
    Begin VB.CheckBox CheckBold 
@@ -44,7 +53,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   38
+      TabIndex        =   40
       Top             =   3360
       Width           =   1215
    End
@@ -61,7 +70,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Caption         =   "Picture"
       Height          =   1065
       Left            =   3000
-      TabIndex        =   30
+      TabIndex        =   32
       Top             =   1920
       Width           =   2655
       Begin VB.PictureBox PictureDraw 
@@ -72,7 +81,7 @@ Begin VB.PropertyPage PPStatusBarPanels
          Left            =   120
          ScaleHeight     =   690
          ScaleWidth      =   930
-         TabIndex        =   31
+         TabIndex        =   33
          TabStop         =   0   'False
          Top             =   240
          Width           =   960
@@ -84,7 +93,7 @@ Begin VB.PropertyPage PPStatusBarPanels
          Left            =   1440
          ScaleHeight     =   315
          ScaleWidth      =   1035
-         TabIndex        =   34
+         TabIndex        =   36
          TabStop         =   0   'False
          Top             =   630
          Width           =   1035
@@ -93,7 +102,7 @@ Begin VB.PropertyPage PPStatusBarPanels
             Enabled         =   0   'False
             Height          =   315
             Left            =   0
-            TabIndex        =   35
+            TabIndex        =   37
             Top             =   0
             Width           =   1035
          End
@@ -105,7 +114,7 @@ Begin VB.PropertyPage PPStatusBarPanels
          Left            =   1440
          ScaleHeight     =   315
          ScaleWidth      =   1035
-         TabIndex        =   32
+         TabIndex        =   34
          TabStop         =   0   'False
          Top             =   240
          Width           =   1035
@@ -114,7 +123,7 @@ Begin VB.PropertyPage PPStatusBarPanels
             Enabled         =   0   'False
             Height          =   315
             Left            =   0
-            TabIndex        =   33
+            TabIndex        =   35
             Top             =   0
             Width           =   1035
          End
@@ -135,7 +144,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   3000
-      TabIndex        =   36
+      TabIndex        =   38
       Top             =   3030
       Width           =   1215
    End
@@ -144,7 +153,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   285
       Left            =   4440
-      TabIndex        =   37
+      TabIndex        =   39
       Top             =   3030
       Width           =   1215
    End
@@ -153,7 +162,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Height          =   315
       Left            =   4080
       Locked          =   -1  'True
-      TabIndex        =   29
+      TabIndex        =   31
       Top             =   1560
       Width           =   1575
    End
@@ -162,7 +171,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Enabled         =   0   'False
       Height          =   315
       Left            =   4080
-      TabIndex        =   27
+      TabIndex        =   29
       Top             =   1200
       Width           =   1575
    End
@@ -299,6 +308,14 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   120
       Width           =   1035
    End
+   Begin VB.Label LabelTextIndent 
+      Caption         =   "Text&Indent:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   24
+      Top             =   3720
+      Width           =   975
+   End
    Begin VB.Label LabelDTFormat 
       Caption         =   "&DTFormat:"
       Height          =   240
@@ -311,8 +328,8 @@ Begin VB.PropertyPage PPStatusBarPanels
       Caption         =   "&ForeColor:"
       Height          =   195
       Left            =   120
-      TabIndex        =   24
-      Top             =   3720
+      TabIndex        =   26
+      Top             =   4080
       Width           =   975
    End
    Begin VB.Label LabelToolTipText 
@@ -327,7 +344,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Caption         =   "A&ctualWidth:"
       Height          =   240
       Left            =   3000
-      TabIndex        =   28
+      TabIndex        =   30
       Top             =   1560
       Width           =   975
    End
@@ -335,7 +352,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Caption         =   "Min&Width:"
       Height          =   240
       Left            =   3000
-      TabIndex        =   26
+      TabIndex        =   28
       Top             =   1200
       Width           =   975
    End
@@ -432,6 +449,7 @@ Bevel As SbrPanelBevelConstants
 AutoSize As SbrPanelAutoSizeConstants
 Alignment As SbrPanelAlignmentConstants
 DTFormat As SbrPanelDTFormatConstants
+TextIndent As Single
 ForeColor As OLE_COLOR
 MinWidth As Single
 Picture As IPictureDisp
@@ -534,8 +552,9 @@ If CurrIndex > 0 Then
     .AutoSize = CLng(ComboAutoSize.ItemData(ComboAutoSize.ListIndex))
     .Alignment = CLng(ComboAlignment.ItemData(ComboAlignment.ListIndex))
     .DTFormat = CLng(ComboDTFormat.ItemData(ComboDTFormat.ListIndex))
+    .TextIndent = CSng(TextTextIndent.Text)
     .ForeColor = CommandForeColor.BackColor
-    .MinWidth = TextMinWidth.Text
+    .MinWidth = CSng(TextMinWidth.Text)
     Set .Picture = ImagePicture.Picture
     .Enabled = CBool(CheckEnabled.Value = vbChecked)
     .Visible = CBool(CheckVisible.Value = vbChecked)
@@ -565,6 +584,8 @@ If CurrIndex > 0 Then
     .AutoSize = PropShadowPanels(CurrIndex).AutoSize
     .Alignment = PropShadowPanels(CurrIndex).Alignment
     .DTFormat = PropShadowPanels(CurrIndex).DTFormat
+    .TextIndent = PropShadowPanels(CurrIndex).TextIndent
+    TextTextIndent.Text = CStr(.TextIndent)
     .ForeColor = PropShadowPanels(CurrIndex).ForeColor
     .MinWidth = PropShadowPanels(CurrIndex).MinWidth
     TextMinWidth.Text = CStr(.MinWidth)
@@ -625,6 +646,7 @@ If .Panels.Count > 0 And CurrIndex = 0 Then
             Exit For
         End If
     Next i
+    TextTextIndent.Text = CStr(.TextIndent)
     CommandForeColor.BackColor = .ForeColor
     TextMinWidth.Text = CStr(.MinWidth)
     TextActualWidth.Text = CStr(.Width)
@@ -698,6 +720,7 @@ If CurrIndex > 1 Then
             Exit For
         End If
     Next i
+    TextTextIndent.Text = CStr(.TextIndent)
     CommandForeColor.BackColor = .ForeColor
     TextMinWidth.Text = CStr(.MinWidth)
     TextActualWidth.Text = CStr(.Width)
@@ -769,6 +792,7 @@ If CurrIndex < .Panels.Count Then
             Exit For
         End If
     Next i
+    TextTextIndent.Text = CStr(.TextIndent)
     CommandForeColor.BackColor = .ForeColor
     TextMinWidth.Text = CStr(.MinWidth)
     TextActualWidth.Text = CStr(.Width)
@@ -840,6 +864,7 @@ For i = 0 To ComboDTFormat.ListCount - 1
         Exit For
     End If
 Next i
+TextTextIndent.Text = CStr(.TextIndent)
 CommandForeColor.BackColor = vbButtonText
 TextMinWidth.Text = CStr(.MinWidth)
 TextActualWidth.Text = CStr(.Width)
@@ -902,6 +927,7 @@ If CurrIndex > 0 Then
                 Exit For
             End If
         Next i
+        TextTextIndent.Text = CStr(.TextIndent)
         CommandForeColor.BackColor = .ForeColor
         TextMinWidth.Text = CStr(.MinWidth)
         TextActualWidth.Text = CStr(.Width)
@@ -979,6 +1005,57 @@ End Sub
 Private Sub ComboDTFormat_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
+End Sub
+
+Private Sub TextTextIndent_GotFocus()
+If Not TextTextIndent.SelStart = 0 Then Exit Sub
+TextTextIndent.SelLength = Len(TextTextIndent.Text)
+End Sub
+
+Private Sub TextTextIndent_LostFocus()
+TextTextIndent.SelStart = 0
+End Sub
+
+Private Sub TextTextIndent_Change()
+If FreezeChanged = True Then Exit Sub
+If TextTextIndent.Text = vbNullString Then
+    TextTextIndent.Text = "0"
+    TextTextIndent.SelStart = 0
+    TextTextIndent.SelLength = 1
+End If
+PropertyPage.Changed = True
+End Sub
+
+Private Sub TextTextIndent_Validate(Cancel As Boolean)
+If TextTextIndent.Text = vbNullString Then Exit Sub
+If Not IsNumeric(TextTextIndent.Text) Then
+    MsgBox "Invalid property value", vbCritical + vbOKOnly
+    If CurrIndex > 0 Then
+        TextTextIndent.Text = PropertyPage.SelectedControls(0).Panels(CurrIndex).TextIndent
+    Else
+        TextTextIndent.Text = "0"
+    End If
+    If TextTextIndent.Enabled = True Then TextTextIndent.SetFocus
+    Cancel = True
+Else
+    Dim SngValue As Single
+    On Error Resume Next
+    SngValue = CSng(TextTextIndent.Text)
+    Cancel = CBool(Err.Number <> 0)
+    On Error GoTo 0
+    If SngValue < 0 Then Cancel = True
+    If Cancel = False Then
+        TextTextIndent.Text = SngValue
+    Else
+        MsgBox "Invalid property value", vbCritical + vbOKOnly
+        If CurrIndex > 0 Then
+            TextTextIndent.Text = PropertyPage.SelectedControls(0).Panels(CurrIndex).TextIndent
+        Else
+            TextTextIndent.Text = "0"
+        End If
+        If TextTextIndent.Enabled = True Then TextTextIndent.SetFocus
+    End If
+End If
 End Sub
 
 Private Sub CommandForeColor_Click()
@@ -1148,6 +1225,8 @@ If .Panels.Count > 0 Then
     ComboAlignment.Enabled = True
     ComboDTFormat.BackColor = vbWindowBackground
     ComboDTFormat.Enabled = True
+    TextTextIndent.BackColor = vbWindowBackground
+    TextTextIndent.Enabled = True
     CommandForeColor.Enabled = True
     TextMinWidth.BackColor = vbWindowBackground
     TextMinWidth.Enabled = True
@@ -1203,6 +1282,9 @@ Else
     ComboDTFormat.ListIndex = 0
     ComboDTFormat.BackColor = vbButtonFace
     ComboDTFormat.Enabled = False
+    TextTextIndent.Text = vbNullString
+    TextTextIndent.BackColor = vbButtonFace
+    TextTextIndent.Enabled = False
     CommandForeColor.Enabled = False
     TextMinWidth.Text = vbNullString
     TextMinWidth.BackColor = vbButtonFace
@@ -1243,6 +1325,7 @@ For i = 0 To .Panels.Count
         PropShadowPanels(i).AutoSize = .AutoSize
         PropShadowPanels(i).Alignment = .Alignment
         PropShadowPanels(i).DTFormat = .DTFormat
+        PropShadowPanels(i).TextIndent = .TextIndent
         PropShadowPanels(i).ForeColor = .ForeColor
         PropShadowPanels(i).MinWidth = .MinWidth
         Set PropShadowPanels(i).Picture = .Picture
