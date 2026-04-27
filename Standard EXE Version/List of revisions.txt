@@ -1,5 +1,9 @@
 List of revisions:
 
+27-Apr-2026
+- Improvement in the internal SetParts method in the StatusBar control.
+  Now the SBB_DIVIDER border size is not added when the adjacent panel is hidden.
+
 26-Apr-2026
 - Included the TextIndent/PictureIndent property of a Panel in the StatusBar control.
 
