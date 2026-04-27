@@ -65,6 +65,7 @@ End Sub
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal Style As SbrPanelStyleConstants) As SbrPanel
 Attribute Add.VB_Description = "Adds a panel to the panels collection."
 If Index > (PropPanel.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
+If PropPanel.Count >= 255 Then Err.Raise Number:=35616, Description:="Maximum Panels Exceeded"
 Dim NewPanel As New SbrPanel
 NewPanel.FInit ShadowStatusBar, Key
 If Key = vbNullString Then
