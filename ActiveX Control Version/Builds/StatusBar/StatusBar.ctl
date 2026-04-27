@@ -1953,7 +1953,9 @@ If StatusBarHandle <> NULL_PTR Then
         For i = 1 To PropShadowPanelsCount
             Parts(i - 1) = GetGoodWidth(i)
             TotalWidth = TotalWidth + Parts(i - 1)
-            If i < PropShadowPanelsCount Then TotalWidth = TotalWidth + Borders(SBB_DIVIDER)
+            If i < PropShadowPanelsCount Then
+                If TotalWidth > 0 And PropShadowPanels(i + 1).Visible = True Then TotalWidth = TotalWidth + Borders(SBB_DIVIDER)
+            End If
         Next i
         TotalWidth = TotalWidth + Borders(SBB_HORIZONTAL) + Borders(SBB_HORIZONTAL)
         If Me.IncludesSizeGrip = True Then TotalWidth = TotalWidth + GetSystemMetrics(SM_CXVSCROLL)
@@ -1982,7 +1984,10 @@ If StatusBarHandle <> NULL_PTR Then
             With PropShadowPanels(i)
             .Left = TotalWidth
             .ActualWidth = Parts(i - 1)
-            TotalWidth = TotalWidth + Parts(i - 1) + Borders(SBB_DIVIDER)
+            TotalWidth = TotalWidth + Parts(i - 1)
+            If i < PropShadowPanelsCount Then
+                If TotalWidth > Borders(SBB_HORIZONTAL) And PropShadowPanels(i + 1).Visible = True Then TotalWidth = TotalWidth + Borders(SBB_DIVIDER)
+            End If
             Parts(i - 1) = .Left + .ActualWidth
             End With
         Next i
@@ -2300,7 +2305,7 @@ Select Case wMsg
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.hWndItem = StatusBarHandle And DIS.ItemID <> SB_SIMPLEID Then
+        If DIS.hWndItem = StatusBarHandle And DIS.ItemID > -1 And DIS.ItemID < SB_SIMPLEID Then
             Call DrawPanel(DIS.ItemID + 1, DIS.hDC, DIS.RCItem)
             WindowProcUserControl = 1
             Exit Function
@@ -2350,7 +2355,7 @@ Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wM
 If wMsg = WM_DRAWITEM Then
     Dim DIS As DRAWITEMSTRUCT
     CopyMemory DIS, ByVal lParam, LenB(DIS)
-    If DIS.hWndItem = StatusBarHandle And DIS.ItemID <> SB_SIMPLEID Then
+    If DIS.hWndItem = StatusBarHandle And DIS.ItemID > -1 And DIS.ItemID < SB_SIMPLEID Then
         Call DrawPanel(DIS.ItemID + 1, DIS.hDC, DIS.RCItem)
         WindowProcUserControlDesignMode = 1
         Exit Function
