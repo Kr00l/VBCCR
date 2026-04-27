@@ -1887,7 +1887,7 @@ End Select
 End Sub
 
 Private Sub DrawPanel(ByVal Index As Long, ByVal hDC As LongPtr, ByRef RC As RECT)
-If Index <> SB_SIMPLEID And StatusBarHandle <> NULL_PTR Then
+If StatusBarHandle <> NULL_PTR Then
     Dim Text As String, Size As SIZEAPI, OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long, hFontOld As LongPtr
     With PropShadowPanels(Index)
     Call GetDisplayText(Index, Text, .Enabled)
@@ -2405,7 +2405,7 @@ Select Case wMsg
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.hWndItem = StatusBarHandle Then
+        If DIS.hWndItem = StatusBarHandle And DIS.ItemID <> SB_SIMPLEID Then
             Call DrawPanel(DIS.ItemID + 1, DIS.hDC, DIS.RCItem)
             WindowProcUserControl = 1
             Exit Function
@@ -2455,7 +2455,7 @@ Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wM
 If wMsg = WM_DRAWITEM Then
     Dim DIS As DRAWITEMSTRUCT
     CopyMemory DIS, ByVal lParam, LenB(DIS)
-    If DIS.hWndItem = StatusBarHandle Then
+    If DIS.hWndItem = StatusBarHandle And DIS.ItemID <> SB_SIMPLEID Then
         Call DrawPanel(DIS.ItemID + 1, DIS.hDC, DIS.RCItem)
         WindowProcUserControlDesignMode = 1
         Exit Function
