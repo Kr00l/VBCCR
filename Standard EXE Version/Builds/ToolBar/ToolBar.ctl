@@ -4496,11 +4496,14 @@ Select Case wMsg
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 ToolBarIsClick = True
             Case WM_MOUSEMOVE
-                Dim P As POINTAPI, Index As Long
-                If PropHotTracking = True And PropStyle = TbrStyleStandard Then
+                Dim Index As Long
+                If (PropHotTracking = True And PropStyle = TbrStyleStandard) Or PropMouseTrack = True Then
+                    Dim P As POINTAPI
                     P.X = Get_X_lParam(lParam)
                     P.Y = Get_Y_lParam(lParam)
                     Index = CLng(SendMessage(ToolBarHandle, TB_HITTEST, 0, ByVal VarPtr(P))) + 1
+                End If
+                If PropHotTracking = True And PropStyle = TbrStyleStandard Then
                     If SendMessage(ToolBarHandle, TB_GETANCHORHIGHLIGHT, 0, ByVal 0&) = 0 Then
                         SendMessage ToolBarHandle, TB_SETHOTITEM, Index - 1, ByVal 0&
                     Else
@@ -4510,9 +4513,7 @@ Select Case wMsg
                 If ToolBarMouseOver = False And PropMouseTrack = True Then
                     ToolBarMouseOver = True
                     RaiseEvent MouseEnter
-                    P.X = Get_X_lParam(lParam)
-                    P.Y = Get_Y_lParam(lParam)
-                    ToolBarMouseOverIndex = CLng(SendMessage(ToolBarHandle, TB_HITTEST, 0, ByVal VarPtr(P))) + 1
+                    ToolBarMouseOverIndex = Index
                     If ToolBarMouseOverIndex > 0 Then
                         Dim ID1 As Long
                         ID1 = GetButtonID(ToolBarMouseOverIndex)
@@ -4525,9 +4526,6 @@ Select Case wMsg
                     Call ComCtlsRequestMouseLeave(hWnd)
                 End If
                 If ToolBarMouseOver = True And PropMouseTrack = True Then
-                    P.X = Get_X_lParam(lParam)
-                    P.Y = Get_Y_lParam(lParam)
-                    Index = CLng(SendMessage(ToolBarHandle, TB_HITTEST, 0, ByVal VarPtr(P))) + 1
                     If ToolBarMouseOverIndex <> Index Then
                         If ToolBarMouseOverIndex > 0 Then
                             Dim ID2 As Long
