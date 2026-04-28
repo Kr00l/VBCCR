@@ -45,7 +45,7 @@ Private SbrPanelStyleText, SbrPanelStyleCaps, SbrPanelStyleNum, SbrPanelStyleIns
 Private SbrPanelBevelFlat, SbrPanelBevelInset, SbrPanelBevelRaised
 Private SbrPanelAutoSizeNone, SbrPanelAutoSizeSpring, SbrPanelAutoSizeContent
 Private SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight, SbrPanelAlignmentLeftRight
-Private SbrPanelDTFormatShort, SbrPanelDTFormatLong
+Private SbrPanelDTFormatShort, SbrPanelDTFormatLong, SbrPanelDTFormatMedium
 #End If
 Public Enum SbrStyleConstants
 SbrStyleNormal = 0
@@ -85,6 +85,7 @@ End Enum
 Public Enum SbrPanelDTFormatConstants
 SbrPanelDTFormatShort = 0
 SbrPanelDTFormatLong = 1
+SbrPanelDTFormatMedium = 2
 End Enum
 Private Type RECT
 Left As Long
@@ -155,6 +156,10 @@ Public Event PanelClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
 Attribute PanelClick.VB_Description = "Occurs when a user presses and then releases a mouse button over any of the panels."
 Public Event PanelDblClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
 Attribute PanelDblClick.VB_Description = "Occurs when a user presses and then releases a mouse button twice over any of the panels."
+Public Event PanelMouseEnter(ByVal Panel As SbrPanel)
+Attribute PanelMouseEnter.VB_Description = "Occurs when the user moves the mouse into a panel."
+Public Event PanelMouseLeave(ByVal Panel As SbrPanel)
+Attribute PanelMouseLeave.VB_Description = "Occurs when the user moves the mouse out of a panel."
 Public Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 Attribute MouseDown.VB_Description = "Occurs when the user presses the mouse button while an object has the focus."
 Attribute MouseDown.VB_UserMemId = -605
@@ -414,7 +419,7 @@ Private WithEvents StatusBarParentFormEvents As VB.Form
 Attribute StatusBarParentFormEvents.VB_VarHelpID = -1
 Private StatusBarFontHandle As LongPtr, StatusBarBoldFontHandle As LongPtr
 Private StatusBarIsClick As Boolean
-Private StatusBarMouseOver As Boolean
+Private StatusBarMouseOver As Boolean, StatusBarMouseOverIndex As Long
 Private StatusBarDesignMode As Boolean
 Private StatusBarDoubleBufferEraseBkgDC As LongPtr
 Private StatusBarAlignable As Boolean
@@ -1501,7 +1506,7 @@ End Property
 Friend Property Let FPanelDTFormat(ByVal Index As Long, ByVal Value As SbrPanelDTFormatConstants)
 If StatusBarHandle <> NULL_PTR Then
     Select Case Value
-        Case SbrPanelDTFormatShort, SbrPanelDTFormatLong
+        Case SbrPanelDTFormatShort, SbrPanelDTFormatLong, SbrPanelDTFormatMedium
             PropShadowPanels(Index).DTFormat = Value
         Case Else
             Err.Raise 380
@@ -1843,6 +1848,8 @@ Select Case PropShadowPanels(Index).Style
                 Text = VBA.FormatDateTime(VBA.Time, vbShortTime)
             Case SbrPanelDTFormatLong
                 Text = VBA.FormatDateTime(VBA.Time, vbLongTime)
+            Case SbrPanelDTFormatMedium
+                Text = Format$(VBA.Time, "Medium Time")
         End Select
         Enabled = PropShadowPanels(Index).Enabled
     Case SbrPanelStyleDate
@@ -1851,6 +1858,8 @@ Select Case PropShadowPanels(Index).Style
                 Text = VBA.FormatDateTime(VBA.Date, vbShortDate)
             Case SbrPanelDTFormatLong
                 Text = VBA.FormatDateTime(VBA.Date, vbLongDate)
+            Case SbrPanelDTFormatMedium
+                Text = Format$(VBA.Date, "Medium Date")
         End Select
         Enabled = PropShadowPanels(Index).Enabled
     Case SbrPanelStyleKana
@@ -2351,10 +2360,32 @@ Select Case wMsg
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 StatusBarIsClick = True
             Case WM_MOUSEMOVE
+                Dim Index As Long
+                If PropMouseTrack = True Then
+                    Dim P As POINTAPI, RC As RECT, i As Long
+                    P.X = Get_X_lParam(lParam)
+                    P.Y = Get_Y_lParam(lParam)
+                    For i = 1 To PropShadowPanelsCount
+                        Call GetPanelRect(i, RC)
+                        If PtInRect(RC, P.X, P.Y) <> 0 Then
+                            Index = i
+                            Exit For
+                        End If
+                    Next i
+                End If
                 If StatusBarMouseOver = False And PropMouseTrack = True Then
                     StatusBarMouseOver = True
                     RaiseEvent MouseEnter
+                    StatusBarMouseOverIndex = Index
+                    If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseEnter(Me.Panels(StatusBarMouseOverIndex))
                     Call ComCtlsRequestMouseLeave(hWnd)
+                End If
+                If StatusBarMouseOver = True And PropMouseTrack = True Then
+                    If StatusBarMouseOverIndex <> Index Then
+                        If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseLeave(Me.Panels(StatusBarMouseOverIndex))
+                        StatusBarMouseOverIndex = Index
+                        If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseEnter(Me.Panels(StatusBarMouseOverIndex))
+                    End If
                 End If
                 RaiseEvent MouseMove(GetMouseStateFromParam(wParam), GetShiftStateFromParam(wParam), X, Y)
             Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -2374,6 +2405,7 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         If StatusBarMouseOver = True Then
             StatusBarMouseOver = False
+            If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseLeave(Me.Panels(StatusBarMouseOverIndex))
             RaiseEvent MouseLeave
         End If
 End Select

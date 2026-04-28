@@ -551,6 +551,8 @@ With ComboDTFormat
 .ItemData(.NewIndex) = SbrPanelDTFormatShort
 .AddItem SbrPanelDTFormatLong & " - Long"
 .ItemData(.NewIndex) = SbrPanelDTFormatLong
+.AddItem SbrPanelDTFormatMedium & " - Medium"
+.ItemData(.NewIndex) = SbrPanelDTFormatMedium
 End With
 ReDim PropShadowPanels(0) As ShadowPanelStruct
 End Sub
