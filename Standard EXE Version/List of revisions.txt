@@ -1,5 +1,10 @@
 List of revisions:
 
+28-Apr-2026
+- Included the PanelMouseEnter/PanelMouseLeave event in the StatusBar control.
+  This enables more specific handling of a single panel instead of the global MouseEnter/MouseLeave event.
+- Included enum value 'SbrPanelDTFormatMedium' for the DTFormat property of a Panel in the StatusBar control.
+
 27-Apr-2026
 - Improvement in the internal SetParts method in the StatusBar control.
   Now the SBB_DIVIDER border size is not added when the adjacent panel is hidden.
