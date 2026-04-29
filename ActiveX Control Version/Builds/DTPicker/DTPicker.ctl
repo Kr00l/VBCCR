@@ -220,6 +220,8 @@ Private Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hWndLock A
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
 Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
+Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
+Private Declare PtrSafe Function GetClientRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
@@ -228,6 +230,7 @@ Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As L
 Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
 Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
+Private Declare PtrSafe Function GetAncestor Lib "user32" (ByVal hWnd As LongPtr, ByVal gaFlags As Long) As LongPtr
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal Locale As Long, ByVal LCType As Long, ByVal lpLCData As Long, ByVal cchData As Long) As Long
@@ -249,6 +252,8 @@ Private Declare Function LockWindowUpdate Lib "user32" (ByVal hWndLock As Long) 
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
+Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
+Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
@@ -257,6 +262,7 @@ Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
+Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 #End If
 Private Const ICC_DATE_CLASSES As Long = &H100
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -269,6 +275,7 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
+Private Const GA_PARENT As Long = 1
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_SETFOCUS As Long = &H7
@@ -361,6 +368,7 @@ Private Const MCM_GETMINREQRECT As Long = (MCM_FIRST + 9)
 Private Const MCM_SETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 15)
 Private Const MCM_GETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 16)
 Private Const MCM_GETMAXTODAYWIDTH As Long = (MCM_FIRST + 21)
+Private Const MCM_SIZERECTTOMIN As Long = (MCM_FIRST + 29)
 Private Const MCN_FIRST As Long = (-750)
 Private Const MCN_GETDAYSTATE As Long = (MCN_FIRST + 3)
 Private Const UDN_FIRST As Long = (-721)
@@ -598,7 +606,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
-.WriteProperty "CalendarFont", IIf(OLEFontIsEqual(PropCalendarFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "CalendarFont", IIf(OLEFontIsEqual(PropCalendarFont, Ambient.Font) = False, PropCalendarFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -2493,8 +2501,34 @@ Select Case wMsg
                     Select Case NM.Code
                         Case DTN_DROPDOWN
                             If CalendarHandle <> NULL_PTR Then
-                                If EnabledVisualStyles() = True And PropVisualStyles = False Then RemoveVisualStyles CalendarHandle
-                                If ComCtlsSupportLevel() <= 1 Then
+                                If EnabledVisualStyles() = True And PropVisualStyles = False Then
+                                    RemoveVisualStyles CalendarHandle
+                                    If ComCtlsSupportLevel() >= 2 Then
+                                        ' The theme just got removed and the size of the drop-down control will not be adjusted automatically.
+                                        Dim DropDownHandle As LongPtr
+                                        If (GetWindowLong(CalendarHandle, GWL_STYLE) And WS_CHILD) = WS_CHILD Then
+                                            DropDownHandle = GetAncestor(CalendarHandle, GA_PARENT)
+                                        Else
+                                            DropDownHandle = CalendarHandle
+                                        End If
+                                        Dim ReqWndRect As RECT, RC(0 To 1) As RECT
+                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
+                                        SendMessage CalendarHandle, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
+                                        GetWindowRect DropDownHandle, RC(0)
+                                        GetClientRect CalendarHandle, RC(1)
+                                        ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left)) + 2
+                                        ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top)) + 2
+                                        SetWindowPos DropDownHandle, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+                                    End If
+                                End If
+                                If ComCtlsSupportLevel() >= 2 Then
+                                    If PropCalendarDayState = True Then
+                                        Dim ArraySize As Long
+                                        Dim DayState() As Long, State() As Boolean
+                                        ArraySize = SetDayState(DayState(), State())
+                                        SendMessage CalendarHandle, MCM_SETDAYSTATE, ArraySize, ByVal VarPtr(DayState(1))
+                                    End If
+                                Else
                                     Dim dwStyle As Long, dwStyleOld As Long
                                     dwStyle = GetWindowLong(CalendarHandle, GWL_STYLE)
                                     dwStyleOld = dwStyle
@@ -2523,13 +2557,6 @@ Select Case wMsg
                                             If TodayWidth > (ReqRect.Right - ReqRect.Left) Then ReqRect.Right = ReqRect.Left + TodayWidth
                                         End If
                                         SetWindowPos CalendarHandle, NULL_PTR, 0, 0, (ReqRect.Right - ReqRect.Left), (ReqRect.Bottom - ReqRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
-                                    End If
-                                Else
-                                    If PropCalendarDayState = True Then
-                                        Dim ArraySize As Long
-                                        Dim DayState() As Long, State() As Boolean
-                                        ArraySize = SetDayState(DayState(), State())
-                                        SendMessage CalendarHandle, MCM_SETDAYSTATE, ArraySize, ByVal VarPtr(DayState(1))
                                     End If
                                 End If
                                 Me.StartOfWeek = PropStartOfWeek

@@ -3289,32 +3289,27 @@ Select Case wMsg
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 CoolBarIsClick = True
             Case WM_MOUSEMOVE
+                Dim Index As Long
+                If PropMouseTrack = True Then
+                    Dim RBHTI1 As RBHITTESTINFO
+                    RBHTI1.PT.X = Get_X_lParam(lParam)
+                    RBHTI1.PT.Y = Get_Y_lParam(lParam)
+                    Index = CLng(SendMessage(CoolBarHandle, RB_HITTEST, 0, ByVal VarPtr(RBHTI1))) + 1
+                End If
                 If CoolBarMouseOver = False And PropMouseTrack = True Then
                     CoolBarMouseOver = True
                     RaiseEvent MouseEnter
-                    Dim RBHTI1 As RBHITTESTINFO
-                    With RBHTI1
-                    .PT.X = Get_X_lParam(lParam)
-                    .PT.Y = Get_Y_lParam(lParam)
-                    CoolBarMouseOverIndex = CLng(SendMessage(CoolBarHandle, RB_HITTEST, 0, ByVal VarPtr(RBHTI1))) + 1
+                    CoolBarMouseOverIndex = Index
                     If CoolBarMouseOverIndex > 0 Then
-                        If .uBand > -1 Then
-                            Dim RBBI1 As REBARBANDINFO
-                            RBBI1.cbSize = LenB(RBBI1)
-                            RBBI1.fMask = RBBIM_LPARAM
-                            SendMessage CoolBarHandle, RB_GETBANDINFO, .uBand, ByVal VarPtr(RBBI1)
-                            If RBBI1.lParam <> 0 Then RaiseEvent BandMouseEnter(PtrToObj(RBBI1.lParam))
-                        End If
+                        Dim RBBI1 As REBARBANDINFO
+                        RBBI1.cbSize = LenB(RBBI1)
+                        RBBI1.fMask = RBBIM_LPARAM
+                        SendMessage CoolBarHandle, RB_GETBANDINFO, CoolBarMouseOverIndex - 1, ByVal VarPtr(RBBI1)
+                        If RBBI1.lParam <> 0 Then RaiseEvent BandMouseEnter(PtrToObj(RBBI1.lParam))
                     End If
-                    End With
                     Call ComCtlsRequestMouseLeave(hWnd)
                 End If
                 If CoolBarMouseOver = True And PropMouseTrack = True Then
-                    Dim RBHTI2 As RBHITTESTINFO, Index As Long
-                    With RBHTI2
-                    .PT.X = Get_X_lParam(lParam)
-                    .PT.Y = Get_Y_lParam(lParam)
-                    Index = CLng(SendMessage(CoolBarHandle, RB_HITTEST, 0, ByVal VarPtr(RBHTI2))) + 1
                     If CoolBarMouseOverIndex <> Index Then
                         If CoolBarMouseOverIndex > 0 Then
                             Dim RBBI2 As REBARBANDINFO
@@ -3332,7 +3327,6 @@ Select Case wMsg
                             If RBBI3.lParam <> 0 Then RaiseEvent BandMouseEnter(PtrToObj(RBBI3.lParam))
                         End If
                     End If
-                    End With
                 End If
                 RaiseEvent MouseMove(GetMouseStateFromParam(wParam), GetShiftStateFromParam(wParam), X, Y)
             Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP

@@ -2043,8 +2043,8 @@ If MonthViewHandle <> NULL_PTR Then
         Dim ReqWndRect As RECT
         ReqWndRect.Left = WndRect.Left
         ReqWndRect.Top = WndRect.Top
-        ReqWndRect.Right = (WndRect.Right - WndRect.Left) * MonthColumns
-        ReqWndRect.Bottom = (WndRect.Bottom - WndRect.Top) * MonthRows
+        ReqWndRect.Right = WndRect.Right * MonthColumns
+        ReqWndRect.Bottom = WndRect.Bottom * MonthRows
         SendMessage MonthViewHandle, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
         ModRect.Left = ReqWndRect.Left
         ModRect.Right = ReqWndRect.Right
