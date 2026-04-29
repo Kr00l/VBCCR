@@ -1,5 +1,9 @@
 List of revisions:
 
+29-Apr-2026
+- Bugfix that the size is incorrect for an un-themed drop-down calendar in the DTPicker control. (comctl version 6.1 [Vista+])
+- CalendarFont not written to the property bag in the DTPicker control.
+
 28-Apr-2026
 - Included the PanelMouseEnter/PanelMouseLeave event in the StatusBar control.
   This enables more specific handling of a single panel instead of the global MouseEnter/MouseLeave event.
