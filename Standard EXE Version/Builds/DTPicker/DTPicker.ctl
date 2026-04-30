@@ -2525,20 +2525,20 @@ Select Case wMsg
                                     RemoveVisualStyles CalendarHandle
                                     If ComCtlsSupportLevel() >= 2 Then
                                         ' The theme just got removed and the size of the drop-down control will not be adjusted automatically.
-                                        Dim DropDownHandle As LongPtr
-                                        If (GetWindowLong(CalendarHandle, GWL_STYLE) And WS_CHILD) = WS_CHILD Then
-                                            DropDownHandle = GetAncestor(CalendarHandle, GA_PARENT)
-                                        Else
-                                            DropDownHandle = CalendarHandle
-                                        End If
-                                        Dim ReqWndRect As RECT, RC(0 To 1) As RECT
+                                        Dim ReqWndRect As RECT
                                         SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
                                         SendMessage CalendarHandle, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
-                                        GetWindowRect DropDownHandle, RC(0)
-                                        GetClientRect CalendarHandle, RC(1)
-                                        ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left)) + 2
-                                        ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top)) + 2
-                                        SetWindowPos DropDownHandle, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+                                        If (GetWindowLong(CalendarHandle, GWL_STYLE) And WS_CHILD) = WS_CHILD Then
+                                            Dim CalendarContainerHwnd As LongPtr, RC(0 To 1) As RECT
+                                            CalendarContainerHwnd = GetAncestor(CalendarHandle, GA_PARENT)
+                                            GetWindowRect CalendarContainerHwnd, RC(0)
+                                            GetClientRect CalendarHandle, RC(1)
+                                            ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left)) + 2
+                                            ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top)) + 2
+                                            SetWindowPos CalendarContainerHwnd, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+                                        Else
+                                            SetWindowPos CalendarHandle, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+                                        End If
                                     End If
                                 End If
                                 If ComCtlsSupportLevel() >= 2 Then
