@@ -81,6 +81,16 @@ wMinute As Integer
 wSecond As Integer
 wMilliseconds As Integer
 End Type
+Private Type DATETIMEPICKERINFO
+cbSize As Long
+RCCheck As RECT
+StateCheck As Long
+RCButton As RECT
+StateButton As Long
+hWndEdit As LongPtr
+hWndUD As LongPtr
+hWndDropDown As LongPtr
+End Type
 Private Type NMHDR
 hWndFrom As LongPtr
 IDFrom As LongPtr
@@ -230,7 +240,6 @@ Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As L
 Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
 Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
-Private Declare PtrSafe Function GetAncestor Lib "user32" (ByVal hWnd As LongPtr, ByVal gaFlags As Long) As LongPtr
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal Locale As Long, ByVal LCType As Long, ByVal lpLCData As Long, ByVal cchData As Long) As Long
@@ -262,7 +271,6 @@ Private Declare Function GetDC Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As Long, ByVal hDC As Long) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
-Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 #End If
 Private Const ICC_DATE_CLASSES As Long = &H100
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -276,7 +284,6 @@ Private Const WS_BORDER As Long = &H800000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
-Private Const GA_PARENT As Long = 1
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_SETFOCUS As Long = &H7
@@ -347,6 +354,7 @@ Private Const DTM_GETMCFONT As Long = (DTM_FIRST + 10)
 Private Const DTM_SETMCSTYLE As Long = (DTM_FIRST + 11)
 Private Const DTM_GETMCSTYLE As Long = (DTM_FIRST + 12)
 Private Const DTM_CLOSEMONTHCAL As Long = (DTM_FIRST + 13)
+Private Const DTM_GETDATETIMEPICKERINFO As Long = (DTM_FIRST + 14)
 Private Const DTM_GETIDEALSIZE As Long = (DTM_FIRST + 15)
 Private Const MCSC_BACKGROUND As Long = 0
 Private Const MCSC_TEXT As Long = 1
@@ -2248,14 +2256,16 @@ End Function
 Private Function WindowProcCalendar(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_COMMAND
-        If HiWord(CLng(wParam)) = EN_SETFOCUS Then
-            Dim UpDownHandle As LongPtr
-            UpDownHandle = FindWindowEx(hWnd, NULL_PTR, StrPtr("msctls_updown32"), NULL_PTR)
-            If UpDownHandle <> NULL_PTR And EnabledVisualStyles() = True Then
-                If PropVisualStyles = True Then
-                    ActivateVisualStyles UpDownHandle
-                Else
-                    RemoveVisualStyles UpDownHandle
+        If ComCtlsSupportLevel() < 2 Then
+            If HiWord(CLng(wParam)) = EN_SETFOCUS Then
+                Dim UpDownHandle As LongPtr
+                UpDownHandle = FindWindowEx(hWnd, NULL_PTR, StrPtr("msctls_updown32"), NULL_PTR)
+                If UpDownHandle <> NULL_PTR And EnabledVisualStyles() = True Then
+                    If PropVisualStyles = True Then
+                        ActivateVisualStyles UpDownHandle
+                    Else
+                        RemoveVisualStyles UpDownHandle
+                    End If
                 End If
             End If
         End If
@@ -2316,26 +2326,25 @@ WindowProcCalendar = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_THEMECHANGED
         If ComCtlsSupportLevel() >= 2 Then
-            ' The theme just got changed and the size will not be adjusted automatically.
-            Dim ReqWndRect As RECT
-            SendMessage hWnd, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
-            SendMessage hWnd, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
-            If (GetWindowLong(hWnd, GWL_STYLE) And WS_CHILD) = WS_CHILD Then
-                Dim CalendarContainerHwnd As LongPtr, RC(0 To 1) As RECT
-                CalendarContainerHwnd = GetAncestor(hWnd, GA_PARENT)
-                GetWindowRect CalendarContainerHwnd, RC(0)
+            ' The theme just got changed and the size of the drop-down grid will not be adjusted automatically.
+            Dim DTPI As DATETIMEPICKERINFO
+            DTPI.cbSize = LenB(DTPI)
+            SendMessage DTPickerHandle, DTM_GETDATETIMEPICKERINFO, 0, ByVal VarPtr(DTPI)
+            If DTPI.hWndDropDown <> NULL_PTR Then
+                Dim ReqWndRect As RECT, RC(0 To 1) As RECT
+                SendMessage hWnd, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
+                SendMessage hWnd, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
+                GetWindowRect DTPI.hWndDropDown, RC(0)
                 GetClientRect hWnd, RC(1)
                 ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left))
                 ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top))
-                If (GetWindowLong(CalendarContainerHwnd, GWL_STYLE) And WS_BORDER) = WS_BORDER Then
+                If (GetWindowLong(DTPI.hWndDropDown, GWL_STYLE) And WS_BORDER) = WS_BORDER Then
                     ' The border is included above but must be added again. (Bug?)
                     ' There is only a border when the date picker is not themed.
                     ReqWndRect.Right = ReqWndRect.Right + 2
                     ReqWndRect.Bottom = ReqWndRect.Bottom + 2
                 End If
-                SetWindowPos CalendarContainerHwnd, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
-            Else
-                SetWindowPos hWnd, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+                SetWindowPos DTPI.hWndDropDown, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
             End If
         End If
 End Select
