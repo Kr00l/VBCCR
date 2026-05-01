@@ -272,6 +272,7 @@ Private Const SWP_NOZORDER As Long = &H4
 Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_BORDER As Long = &H800000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
@@ -299,6 +300,7 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_CONTEXTMENU As Long = &H7B
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const DTS_UPDOWN As Long = &H1
 Private Const DTS_SHOWNONE As Long = &H2
 Private Const DTS_SHORTDATEFORMAT As Long = &H0
@@ -2311,6 +2313,32 @@ Select Case wMsg
         End If
 End Select
 WindowProcCalendar = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_THEMECHANGED
+        If ComCtlsSupportLevel() >= 2 Then
+            ' The theme just got changed and the size will not be adjusted automatically.
+            Dim ReqWndRect As RECT
+            SendMessage hWnd, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
+            SendMessage hWnd, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
+            If (GetWindowLong(hWnd, GWL_STYLE) And WS_CHILD) = WS_CHILD Then
+                Dim CalendarContainerHwnd As LongPtr, RC(0 To 1) As RECT
+                CalendarContainerHwnd = GetAncestor(hWnd, GA_PARENT)
+                GetWindowRect CalendarContainerHwnd, RC(0)
+                GetClientRect hWnd, RC(1)
+                ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left))
+                ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top))
+                If (GetWindowLong(CalendarContainerHwnd, GWL_STYLE) And WS_BORDER) = WS_BORDER Then
+                    ' The border is included above but must be added again. (Bug?)
+                    ' There is only a border when the date picker is not themed.
+                    ReqWndRect.Right = ReqWndRect.Right + 2
+                    ReqWndRect.Bottom = ReqWndRect.Bottom + 2
+                End If
+                SetWindowPos CalendarContainerHwnd, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+            Else
+                SetWindowPos hWnd, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+            End If
+        End If
+End Select
 End Function
 
 Private Function WindowProcEdit(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
@@ -2493,26 +2521,8 @@ Select Case wMsg
                     Select Case NM.Code
                         Case DTN_DROPDOWN
                             If CalendarHandle <> NULL_PTR Then
-                                If EnabledVisualStyles() = True And PropVisualStyles = False Then
-                                    RemoveVisualStyles CalendarHandle
-                                    If ComCtlsSupportLevel() >= 2 Then
-                                        ' The theme just got removed and the size of the drop-down control will not be adjusted automatically.
-                                        Dim ReqWndRect As RECT
-                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
-                                        SendMessage CalendarHandle, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
-                                        If (GetWindowLong(CalendarHandle, GWL_STYLE) And WS_CHILD) = WS_CHILD Then
-                                            Dim CalendarContainerHwnd As LongPtr, RC(0 To 1) As RECT
-                                            CalendarContainerHwnd = GetAncestor(CalendarHandle, GA_PARENT)
-                                            GetWindowRect CalendarContainerHwnd, RC(0)
-                                            GetClientRect CalendarHandle, RC(1)
-                                            ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left)) + 2
-                                            ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top)) + 2
-                                            SetWindowPos CalendarContainerHwnd, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
-                                        Else
-                                            SetWindowPos CalendarHandle, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
-                                        End If
-                                    End If
-                                End If
+                                Call ComCtlsSetSubclass(CalendarHandle, Me, 2)
+                                If EnabledVisualStyles() = True And PropVisualStyles = False Then RemoveVisualStyles CalendarHandle
                                 If ComCtlsSupportLevel() >= 2 Then
                                     If PropCalendarDayState = True Then
                                         Dim ArraySize As Long
@@ -2552,7 +2562,6 @@ Select Case wMsg
                                     End If
                                 End If
                                 Me.StartOfWeek = PropStartOfWeek
-                                Call ComCtlsSetSubclass(CalendarHandle, Me, 2)
                             End If
                             ' There is a focus issue with the calendar. (quickly flash open and then close)
                             ' But only when the previous focused control was an intrinsic VB.TextBox or VB.ListBox.
