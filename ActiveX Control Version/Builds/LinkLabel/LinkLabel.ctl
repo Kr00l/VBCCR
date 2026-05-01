@@ -321,6 +321,9 @@ Private Const NM_CUSTOMDRAW As Long = (NM_FIRST - 12)
 Private Const TTM_ADDTOOLA As Long = (WM_USER + 4)
 Private Const TTM_ADDTOOLW As Long = (WM_USER + 50)
 Private Const TTM_ADDTOOL As Long = TTM_ADDTOOLW
+Private Const TTM_NEWTOOLRECTA As Long = (WM_USER + 6)
+Private Const TTM_NEWTOOLRECTW As Long = (WM_USER + 52)
+Private Const TTM_NEWTOOLRECT As Long = TTM_NEWTOOLRECTW
 #If VBA7 Then
 Private Const LPSTR_TEXTCALLBACK As LongPtr = (-1)
 #Else
@@ -581,10 +584,7 @@ If LinkLabelHandle <> NULL_PTR Then
     Else
         MoveWindow LinkLabelHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
     End If
-    If PropShowTips = True And LinkLabelDesignMode = False Then
-        Call DestroyToolTip
-        Call CreateToolTip
-    End If
+    If PropShowTips = True And LinkLabelDesignMode = False Then Call UpdateToolTipRects
 End If
 End With
 InProc = False
@@ -1673,6 +1673,25 @@ If LinkLabelHandle <> NULL_PTR Then
         RC.Bottom = Y2
     End If
     End With
+End If
+End Sub
+
+Private Sub UpdateToolTipRects()
+If LinkLabelHandle <> NULL_PTR And LinkLabelToolTipHandle <> NULL_PTR Then
+    Dim Count As Long
+    Count = Me.FLinksCount
+    If Count > 0 Then
+        Dim TI As TOOLINFO, i As Long
+        With TI
+        .cbSize = LenB(TI)
+        .hWnd = LinkLabelHandle
+        For i = 1 To Count
+            .uId = i
+            Call GetLinkRect(i, .RC)
+            SendMessage LinkLabelToolTipHandle, TTM_NEWTOOLRECT, 0, ByVal VarPtr(TI)
+        Next i
+        End With
+    End If
 End If
 End Sub
 

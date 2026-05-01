@@ -1716,15 +1716,7 @@ End Select
 Dim CalendarHandle As LongPtr
 CalendarHandle = Me.hWndCalendar
 If CalendarHandle <> NULL_PTR Then
-    If (PropStartOfWeek = 0 And HiWord(CLng(SendMessage(CalendarHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&))) <> 0) Or PropStartOfWeek > 0 Then
-        Dim DayVal As Integer
-        If PropStartOfWeek = 0 Then
-            DayVal = Me.SystemStartOfWeek
-        Else
-            DayVal = PropStartOfWeek
-        End If
-        SendMessage CalendarHandle, MCM_SETFIRSTDAYOFWEEK, 0, ByVal CLng(DayVal - 1)
-    End If
+    If PropStartOfWeek > 0 Or HiWord(CLng(SendMessage(CalendarHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&))) <> 0 Then SendMessage CalendarHandle, MCM_SETFIRSTDAYOFWEEK, 0, ByVal CLng(PropStartOfWeek - 1)
 End If
 UserControl.PropertyChanged "StartOfWeek"
 End Property
