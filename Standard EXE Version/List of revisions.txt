@@ -3,6 +3,7 @@ List of revisions:
 01-May-2026
 - The MonthView control will now resize upon WM_THEMECHANGED.
 - The drop-down calendar in the DTPicker control will now resize upon WM_THEMECHANGED.
+- Included the hWndUpDown read-only run-time property in the DTPicker control.
 
 29-Apr-2026
 - Bugfix that the size is incorrect for an un-themed drop-down calendar in the DTPicker control. (comctl version 6.1 [Vista+])
