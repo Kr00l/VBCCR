@@ -259,6 +259,7 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_CONTEXTMENU As Long = &H7B
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const MCS_DAYSTATE As Long = &H1
 Private Const MCS_MULTISELECT As Long = &H2
 Private Const MCS_WEEKNUMBERS As Long = &H4
@@ -899,9 +900,12 @@ If MonthViewHandle <> NULL_PTR And EnabledVisualStyles() = True Then
     Else
         RemoveVisualStyles MonthViewHandle
     End If
+    If MonthViewDesignMode = True Then
+        ' The month view control will react upon WM_THEMECHANGED at run-time.
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
+    End If
     Me.Refresh
-    Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
-    Call UserControl_Resize
 End If
 UserControl.PropertyChanged "VisualStyles"
 End Property
@@ -1483,15 +1487,7 @@ Select Case Value
         Err.Raise 380
 End Select
 If MonthViewHandle <> NULL_PTR Then
-    If (PropStartOfWeek = 0 And HiWord(CLng(SendMessage(MonthViewHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&))) <> 0) Or PropStartOfWeek > 0 Then
-        Dim DayVal As Integer
-        If PropStartOfWeek = 0 Then
-            DayVal = Me.SystemStartOfWeek
-        Else
-            DayVal = PropStartOfWeek
-        End If
-        SendMessage MonthViewHandle, MCM_SETFIRSTDAYOFWEEK, 0, ByVal CLng(DayVal - 1)
-    End If
+    If PropStartOfWeek > 0 Or HiWord(CLng(SendMessage(MonthViewHandle, MCM_GETFIRSTDAYOFWEEK, 0, ByVal 0&))) <> 0 Then SendMessage MonthViewHandle, MCM_SETFIRSTDAYOFWEEK, 0, ByVal CLng(PropStartOfWeek - 1)
 End If
 UserControl.PropertyChanged "StartOfWeek"
 End Property
@@ -2323,6 +2319,9 @@ Select Case wMsg
             MonthViewMouseOver = False
             RaiseEvent MouseLeave
         End If
+    Case WM_THEMECHANGED
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
 End Select
 End Function
 
