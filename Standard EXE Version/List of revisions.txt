@@ -1,5 +1,8 @@
 List of revisions:
 
+01-May-2026
+- The MonthView control will now resize upon WM_THEMECHANGED.
+
 29-Apr-2026
 - Bugfix that the size is incorrect for an un-themed drop-down calendar in the DTPicker control. (comctl version 6.1 [Vista+])
 - CalendarFont not written to the property bag in the DTPicker control.
