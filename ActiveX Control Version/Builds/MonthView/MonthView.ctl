@@ -1662,6 +1662,7 @@ Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
 Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+Call UserControl_Resize
 Me.BackColor = PropBackColor
 Me.ForeColor = PropForeColor
 Me.TitleBackColor = PropTitleBackColor
