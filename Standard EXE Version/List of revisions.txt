@@ -1,5 +1,10 @@
 List of revisions:
 
+02-May-2026
+- Improvement in the StatusBar control when the Form is maximized.
+  The UserControl will get the WS_MAXIMIZE style instead of re-creating the StatusBar control.
+  This allows to apply a different window theme and to not loose it.
+
 01-May-2026
 - The MonthView control will now resize upon WM_THEMECHANGED.
 - The drop-down calendar in the DTPicker control will now resize upon WM_THEMECHANGED.
