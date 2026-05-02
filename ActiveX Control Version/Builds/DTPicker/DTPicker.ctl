@@ -231,7 +231,6 @@ Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPt
 Private Declare PtrSafe Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal lprcUpdate As LongPtr, ByVal hrgnUpdate As LongPtr, ByVal fuRedraw As Long) As Long
 Private Declare PtrSafe Function ScreenToClient Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
-Private Declare PtrSafe Function GetClientRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
@@ -262,7 +261,6 @@ Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fE
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
-Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
@@ -2335,7 +2333,7 @@ Select Case wMsg
                 SendMessage hWnd, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
                 SendMessage hWnd, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
                 GetWindowRect DTPI.hWndDropDown, RC(0)
-                GetClientRect hWnd, RC(1)
+                GetWindowRect hWnd, RC(1)
                 ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left))
                 ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top))
                 If (GetWindowLong(DTPI.hWndDropDown, GWL_STYLE) And WS_BORDER) = WS_BORDER Then

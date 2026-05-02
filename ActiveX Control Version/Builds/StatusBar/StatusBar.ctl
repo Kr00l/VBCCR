@@ -179,6 +179,7 @@ Public Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
 Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation is initiated either manually or automatically."
 #If VBA7 Then
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function GetKeyboardState Lib "user32" (ByRef pbKeyState As Byte) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
@@ -217,6 +218,7 @@ Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (By
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function GetKeyboardState Lib "user32" (ByRef pbKeyState As Byte) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
@@ -268,6 +270,7 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_CLIPSIBLINGS As Long = &H4000000
 Private Const WS_POPUP As Long = &H80000000
 Private Const WS_THICKFRAME As Long = &H40000
+Private Const WS_MAXIMIZE As Long = &H1000000
 Private Const WS_EX_TOOLWINDOW As Long = &H80
 Private Const WS_EX_TOPMOST As Long = &H8
 Private Const WS_EX_LAYOUTRTL As Long = &H400000, WS_EX_RTLREADING As Long = &H2000
@@ -288,7 +291,6 @@ Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SHOWWINDOW As Long = &H18
-Private Const WM_WINDOWPOSCHANGED As Long = &H47
 Private Const WM_SIZE As Long = &H5
 Private Const WM_DRAWITEM As Long = &H2B
 Private Const WM_DESTROY As Long = &H2
@@ -447,13 +449,13 @@ End Sub
 
 Private Sub UserControl_Show()
 If StatusBarDesignMode = True Then
-    Dim Align As Integer
-    If StatusBarAlignable = True Then Align = Extender.Align Else Align = vbAlignNone
-    If Align <> vbAlignBottom Then
-        StatusBarSizeGripAllowable = False
-        Call ReCreateStatusBar
-    Else
-        Call UserControl_Resize
+    If StatusBarSizeGripAllowable = True Then
+        Dim Align As Integer
+        If StatusBarAlignable = True Then Align = Extender.Align Else Align = vbAlignNone
+        If Align <> vbAlignBottom Then
+            StatusBarSizeGripAllowable = False
+            Call ReCreateStatusBar
+        End If
     End If
 End If
 End Sub
@@ -728,15 +730,36 @@ Private Sub StatusBarParentFormEvents_Resize()
 Static LastWindowState As Integer
 Dim CurrentWindowState As Integer
 CurrentWindowState = StatusBarParentForm.WindowState
+Dim dwStyle As Long
 If CurrentWindowState = vbMaximized Then
-    If StatusBarSizeGripAllowable = True And Me.IncludesSizeGrip = True Then
-        StatusBarSizeGripAllowable = False
-        Call ReCreateStatusBar
+    If StatusBarSizeGripAllowable = True And PropAllowSizeGrip = True Then
+        ' The status bar control will not draw the size grip when its parent has the WS_MAXIMIZE style set.
+        ' When set on a child control, it will occupy the entire client area of its parent.
+        ' But only when set at creation. Therefore it is safe to set the WS_MAXIMIZE style at run-time.
+        dwStyle = GetWindowLong(UserControl.hWnd, GWL_STYLE)
+        If Not (dwStyle And WS_MAXIMIZE) = WS_MAXIMIZE Then SetWindowLong UserControl.hWnd, GWL_STYLE, dwStyle Or WS_MAXIMIZE
+        If StatusBarHandle <> NULL_PTR Then
+            dwStyle = GetWindowLong(StatusBarHandle, GWL_STYLE)
+            If (dwStyle And SBARS_SIZEGRIP) = SBARS_SIZEGRIP Then
+                SetWindowLong StatusBarHandle, GWL_STYLE, dwStyle And Not SBARS_SIZEGRIP
+                InvalidateRect StatusBarHandle, ByVal NULL_PTR, 1
+                UpdateWindow StatusBarHandle
+            End If
+        End If
     End If
 ElseIf CurrentWindowState = vbNormal And LastWindowState = vbMaximized Then
-    If StatusBarAlignable = True Then StatusBarSizeGripAllowable = CBool(((GetWindowLong(UserControl.ContainerHwnd, GWL_STYLE) And WS_THICKFRAME) = WS_THICKFRAME) And Extender.Align = vbAlignBottom) Else StatusBarSizeGripAllowable = False
-    If StatusBarSizeGripAllowable = True And PropAllowSizeGrip = True And Me.IncludesSizeGrip = False Then
-        Call ReCreateStatusBar
+    ' Check and remove the WS_MAXIMIZE style always, if applicable.
+    dwStyle = GetWindowLong(UserControl.hWnd, GWL_STYLE)
+    If (dwStyle And WS_MAXIMIZE) = WS_MAXIMIZE Then SetWindowLong UserControl.hWnd, GWL_STYLE, dwStyle And Not WS_MAXIMIZE
+    If StatusBarSizeGripAllowable = True And PropAllowSizeGrip = True Then
+        If StatusBarHandle <> NULL_PTR Then
+            dwStyle = GetWindowLong(StatusBarHandle, GWL_STYLE)
+            If Not (dwStyle And SBARS_SIZEGRIP) = SBARS_SIZEGRIP Then
+                SetWindowLong StatusBarHandle, GWL_STYLE, dwStyle Or SBARS_SIZEGRIP
+                InvalidateRect StatusBarHandle, ByVal NULL_PTR, 1
+                UpdateWindow StatusBarHandle
+            End If
+        End If
     End If
 End If
 LastWindowState = CurrentWindowState
@@ -2284,23 +2307,6 @@ Select Case wMsg
                 StatusBarSizeGripAllowable = False
                 Call ReCreateStatusBar
             End If
-        End If
-    Case WM_WINDOWPOSCHANGED
-        Static PrevWndContainer As LongPtr
-        If StatusBarAlignable = True Then
-            If PrevWndContainer <> UserControl.ContainerHwnd And PrevWndContainer <> NULL_PTR Then
-                If Not StatusBarSizeGripAllowable = CBool(((GetWindowLong(UserControl.ContainerHwnd, GWL_STYLE) And WS_THICKFRAME) = WS_THICKFRAME) And Extender.Align = vbAlignBottom) Then
-                    StatusBarSizeGripAllowable = Not StatusBarSizeGripAllowable
-                    Call ReCreateStatusBar
-                End If
-            End If
-            PrevWndContainer = UserControl.ContainerHwnd
-        Else
-            If StatusBarSizeGripAllowable = True Then
-                StatusBarSizeGripAllowable = False
-                Call ReCreateStatusBar
-            End If
-            PrevWndContainer = NULL_PTR
         End If
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
