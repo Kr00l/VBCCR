@@ -307,6 +307,7 @@ Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_THEMECHANGED As Long = &H31A
+Private Const WM_STYLECHANGED As Long = &H7D
 Private Const DTS_UPDOWN As Long = &H1
 Private Const DTS_SHOWNONE As Long = &H2
 Private Const DTS_SHORTDATEFORMAT As Long = &H0
@@ -377,7 +378,6 @@ Private Const MCM_GETMINREQRECT As Long = (MCM_FIRST + 9)
 Private Const MCM_SETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 15)
 Private Const MCM_GETFIRSTDAYOFWEEK As Long = (MCM_FIRST + 16)
 Private Const MCM_GETMAXTODAYWIDTH As Long = (MCM_FIRST + 21)
-Private Const MCM_SIZERECTTOMIN As Long = (MCM_FIRST + 29)
 Private Const MCN_FIRST As Long = (-750)
 Private Const MCN_GETDAYSTATE As Long = (MCN_FIRST + 3)
 Private Const UDN_FIRST As Long = (-721)
@@ -2361,28 +2361,36 @@ Select Case wMsg
 End Select
 WindowProcCalendar = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
-    Case WM_THEMECHANGED
+    Case WM_THEMECHANGED, WM_STYLECHANGED
+        Dim ReqRect As RECT
+        SendMessage hWnd, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqRect)
+        If Not (GetWindowLong(hWnd, GWL_STYLE) And MCS_NOTODAY) = MCS_NOTODAY Then
+            Dim TodayWidth As Long
+            TodayWidth = CLng(SendMessage(hWnd, MCM_GETMAXTODAYWIDTH, 0, ByVal 0&))
+            If TodayWidth > (ReqRect.Right - ReqRect.Left) Then ReqRect.Right = ReqRect.Left + TodayWidth
+        End If
+        Dim DropDownHandle As LongPtr
         If ComCtlsSupportLevel() >= 2 Then
-            ' The theme just got changed and the size of the drop-down grid will not be adjusted automatically.
             Dim DTPI As DATETIMEPICKERINFO
             DTPI.cbSize = LenB(DTPI)
             SendMessage DTPickerHandle, DTM_GETDATETIMEPICKERINFO, 0, ByVal VarPtr(DTPI)
-            If DTPI.hWndDropDown <> NULL_PTR Then
-                Dim ReqWndRect As RECT, RC(0 To 1) As RECT
-                SendMessage hWnd, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqWndRect)
-                SendMessage hWnd, MCM_SIZERECTTOMIN, 0, ByVal VarPtr(ReqWndRect)
-                GetWindowRect DTPI.hWndDropDown, RC(0)
-                GetWindowRect hWnd, RC(1)
-                ReqWndRect.Right = ReqWndRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left))
-                ReqWndRect.Bottom = ReqWndRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top))
-                If (GetWindowLong(DTPI.hWndDropDown, GWL_STYLE) And WS_BORDER) = WS_BORDER Then
-                    ' The border is included above but must be added again. (Bug?)
-                    ' There is only a border when the date picker is not themed.
-                    ReqWndRect.Right = ReqWndRect.Right + 2
-                    ReqWndRect.Bottom = ReqWndRect.Bottom + 2
-                End If
-                SetWindowPos DTPI.hWndDropDown, NULL_PTR, 0, 0, (ReqWndRect.Right - ReqWndRect.Left), (ReqWndRect.Bottom - ReqWndRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+            DropDownHandle = DTPI.hWndDropDown
+        End If
+        If DropDownHandle <> NULL_PTR Then
+            Dim RC(0 To 1) As RECT
+            GetWindowRect DropDownHandle, RC(0)
+            GetWindowRect hWnd, RC(1)
+            ReqRect.Right = ReqRect.Right + ((RC(0).Right - RC(0).Left) - (RC(1).Right - RC(1).Left))
+            ReqRect.Bottom = ReqRect.Bottom + ((RC(0).Bottom - RC(0).Top) - (RC(1).Bottom - RC(1).Top))
+            If (GetWindowLong(DropDownHandle, GWL_STYLE) And WS_BORDER) = WS_BORDER Then
+                ' The border is included above but must be added again. (Bug?)
+                ' There is only a border when the date picker is not themed.
+                ReqRect.Right = ReqRect.Right + 2
+                ReqRect.Bottom = ReqRect.Bottom + 2
             End If
+            SetWindowPos DropDownHandle, NULL_PTR, 0, 0, (ReqRect.Right - ReqRect.Left), (ReqRect.Bottom - ReqRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
+        Else
+            SetWindowPos hWnd, NULL_PTR, 0, 0, (ReqRect.Right - ReqRect.Left), (ReqRect.Bottom - ReqRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
         End If
 End Select
 End Function
@@ -2595,17 +2603,7 @@ Select Case wMsg
                                     Else
                                         If (dwStyle And MCS_WEEKNUMBERS) = MCS_WEEKNUMBERS Then dwStyle = dwStyle And Not MCS_WEEKNUMBERS
                                     End If
-                                    If dwStyle <> dwStyleOld Then
-                                        SetWindowLong CalendarHandle, GWL_STYLE, dwStyle
-                                        Dim ReqRect As RECT
-                                        SendMessage CalendarHandle, MCM_GETMINREQRECT, 0, ByVal VarPtr(ReqRect)
-                                        If Not (dwStyle And MCS_NOTODAY) = MCS_NOTODAY Then
-                                            Dim TodayWidth As Long
-                                            TodayWidth = CLng(SendMessage(CalendarHandle, MCM_GETMAXTODAYWIDTH, 0, ByVal 0&))
-                                            If TodayWidth > (ReqRect.Right - ReqRect.Left) Then ReqRect.Right = ReqRect.Left + TodayWidth
-                                        End If
-                                        SetWindowPos CalendarHandle, NULL_PTR, 0, 0, (ReqRect.Right - ReqRect.Left), (ReqRect.Bottom - ReqRect.Top), SWP_NOMOVE Or SWP_NOOWNERZORDER Or SWP_NOZORDER
-                                    End If
+                                    If dwStyle <> dwStyleOld Then SetWindowLong CalendarHandle, GWL_STYLE, dwStyle
                                 End If
                                 Me.StartOfWeek = PropStartOfWeek
                             End If
