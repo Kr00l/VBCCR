@@ -519,6 +519,8 @@ With ComboStyle
 .ItemData(.NewIndex) = SbrPanelStyleKanji
 .AddItem SbrPanelStyleHanja & " - Hanja"
 .ItemData(.NewIndex) = SbrPanelStyleHanja
+.AddItem SbrPanelStyleDateTime & " - DateTime"
+.ItemData(.NewIndex) = SbrPanelStyleDateTime
 End With
 With ComboBevel
 .AddItem SbrPanelBevelFlat & " - Flat"
@@ -553,6 +555,10 @@ With ComboDTFormat
 .ItemData(.NewIndex) = SbrPanelDTFormatLong
 .AddItem SbrPanelDTFormatMedium & " - Medium"
 .ItemData(.NewIndex) = SbrPanelDTFormatMedium
+.AddItem SbrPanelDTFormatGeneral & " - General"
+.ItemData(.NewIndex) = SbrPanelDTFormatGeneral
+.AddItem SbrPanelDTFormatCustom & " - Custom"
+.ItemData(.NewIndex) = SbrPanelDTFormatCustom
 End With
 ReDim PropShadowPanels(0) As ShadowPanelStruct
 End Sub
