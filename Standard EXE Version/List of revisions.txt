@@ -6,7 +6,7 @@ List of revisions:
   This allows to apply a different window theme and to not loose it.
 
 01-May-2026
-- The MonthView control will now resize upon WM_THEMECHANGED.
+- The MonthView control will now resize upon WM_THEMECHANGED/WM_STYLECHANGED.
 - The drop-down calendar in the DTPicker control will now resize upon WM_THEMECHANGED/WM_STYLECHANGED.
 - Included the hWndUpDown read-only run-time property in the DTPicker control.
 
