@@ -260,6 +260,7 @@ Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const WM_THEMECHANGED As Long = &H31A
+Private Const WM_STYLECHANGED As Long = &H7D
 Private Const MCS_DAYSTATE As Long = &H1
 Private Const MCS_MULTISELECT As Long = &H2
 Private Const MCS_WEEKNUMBERS As Long = &H4
@@ -1375,8 +1376,11 @@ If MonthViewHandle <> NULL_PTR Then
         If (dwStyle And MCS_NOTODAY) = MCS_NOTODAY Then dwStyle = dwStyle And Not MCS_NOTODAY
     End If
     SetWindowLong MonthViewHandle, GWL_STYLE, dwStyle
-    Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
-    Call UserControl_Resize
+    If MonthViewDesignMode = True Then
+        ' The month view control will react upon WM_STYLECHANGED at run-time.
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
+    End If
 End If
 UserControl.PropertyChanged "ShowToday"
 End Property
@@ -1397,8 +1401,11 @@ If MonthViewHandle <> NULL_PTR Then
         If (dwStyle And MCS_NOTODAYCIRCLE) = MCS_NOTODAYCIRCLE Then dwStyle = dwStyle And Not MCS_NOTODAYCIRCLE
     End If
     SetWindowLong MonthViewHandle, GWL_STYLE, dwStyle
-    Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
-    Call UserControl_Resize
+    If MonthViewDesignMode = True Then
+        ' The month view control will react upon WM_STYLECHANGED at run-time.
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
+    End If
 End If
 UserControl.PropertyChanged "ShowTodayCircle"
 End Property
@@ -1419,8 +1426,11 @@ If MonthViewHandle <> NULL_PTR Then
         If (dwStyle And MCS_WEEKNUMBERS) = MCS_WEEKNUMBERS Then dwStyle = dwStyle And Not MCS_WEEKNUMBERS
     End If
     SetWindowLong MonthViewHandle, GWL_STYLE, dwStyle
-    Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
-    Call UserControl_Resize
+    If MonthViewDesignMode = True Then
+        ' The month view control will react upon WM_STYLECHANGED at run-time.
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
+    End If
 End If
 UserControl.PropertyChanged "ShowWeekNumbers"
 End Property
@@ -1441,8 +1451,11 @@ If MonthViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
         If Not (dwStyle And MCS_NOTRAILINGDATES) = MCS_NOTRAILINGDATES Then dwStyle = dwStyle Or MCS_NOTRAILINGDATES
     End If
     SetWindowLong MonthViewHandle, GWL_STYLE, dwStyle
-    Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
-    Call UserControl_Resize
+    If MonthViewDesignMode = True Then
+        ' The month view control will react upon WM_STYLECHANGED at run-time.
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
+    End If
 End If
 UserControl.PropertyChanged "ShowTrailingDates"
 End Property
@@ -1652,8 +1665,11 @@ If MonthViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
         If (dwStyle And MCS_SHORTDAYSOFWEEK) = MCS_SHORTDAYSOFWEEK Then dwStyle = dwStyle And Not MCS_SHORTDAYSOFWEEK
     End If
     SetWindowLong MonthViewHandle, GWL_STYLE, dwStyle
-    Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
-    Call UserControl_Resize
+    If MonthViewDesignMode = True Then
+        ' The month view control will react upon WM_STYLECHANGED at run-time.
+        Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
+        Call UserControl_Resize
+    End If
 End If
 UserControl.PropertyChanged "UseShortestDayNames"
 End Property
@@ -2320,7 +2336,7 @@ Select Case wMsg
             MonthViewMouseOver = False
             RaiseEvent MouseLeave
         End If
-    Case WM_THEMECHANGED
+    Case WM_THEMECHANGED, WM_STYLECHANGED
         Call ComputeInternalControlSize(PropMonthColumns, PropMonthRows, MonthViewReqWidth, MonthViewReqHeight)
         Call UserControl_Resize
 End Select
