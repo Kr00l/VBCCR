@@ -1,5 +1,10 @@
 List of revisions:
 
+04-May-2026
+- Included enum value 'SbrPanelStyleDateTime' for the Style property of a Panel in the StatusBar control.
+- Included enum value 'SbrPanelDTFormatGeneral' and 'SbrPanelDTFormatCustom' for the DTFormat property of a Panel in the StatusBar control.
+  For 'SbrPanelDTFormatCustom' the Text property of a Panel is used for the custom format. (Format$() function)
+
 02-May-2026
 - Improvement in the StatusBar control when the Form is maximized.
   The UserControl will get the WS_MAXIMIZE style instead of re-creating the StatusBar control.
