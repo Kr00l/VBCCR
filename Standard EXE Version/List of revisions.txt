@@ -1,5 +1,8 @@
 List of revisions:
 
+05-May-2026
+- Text property improved in the HotKey control to return localized 'None' string instead of an empty string. (LoadString on comctl32.dll)
+
 04-May-2026
 - Included enum value 'SbrPanelStyleDateTime' for the Style property of a Panel in the StatusBar control.
 - Included enum value 'SbrPanelDTFormatGeneral' and 'SbrPanelDTFormatCustom' for the DTFormat property of a Panel in the StatusBar control.
