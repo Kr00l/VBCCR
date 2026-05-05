@@ -149,6 +149,9 @@ Private Declare PtrSafe Function GetClassLong Lib "user32" Alias "GetClassLongW"
 Private Declare PtrSafe Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As LongPtr
 Private Declare PtrSafe Function GetKeyNameText Lib "user32" Alias "GetKeyNameTextW" (ByVal lParam As Long, ByVal lpBuffer As LongPtr, ByVal nSize As Long) As Long
 Private Declare PtrSafe Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualKeyExW" (ByVal wCode As Long, ByVal wMapType As Long, ByVal hKL As LongPtr) As Long
+Private Declare PtrSafe Function LoadLibraryEx Lib "kernel32" Alias "LoadLibraryExW" (ByVal lpLibFileName As LongPtr, ByVal hFile As LongPtr, ByVal dwFlags As Long) As LongPtr
+Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
+Private Declare PtrSafe Function LoadString Lib "user32" Alias "LoadStringW" (ByVal hInstance As LongPtr, ByVal uId As Long, ByVal lpBuffer As LongPtr, ByVal cchBufferMax As Long) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -179,6 +182,9 @@ Private Declare Function GetClassLong Lib "user32" Alias "GetClassLongW" (ByVal 
 Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
 Private Declare Function GetKeyNameText Lib "user32" Alias "GetKeyNameTextW" (ByVal lParam As Long, ByVal lpBuffer As Long, ByVal nSize As Long) As Long
 Private Declare Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualKeyExW" (ByVal wCode As Long, ByVal wMapType As Long, ByVal hKL As Long) As Long
+Private Declare Function LoadLibraryEx Lib "kernel32" Alias "LoadLibraryExW" (ByVal lpLibFileName As Long, ByVal hFile As Long, ByVal dwFlags As Long) As Long
+Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
+Private Declare Function LoadString Lib "user32" Alias "LoadStringW" (ByVal hInstance As Long, ByVal uId As Long, ByVal lpBuffer As Long, ByVal cchBufferMax As Long) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -229,6 +235,7 @@ Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef l
 #End If
 
 Private Const ICC_HOTKEY_CLASS As Long = &H40
+Private Const LOAD_LIBRARY_AS_DATAFILE As Long = &H2
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80, RDW_NOCHILDREN As Long = &H40, RDW_FRAME As Long = &H400
 Private Const SWP_FRAMECHANGED As Long = &H20
 Private Const SWP_DRAWFRAME As Long = SWP_FRAMECHANGED
@@ -295,6 +302,7 @@ Private HotKeyMouseOver As Boolean
 Private HotKeyDesignMode As Boolean
 Private HotKeyFocused As Boolean
 Private HotKeyEnabledVisualStyles As Boolean
+Private HotKeyStrSeparator As String, HotKeyStrNone As String
 Private HotKeyDblClickSupported As Boolean, HotKeyIsDblClick As Boolean
 Private HotKeyDblClickTime As Long, HotKeyDblClickTickCount As Double
 Private HotKeyDblClickCX As Long, HotKeyDblClickCY As Long
@@ -366,6 +374,22 @@ Call SetVTableHandling(Me, VTableInterfaceInPlaceActiveObject)
 
 #End If
 
+Dim hLib As LongPtr
+hLib = LoadLibraryEx(StrPtr("comctl32.dll.mui"), NULL_PTR, LOAD_LIBRARY_AS_DATAFILE)
+If hLib = NULL_PTR Then
+    ' Fallback for Windows 2000 and XP.
+    hLib = LoadLibraryEx(StrPtr("comctl32.dll"), NULL_PTR, LOAD_LIBRARY_AS_DATAFILE)
+End If
+If hLib <> NULL_PTR Then
+    Dim Buffer As String
+    Buffer = String$(100, vbNullChar)
+    If LoadString(hLib, 1025, StrPtr(Buffer), 100) > 0 Then HotKeyStrSeparator = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    Buffer = String$(100, vbNullChar)
+    If LoadString(hLib, 1026, StrPtr(Buffer), 100) > 0 Then HotKeyStrNone = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+    FreeLibrary hLib
+End If
+If HotKeyStrSeparator = vbNullString Then HotKeyStrSeparator = " + "
+If HotKeyStrNone = vbNullString Then HotKeyStrNone = "None"
 HotKeyDblClickTime = GetDoubleClickTime()
 Const SM_CXDOUBLECLK As Long = 36
 Const SM_CYDOUBLECLK As Long = 37
@@ -965,12 +989,18 @@ If HotKeyHandle <> NULL_PTR Then
     Dim StrModifiers As String
     If (Modifiers And vbCtrlMask) <> 0 Then StrModifiers = StrCtrl
     If (Modifiers And vbShiftMask) <> 0 Then
-        If Not StrModifiers = vbNullString Then StrModifiers = StrModifiers & " + " & StrShift Else StrModifiers = StrShift
+        If Not StrModifiers = vbNullString Then StrModifiers = StrModifiers & HotKeyStrSeparator & StrShift Else StrModifiers = StrShift
     End If
     If (Modifiers And vbAltMask) <> 0 Then
-        If Not StrModifiers = vbNullString Then StrModifiers = StrModifiers & " + " & StrAlt Else StrModifiers = StrAlt
+        If Not StrModifiers = vbNullString Then StrModifiers = StrModifiers & HotKeyStrSeparator & StrAlt Else StrModifiers = StrAlt
     End If
-    If Not StrModifiers = vbNullString Then Text = StrModifiers & " + " & StrKey Else Text = StrKey
+    If Not StrModifiers = vbNullString Then
+        Text = StrModifiers & HotKeyStrSeparator & StrKey
+    ElseIf Not StrKey = vbNullString Then
+        Text = StrKey
+    Else
+        Text = HotKeyStrNone
+    End If
 End If
 End Property
 
