@@ -1,5 +1,9 @@
 List of revisions:
 
+06-May-2026
+- Included the ForeColor and RightToLeft property in the HotKey control.
+- The HotKey control supports now the WM_PRINTCLIENT message.
+
 05-May-2026
 - Text property improved in the HotKey control to return localized 'None' string instead of an empty string. (LoadString on comctl32.dll)
 
