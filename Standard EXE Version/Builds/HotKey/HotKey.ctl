@@ -1309,7 +1309,8 @@ Select Case wMsg
         WindowProcControl = 0
         Exit Function
     Case WM_PRINTCLIENT
-        WindowProcControl = WindowProcControl(hWnd, WM_PAINT, wParam, ByVal 0&)
+        SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
+        WindowProcControl = 0
         Exit Function
     
     #If ImplementThemedBorder = True Then

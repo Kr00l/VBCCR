@@ -533,6 +533,7 @@ Private Const WM_MEASUREITEM As Long = &H2C
 Private Const WM_DRAWITEM As Long = &H2B, ODT_MENU As Long = &H1, ODS_DISABLED As Long = &H4
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const WM_UPDATEUISTATE As Long = &H128, UIS_SET As Long = 1, UISF_HIDEACCEL As Long = &H2
 Private Const WM_USER As Long = &H400
 Private Const UM_SETBUTTONCX As Long = (WM_USER + 1000)
@@ -1564,10 +1565,13 @@ If ToolBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
         RemoveVisualStyles ToolBarHandle
     End If
     Call SetVisualStylesToolTip
-    ' The font need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
-    If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
-    Call CheckButtonSize
-    Call UserControl_Resize
+    If ToolBarDesignMode = True Then
+        ' The tool bar control will react upon WM_THEMECHANGED at run-time.
+        ' The font need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
+        If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
+        Call CheckButtonSize
+        Call UserControl_Resize
+    End If
     Me.Refresh
 End If
 UserControl.PropertyChanged "VisualStyles"
@@ -4463,7 +4467,7 @@ Select Case wMsg
             SendMessage ToolBarHandle, TB_SETBUTTONINFO, wParam, ByVal VarPtr(TBBI)
         End If
     Case WM_UPDATEUISTATE
-        ' When a ToolBar is hosted in a MDIForm it *can* happen that an MDIChild sets UISF_HIDEACCEL to it's owner.
+        ' When a tool bar is hosted in a MDIForm it *can* happen that an MDIChild sets UISF_HIDEACCEL to it's owner.
         ' However, this ensures to circumvent such scenario.
         If LoWord(CLng(wParam)) = UIS_SET Then
             Dim IntValue As Integer
@@ -4577,6 +4581,11 @@ Select Case wMsg
             End If
             RaiseEvent MouseLeave
         End If
+    Case WM_THEMECHANGED
+        ' The font need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
+        If ToolBarFontHandle <> NULL_PTR Then SendMessage ToolBarHandle, WM_SETFONT, ToolBarFontHandle, ByVal 0&
+        Call CheckButtonSize
+        Call UserControl_Resize
 End Select
 End Function
 
