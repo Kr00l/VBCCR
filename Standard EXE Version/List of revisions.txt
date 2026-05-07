@@ -1,5 +1,8 @@
 List of revisions:
 
+07-May-2026
+- The ToolBar control will now react upon WM_THEMECHANGED.
+
 06-May-2026
 - Included the ForeColor and RightToLeft property in the HotKey control.
 - The HotKey control supports now the WM_PRINTCLIENT message.
