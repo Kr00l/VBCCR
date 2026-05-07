@@ -442,6 +442,7 @@ Private Const WM_SIZE As Long = &H5
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_DESTROY As Long = &H2
 Private Const WM_NCDESTROY As Long = &H82
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINT As Long = &H317, PRF_CLIENT As Long = &H4, PRF_ERASEBKGND As Long = &H8
@@ -1285,10 +1286,14 @@ If CoolBarHandle <> NULL_PTR And EnabledVisualStyles() = True Then
         RemoveVisualStyles CoolBarHandle
     End If
     Call SetVisualStylesToolTip
-    If PropBorderStyle <> vbBSNone Then
-        Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleSingle)
-    Else
-        Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleNone)
+    If CoolBarDesignMode = True Then
+        ' The cool bar control will react upon WM_THEMECHANGED at run-time.
+        ' The border need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
+        If PropBorderStyle <> vbBSNone Then
+            Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleSingle)
+        Else
+            Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleNone)
+        End If
     End If
     Me.Refresh
 End If
@@ -3354,6 +3359,13 @@ Select Case wMsg
                 If RBBI4.lParam <> 0 Then RaiseEvent BandMouseLeave(PtrToObj(RBBI4.lParam))
             End If
             RaiseEvent MouseLeave
+        End If
+    Case WM_THEMECHANGED
+        ' The border need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
+        If PropBorderStyle <> vbBSNone Then
+            Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleSingle)
+        Else
+            Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleNone)
         End If
 End Select
 End Function
