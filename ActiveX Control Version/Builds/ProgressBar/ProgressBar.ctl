@@ -870,6 +870,10 @@ If ProgressBarHandle <> NULL_PTR Then
         If (dwStyle And WS_BORDER) = WS_BORDER Then dwStyle = dwStyle And Not WS_BORDER
     End If
     SetWindowLong ProgressBarHandle, GWL_STYLE, dwStyle
+    If PropScrolling <> PrbScrollingMarquee And ComCtlsSupportLevel() >= 1 Then
+        ' The progress bar resets the position to minimum value when it receives WM_STYLECHANGED.
+        SendMessage ProgressBarHandle, PBM_SETPOS, PropValue, ByVal 0&
+    End If
     Call ComCtlsFrameChanged(ProgressBarHandle)
 End If
 UserControl.PropertyChanged "BorderStyle"
