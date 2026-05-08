@@ -556,10 +556,10 @@ On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
-PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 Me.BackColor = .ReadProperty("BackColor", vbWindowBackground)
 Me.ForeColor = .ReadProperty("ForeColor", vbWindowText)
 Me.Enabled = .ReadProperty("Enabled", True)
+PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
