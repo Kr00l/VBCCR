@@ -2766,7 +2766,14 @@ Me.BackColor = PropBackColor
 Me.ForeColor = PropForeColor
 Me.ShowTips = PropShowTips
 If CoolBarHandle <> NULL_PTR Then
-    If ComCtlsSupportLevel() = 0 Then
+    If ComCtlsSupportLevel() >= 1 Then
+        ' The border need to be set again if the comctl32.dll version is 6.0 or higher. (Bug?)
+        If PropBorderStyle <> vbBSNone Then
+            Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleSingle)
+        Else
+            Call ComCtlsChangeBorderStyle(CoolBarHandle, CCBorderStyleNone)
+        End If
+    Else
         ' The '&' won't underline the character, instead it is displayed as a normal character.
         ' This behavior is necessary for backward compatibility with earlier versions of the common controls.
         ' If you want the character to be underlined, it is necessary to send a CCM_SETVERSION message
