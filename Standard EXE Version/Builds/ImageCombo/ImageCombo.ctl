@@ -1527,11 +1527,16 @@ End Property
 Public Property Let ShowImages(ByVal Value As Boolean)
 PropShowImages = Value
 If ImageComboHandle <> NULL_PTR Then
+    Dim dwExStyle As Long
+    dwExStyle = CLng(SendMessage(ImageComboHandle, CBEM_GETEXTENDEDSTYLE, 0, ByVal 0&))
     If PropShowImages = True Then
-        SendMessage ImageComboHandle, CBEM_SETEXTENDEDSTYLE, CBES_EX_NOEDITIMAGE And CBES_EX_NOEDITIMAGEINDENT, ByVal 0&
+        If (dwExStyle And CBES_EX_NOEDITIMAGE) = CBES_EX_NOEDITIMAGE Then dwExStyle = dwExStyle And Not CBES_EX_NOEDITIMAGE
+        If (dwExStyle And CBES_EX_NOEDITIMAGEINDENT) = CBES_EX_NOEDITIMAGEINDENT Then dwExStyle = dwExStyle And Not CBES_EX_NOEDITIMAGEINDENT
     Else
-        SendMessage ImageComboHandle, CBEM_SETEXTENDEDSTYLE, CBES_EX_NOEDITIMAGEINDENT, ByVal CBES_EX_NOEDITIMAGEINDENT
+        If Not (dwExStyle And CBES_EX_NOEDITIMAGE) = CBES_EX_NOEDITIMAGE Then dwExStyle = dwExStyle Or CBES_EX_NOEDITIMAGE
+        If Not (dwExStyle And CBES_EX_NOEDITIMAGEINDENT) = CBES_EX_NOEDITIMAGEINDENT Then dwExStyle = dwExStyle Or CBES_EX_NOEDITIMAGEINDENT
     End If
+    SendMessage ImageComboHandle, CBEM_SETEXTENDEDSTYLE, dwExStyle, ByVal 0&
     SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
 End If
 UserControl.PropertyChanged "ShowImages"
@@ -1587,12 +1592,15 @@ Select Case Value
         Err.Raise 380
 End Select
 If ImageComboHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
+    Dim dwExStyle As Long
+    dwExStyle = CLng(SendMessage(ImageComboHandle, CBEM_GETEXTENDEDSTYLE, 0, ByVal 0&))
     Select Case PropEllipsisFormat
         Case ImcEllipsisFormatNone
-            SendMessage ImageComboHandle, CBEM_SETEXTENDEDSTYLE, CBES_EX_TEXTENDELLIPSIS, ByVal 0&
+            If (dwExStyle And CBES_EX_TEXTENDELLIPSIS) = CBES_EX_TEXTENDELLIPSIS Then dwExStyle = dwExStyle And Not CBES_EX_TEXTENDELLIPSIS
         Case ImcEllipsisFormatEnd
-            SendMessage ImageComboHandle, CBEM_SETEXTENDEDSTYLE, CBES_EX_TEXTENDELLIPSIS, ByVal CBES_EX_TEXTENDELLIPSIS
+            If Not (dwExStyle And CBES_EX_TEXTENDELLIPSIS) = CBES_EX_TEXTENDELLIPSIS Then dwExStyle = dwExStyle Or CBES_EX_TEXTENDELLIPSIS
     End Select
+    SendMessage ImageComboHandle, CBEM_SETEXTENDEDSTYLE, dwExStyle, ByVal 0&
     Me.Refresh
 End If
 UserControl.PropertyChanged "EllipsisFormat"
