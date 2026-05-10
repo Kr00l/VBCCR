@@ -428,6 +428,7 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private ImageComboHandle As LongPtr
 Private ImageComboComboHandle As LongPtr, ImageComboEditHandle As LongPtr, ImageComboListHandle As LongPtr
 Private ImageComboFontHandle As LongPtr
+Private ImageComboBackColor As Long, ImageComboForeColor As Long
 Private ImageComboBackColorBrush As LongPtr
 Private ImageComboIMCHandle As LongPtr
 Private ImageComboCharCodeCache As Long
@@ -1062,9 +1063,9 @@ End Property
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
 UserControl.BackColor = Value
 If ImageComboHandle <> NULL_PTR Then
+    ImageComboBackColor = WinColor(Me.BackColor)
     If ImageComboBackColorBrush <> NULL_PTR Then DeleteObject ImageComboBackColorBrush
-    ImageComboBackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
-    Call ComCtlsImcGetSysColorBackColor(WinColor(Me.BackColor))
+    ImageComboBackColorBrush = CreateSolidBrush(ImageComboBackColor)
     SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
 End If
 Me.Refresh
@@ -1079,7 +1080,7 @@ End Property
 
 Public Property Let ForeColor(ByVal Value As OLE_COLOR)
 UserControl.ForeColor = Value
-If ImageComboHandle <> NULL_PTR Then Call ComCtlsImcGetSysColorForeColor(WinColor(Me.ForeColor))
+If ImageComboHandle <> NULL_PTR Then ImageComboForeColor = WinColor(Me.ForeColor)
 Me.Refresh
 UserControl.PropertyChanged "ForeColor"
 End Property
@@ -1860,9 +1861,9 @@ Me.MaxDropDownItems = PropMaxDropDownItems
 If PropShowImages = False Then Me.ShowImages = PropShowImages
 If PropEllipsisFormat <> ImcEllipsisFormatNone Then Me.EllipsisFormat = PropEllipsisFormat
 If ImageComboHandle <> NULL_PTR Then
-    If ImageComboBackColorBrush = NULL_PTR Then ImageComboBackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
-    Call ComCtlsImcGetSysColorBackColor(WinColor(Me.BackColor))
-    Call ComCtlsImcGetSysColorForeColor(WinColor(Me.ForeColor))
+    ImageComboBackColor = WinColor(Me.BackColor)
+    ImageComboForeColor = WinColor(Me.ForeColor)
+    If ImageComboBackColorBrush = NULL_PTR Then ImageComboBackColorBrush = CreateSolidBrush(ImageComboBackColor)
 End If
 If ImageComboDesignMode = False Then
     If ImageComboHandle <> NULL_PTR Then
@@ -2283,9 +2284,9 @@ Select Case wMsg
                     If ImageComboBackColorBrush <> NULL_PTR Then FillRect DIS.hDC, DIS.RCItem, ImageComboBackColorBrush
                 End If
             End If
-            Call ComCtlsImcGetSysColorHook(True)
+            Call ComCtlsImcGetSysColorSetHook(ImageComboBackColor, ImageComboForeColor)
             WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-            Call ComCtlsImcGetSysColorHook(False)
+            Call ComCtlsImcGetSysColorRemoveHook
             Exit Function
         End If
     Case WM_CTLCOLOREDIT, WM_CTLCOLORSTATIC
