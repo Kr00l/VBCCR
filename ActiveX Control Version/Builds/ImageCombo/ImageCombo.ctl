@@ -304,6 +304,7 @@ Private Const SIF_POS As Long = &H4
 Private Const SIF_TRACKPOS As Long = &H10
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -993,8 +994,11 @@ If ImageComboHandle <> NULL_PTR And EnabledVisualStyles() = True Then
     Else
         RemoveVisualStyles ImageComboComboHandle
     End If
+    If ImageComboDesignMode = True Then
+        ' The image combo control will react upon WM_THEMECHANGED at run-time.
+        SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
+    End If
     Me.Refresh
-    SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
 End If
 UserControl.PropertyChanged "VisualStyles"
 End Property
@@ -2401,6 +2405,8 @@ Select Case wMsg
         End If
     Case CB_SETTOPINDEX
         Call CheckTopIndex
+    Case WM_THEMECHANGED
+        SetWindowPos hWnd, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
 End Select
 End Function
 
