@@ -1117,7 +1117,7 @@ End If
 If ImageComboHandle <> NULL_PTR Then Call ComCtlsSetRightToLeft(ImageComboHandle, dwMask)
 If ImageComboComboHandle <> NULL_PTR Then Call ComCtlsSetRightToLeft(ImageComboComboHandle, dwMask)
 If ImageComboEditHandle <> NULL_PTR Then Call ComCtlsSetRightToLeft(ImageComboEditHandle, dwMask)
-If (PropRightToLeft = False Or PropRightToLeftLayout = False) And ImageComboEditHandle <> NULL_PTR <> 0 Then
+If (PropRightToLeft = False Or PropRightToLeftLayout = False) And ImageComboEditHandle <> NULL_PTR Then
     Const ES_RIGHT As Long = &H2
     Dim dwStyle As Long
     dwStyle = GetWindowLong(ImageComboEditHandle, GWL_STYLE)
@@ -1742,6 +1742,7 @@ If ImageComboHandle <> NULL_PTR Then
         Dim CBI As COMBOBOXINFO
         CBI.cbSize = LenB(CBI)
         GetComboBoxInfo ImageComboComboHandle, CBI
+        ImageComboListHandle = CBI.hWndList
     End If
     If PropStyle = ImcStyleDropDownCombo Then
         ImageComboEditHandle = SendMessage(ImageComboHandle, CBEM_GETEDITCONTROL, 0, ByVal 0&)
@@ -1749,7 +1750,6 @@ If ImageComboHandle <> NULL_PTR Then
     ElseIf PropStyle = ImcStyleSimpleCombo Then
         ImageComboEditHandle = FindWindowEx(ImageComboComboHandle, NULL_PTR, StrPtr("Edit"), NULL_PTR)
     End If
-    ImageComboListHandle = CBI.hWndList
     SendMessage ImageComboHandle, CB_LIMITTEXT, IIf(PropMaxLength = 0, CBEMAXSTRLEN - 1, PropMaxLength), ByVal 0&
     If PropStyle = ImcStyleDropDownCombo Then
         Dim CBEI As COMBOBOXEXITEM
