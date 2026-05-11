@@ -216,7 +216,10 @@ Private Declare PtrSafe Function GetUserDefaultUILanguage Lib "kernel32" () As I
 Private Declare PtrSafe Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal LCID As Long, ByVal LCType As Long, ByVal lpLCData As LongPtr, ByVal cchData As Long) As Long
 Private Declare PtrSafe Function IsDialogMessage Lib "user32" Alias "IsDialogMessageW" (ByVal hDlg As LongPtr, ByRef lpMsg As TMSG) As Long
 Private Declare PtrSafe Function DllGetVersion Lib "comctl32" (ByRef pdvi As DLLVERSIONINFO) As Long
+Private Declare PtrSafe Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleW" (ByVal lpModuleName As LongPtr) As LongPtr
+Private Declare PtrSafe Function VirtualProtect Lib "kernel32" (ByVal lpAddress As LongPtr, ByVal dwSize As LongPtr, ByVal flNewProtect As Long, ByRef lpflOldProtect As Long) As Long
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
+Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -271,7 +274,10 @@ Private Declare Function GetUserDefaultUILanguage Lib "kernel32" () As Integer
 Private Declare Function GetLocaleInfo Lib "kernel32" Alias "GetLocaleInfoW" (ByVal LCID As Long, ByVal LCType As Long, ByVal lpLCData As Long, ByVal cchData As Long) As Long
 Private Declare Function IsDialogMessage Lib "user32" Alias "IsDialogMessageW" (ByVal hDlg As Long, ByRef lpMsg As TMSG) As Long
 Private Declare Function DllGetVersion Lib "comctl32" (ByRef pdvi As DLLVERSIONINFO) As Long
+Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleW" (ByVal lpModuleName As Long) As Long
+Private Declare Function VirtualProtect Lib "kernel32" (ByVal lpAddress As Long, ByVal dwSize As Long, ByVal flNewProtect As Long, ByRef lpflOldProtect As Long) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As Any) As Long
+Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As Long) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -297,16 +303,23 @@ Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_UAHDESTROYWINDOW As Long = &H90
 Private Const WM_INITDIALOG As Long = &H110
 Private Const WM_USER As Long = &H400
+Private Const PAGE_EXECUTE_READWRITE As Long = &H40
 Private Const E_NOINTERFACE As Long = &H80004002
 Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
+#If Win64 Then
+Private Const API_HOOK_SIZE As Long = 12
+#Else
+Private Const API_HOOK_SIZE As Long = 6
+#End If
 Private ShellModHandle As LongPtr, ShellModCount As Long
 Private ComCtlsSubclassProcPtr As LongPtr
 #If (VBA7 = 0) Then
 Private ComCtlsSubclassW2K As Integer
 #End If
 Private MCIWndRefCount As Long
+Private ImcGetSysColorPtr As LongPtr, ImcGetSysColorRGBBackColor As Long, ImcGetSysColorRGBForeColor As Long, ImcGetSysColorHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcGetSysColorOrig(0 To (API_HOOK_SIZE - 1)) As Byte
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
@@ -908,6 +921,58 @@ Public Sub ComCtlsMCIWndReleaseClass()
 MCIWndRefCount = MCIWndRefCount - 1
 If MCIWndRefCount = 0 Then UnregisterClass StrPtr("MCIWndClass"), App.hInstance
 End Sub
+
+Public Sub ComCtlsImcGetSysColorSetHook(ByVal RGBBackColor As Long, ByVal RGBForeColor As Long)
+Dim OldProtect As Long
+If ImcGetSysColorPtr = NULL_PTR Then
+    ImcGetSysColorPtr = GetProcAddress(GetModuleHandle(StrPtr("user32.dll")), "GetSysColor")
+    If ImcGetSysColorPtr <> NULL_PTR Then
+        VirtualProtect ImcGetSysColorPtr, API_HOOK_SIZE, PAGE_EXECUTE_READWRITE, OldProtect
+        CopyMemory ByVal VarPtr(ImcGetSysColorOrig(0)), ByVal ImcGetSysColorPtr, API_HOOK_SIZE
+        #If Win64 Then
+        ImcGetSysColorHook(0) = &H48
+        ImcGetSysColorHook(1) = &HB8
+        CopyMemory ByVal VarPtr(ImcGetSysColorHook(2)), ProcPtr(AddressOf ComCtlsImcGetSysColorProc), PTR_SIZE
+        ImcGetSysColorHook(10) = &HFF
+        ImcGetSysColorHook(11) = &HE0
+        #Else
+        ImcGetSysColorHook(0) = &H68
+        CopyMemory ByVal VarPtr(ImcGetSysColorHook(1)), ProcPtr(AddressOf ComCtlsImcGetSysColorProc), PTR_SIZE
+        ImcGetSysColorHook(5) = &HC3
+        #End If
+        VirtualProtect ImcGetSysColorPtr, API_HOOK_SIZE, OldProtect, OldProtect
+    End If
+End If
+If ImcGetSysColorPtr <> NULL_PTR Then
+    ImcGetSysColorRGBBackColor = RGBBackColor
+    ImcGetSysColorRGBForeColor = RGBForeColor
+    VirtualProtect ImcGetSysColorPtr, API_HOOK_SIZE, PAGE_EXECUTE_READWRITE, OldProtect
+    CopyMemory ByVal ImcGetSysColorPtr, ByVal VarPtr(ImcGetSysColorHook(0)), API_HOOK_SIZE
+    VirtualProtect ImcGetSysColorPtr, API_HOOK_SIZE, OldProtect, OldProtect
+End If
+End Sub
+
+Public Sub ComCtlsImcGetSysColorRemoveHook()
+If ImcGetSysColorPtr <> NULL_PTR Then
+    Dim OldProtect As Long
+    VirtualProtect ImcGetSysColorPtr, API_HOOK_SIZE, PAGE_EXECUTE_READWRITE, OldProtect
+    CopyMemory ByVal ImcGetSysColorPtr, ByVal VarPtr(ImcGetSysColorOrig(0)), API_HOOK_SIZE
+    VirtualProtect ImcGetSysColorPtr, API_HOOK_SIZE, OldProtect, OldProtect
+End If
+End Sub
+
+Private Function ComCtlsImcGetSysColorProc(ByVal nIndex As Long) As Long
+Const COLOR_WINDOW As Long = 5, COLOR_WINDOWTEXT As Long = 8
+If nIndex = COLOR_WINDOW Then
+    ComCtlsImcGetSysColorProc = ImcGetSysColorRGBBackColor
+ElseIf nIndex = COLOR_WINDOWTEXT Then
+    ComCtlsImcGetSysColorProc = ImcGetSysColorRGBForeColor
+Else
+    Call ComCtlsImcGetSysColorRemoveHook
+    ComCtlsImcGetSysColorProc = GetSysColor(nIndex)
+    Call ComCtlsImcGetSysColorSetHook(ImcGetSysColorRGBBackColor, ImcGetSysColorRGBForeColor)
+End If
+End Function
 
 #If VBA7 Then
 Public Function ComCtlsCbrPlaceholderWindowProc(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
