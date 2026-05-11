@@ -2520,15 +2520,11 @@ WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
-If wMsg = WM_DRAWITEM Then
-    Dim DIS As DRAWITEMSTRUCT
-    CopyMemory DIS, ByVal lParam, LenB(DIS)
-    If DIS.hWndItem = StatusBarHandle And DIS.ItemID > -1 And DIS.ItemID < SB_SIMPLEID Then
-        Call DrawPanel(DIS.ItemID + 1, DIS.hDC, DIS.RCItem)
-        WindowProcUserControlDesignMode = 1
+Select Case wMsg
+    Case WM_DRAWITEM
+        WindowProcUserControlDesignMode = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
         Exit Function
-    End If
-End If
+End Select
 WindowProcUserControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_DESTROY, WM_NCDESTROY
