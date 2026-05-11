@@ -834,11 +834,13 @@ PropVisualStyles = Value
 IPAddressEnabledVisualStyles = EnabledVisualStyles()
 If IPAddressEnabledVisualStyles = True Then
     If PropVisualStyles = True Then
+        ActivateVisualStyles UserControl.hWnd
         If IPAddressEditHandle(1) <> NULL_PTR Then ActivateVisualStyles IPAddressEditHandle(1)
         If IPAddressEditHandle(2) <> NULL_PTR Then ActivateVisualStyles IPAddressEditHandle(2)
         If IPAddressEditHandle(3) <> NULL_PTR Then ActivateVisualStyles IPAddressEditHandle(3)
         If IPAddressEditHandle(4) <> NULL_PTR Then ActivateVisualStyles IPAddressEditHandle(4)
     Else
+        RemoveVisualStyles UserControl.hWnd
         If IPAddressEditHandle(1) <> NULL_PTR Then RemoveVisualStyles IPAddressEditHandle(1)
         If IPAddressEditHandle(2) <> NULL_PTR Then RemoveVisualStyles IPAddressEditHandle(2)
         If IPAddressEditHandle(3) <> NULL_PTR Then RemoveVisualStyles IPAddressEditHandle(3)
