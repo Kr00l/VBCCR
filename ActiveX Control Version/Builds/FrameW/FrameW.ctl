@@ -188,6 +188,7 @@ Private Const WM_PAINT As Long = &HF
 Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_MOUSELEAVE As Long = &H2A3
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_THEMECHANGED As Long = &H31A
 Private Const DT_LEFT As Long = &H0
 Private Const DT_CENTER As Long = &H1
 Private Const DT_RIGHT As Long = &H2
@@ -274,7 +275,7 @@ On Error Resume Next
 FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set Me.Font = Ambient.Font
-PropVisualStyles = True
+Me.VisualStyles = True
 Me.Enabled = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0
@@ -299,7 +300,7 @@ FrameDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set Me.Font = .ReadProperty("Font", Nothing)
-PropVisualStyles = .ReadProperty("VisualStyles", True)
+Me.VisualStyles = .ReadProperty("VisualStyles", True)
 Me.Appearance = .ReadProperty("Appearance", CCAppearance3D)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.ForeColor = .ReadProperty("ForeColor", vbButtonText)
@@ -598,7 +599,14 @@ End Property
 
 Public Property Let VisualStyles(ByVal Value As Boolean)
 PropVisualStyles = Value
-Call DrawFrame
+If EnabledVisualStyles() = True Then
+    If PropVisualStyles = True Then
+        ActivateVisualStyles UserControl.hWnd
+    Else
+        RemoveVisualStyles UserControl.hWnd
+    End If
+    Call DrawFrame
+End If
 UserControl.PropertyChanged "VisualStyles"
 End Property
 
@@ -1247,10 +1255,13 @@ Select Case wMsg
         Exit Function
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-If wMsg = WM_MOUSELEAVE Then
-    If FrameMouseOver = True Then
-        FrameMouseOver = False
-        RaiseEvent MouseLeave
-    End If
-End If
+Select Case wMsg
+    Case WM_MOUSELEAVE
+        If FrameMouseOver = True Then
+            FrameMouseOver = False
+            RaiseEvent MouseLeave
+        End If
+    Case WM_THEMECHANGED
+        Call DrawFrame
+End Select
 End Function
