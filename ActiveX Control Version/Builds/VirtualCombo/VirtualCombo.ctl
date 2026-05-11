@@ -2629,7 +2629,7 @@ Select Case wMsg
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = VirtualComboHandle And DIS.ItemID > -1 Then
+        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = VirtualComboHandle Then
             If PropDrawMode = VcbDrawModeNormal Then
                 Dim Brush As LongPtr
                 If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
@@ -2641,32 +2641,34 @@ Select Case wMsg
                 End If
                 FillRect DIS.hDC, DIS.RCItem, Brush
                 DeleteObject Brush
+                If DIS.ItemID > -1 Then
                 Dim Text As String
-                If VirtualComboDesignMode = False Then
-                    RaiseEvent GetVirtualItem(DIS.ItemID, Text)
-                Else
-                    Text = Ambient.DisplayName
+                    If VirtualComboDesignMode = False Then
+                        RaiseEvent GetVirtualItem(DIS.ItemID, Text)
+                    Else
+                        Text = Ambient.DisplayName
+                    End If
+                    Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
+                    If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
+                    OldBkMode = SetBkMode(DIS.hDC, 1)
+                    If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
+                    ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
+                    ElseIf PropUseListForeColor = False Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
+                    Else
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(PropListForeColor))
+                    End If
+                    If PropRightToLeft = False Then
+                        TextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                    Else
+                        TextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                    End If
+                    SetBkMode DIS.hDC, OldBkMode
+                    SetTextColor DIS.hDC, OldTextColor
+                    If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                 End If
-                Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
-                If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
-                OldBkMode = SetBkMode(DIS.hDC, 1)
-                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
-                ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
-                ElseIf PropUseListForeColor = False Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
-                Else
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(PropListForeColor))
-                End If
-                If PropRightToLeft = False Then
-                    TextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
-                Else
-                    TextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
-                End If
-                SetBkMode DIS.hDC, OldBkMode
-                SetTextColor DIS.hDC, OldTextColor
-                If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                 If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then DrawFocusRect DIS.hDC, DIS.RCItem
             Else
                 With DIS

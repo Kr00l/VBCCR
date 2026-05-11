@@ -2756,7 +2756,7 @@ Select Case wMsg
         If PropDrawMode <> CboDrawModeNormal Then
             Dim DIS As DRAWITEMSTRUCT
             CopyMemory DIS, ByVal lParam, LenB(DIS)
-            If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = ComboBoxHandle And DIS.ItemID > -1 Then
+            If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = ComboBoxHandle Then
                 With DIS
                 #If Win64 Then
                 Dim hDC32 As Long

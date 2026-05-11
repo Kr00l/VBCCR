@@ -3033,7 +3033,7 @@ Select Case wMsg
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = FontComboHandle And DIS.ItemID > -1 Then
+        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = FontComboHandle Then
             Dim Brush As LongPtr
             If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
                 Brush = CreateSolidBrush(WinColor(vbHighlight))
@@ -3054,57 +3054,59 @@ Select Case wMsg
                 End If
             End If
             DeleteObject Brush
-            Dim Length As Long
-            Length = CLng(SendMessage(FontComboHandle, CB_GETLBTEXTLEN, DIS.ItemID, ByVal 0&))
-            If Not Length = CB_ERR Then
-                Dim Text As String, LF As LOGFONT, FontName As String
-                Text = String$(Length, vbNullChar)
-                SendMessage FontComboHandle, CB_GETLBTEXT, DIS.ItemID, ByVal StrPtr(Text)
-                FontName = Left$(Text, LF_FACESIZE)
-                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = NULL_PTR Then
-                    With LF
-                    CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
-                    .LFHeight = .LFHeight - FontComboLFHeightSpacing
-                    .LFHeight = ((SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&) / FONTHEIGHT_DENOMINATOR) * FONTHEIGHT_NUMERATOR)
-                    .LFHeight = -.LFHeight
-                    .LFWeight = FW_NORMAL
-                    .LFItalic = 0
-                    .LFStrikeOut = 0
-                    .LFUnderline = 0
-                    .LFQuality = DEFAULT_QUALITY
-                    .LFCharset = ANSI_CHARSET
-                    End With
+            If DIS.ItemID > -1 Then
+                Dim Length As Long
+                Length = CLng(SendMessage(FontComboHandle, CB_GETLBTEXTLEN, DIS.ItemID, ByVal 0&))
+                If Not Length = CB_ERR Then
+                    Dim Text As String, LF As LOGFONT, FontName As String
+                    Text = String$(Length, vbNullChar)
+                    SendMessage FontComboHandle, CB_GETLBTEXT, DIS.ItemID, ByVal StrPtr(Text)
+                    FontName = Left$(Text, LF_FACESIZE)
+                    If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = NULL_PTR Then
+                        With LF
+                        CopyMemory .LFFaceName(0), ByVal StrPtr(FontName), LenB(FontName)
+                        .LFHeight = .LFHeight - FontComboLFHeightSpacing
+                        .LFHeight = ((SendMessage(FontComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&) / FONTHEIGHT_DENOMINATOR) * FONTHEIGHT_NUMERATOR)
+                        .LFHeight = -.LFHeight
+                        .LFWeight = FW_NORMAL
+                        .LFItalic = 0
+                        .LFStrikeOut = 0
+                        .LFUnderline = 0
+                        .LFQuality = DEFAULT_QUALITY
+                        .LFCharset = ANSI_CHARSET
+                        End With
+                    End If
+                    Dim OldBkMode As Long, OldTextColor As Long
+                    OldBkMode = SetBkMode(DIS.hDC, 1)
+                    If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
+                    ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
+                    ElseIf DIS.ItemID > (FontComboRecentCount - 1) Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
+                    Else
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.RecentForeColor))
+                    End If
+                    Dim hFontTemp As LongPtr, hFontOld As LongPtr
+                    If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = NULL_PTR Then
+                        hFontTemp = CreateFontIndirect(LF)
+                        hFontOld = SelectObject(DIS.hDC, hFontTemp)
+                    End If
+                    Dim DrawFlags As Long, TextRect As RECT
+                    DrawFlags = DT_NOCLIP Or DT_SINGLELINE Or DT_VCENTER
+                    LSet TextRect = DIS.RCItem
+                    If PropRightToLeft = False Then
+                        TextRect.Left = TextRect.Left + 2
+                        DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, DrawFlags Or DT_LEFT
+                    Else
+                        TextRect.Right = TextRect.Right - 2
+                        DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, DrawFlags Or DT_RTLREADING Or DT_RIGHT
+                    End If
+                    If hFontOld <> NULL_PTR Then SelectObject DIS.hDC, hFontOld
+                    If hFontTemp <> NULL_PTR Then DeleteObject hFontTemp
+                    SetBkMode DIS.hDC, OldBkMode
+                    SetTextColor DIS.hDC, OldTextColor
                 End If
-                Dim OldBkMode As Long, OldTextColor As Long
-                OldBkMode = SetBkMode(DIS.hDC, 1)
-                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
-                ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
-                ElseIf DIS.ItemID > (FontComboRecentCount - 1) Or (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
-                Else
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.RecentForeColor))
-                End If
-                Dim hFontTemp As LongPtr, hFontOld As LongPtr
-                If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT And FontComboBuddyShadowObjectPointer = NULL_PTR Then
-                    hFontTemp = CreateFontIndirect(LF)
-                    hFontOld = SelectObject(DIS.hDC, hFontTemp)
-                End If
-                Dim DrawFlags As Long, TextRect As RECT
-                DrawFlags = DT_NOCLIP Or DT_SINGLELINE Or DT_VCENTER
-                LSet TextRect = DIS.RCItem
-                If PropRightToLeft = False Then
-                    TextRect.Left = TextRect.Left + 2
-                    DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, DrawFlags Or DT_LEFT
-                Else
-                    TextRect.Right = TextRect.Right - 2
-                    DrawText DIS.hDC, StrPtr(FontName), -1, TextRect, DrawFlags Or DT_RTLREADING Or DT_RIGHT
-                End If
-                If hFontOld <> NULL_PTR Then SelectObject DIS.hDC, hFontOld
-                If hFontTemp <> NULL_PTR Then DeleteObject hFontTemp
-                SetBkMode DIS.hDC, OldBkMode
-                SetTextColor DIS.hDC, OldTextColor
             End If
             If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then DrawFocusRect DIS.hDC, DIS.RCItem
             WindowProcUserControl = 1
