@@ -1,6 +1,8 @@
 List of revisions:
 
 11-May-2026
+- The FrameW control will now react upon WM_THEMECHANGED.
+  Before the new theme was not changed at all. (e.g. "DarkMode_DarkTheme")
 - The Item in the ItemDraw event can now be -1 in the ComboBoxW and VirtualCombo control.
   This allows to draw a background and focus rect when the list index is -1.
   Caution! You might need to adapt your ItemDraw handler as this change could cause crashes otherwise.
