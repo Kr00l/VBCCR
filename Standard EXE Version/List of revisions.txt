@@ -1,5 +1,11 @@
 List of revisions:
 
+11-May-2026
+- The Item in the ItemDraw event can now be -1 in the ComboBoxW and VirtualCombo control.
+  This allows to draw a background and focus rect when the list index is -1.
+  Caution! You might need to adapt your ItemDraw handler as this change could cause crashes otherwise.
+- FontCombo control (in-built owner draw) fixed to draw a background and focus rect when the list index is -1.
+
 10-May-2026
 - Included the BackColor/ForeColor in the ImageCombo control.
 
