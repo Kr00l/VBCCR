@@ -1,5 +1,8 @@
 List of revisions:
 
+12-May-2026
+- The Item in the ItemDraw event can now be -1 in the ListBoxW and VListBox control.
+
 11-May-2026
 - The FrameW control will now react upon WM_THEMECHANGED.
   Before the new theme was not changed at all. (e.g. "DarkMode_DarkTheme")
