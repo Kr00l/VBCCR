@@ -2743,7 +2743,7 @@ Select Case wMsg
         If PropDrawMode = CboDrawModeOwnerDrawVariable Then
             Dim MIS As MEASUREITEMSTRUCT
             CopyMemory MIS, ByVal lParam, LenB(MIS)
-            If MIS.CtlType = ODT_COMBOBOX And MIS.ItemID > -1 Then
+            If MIS.CtlType = ODT_COMBOBOX Then
                 With MIS
                 RaiseEvent ItemMeasure(.ItemID, .ItemHeight)
                 End With

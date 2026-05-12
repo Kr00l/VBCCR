@@ -2201,7 +2201,7 @@ Select Case wMsg
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.CtlType = ODT_LISTBOX And DIS.hWndItem = VListBoxHandle And DIS.ItemID > -1 Then
+        If DIS.CtlType = ODT_LISTBOX And DIS.hWndItem = VListBoxHandle Then
             If PropDrawMode = VlbDrawModeNormal Then
                 Dim Brush As LongPtr
                 If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then
@@ -2211,46 +2211,48 @@ Select Case wMsg
                 End If
                 FillRect DIS.hDC, DIS.RCItem, Brush
                 DeleteObject Brush
-                Dim Text As String
-                If VListBoxDesignMode = False Then
-                    RaiseEvent GetVirtualItem(DIS.ItemID, Text)
-                Else
-                    Text = Ambient.DisplayName
-                End If
-                Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
-                If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
-                OldBkMode = SetBkMode(DIS.hDC, 1)
-                If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
-                ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
-                Else
-                    OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
-                End If
-                If PropRightToLeft = False Then
-                    If PropUseTabStops = False Then
-                        TextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                If DIS.ItemID > -1 Then
+                    Dim Text As String
+                    If VListBoxDesignMode = False Then
+                        RaiseEvent GetVirtualItem(DIS.ItemID, Text)
                     Else
-                        If VListBoxTabPositions = 0 Then
-                            TabbedTextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                        Text = Ambient.DisplayName
+                    End If
+                    Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
+                    If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
+                    OldBkMode = SetBkMode(DIS.hDC, 1)
+                    If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
+                    ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
+                    Else
+                        OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
+                    End If
+                    If PropRightToLeft = False Then
+                        If PropUseTabStops = False Then
+                            TextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
                         Else
-                            TabbedTextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), VListBoxTabPositions, VarPtr(VListBoxTabStopPositions(0)), 0
+                            If VListBoxTabPositions = 0 Then
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                            Else
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Left + 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), VListBoxTabPositions, VarPtr(VListBoxTabStopPositions(0)), 0
+                            End If
+                        End If
+                    Else
+                        If PropUseTabStops = False Then
+                            TextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
+                        Else
+                            If VListBoxTabPositions = 0 Then
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
+                            Else
+                                TabbedTextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), VListBoxTabPositions, VarPtr(VListBoxTabStopPositions(0)), 0
+                            End If
                         End If
                     End If
-                Else
-                    If PropUseTabStops = False Then
-                        TextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text)
-                    Else
-                        If VListBoxTabPositions = 0 Then
-                            TabbedTextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), 0, NULL_PTR, 0
-                        Else
-                            TabbedTextOut DIS.hDC, DIS.RCItem.Right - 2, DIS.RCItem.Top, StrPtr(Text), Len(Text), VListBoxTabPositions, VarPtr(VListBoxTabStopPositions(0)), 0
-                        End If
-                    End If
+                    SetBkMode DIS.hDC, OldBkMode
+                    SetTextColor DIS.hDC, OldTextColor
+                    If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                 End If
-                SetBkMode DIS.hDC, OldBkMode
-                SetTextColor DIS.hDC, OldTextColor
-                If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                 If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then DrawFocusRect DIS.hDC, DIS.RCItem
             Else
                 With DIS
