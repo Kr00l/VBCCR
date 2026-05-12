@@ -2717,7 +2717,7 @@ Select Case wMsg
         If PropDrawMode = LstDrawModeOwnerDrawVariable Then
             Dim MIS As MEASUREITEMSTRUCT
             CopyMemory MIS, ByVal lParam, LenB(MIS)
-            If MIS.CtlType = ODT_LISTBOX And MIS.ItemID > -1 Then
+            If MIS.CtlType = ODT_LISTBOX Then
                 With MIS
                 RaiseEvent ItemMeasure(.ItemID, .ItemHeight)
                 End With
@@ -2729,21 +2729,23 @@ Select Case wMsg
     Case WM_DRAWITEM
         Dim DIS As DRAWITEMSTRUCT
         CopyMemory DIS, ByVal lParam, LenB(DIS)
-        If DIS.CtlType = ODT_LISTBOX And DIS.hWndItem = ListBoxHandle And DIS.ItemID > -1 Then
+        If DIS.CtlType = ODT_LISTBOX And DIS.hWndItem = ListBoxHandle Then
             If PropStyle <> LstStyleStandard Then
                 Dim BackColorBrush As LongPtr, BackColorSelBrush As LongPtr
                 BackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
                 If (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then BackColorSelBrush = CreateSolidBrush(WinColor(vbHighlight))
                 Dim RC As RECT
-                With DIS.RCItem
-                If PropRightToLeft = False Then
-                    SetRect RC, .Left + 1, .Top + 1, .Left + ListBoxStateImageSize - 1, .Bottom - 1
-                    .Left = .Left + ListBoxStateImageSize
-                Else
-                    SetRect RC, .Right - ListBoxStateImageSize + 1, .Top + 1, .Right - 1, .Bottom - 1
-                    .Right = .Right - ListBoxStateImageSize
+                If DIS.ItemID > -1 Then
+                    With DIS.RCItem
+                    If PropRightToLeft = False Then
+                        SetRect RC, .Left + 1, .Top + 1, .Left + ListBoxStateImageSize - 1, .Bottom - 1
+                        .Left = .Left + ListBoxStateImageSize
+                    Else
+                        SetRect RC, .Right - ListBoxStateImageSize + 1, .Top + 1, .Right - 1, .Bottom - 1
+                        .Right = .Right - ListBoxStateImageSize
+                    End If
+                    End With
                 End If
-                End With
                 If BackColorSelBrush <> NULL_PTR Then
                     FillRect DIS.hDC, DIS.RCItem, BackColorSelBrush
                     DeleteObject BackColorSelBrush
@@ -2752,110 +2754,112 @@ Select Case wMsg
                 End If
                 FillRect DIS.hDC, RC, BackColorBrush
                 DeleteObject BackColorBrush
-                Dim Theme As LongPtr
-                
-                #If ImplementThemedButton = True Then
-                
-                If EnabledVisualStyles() = True And PropVisualStyles = True Then Theme = OpenThemeData(ListBoxHandle, StrPtr("Button"))
-                If Theme <> NULL_PTR Then
-                    Dim ButtonPart As Long, CheckState As Long
-                    If PropStyle = LstStyleCheckbox Then
-                        ButtonPart = BP_CHECKBOX
-                        If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                            CheckState = CBS_UNCHECKEDNORMAL
-                        Else
-                            CheckState = CBS_UNCHECKEDDISABLED
-                        End If
-                        If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                            If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then
-                                If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                    CheckState = CBS_CHECKEDNORMAL
-                                Else
-                                    CheckState = CBS_CHECKEDDISABLED
+                If DIS.ItemID > -1 Then
+                    Dim Theme As LongPtr
+                    
+                    #If ImplementThemedButton = True Then
+                    
+                    If EnabledVisualStyles() = True And PropVisualStyles = True Then Theme = OpenThemeData(ListBoxHandle, StrPtr("Button"))
+                    If Theme <> NULL_PTR Then
+                        Dim ButtonPart As Long, CheckState As Long
+                        If PropStyle = LstStyleCheckbox Then
+                            ButtonPart = BP_CHECKBOX
+                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                CheckState = CBS_UNCHECKEDNORMAL
+                            Else
+                                CheckState = CBS_UNCHECKEDDISABLED
+                            End If
+                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                                If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then
+                                    If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                        CheckState = CBS_CHECKEDNORMAL
+                                    Else
+                                        CheckState = CBS_CHECKEDDISABLED
+                                    End If
+                                End If
+                            End If
+                        ElseIf PropStyle = LstStyleOption Then
+                            ButtonPart = BP_RADIOBUTTON
+                            If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                CheckState = RBS_UNCHECKEDNORMAL
+                            Else
+                                CheckState = RBS_UNCHECKEDDISABLED
+                            End If
+                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                                If ListBoxOptionIndex = DIS.ItemID Then
+                                    If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                                        CheckState = CBS_CHECKEDNORMAL
+                                    Else
+                                        CheckState = CBS_CHECKEDDISABLED
+                                    End If
                                 End If
                             End If
                         End If
-                    ElseIf PropStyle = LstStyleOption Then
-                        ButtonPart = BP_RADIOBUTTON
-                        If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                            CheckState = RBS_UNCHECKEDNORMAL
-                        Else
-                            CheckState = RBS_UNCHECKEDDISABLED
+                        If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, CheckState) <> 0 Then DrawThemeParentBackground DIS.hWndItem, DIS.hDC, RC
+                        DrawThemeBackground Theme, DIS.hDC, ButtonPart, CheckState, RC, RC
+                        CloseThemeData Theme
+                    End If
+                    
+                    #End If
+                    
+                    If Theme = NULL_PTR Then
+                        Dim Flags As Long
+                        Flags = DFCS_FLAT
+                        If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
+                        If PropStyle = LstStyleCheckbox Then
+                            Flags = Flags Or DFCS_BUTTONCHECK
+                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                                If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then Flags = Flags Or DFCS_CHECKED
+                            End If
+                        ElseIf PropStyle = LstStyleOption Then
+                            Flags = Flags Or DFCS_BUTTONRADIO
+                            If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
+                                If ListBoxOptionIndex = DIS.ItemID Then Flags = Flags Or DFCS_CHECKED
+                            End If
                         End If
-                        If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                            If ListBoxOptionIndex = DIS.ItemID Then
-                                If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                    CheckState = CBS_CHECKEDNORMAL
+                        DrawFrameControl DIS.hDC, RC, DFC_BUTTON, Flags
+                    End If
+                    Dim Length As Long
+                    Length = CLng(SendMessage(ListBoxHandle, LB_GETTEXTLEN, DIS.ItemID, ByVal 0&))
+                    If Not Length = LB_ERR Then
+                        Dim Text As String
+                        Text = String(Length, vbNullChar)
+                        SendMessage ListBoxHandle, LB_GETTEXT, DIS.ItemID, ByVal StrPtr(Text)
+                        Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
+                        If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
+                        OldBkMode = SetBkMode(DIS.hDC, 1)
+                        If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
+                            OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
+                        ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then
+                            OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
+                        Else
+                            OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
+                        End If
+                        If PropRightToLeft = False Then
+                            If PropUseTabStops = False Then
+                                TextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length
+                            Else
+                                If ListBoxTabPositions = 0 Then
+                                    TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length, 0, NULL_PTR, 0
                                 Else
-                                    CheckState = CBS_CHECKEDDISABLED
+                                    TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0)), 0
+                                End If
+                            End If
+                        Else
+                            If PropUseTabStops = False Then
+                                TextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length
+                            Else
+                                If ListBoxTabPositions = 0 Then
+                                    TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length, 0, NULL_PTR, 0
+                                Else
+                                    TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0)), 0
                                 End If
                             End If
                         End If
+                        SetBkMode DIS.hDC, OldBkMode
+                        SetTextColor DIS.hDC, OldTextColor
+                        If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                     End If
-                    If IsThemeBackgroundPartiallyTransparent(Theme, ButtonPart, CheckState) <> 0 Then DrawThemeParentBackground DIS.hWndItem, DIS.hDC, RC
-                    DrawThemeBackground Theme, DIS.hDC, ButtonPart, CheckState, RC, RC
-                    CloseThemeData Theme
-                End If
-                
-                #End If
-                
-                If Theme = NULL_PTR Then
-                    Dim Flags As Long
-                    Flags = DFCS_FLAT
-                    If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then Flags = Flags Or DFCS_INACTIVE
-                    If PropStyle = LstStyleCheckbox Then
-                        Flags = Flags Or DFCS_BUTTONCHECK
-                        If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                            If ListBoxItemChecked(DIS.ItemID + 1) = vbChecked Then Flags = Flags Or DFCS_CHECKED
-                        End If
-                    ElseIf PropStyle = LstStyleOption Then
-                        Flags = Flags Or DFCS_BUTTONRADIO
-                        If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
-                            If ListBoxOptionIndex = DIS.ItemID Then Flags = Flags Or DFCS_CHECKED
-                        End If
-                    End If
-                    DrawFrameControl DIS.hDC, RC, DFC_BUTTON, Flags
-                End If
-                Dim Length As Long
-                Length = CLng(SendMessage(ListBoxHandle, LB_GETTEXTLEN, DIS.ItemID, ByVal 0&))
-                If Not Length = LB_ERR Then
-                    Dim Text As String
-                    Text = String(Length, vbNullChar)
-                    SendMessage ListBoxHandle, LB_GETTEXT, DIS.ItemID, ByVal StrPtr(Text)
-                    Dim OldTextAlign As Long, OldBkMode As Long, OldTextColor As Long
-                    If PropRightToLeft = True Then OldTextAlign = SetTextAlign(DIS.hDC, TA_RTLREADING Or TA_RIGHT)
-                    OldBkMode = SetBkMode(DIS.hDC, 1)
-                    If (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbGrayText))
-                    ElseIf (DIS.ItemState And ODS_SELECTED) = ODS_SELECTED And PropAllowSelection = True Then
-                        OldTextColor = SetTextColor(DIS.hDC, WinColor(vbHighlightText))
-                    Else
-                        OldTextColor = SetTextColor(DIS.hDC, WinColor(Me.ForeColor))
-                    End If
-                    If PropRightToLeft = False Then
-                        If PropUseTabStops = False Then
-                            TextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length
-                        Else
-                            If ListBoxTabPositions = 0 Then
-                                TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length, 0, NULL_PTR, 0
-                            Else
-                                TabbedTextOut DIS.hDC, DIS.RCItem.Left + 1, DIS.RCItem.Top, StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0)), 0
-                            End If
-                        End If
-                    Else
-                        If PropUseTabStops = False Then
-                            TextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length
-                        Else
-                            If ListBoxTabPositions = 0 Then
-                                TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length, 0, NULL_PTR, 0
-                            Else
-                                TabbedTextOut DIS.hDC, DIS.RCItem.Right - 1, DIS.RCItem.Top, StrPtr(Text), Length, ListBoxTabPositions, VarPtr(ListBoxTabStopPositions(0)), 0
-                            End If
-                        End If
-                    End If
-                    SetBkMode DIS.hDC, OldBkMode
-                    SetTextColor DIS.hDC, OldTextColor
-                    If PropRightToLeft = True Then SetTextAlign DIS.hDC, OldTextAlign
                 End If
                 If (DIS.ItemState And ODS_FOCUS) = ODS_FOCUS Then DrawFocusRect DIS.hDC, DIS.RCItem
             Else
