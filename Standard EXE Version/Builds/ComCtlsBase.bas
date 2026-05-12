@@ -220,6 +220,7 @@ Private Declare PtrSafe Function GetModuleHandle Lib "kernel32" Alias "GetModule
 Private Declare PtrSafe Function VirtualProtect Lib "kernel32" (ByVal lpAddress As LongPtr, ByVal dwSize As LongPtr, ByVal flNewProtect As Long, ByRef lpflOldProtect As Long) As Long
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
 Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
 Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -278,6 +279,7 @@ Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleW"
 Private Declare Function VirtualProtect Lib "kernel32" (ByVal lpAddress As Long, ByVal dwSize As Long, ByVal flNewProtect As Long, ByRef lpflOldProtect As Long) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As Any) As Long
 Private Declare Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As Long) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -320,6 +322,7 @@ Private ComCtlsSubclassW2K As Integer
 #End If
 Private MCIWndRefCount As Long
 Private ImcGetSysColorPtr As LongPtr, ImcGetSysColorRGBBackColor As Long, ImcGetSysColorRGBForeColor As Long, ImcGetSysColorHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcGetSysColorOrig(0 To (API_HOOK_SIZE - 1)) As Byte
+Private ImcImageListDrawPtr As LongPtr, ImcImageListDrawHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcImageListDrawOrig(0 To (API_HOOK_SIZE - 1)) As Byte
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
@@ -972,6 +975,54 @@ Else
     ComCtlsImcGetSysColorProc = GetSysColor(nIndex)
     Call ComCtlsImcGetSysColorSetHook(ImcGetSysColorRGBBackColor, ImcGetSysColorRGBForeColor)
 End If
+End Function
+
+Public Sub ComCtlsImcImageListDrawSetHook()
+Dim OldProtect As Long
+If ImcImageListDrawPtr = NULL_PTR Then
+    ImcImageListDrawPtr = GetProcAddress(GetModuleHandle(StrPtr("comctl32.dll")), "ImageList_Draw")
+    If ImcImageListDrawPtr <> NULL_PTR Then
+        VirtualProtect ImcImageListDrawPtr, API_HOOK_SIZE, PAGE_EXECUTE_READWRITE, OldProtect
+        CopyMemory ByVal VarPtr(ImcImageListDrawOrig(0)), ByVal ImcImageListDrawPtr, API_HOOK_SIZE
+        #If Win64 Then
+        ImcImageListDrawHook(0) = &H48
+        ImcImageListDrawHook(1) = &HB8
+        CopyMemory ByVal VarPtr(ImcImageListDrawHook(2)), ProcPtr(AddressOf ComCtlsImcImageListDrawProc), PTR_SIZE
+        ImcImageListDrawHook(10) = &HFF
+        ImcImageListDrawHook(11) = &HE0
+        #Else
+        ImcImageListDrawHook(0) = &H68
+        CopyMemory ByVal VarPtr(ImcImageListDrawHook(1)), ProcPtr(AddressOf ComCtlsImcImageListDrawProc), PTR_SIZE
+        ImcImageListDrawHook(5) = &HC3
+        #End If
+        VirtualProtect ImcImageListDrawPtr, API_HOOK_SIZE, OldProtect, OldProtect
+    End If
+End If
+If ImcImageListDrawPtr <> NULL_PTR Then
+    VirtualProtect ImcImageListDrawPtr, API_HOOK_SIZE, PAGE_EXECUTE_READWRITE, OldProtect
+    CopyMemory ByVal ImcImageListDrawPtr, ByVal VarPtr(ImcImageListDrawHook(0)), API_HOOK_SIZE
+    VirtualProtect ImcImageListDrawPtr, API_HOOK_SIZE, OldProtect, OldProtect
+End If
+End Sub
+
+Public Sub ComCtlsImcImageListDrawRemoveHook()
+If ImcImageListDrawPtr <> NULL_PTR Then
+    Dim OldProtect As Long
+    VirtualProtect ImcImageListDrawPtr, API_HOOK_SIZE, PAGE_EXECUTE_READWRITE, OldProtect
+    CopyMemory ByVal ImcImageListDrawPtr, ByVal VarPtr(ImcImageListDrawOrig(0)), API_HOOK_SIZE
+    VirtualProtect ImcImageListDrawPtr, API_HOOK_SIZE, OldProtect, OldProtect
+End If
+End Sub
+
+#If VBA7 Then
+Private Function ComCtlsImcImageListDrawProc(ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal fStyle As Long) As Long
+#Else
+Private Function ComCtlsImcImageListDrawProc(ByVal hImageList As Long, ByVal ImgIndex As Long, ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal fStyle As Long) As Long
+#End If
+Const ILD_FOCUS As Long = &H2, ILD_SELECTED As Long = &H4, CLR_DEFAULT As Long = -16777216
+If (fStyle And ILD_FOCUS) = ILD_FOCUS Then fStyle = fStyle And Not ILD_FOCUS
+If (fStyle And ILD_SELECTED) = ILD_SELECTED Then fStyle = fStyle And Not ILD_SELECTED
+ComCtlsImcImageListDrawProc = ImageList_DrawEx(hImageList, ImgIndex, hDC, X, Y, 0, 0, CLR_DEFAULT, CLR_DEFAULT, fStyle)
 End Function
 
 #If VBA7 Then
