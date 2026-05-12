@@ -4,18 +4,26 @@ Begin VB.PropertyPage PPImageComboGeneral
    ClientHeight    =   3810
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   5925
+   ClientWidth     =   6225
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   3810
-   ScaleWidth      =   5925
+   ScaleWidth      =   6225
+   Begin VB.CheckBox CheckAllowImageHighlight 
+      Caption         =   "AllowImageHighlight"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   25
+      Top             =   1920
+      Width           =   1920
+   End
    Begin VB.CheckBox CheckMouseTrack 
       Caption         =   "MouseTrack"
       Height          =   285
       Left            =   4200
       TabIndex        =   21
       Top             =   480
-      Width           =   1620
+      Width           =   1920
    End
    Begin VB.CheckBox CheckScrollTrack 
       Caption         =   "ScrollTrack"
@@ -23,7 +31,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Left            =   4200
       TabIndex        =   24
       Top             =   1560
-      Width           =   1620
+      Width           =   1920
    End
    Begin VB.ComboBox ComboEllipsisFormat 
       Height          =   315
@@ -69,7 +77,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Left            =   4200
       TabIndex        =   23
       Top             =   1200
-      Width           =   1620
+      Width           =   1920
    End
    Begin VB.ComboBox ComboMousePointer 
       Height          =   315
@@ -115,7 +123,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Left            =   4200
       TabIndex        =   22
       Top             =   840
-      Width           =   1620
+      Width           =   1920
    End
    Begin VB.CheckBox CheckEnabled 
       Caption         =   "Enabled"
@@ -261,6 +269,7 @@ With PropertyPage.SelectedControls(0)
 .ExtendedUI = CBool(CheckExtendedUI.Value = vbChecked)
 .ShowImages = CBool(CheckShowImages.Value = vbChecked)
 .ScrollTrack = CBool(CheckScrollTrack.Value = vbChecked)
+.AllowImageHighlight = CBool(CheckAllowImageHighlight.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub
@@ -319,6 +328,7 @@ CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckExtendedUI.Value = IIf(.ExtendedUI = True, vbChecked, vbUnchecked)
 CheckShowImages.Value = IIf(.ShowImages = True, vbChecked, vbUnchecked)
 CheckScrollTrack.Value = IIf(.ScrollTrack = True, vbChecked, vbUnchecked)
+CheckAllowImageHighlight.Value = IIf(.AllowImageHighlight = True, vbChecked, vbUnchecked)
 End With
 FreezeChanged = False
 End Sub
@@ -535,6 +545,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckScrollTrack_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckAllowImageHighlight_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
