@@ -1,6 +1,8 @@
 List of revisions:
 
 12-May-2026
+- Included the AllowImageHighlight property in the ImageCombo control. (defaults to True)
+  When set to False a focused item image is not allowed anymore to be drawn highlighted.
 - The Item in the ItemDraw event can now be -1 in the ListBoxW and VListBox control.
 
 11-May-2026
