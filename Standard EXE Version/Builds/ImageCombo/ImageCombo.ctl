@@ -1906,7 +1906,12 @@ If ImageComboDesignMode = False Then
     #End If
     
 Else
-    If ImageComboHandle <> NULL_PTR Then Call ComCtlsSetSubclass(ImageComboHandle, Me, 6)
+    If ImageComboHandle <> NULL_PTR Then
+        Call ComCtlsSetSubclass(ImageComboHandle, Me, 6)
+        If PropStyle = ImcStyleSimpleCombo Then
+            If ImageComboComboHandle <> NULL_PTR Then Call ComCtlsSetSubclass(ImageComboComboHandle, Me, 7)
+        End If
+    End If
     If PropStyle = ImcStyleDropDownList Then
         Me.FComboItemsAdd 1, Ambient.DisplayName
         If ImageComboHandle <> NULL_PTR Then SendMessage ImageComboHandle, CB_SETCURSEL, 0, ByVal 0&
@@ -2253,6 +2258,8 @@ Select Case dwRefData
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
     Case 6
         ISubclass_Message = WindowProcControlDesignMode(hWnd, wMsg, wParam, lParam)
+    Case 7
+        ISubclass_Message = WindowProcComboDesignMode(hWnd, wMsg, wParam, lParam)
 End Select
 End Function
 
@@ -2864,6 +2871,19 @@ Select Case wMsg
         Exit Function
 End Select
 WindowProcControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_DESTROY, WM_NCDESTROY
+        Call ComCtlsRemoveSubclass(hWnd)
+End Select
+End Function
+
+Private Function WindowProcComboDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Select Case wMsg
+    Case WM_CTLCOLORLISTBOX
+        WindowProcComboDesignMode = WindowProcCombo(hWnd, wMsg, wParam, lParam)
+        Exit Function
+End Select
+WindowProcComboDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_DESTROY, WM_NCDESTROY
         Call ComCtlsRemoveSubclass(hWnd)
