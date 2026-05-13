@@ -13,7 +13,7 @@ Begin VB.UserControl ImageCombo
    ScaleHeight     =   120
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   160
-   ToolboxBitmap   =   "ImageCombo.ctx":003B
+   ToolboxBitmap   =   "ImageCombo.ctx":004B
    Begin VB.Timer TimerImageList 
       Enabled         =   0   'False
       Interval        =   1
@@ -83,6 +83,17 @@ wParam As LongPtr
 lParam As LongPtr
 Time As Long
 PT As POINTAPI
+End Type
+Private Type DRAWITEMSTRUCT
+CtlType As Long
+CtlID As Long
+ItemID As Long
+ItemAction As Long
+ItemState As Long
+hWndItem As LongPtr
+hDC As LongPtr
+RCItem As RECT
+ItemData As LongPtr
 End Type
 Private Type SCROLLINFO
 cbSize As Long
@@ -214,6 +225,10 @@ Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongP
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As LongPtr, ByVal hWndChildAfter As LongPtr, ByVal lpszClass As LongPtr, ByVal lpszWindow As LongPtr) As LongPtr
 Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
+Private Declare PtrSafe Function SetTextColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
+Private Declare PtrSafe Function SetBkColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
+Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, ByRef lpRect As RECT, ByVal hBrush As LongPtr) As Long
+Private Declare PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As LongPtr
 Private Declare PtrSafe Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As LongPtr, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare PtrSafe Function ClientToScreen Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPoint As POINTAPI) As Long
 Private Declare PtrSafe Function GetScrollInfo Lib "user32" (ByVal hWnd As LongPtr, ByVal wBar As Long, ByRef lpScrollInfo As SCROLLINFO) As Long
@@ -245,6 +260,10 @@ Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef l
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
+Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
+Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
+Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect As RECT, ByVal hBrush As Long) As Long
+Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
 Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As Long, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetScrollInfo Lib "user32" (ByVal hWnd As Long, ByVal wBar As Long, ByRef lpScrollInfo As SCROLLINFO) As Long
@@ -286,6 +305,7 @@ Private Const WM_INPUTLANGCHANGE As Long = &H51
 Private Const WM_IME_SETCONTEXT As Long = &H281
 Private Const WM_IME_CHAR As Long = &H286
 Private Const WM_CHARTOITEM As Long = &H2F
+Private Const WM_DRAWITEM As Long = &H2B, ODT_COMBOBOX As Long = &H3, ODS_COMBOBOXEDIT As Long = &H1000
 Private Const WM_LBUTTONDOWN As Long = &H201
 Private Const WM_LBUTTONUP As Long = &H202
 Private Const WM_MBUTTONDOWN As Long = &H207
@@ -297,6 +317,8 @@ Private Const WM_MBUTTONDBLCLK As Long = &H209
 Private Const WM_RBUTTONDBLCLK As Long = &H206
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DESTROY As Long = &H2
+Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_VSCROLL As Long = &H115
 Private Const SB_VERT As Long = 1
 Private Const SB_THUMBPOSITION As Long = 4, SB_THUMBTRACK As Long = 5
@@ -305,6 +327,9 @@ Private Const SIF_TRACKPOS As Long = &H10
 Private Const WM_SETFONT As Long = &H30
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_THEMECHANGED As Long = &H31A
+Private Const WM_CTLCOLOREDIT As Long = &H133
+Private Const WM_CTLCOLORSTATIC As Long = &H138
+Private Const WM_CTLCOLORLISTBOX As Long = &H134
 Private Const WM_GETTEXTLENGTH As Long = &HE
 Private Const WM_GETTEXT As Long = &HD
 Private Const WM_SETTEXT As Long = &HC
@@ -403,6 +428,8 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private ImageComboHandle As LongPtr
 Private ImageComboComboHandle As LongPtr, ImageComboEditHandle As LongPtr, ImageComboListHandle As LongPtr
 Private ImageComboFontHandle As LongPtr
+Private ImageComboBackColorBrush As LongPtr
+Private ImageComboRGBBackColor As Long, ImageComboRGBForeColor As Long
 Private ImageComboIMCHandle As LongPtr
 Private ImageComboCharCodeCache As Long
 Private ImageComboMouseOver(0 To 2) As Boolean
@@ -442,6 +469,7 @@ Private PropMaxLength As Long
 Private PropIMEMode As CCIMEModeConstants
 Private PropEllipsisFormat As ImcEllipsisFormatConstants
 Private PropScrollTrack As Boolean
+Private PropAllowImageHighlight As Boolean
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -554,6 +582,7 @@ PropMaxLength = 0
 PropIMEMode = CCIMEModeNoControl
 PropEllipsisFormat = ImcEllipsisFormatNone
 PropScrollTrack = True
+PropAllowImageHighlight = True
 Call CreateImageCombo
 End Sub
 
@@ -565,6 +594,8 @@ On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
+Me.BackColor = .ReadProperty("BackColor", vbWindowBackground)
+Me.ForeColor = .ReadProperty("ForeColor", vbWindowText)
 Me.Enabled = .ReadProperty("Enabled", True)
 PropOLEDragMode = .ReadProperty("OLEDragMode", vbOLEDragManual)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -587,6 +618,7 @@ PropMaxLength = .ReadProperty("MaxLength", 0)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropEllipsisFormat = .ReadProperty("EllipsisFormat", ImcEllipsisFormatNone)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
+PropAllowImageHighlight = .ReadProperty("AllowImageHighlight", True)
 End With
 Call CreateImageCombo
 If Not PropImageListName = "(None)" Then TimerImageList.Enabled = True
@@ -596,6 +628,8 @@ Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "VisualStyles", PropVisualStyles, True
+.WriteProperty "BackColor", Me.BackColor, vbWindowBackground
+.WriteProperty "ForeColor", Me.ForeColor, vbWindowText
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDragMode", PropOLEDragMode, vbOLEDragManual
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -617,6 +651,7 @@ With PropBag
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "EllipsisFormat", PropEllipsisFormat, ImcEllipsisFormatNone
 .WriteProperty "ScrollTrack", PropScrollTrack, True
+.WriteProperty "AllowImageHighlight", PropAllowImageHighlight, True
 End With
 End Sub
 
@@ -1001,6 +1036,37 @@ If ImageComboHandle <> NULL_PTR And EnabledVisualStyles() = True Then
     Me.Refresh
 End If
 UserControl.PropertyChanged "VisualStyles"
+End Property
+
+Public Property Get BackColor() As OLE_COLOR
+Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object."
+Attribute BackColor.VB_UserMemId = -501
+BackColor = UserControl.BackColor
+End Property
+
+Public Property Let BackColor(ByVal Value As OLE_COLOR)
+UserControl.BackColor = Value
+If ImageComboHandle <> NULL_PTR Then
+    If ImageComboBackColorBrush <> NULL_PTR Then DeleteObject ImageComboBackColorBrush
+    ImageComboBackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
+    ImageComboRGBBackColor = WinColor(Me.BackColor)
+    SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
+End If
+Me.Refresh
+UserControl.PropertyChanged "BackColor"
+End Property
+
+Public Property Get ForeColor() As OLE_COLOR
+Attribute ForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in an object."
+Attribute ForeColor.VB_UserMemId = -513
+ForeColor = UserControl.ForeColor
+End Property
+
+Public Property Let ForeColor(ByVal Value As OLE_COLOR)
+UserControl.ForeColor = Value
+If ImageComboHandle <> NULL_PTR Then ImageComboRGBForeColor = WinColor(Me.ForeColor)
+Me.Refresh
+UserControl.PropertyChanged "ForeColor"
 End Property
 
 Public Property Get Enabled() As Boolean
@@ -1534,6 +1600,16 @@ PropScrollTrack = Value
 UserControl.PropertyChanged "ScrollTrack"
 End Property
 
+Public Property Get AllowImageHighlight() As Boolean
+Attribute AllowImageHighlight.VB_Description = "Returns/sets a value that determines whether a focused item image is allowed to be drawn highlighted."
+AllowImageHighlight = PropAllowImageHighlight
+End Property
+
+Public Property Let AllowImageHighlight(ByVal Value As Boolean)
+PropAllowImageHighlight = Value
+UserControl.PropertyChanged "AllowImageHighlight"
+End Property
+
 Public Property Get ComboItems() As ImcComboItems
 Attribute ComboItems.VB_Description = "Returns a reference to a collection of the combo item objects."
 If PropComboItems Is Nothing Then
@@ -1786,6 +1862,11 @@ Me.ExtendedUI = PropExtendedUI
 Me.MaxDropDownItems = PropMaxDropDownItems
 If PropShowImages = False Then Me.ShowImages = PropShowImages
 If PropEllipsisFormat <> ImcEllipsisFormatNone Then Me.EllipsisFormat = PropEllipsisFormat
+If ImageComboHandle <> NULL_PTR Then
+    If ImageComboBackColorBrush = NULL_PTR Then ImageComboBackColorBrush = CreateSolidBrush(WinColor(Me.BackColor))
+    ImageComboRGBBackColor = WinColor(Me.BackColor)
+    ImageComboRGBForeColor = WinColor(Me.ForeColor)
+End If
 If ImageComboDesignMode = False Then
     If ImageComboHandle <> NULL_PTR Then
         Call ComCtlsSetSubclass(ImageComboHandle, Me, 1)
@@ -1805,6 +1886,12 @@ If ImageComboDesignMode = False Then
     #End If
     
 Else
+    If ImageComboHandle <> NULL_PTR Then
+        Call ComCtlsSetSubclass(ImageComboHandle, Me, 6)
+        If PropStyle = ImcStyleSimpleCombo Then
+            If ImageComboComboHandle <> NULL_PTR Then Call ComCtlsSetSubclass(ImageComboComboHandle, Me, 7)
+        End If
+    End If
     If PropStyle = ImcStyleDropDownList Then
         Me.FComboItemsAdd 1, Ambient.DisplayName
         If ImageComboHandle <> NULL_PTR Then SendMessage ImageComboHandle, CB_SETCURSEL, 0, ByVal 0&
@@ -1840,6 +1927,10 @@ ImageComboEditHandle = NULL_PTR
 If ImageComboFontHandle <> NULL_PTR Then
     DeleteObject ImageComboFontHandle
     ImageComboFontHandle = NULL_PTR
+End If
+If ImageComboBackColorBrush <> NULL_PTR Then
+    DeleteObject ImageComboBackColorBrush
+    ImageComboBackColorBrush = NULL_PTR
 End If
 End Sub
 
@@ -2145,6 +2236,10 @@ Select Case dwRefData
         ISubclass_Message = WindowProcList(hWnd, wMsg, wParam, lParam)
     Case 5
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+    Case 6
+        ISubclass_Message = WindowProcControlDesignMode(hWnd, wMsg, wParam, lParam)
+    Case 7
+        ISubclass_Message = WindowProcComboDesignMode(hWnd, wMsg, wParam, lParam)
 End Select
 End Function
 
@@ -2189,6 +2284,34 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_DRAWITEM
+        Dim DIS As DRAWITEMSTRUCT
+        CopyMemory DIS, ByVal lParam, LenB(DIS)
+        If DIS.CtlType = ODT_COMBOBOX And DIS.hWndItem = ImageComboComboHandle Then
+            If (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                If PropStyle <> ImcStyleDropDownList And ImageComboEditHandle <> NULL_PTR Then
+                    If ImageComboBackColorBrush <> NULL_PTR Then FillRect DIS.hDC, DIS.RCItem, ImageComboBackColorBrush
+                End If
+            End If
+            Call ComCtlsImcGetSysColorSetHook(ImageComboRGBBackColor, ImageComboRGBForeColor)
+            If PropAllowImageHighlight = True Then
+                WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+            Else
+                Call ComCtlsImcImageListDrawSetHook
+                WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                Call ComCtlsImcImageListDrawRemoveHook
+            End If
+            Call ComCtlsImcGetSysColorRemoveHook
+            Exit Function
+        End If
+    Case WM_CTLCOLOREDIT, WM_CTLCOLORSTATIC
+        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+        If lParam = ImageComboEditHandle And ImageComboEditHandle <> NULL_PTR Then
+            SetBkColor wParam, WinColor(Me.BackColor)
+            SetTextColor wParam, WinColor(Me.ForeColor)
+        End If
+        If ImageComboBackColorBrush <> NULL_PTR Then WindowProcControl = ImageComboBackColorBrush
+        Exit Function
     
     #If ImplementPreTranslateMsg = True Then
     
@@ -2338,6 +2461,10 @@ Select Case wMsg
                 If HiWord(CLng(wParam)) = EN_UPDATE Then RedrawWindow ImageComboEditHandle, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
             End If
         End If
+    Case WM_CTLCOLORLISTBOX
+        WindowProcCombo = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+        If ImageComboBackColorBrush <> NULL_PTR Then WindowProcCombo = ImageComboBackColorBrush
+        Exit Function
     Case UM_BUTTONDOWN
         ' The control enters a modal message loop on WM_LBUTTONDOWN and WM_RBUTTONDOWN. (DragDetect)
         ' This workaround is necessary to raise 'MouseDown' before the button was released or the mouse was moved.
@@ -2715,4 +2842,30 @@ Select Case wMsg
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 If wMsg = WM_SETFOCUS And UCNoSetFocusFwd = False Then SetFocusAPI ImageComboHandle
+End Function
+
+Private Function WindowProcControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Select Case wMsg
+    Case WM_DRAWITEM, WM_CTLCOLOREDIT, WM_CTLCOLORSTATIC
+        WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
+        Exit Function
+End Select
+WindowProcControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_DESTROY, WM_NCDESTROY
+        Call ComCtlsRemoveSubclass(hWnd)
+End Select
+End Function
+
+Private Function WindowProcComboDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Select Case wMsg
+    Case WM_CTLCOLORLISTBOX
+        WindowProcComboDesignMode = WindowProcCombo(hWnd, wMsg, wParam, lParam)
+        Exit Function
+End Select
+WindowProcComboDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_DESTROY, WM_NCDESTROY
+        Call ComCtlsRemoveSubclass(hWnd)
+End Select
 End Function

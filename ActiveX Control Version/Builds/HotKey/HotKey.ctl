@@ -65,6 +65,18 @@ Private Type POINTAPI
 X As Long
 Y As Long
 End Type
+Private Type SIZEAPI
+CX As Long
+CY As Long
+End Type
+Private Type PAINTSTRUCT
+hDC As LongPtr
+fErase As Long
+RCPaint As RECT
+fRestore As Long
+fIncUpdate As Long
+RGBReserved(0 To 31) As Byte
+End Type
 Private Type TMSG
 hWnd As LongPtr
 Message As Long
@@ -126,11 +138,16 @@ Private Declare PtrSafe Function GetAncestor Lib "user32" (ByVal hWnd As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
+Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function SetParent Lib "user32" (ByVal hWndChild As LongPtr, ByVal hWndNewParent As LongPtr) As LongPtr
 Private Declare PtrSafe Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetFocus Lib "user32" () As LongPtr
 Private Declare PtrSafe Function SetWindowPos Lib "user32" (ByVal hWnd As LongPtr, ByVal hWndInsertAfter As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
+Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hDC As LongPtr, ByVal hObject As LongPtr) As LongPtr
 Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
+Private Declare PtrSafe Function SetTextColor Lib "gdi32" (ByVal hDC As LongPtr, ByVal crColor As Long) As Long
+Private Declare PtrSafe Function BeginPaint Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPaint As PAINTSTRUCT) As LongPtr
+Private Declare PtrSafe Function EndPaint Lib "user32" (ByVal hWnd As LongPtr, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal nCmdShow As Long) As Long
 Private Declare PtrSafe Function MoveWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
@@ -142,6 +159,7 @@ Private Declare PtrSafe Function FillRect Lib "user32" (ByVal hDC As LongPtr, By
 Private Declare PtrSafe Function MapWindowPoints Lib "user32" (ByVal hWndFrom As LongPtr, ByVal hWndTo As LongPtr, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As LongPtr, ByVal lpCursorName As Any) As LongPtr
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
+Private Declare PtrSafe Function SetCaretPos Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 Private Declare PtrSafe Function GetTickCount Lib "kernel32" () As Long
 Private Declare PtrSafe Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
@@ -152,6 +170,9 @@ Private Declare PtrSafe Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualK
 Private Declare PtrSafe Function LoadLibraryEx Lib "kernel32" Alias "LoadLibraryExW" (ByVal lpLibFileName As LongPtr, ByVal hFile As LongPtr, ByVal dwFlags As Long) As LongPtr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function LoadString Lib "user32" Alias "LoadStringW" (ByVal hInstance As LongPtr, ByVal uId As Long, ByVal lpBuffer As LongPtr, ByVal cchBufferMax As Long) As Long
+Private Declare PtrSafe Function SetTextAlign Lib "gdi32" (ByVal hDC As LongPtr, ByVal fMode As Long) As Long
+Private Declare PtrSafe Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal lpString As LongPtr, ByVal nCount As Long) As Long
+Private Declare PtrSafe Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As LongPtr, ByVal lpsz As LongPtr, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -159,11 +180,16 @@ Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaF
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
 Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal hWndNewParent As Long) As Long
 Private Declare Function SetFocusAPI Lib "user32" Alias "SetFocus" (ByVal hWnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
+Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
+Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
+Private Declare Function BeginPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
+Private Declare Function EndPaint Lib "user32" (ByVal hWnd As Long, ByRef lpPaint As PAINTSTRUCT) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
@@ -175,6 +201,7 @@ Private Declare Function FillRect Lib "user32" (ByVal hDC As Long, ByRef lpRect 
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
+Private Declare Function SetCaretPos Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private Declare Function GetDoubleClickTime Lib "user32" () As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
@@ -185,6 +212,9 @@ Private Declare Function MapVirtualKeyEx Lib "user32" Alias "MapVirtualKeyExW" (
 Private Declare Function LoadLibraryEx Lib "kernel32" Alias "LoadLibraryExW" (ByVal lpLibFileName As Long, ByVal hFile As Long, ByVal dwFlags As Long) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function LoadString Lib "user32" Alias "LoadStringW" (ByVal hInstance As Long, ByVal uId As Long, ByVal lpBuffer As Long, ByVal cchBufferMax As Long) As Long
+Private Declare Function SetTextAlign Lib "gdi32" (ByVal hDC As Long, ByVal fMode As Long) As Long
+Private Declare Function TextOut Lib "gdi32" Alias "TextOutW" (ByVal hDC As Long, ByVal X As Long, ByVal Y As Long, ByVal lpString As Long, ByVal nCount As Long) As Long
+Private Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32W" (ByVal hDC As Long, ByVal lpsz As Long, ByVal cbString As Long, ByRef lpSize As SIZEAPI) As Long
 #End If
 
 #If ImplementThemedBorder = True Then
@@ -248,10 +278,16 @@ Private Const DCX_INTERSECTRGN As Long = &H80
 Private Const DCX_USESTYLE As Long = &H10000
 Private Const GCL_STYLE As Long = (-26)
 Private Const CS_DBLCLKS As Long = &H8
+Private Const GWL_STYLE As Long = (-16)
+Private Const GWL_EXSTYLE As Long = (-20)
 Private Const MAPVK_VK_TO_VSC As Long = 0
 Private Const HOTKEYF_EXT As Long = &H8
+Private Const TA_RIGHT As Long = &H2
+Private Const TA_RTLREADING As Long = &H100
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_DISABLED As Long = &H8000000
+Private Const WS_EX_RTLREADING As Long = &H2000, WS_EX_RIGHT As Long = &H1000
 Private Const SW_HIDE As Long = &H0
 Private Const GA_ROOT As Long = 2
 Private Const WM_SETFOCUS As Long = &H7
@@ -282,7 +318,10 @@ Private Const WM_NCDESTROY As Long = &H82
 Private Const WM_NCPAINT As Long = &H85
 Private Const WM_COMMAND As Long = &H111
 Private Const WM_SETFONT As Long = &H30
+Private Const WM_GETFONT As Long = &H31
 Private Const WM_ERASEBKGND As Long = &H14
+Private Const WM_PAINT As Long = &HF
+Private Const WM_PRINTCLIENT As Long = &H318
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const WM_SETHOTKEY As Long = &H32
 Private Const WM_USER As Long = &H400
@@ -321,8 +360,11 @@ Attribute PropFont.VB_VarHelpID = -1
 Private PropVisualStyles As Boolean
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
-Private PropBackColor As OLE_COLOR
+Private PropRightToLeft As Boolean
+Private PropRightToLeftMode As CCRightToLeftModeConstants
 Private PropBorderStyle As CCBorderStyleConstants
+Private PropBackColor As OLE_COLOR
+Private PropForeColor As OLE_COLOR
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -405,8 +447,11 @@ PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
-PropBackColor = vbWindowBackground
+PropRightToLeft = Ambient.RightToLeft
+PropRightToLeftMode = CCRightToLeftModeVBAME
 PropBorderStyle = CCBorderStyleSunken
+PropBackColor = vbWindowBackground
+PropForeColor = vbWindowText
 Call CreateHotKey
 End Sub
 
@@ -422,8 +467,11 @@ Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropMousePointer = .ReadProperty("MousePointer", 0)
 Set PropMouseIcon = .ReadProperty("MouseIcon", Nothing)
 PropMouseTrack = .ReadProperty("MouseTrack", False)
-PropBackColor = .ReadProperty("BackColor", vbWindowBackground)
+PropRightToLeft = .ReadProperty("RightToLeft", False)
+PropRightToLeftMode = .ReadProperty("RightToLeftMode", CCRightToLeftModeVBAME)
 PropBorderStyle = .ReadProperty("BorderStyle", CCBorderStyleSunken)
+PropBackColor = .ReadProperty("BackColor", vbWindowBackground)
+PropForeColor = .ReadProperty("ForeColor", vbWindowText)
 End With
 Call CreateHotKey
 End Sub
@@ -437,8 +485,11 @@ With PropBag
 .WriteProperty "MousePointer", PropMousePointer, 0
 .WriteProperty "MouseIcon", PropMouseIcon, Nothing
 .WriteProperty "MouseTrack", PropMouseTrack, False
-.WriteProperty "BackColor", PropBackColor, vbWindowBackground
+.WriteProperty "RightToLeft", PropRightToLeft, False
+.WriteProperty "RightToLeftMode", PropRightToLeftMode, CCRightToLeftModeVBAME
 .WriteProperty "BorderStyle", PropBorderStyle, CCBorderStyleSunken
+.WriteProperty "BackColor", PropBackColor, vbWindowBackground
+.WriteProperty "ForeColor", PropForeColor, vbWindowText
 End With
 End Sub
 
@@ -799,6 +850,56 @@ PropMouseTrack = Value
 UserControl.PropertyChanged "MouseTrack"
 End Property
 
+Public Property Get RightToLeft() As Boolean
+Attribute RightToLeft.VB_Description = "Determines text display direction and control visual appearance on a bidirectional system."
+Attribute RightToLeft.VB_UserMemId = -611
+RightToLeft = PropRightToLeft
+End Property
+
+Public Property Let RightToLeft(ByVal Value As Boolean)
+PropRightToLeft = Value
+UserControl.RightToLeft = PropRightToLeft
+Call ComCtlsCheckRightToLeft(PropRightToLeft, UserControl.RightToLeft, PropRightToLeftMode)
+Dim dwMask As Long
+If PropRightToLeft = True Then dwMask = WS_EX_RTLREADING Or WS_EX_RIGHT
+If HotKeyHandle <> NULL_PTR Then Call ComCtlsSetRightToLeft(HotKeyHandle, dwMask)
+UserControl.PropertyChanged "RightToLeft"
+End Property
+
+Public Property Get RightToLeftMode() As CCRightToLeftModeConstants
+Attribute RightToLeftMode.VB_Description = "Returns/sets the right-to-left mode."
+RightToLeftMode = PropRightToLeftMode
+End Property
+
+Public Property Let RightToLeftMode(ByVal Value As CCRightToLeftModeConstants)
+Select Case Value
+    Case CCRightToLeftModeNoControl, CCRightToLeftModeVBAME, CCRightToLeftModeSystemLocale, CCRightToLeftModeUserLocale, CCRightToLeftModeOSLanguage
+        PropRightToLeftMode = Value
+    Case Else
+        Err.Raise 380
+End Select
+Me.RightToLeft = PropRightToLeft
+UserControl.PropertyChanged "RightToLeftMode"
+End Property
+
+Public Property Get BorderStyle() As CCBorderStyleConstants
+Attribute BorderStyle.VB_Description = "Returns/sets the border style."
+Attribute BorderStyle.VB_UserMemId = -504
+BorderStyle = PropBorderStyle
+End Property
+
+Public Property Let BorderStyle(ByVal Value As CCBorderStyleConstants)
+Select Case Value
+    Case CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
+        PropBorderStyle = Value
+    Case Else
+        Err.Raise 380
+End Select
+If HotKeyHandle <> NULL_PTR Then Call ComCtlsChangeBorderStyle(HotKeyHandle, PropBorderStyle)
+Me.Refresh
+UserControl.PropertyChanged "BorderStyle"
+End Property
+
 Public Property Get BackColor() As OLE_COLOR
 Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object."
 Attribute BackColor.VB_UserMemId = -501
@@ -825,28 +926,24 @@ End If
 UserControl.PropertyChanged "BackColor"
 End Property
 
-Public Property Get BorderStyle() As CCBorderStyleConstants
-Attribute BorderStyle.VB_Description = "Returns/sets the border style."
-Attribute BorderStyle.VB_UserMemId = -504
-BorderStyle = PropBorderStyle
+Public Property Get ForeColor() As OLE_COLOR
+Attribute ForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in an object."
+Attribute ForeColor.VB_UserMemId = -513
+ForeColor = PropForeColor
 End Property
 
-Public Property Let BorderStyle(ByVal Value As CCBorderStyleConstants)
-Select Case Value
-    Case CCBorderStyleNone, CCBorderStyleSingle, CCBorderStyleThin, CCBorderStyleSunken, CCBorderStyleRaised
-        PropBorderStyle = Value
-    Case Else
-        Err.Raise 380
-End Select
-If HotKeyHandle <> NULL_PTR Then Call ComCtlsChangeBorderStyle(HotKeyHandle, PropBorderStyle)
-UserControl.PropertyChanged "BorderStyle"
+Public Property Let ForeColor(ByVal Value As OLE_COLOR)
+PropForeColor = Value
+Me.Refresh
+UserControl.PropertyChanged "ForeColor"
 End Property
 
 Private Sub CreateHotKey()
 If HotKeyHandle <> NULL_PTR Then Exit Sub
-Dim dwStyle As Long
+Dim dwStyle As Long, dwExStyle As Long
 dwStyle = WS_CHILD Or WS_VISIBLE
-HotKeyHandle = CreateWindowEx(0, StrPtr("msctls_hotkey32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
+If PropRightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING Or WS_EX_RIGHT
+HotKeyHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_hotkey32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
 Me.Enabled = UserControl.Enabled
@@ -1007,6 +1104,50 @@ If HotKeyHandle <> NULL_PTR Then
 End If
 End Function
 
+Private Sub DrawHotKey(ByVal hDC As LongPtr, ByVal bErase As Boolean)
+If HotKeyHandle <> NULL_PTR And hDC <> NULL_PTR Then
+    Dim RC As RECT
+    GetClientRect HotKeyHandle, RC
+    If HotKeyDesignMode = False Then
+        If bErase = True Then
+            If SendMessage(HotKeyHandle, WM_ERASEBKGND, hDC, ByVal 0&) = 0 Then
+                If HotKeyBackColorBrush <> NULL_PTR Then FillRect hDC, RC, HotKeyBackColorBrush
+            End If
+        End If
+    Else
+        If HotKeyBackColorBrush <> NULL_PTR Then FillRect hDC, RC, HotKeyBackColorBrush
+    End If
+    Dim Text As String, TextAlign As Long, X As Long, Y As Long
+    Text = Me.Text
+    If (GetWindowLong(HotKeyHandle, GWL_EXSTYLE) And WS_EX_RTLREADING) = WS_EX_RTLREADING Then TextAlign = TextAlign Or TA_RTLREADING
+    If (GetWindowLong(HotKeyHandle, GWL_EXSTYLE) And WS_EX_RIGHT) = WS_EX_RIGHT Then TextAlign = TextAlign Or TA_RIGHT
+    Const SM_CXBORDER As Long = 5
+    Const SM_CYBORDER As Long = 6
+    If (TextAlign And TA_RIGHT) = 0 Then X = RC.Left + GetSystemMetrics(SM_CXBORDER) Else X = RC.Right - GetSystemMetrics(SM_CXBORDER)
+    Y = RC.Top + GetSystemMetrics(SM_CYBORDER)
+    Dim hFontOld As LongPtr, OldBkMode As Long, OldTextColor As Long, OldTextAlign As Long
+    hFontOld = SelectObject(hDC, SendMessage(HotKeyHandle, WM_GETFONT, 0, ByVal 0&))
+    OldBkMode = SetBkMode(hDC, 1)
+    If (GetWindowLong(HotKeyHandle, GWL_STYLE) And WS_DISABLED) = WS_DISABLED Then
+        OldTextColor = SetTextColor(hDC, WinColor(vbGrayText))
+    Else
+        OldTextColor = SetTextColor(hDC, WinColor(PropForeColor))
+    End If
+    OldTextAlign = SetTextAlign(hDC, TextAlign)
+    TextOut hDC, X, Y, StrPtr(Text), Len(Text)
+    If HotKeyFocused = True Then
+        Dim Size As SIZEAPI
+        GetTextExtentPoint32 hDC, StrPtr(Text), Len(Text), Size
+        If (TextAlign And TA_RIGHT) = 0 Then X = X + Size.CX Else X = X - Size.CX
+        SetCaretPos X, Y
+    End If
+    If TextAlign <> OldTextAlign Then SetTextAlign hDC, OldTextAlign
+    SetBkMode hDC, OldBkMode
+    SetTextColor hDC, OldTextColor
+    SelectObject hDC, hFontOld
+End If
+End Sub
+
 Private Function PtInRect(ByRef lpRect As RECT, ByVal X As Long, ByVal Y As Long) As Long
 ' Avoid API declare since x64 calling convention aligns 8 bytes per argument.
 ' So the handling of a ByVal PT being split into two 4-byte arguments will crash.
@@ -1130,13 +1271,27 @@ Select Case wMsg
         End If
     Case WM_ERASEBKGND
         If HotKeyBackColorBrush <> NULL_PTR Then
-            SetBkMode wParam, 1
             Dim RC As RECT
             GetClientRect hWnd, RC
             FillRect wParam, RC, HotKeyBackColorBrush
             WindowProcControl = 1
             Exit Function
         End If
+    Case WM_PAINT
+        If wParam = 0 Then
+            Dim PS As PAINTSTRUCT
+            BeginPaint hWnd, PS
+            Call DrawHotKey(PS.hDC, CBool(PS.fErase <> 0))
+            EndPaint hWnd, PS
+        Else
+            Call DrawHotKey(wParam, True)
+        End If
+        WindowProcControl = 0
+        Exit Function
+    Case WM_PRINTCLIENT
+        SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
+        WindowProcControl = 0
+        Exit Function
     
     #If ImplementThemedBorder = True Then
     
@@ -1338,7 +1493,7 @@ Select Case wMsg
     
     #End If
     
-    Case WM_ERASEBKGND, WM_NCPAINT
+    Case WM_ERASEBKGND, WM_PAINT, WM_PRINTCLIENT, WM_NCPAINT
         WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
         Exit Function
 End Select
