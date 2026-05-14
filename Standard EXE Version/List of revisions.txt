@@ -1,5 +1,8 @@
 List of revisions:
 
+14-May-2026
+- AllowImageHighlight property changed to an enum in the ImageCombo control. (defaults to 0 - Always)
+
 12-May-2026
 - Included the AllowImageHighlight property in the ImageCombo control. (defaults to True)
   When set to False a focused item image is not allowed anymore to be drawn highlighted.
