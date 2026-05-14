@@ -1,27 +1,27 @@
 VERSION 5.00
 Begin VB.PropertyPage PPImageComboGeneral 
    Caption         =   "General"
-   ClientHeight    =   3810
+   ClientHeight    =   4200
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   6225
    LockControls    =   -1  'True
    PaletteMode     =   0  'Halftone
-   ScaleHeight     =   3810
+   ScaleHeight     =   4200
    ScaleWidth      =   6225
-   Begin VB.CheckBox CheckAllowImageHighlight 
-      Caption         =   "AllowImageHighlight"
-      Height          =   285
-      Left            =   4200
-      TabIndex        =   25
-      Top             =   1920
-      Width           =   1920
+   Begin VB.ComboBox ComboAllowImageHighlight 
+      Height          =   315
+      Left            =   1800
+      Style           =   2  'Dropdown List
+      TabIndex        =   22
+      Top             =   3720
+      Width           =   2235
    End
    Begin VB.CheckBox CheckMouseTrack 
       Caption         =   "MouseTrack"
       Height          =   285
       Left            =   4200
-      TabIndex        =   21
+      TabIndex        =   23
       Top             =   480
       Width           =   1920
    End
@@ -29,7 +29,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Caption         =   "ScrollTrack"
       Height          =   285
       Left            =   4200
-      TabIndex        =   24
+      TabIndex        =   26
       Top             =   1560
       Width           =   1920
    End
@@ -75,7 +75,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Caption         =   "ShowImages"
       Height          =   285
       Left            =   4200
-      TabIndex        =   23
+      TabIndex        =   25
       Top             =   1200
       Width           =   1920
    End
@@ -121,7 +121,7 @@ Begin VB.PropertyPage PPImageComboGeneral
       Caption         =   "ExtendedUI"
       Height          =   285
       Left            =   4200
-      TabIndex        =   22
+      TabIndex        =   24
       Top             =   840
       Width           =   1920
    End
@@ -139,6 +139,14 @@ Begin VB.PropertyPage PPImageComboGeneral
       Left            =   1800
       TabIndex        =   1
       Top             =   120
+      Width           =   1620
+   End
+   Begin VB.Label LabelAllowImageHighlight 
+      Caption         =   "AllowImageHighlight:"
+      Height          =   240
+      Left            =   120
+      TabIndex        =   21
+      Top             =   3720
       Width           =   1620
    End
    Begin VB.Label LabelEllipsisFormat 
@@ -244,6 +252,16 @@ With ComboEllipsisFormat
 .AddItem ImcEllipsisFormatEnd & " - End"
 .ItemData(.NewIndex) = ImcEllipsisFormatEnd
 End With
+With ComboAllowImageHighlight
+.AddItem ImcAllowImageHighlightAlways & " - Always"
+.ItemData(.NewIndex) = ImcAllowImageHighlightAlways
+.AddItem ImcAllowImageHighlightNever & " - Never"
+.ItemData(.NewIndex) = ImcAllowImageHighlightNever
+.AddItem ImcAllowImageHighlightListOnly & " - ListOnly"
+.ItemData(.NewIndex) = ImcAllowImageHighlightListOnly
+.AddItem ImcAllowImageHighlightComboOnly & " - ComboOnly"
+.ItemData(.NewIndex) = ImcAllowImageHighlightComboOnly
+End With
 Call ComCtlsPPInitComboIMEMode(ComboIMEMode)
 End Sub
 
@@ -265,11 +283,11 @@ With PropertyPage.SelectedControls(0)
 .MaxLength = CLng(TextMaxLength.Text)
 .IMEMode = ComboIMEMode.ItemData(ComboIMEMode.ListIndex)
 .EllipsisFormat = ComboEllipsisFormat.ItemData(ComboEllipsisFormat.ListIndex)
+.AllowImageHighlight = ComboAllowImageHighlight.ItemData(ComboAllowImageHighlight.ListIndex)
 .MouseTrack = CBool(CheckMouseTrack.Value = vbChecked)
 .ExtendedUI = CBool(CheckExtendedUI.Value = vbChecked)
 .ShowImages = CBool(CheckShowImages.Value = vbChecked)
 .ScrollTrack = CBool(CheckScrollTrack.Value = vbChecked)
-.AllowImageHighlight = CBool(CheckAllowImageHighlight.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub
@@ -324,11 +342,16 @@ For i = 0 To ComboEllipsisFormat.ListCount - 1
         Exit For
     End If
 Next i
+For i = 0 To ComboAllowImageHighlight.ListCount - 1
+    If ComboAllowImageHighlight.ItemData(i) = .AllowImageHighlight Then
+        ComboAllowImageHighlight.ListIndex = i
+        Exit For
+    End If
+Next i
 CheckMouseTrack.Value = IIf(.MouseTrack = True, vbChecked, vbUnchecked)
 CheckExtendedUI.Value = IIf(.ExtendedUI = True, vbChecked, vbUnchecked)
 CheckShowImages.Value = IIf(.ShowImages = True, vbChecked, vbUnchecked)
 CheckScrollTrack.Value = IIf(.ScrollTrack = True, vbChecked, vbUnchecked)
-CheckAllowImageHighlight.Value = IIf(.AllowImageHighlight = True, vbChecked, vbUnchecked)
 End With
 FreezeChanged = False
 End Sub
@@ -529,6 +552,11 @@ If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
 
+Private Sub ComboAllowImageHighlight_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
 Private Sub CheckMouseTrack_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
@@ -545,11 +573,6 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckScrollTrack_Click()
-If FreezeChanged = True Then Exit Sub
-PropertyPage.Changed = True
-End Sub
-
-Private Sub CheckAllowImageHighlight_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub
