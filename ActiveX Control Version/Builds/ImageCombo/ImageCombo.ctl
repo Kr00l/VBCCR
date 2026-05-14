@@ -46,6 +46,7 @@ Private Const PTR_SIZE As Long = 4
 Private ImcStyleDropDownCombo, ImcStyleSimpleCombo, ImcStyleDropDownList
 Private ImcEndEditReasonLostFocus, ImcEndEditReasonReturn, ImcEndEditReasonDropDown
 Private ImcEllipsisFormatNone, ImcEllipsisFormatEnd
+Private ImcAllowImageHighlightAlways, ImcAllowImageHighlightNever, ImcAllowImageHighlightListOnly, ImcAllowImageHighlightComboOnly
 #End If
 Public Enum ImcStyleConstants
 ImcStyleDropDownCombo = 0
@@ -65,6 +66,12 @@ End Enum
 Public Enum ImcEllipsisFormatConstants
 ImcEllipsisFormatNone = 0
 ImcEllipsisFormatEnd = 1
+End Enum
+Public Enum ImcAllowImageHighlightConstants
+ImcAllowImageHighlightAlways = 0
+ImcAllowImageHighlightNever = 1
+ImcAllowImageHighlightListOnly = 2
+ImcAllowImageHighlightComboOnly = 3
 End Enum
 Private Type RECT
 Left As Long
@@ -469,7 +476,7 @@ Private PropMaxLength As Long
 Private PropIMEMode As CCIMEModeConstants
 Private PropEllipsisFormat As ImcEllipsisFormatConstants
 Private PropScrollTrack As Boolean
-Private PropAllowImageHighlight As Boolean
+Private PropAllowImageHighlight As ImcAllowImageHighlightConstants
 
 Private Sub IObjectSafety_GetInterfaceSafetyOptions(ByRef riid As OLEGuids.OLECLSID, ByRef pdwSupportedOptions As Long, ByRef pdwEnabledOptions As Long)
 Const INTERFACESAFE_FOR_UNTRUSTED_CALLER As Long = &H1, INTERFACESAFE_FOR_UNTRUSTED_DATA As Long = &H2
@@ -582,7 +589,7 @@ PropMaxLength = 0
 PropIMEMode = CCIMEModeNoControl
 PropEllipsisFormat = ImcEllipsisFormatNone
 PropScrollTrack = True
-PropAllowImageHighlight = True
+PropAllowImageHighlight = ImcAllowImageHighlightAlways
 Call CreateImageCombo
 End Sub
 
@@ -618,7 +625,7 @@ PropMaxLength = .ReadProperty("MaxLength", 0)
 PropIMEMode = .ReadProperty("IMEMode", CCIMEModeNoControl)
 PropEllipsisFormat = .ReadProperty("EllipsisFormat", ImcEllipsisFormatNone)
 PropScrollTrack = .ReadProperty("ScrollTrack", True)
-PropAllowImageHighlight = .ReadProperty("AllowImageHighlight", True)
+PropAllowImageHighlight = .ReadProperty("AllowImageHighlight", ImcAllowImageHighlightAlways)
 End With
 Call CreateImageCombo
 If Not PropImageListName = "(None)" Then TimerImageList.Enabled = True
@@ -651,7 +658,7 @@ With PropBag
 .WriteProperty "IMEMode", PropIMEMode, CCIMEModeNoControl
 .WriteProperty "EllipsisFormat", PropEllipsisFormat, ImcEllipsisFormatNone
 .WriteProperty "ScrollTrack", PropScrollTrack, True
-.WriteProperty "AllowImageHighlight", PropAllowImageHighlight, True
+.WriteProperty "AllowImageHighlight", PropAllowImageHighlight, ImcAllowImageHighlightAlways
 End With
 End Sub
 
@@ -1600,13 +1607,18 @@ PropScrollTrack = Value
 UserControl.PropertyChanged "ScrollTrack"
 End Property
 
-Public Property Get AllowImageHighlight() As Boolean
+Public Property Get AllowImageHighlight() As ImcAllowImageHighlightConstants
 Attribute AllowImageHighlight.VB_Description = "Returns/sets a value that determines whether a focused item image is allowed to be drawn highlighted."
 AllowImageHighlight = PropAllowImageHighlight
 End Property
 
-Public Property Let AllowImageHighlight(ByVal Value As Boolean)
-PropAllowImageHighlight = Value
+Public Property Let AllowImageHighlight(ByVal Value As ImcAllowImageHighlightConstants)
+Select Case Value
+    Case ImcAllowImageHighlightAlways, ImcAllowImageHighlightNever, ImcAllowImageHighlightListOnly, ImcAllowImageHighlightComboOnly
+        PropAllowImageHighlight = Value
+    Case Else
+        Err.Raise 380
+End Select
 UserControl.PropertyChanged "AllowImageHighlight"
 End Property
 
@@ -2294,13 +2306,30 @@ Select Case wMsg
                 End If
             End If
             Call ComCtlsImcGetSysColorSetHook(ImageComboRGBBackColor, ImageComboRGBForeColor)
-            If PropAllowImageHighlight = True Then
-                WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-            Else
-                Call ComCtlsImcImageListDrawSetHook
-                WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-                Call ComCtlsImcImageListDrawRemoveHook
-            End If
+            Select Case PropAllowImageHighlight
+                Case ImcAllowImageHighlightAlways
+                    WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                Case ImcAllowImageHighlightNever
+                    Call ComCtlsImcImageListDrawSetHook
+                    WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                    Call ComCtlsImcImageListDrawRemoveHook
+                Case ImcAllowImageHighlightListOnly
+                    If (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                        Call ComCtlsImcImageListDrawSetHook
+                        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                        Call ComCtlsImcImageListDrawRemoveHook
+                    Else
+                        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                    End If
+                Case ImcAllowImageHighlightComboOnly
+                    If Not (DIS.ItemState And ODS_COMBOBOXEDIT) = ODS_COMBOBOXEDIT Then
+                        Call ComCtlsImcImageListDrawSetHook
+                        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                        Call ComCtlsImcImageListDrawRemoveHook
+                    Else
+                        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+                    End If
+            End Select
             Call ComCtlsImcGetSysColorRemoveHook
             Exit Function
         End If
