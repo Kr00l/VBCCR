@@ -1348,13 +1348,16 @@ End Function
 Public Function UTF8_To_UTF16(ByRef Source() As Byte) As String
 If IsArrayInitialized(Source()) = False Then Exit Function
 Const CP_UTF8 As Long = 65001
-Dim Size As Long, Pointer As LongPtr, Length As Long
+Dim Size As Long
 Size = UBound(Source) - LBound(Source) + 1
-Pointer = VarPtr(Source(LBound(Source)))
-Length = MultiByteToWideChar(CP_UTF8, 0, Pointer, Size, NULL_PTR, 0)
-If Length > 0 Then
-    UTF8_To_UTF16 = Space$(Length)
-    MultiByteToWideChar CP_UTF8, 0, Pointer, Size, StrPtr(UTF8_To_UTF16), Length
+If Size > 0 Then
+    Dim Pointer As LongPtr, Length As Long
+    Pointer = VarPtr(Source(LBound(Source)))
+    Length = MultiByteToWideChar(CP_UTF8, 0, Pointer, Size, NULL_PTR, 0)
+    If Length > 0 Then
+        UTF8_To_UTF16 = Space$(Length)
+        MultiByteToWideChar CP_UTF8, 0, Pointer, Size, StrPtr(UTF8_To_UTF16), Length
+    End If
 End If
 End Function
 
