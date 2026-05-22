@@ -2682,7 +2682,7 @@ End Function
 
 Private Function WindowProcControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
-    Case WM_ERASEBKGND
+    Case WM_ERASEBKGND, WM_PAINT
         WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
         Exit Function
 End Select
