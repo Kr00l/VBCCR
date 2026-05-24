@@ -1108,13 +1108,7 @@ Private Sub DrawHotKey(ByVal hDC As LongPtr, ByVal bErase As Boolean)
 If HotKeyHandle <> NULL_PTR And hDC <> NULL_PTR Then
     Dim RC As RECT
     GetClientRect HotKeyHandle, RC
-    If HotKeyDesignMode = False Then
-        If bErase = True Then
-            If SendMessage(HotKeyHandle, WM_ERASEBKGND, hDC, ByVal 0&) = 0 Then
-                If HotKeyBackColorBrush <> NULL_PTR Then FillRect hDC, RC, HotKeyBackColorBrush
-            End If
-        End If
-    Else
+    If bErase = True Then
         If HotKeyBackColorBrush <> NULL_PTR Then FillRect hDC, RC, HotKeyBackColorBrush
     End If
     Dim Text As String, TextAlign As Long, X As Long, Y As Long
@@ -1270,13 +1264,8 @@ Select Case wMsg
             End If
         End If
     Case WM_ERASEBKGND
-        If HotKeyBackColorBrush <> NULL_PTR Then
-            Dim RC As RECT
-            GetClientRect hWnd, RC
-            FillRect wParam, RC, HotKeyBackColorBrush
-            WindowProcControl = 1
-            Exit Function
-        End If
+        WindowProcControl = 0
+        Exit Function
     Case WM_PAINT
         If wParam = 0 Then
             Dim PS As PAINTSTRUCT
@@ -1284,7 +1273,7 @@ Select Case wMsg
             Call DrawHotKey(PS.hDC, CBool(PS.fErase <> 0))
             EndPaint hWnd, PS
         Else
-            Call DrawHotKey(wParam, True)
+            Call DrawHotKey(wParam, CBool(SendMessage(hWnd, WM_ERASEBKGND, wParam, ByVal 0&) = 0))
         End If
         WindowProcControl = 0
         Exit Function
