@@ -276,6 +276,7 @@ Private Const SWP_NOZORDER As Long = &H4
 Private Const DCX_WINDOW As Long = &H1
 Private Const DCX_INTERSECTRGN As Long = &H80
 Private Const DCX_USESTYLE As Long = &H10000
+Private Const DCX_KEEPCLIPRGN As Long = &H40000
 Private Const GCL_STYLE As Long = (-26)
 Private Const CS_DBLCLKS As Long = &H8
 Private Const GWL_STYLE As Long = (-16)
@@ -1301,7 +1302,7 @@ Select Case wMsg
                 If wParam = 1 Then ' Alias for entire window
                     hDC = GetWindowDC(hWnd)
                 Else
-                    hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE)
+                    hDC = GetDCEx(hWnd, wParam, DCX_WINDOW Or DCX_INTERSECTRGN Or DCX_USESTYLE Or DCX_KEEPCLIPRGN)
                 End If
                 If hDC <> NULL_PTR Then
                     Dim BorderX As Long, BorderY As Long
