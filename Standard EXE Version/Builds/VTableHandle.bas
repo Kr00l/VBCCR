@@ -584,8 +584,8 @@ If Handled = False Or UBound(StringsOutArray()) = 0 Then
 Else
     Dim cElems As Long, pElems As LongPtr, nElemCount As Long
     Dim Buffer As String, lpString As LongPtr
-    cElems = UBound(StringsOutArray())
-    If Not UBound(CookiesOutArray()) = cElems Then ReDim Preserve CookiesOutArray(cElems) As Long
+    cElems = UBound(StringsOutArray()) + 1
+    If (UBound(CookiesOutArray()) + 1) <> cElems Then ReDim Preserve CookiesOutArray(0 To (cElems - 1)) As Long
     pElems = CoTaskMemAlloc(cElems * PTR_SIZE)
     pCaStringsOut.cElems = cElems
     pCaStringsOut.pElems = pElems
