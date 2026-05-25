@@ -648,8 +648,8 @@ End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
 If DispId = DispIdBorderStyle Then
-    ReDim StringsOut(0 To (1 + 1)) As String
-    ReDim CookiesOut(0 To (1 + 1)) As Long
+    ReDim StringsOut(0 To 1) As String
+    ReDim CookiesOut(0 To 1) As Long
     StringsOut(0) = vbBSNone & " - None": CookiesOut(0) = vbBSNone
     StringsOut(1) = vbFixedSingle & " - Fixed Single": CookiesOut(1) = vbFixedSingle
     Handled = True
@@ -669,7 +669,7 @@ If DispId = DispIdBorderStyle Then
     Value = Cookie
     Handled = True
 ElseIf DispId = DispIdImageList Then
-    If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
+    If Cookie <= UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
 End Sub

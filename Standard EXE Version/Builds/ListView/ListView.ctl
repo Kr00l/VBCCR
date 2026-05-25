@@ -1350,16 +1350,16 @@ End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
 If DispId = DispIdIcons Then
-    If Cookie < UBound(IconsArray()) Then Value = IconsArray(Cookie)
+    If Cookie <= UBound(IconsArray()) Then Value = IconsArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdSmallIcons Then
-    If Cookie < UBound(SmallIconsArray()) Then Value = SmallIconsArray(Cookie)
+    If Cookie <= UBound(SmallIconsArray()) Then Value = SmallIconsArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdColumnHeaderIcons Then
-    If Cookie < UBound(ColumnHeaderIconsArray()) Then Value = ColumnHeaderIconsArray(Cookie)
+    If Cookie <= UBound(ColumnHeaderIconsArray()) Then Value = ColumnHeaderIconsArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdGroupIcons Then
-    If Cookie < UBound(GroupIconsArray()) Then Value = GroupIconsArray(Cookie)
+    If Cookie <= UBound(GroupIconsArray()) Then Value = GroupIconsArray(Cookie)
     Handled = True
 End If
 End Sub
