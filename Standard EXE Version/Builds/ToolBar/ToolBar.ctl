@@ -843,16 +843,16 @@ End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
 If DispId = DispIdImageList Then
-    If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
+    If Cookie <= UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdDisabledImageList Then
-    If Cookie < UBound(DisabledImageListArray()) Then Value = DisabledImageListArray(Cookie)
+    If Cookie <= UBound(DisabledImageListArray()) Then Value = DisabledImageListArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdHotImageList Then
-    If Cookie < UBound(HotImageListArray()) Then Value = HotImageListArray(Cookie)
+    If Cookie <= UBound(HotImageListArray()) Then Value = HotImageListArray(Cookie)
     Handled = True
 ElseIf DispId = DispIdPressedImageList Then
-    If Cookie < UBound(PressedImageListArray()) Then Value = PressedImageListArray(Cookie)
+    If Cookie <= UBound(PressedImageListArray()) Then Value = PressedImageListArray(Cookie)
     Handled = True
 End If
 End Sub

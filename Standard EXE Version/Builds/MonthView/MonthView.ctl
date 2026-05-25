@@ -435,8 +435,8 @@ End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
 If DispId = DispIdStartOfWeek Then
-    ReDim StringsOut(0 To (7 + 1)) As String
-    ReDim CookiesOut(0 To (7 + 1)) As Long
+    ReDim StringsOut(0 To 7) As String
+    ReDim CookiesOut(0 To 7) As Long
     StringsOut(0) = "0 - System": CookiesOut(0) = 0
     StringsOut(1) = "1 - Monday": CookiesOut(1) = 1
     StringsOut(2) = "2 - Tuesday": CookiesOut(2) = 2
