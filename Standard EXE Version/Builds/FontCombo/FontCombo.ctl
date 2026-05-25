@@ -565,16 +565,16 @@ If DispId = DispIdBuddyControl Then
     On Error GoTo CATCH_EXCEPTION
     Dim ControlEnum As Object, PropUBound As Long
     PropUBound = UBound(StringsOut())
-    ReDim Preserve StringsOut(PropUBound + 1) As String
-    ReDim Preserve CookiesOut(PropUBound + 1) As Long
+    ReDim Preserve StringsOut(0 To PropUBound) As String
+    ReDim Preserve CookiesOut(0 To PropUBound) As Long
     StringsOut(PropUBound) = "(None)"
     CookiesOut(PropUBound) = PropUBound
     For Each ControlEnum In UserControl.ParentControls
         If Not ControlEnum Is Extender Then
             If TypeOf ControlEnum Is FontCombo Then
-                PropUBound = UBound(StringsOut())
-                ReDim Preserve StringsOut(PropUBound + 1) As String
-                ReDim Preserve CookiesOut(PropUBound + 1) As Long
+                PropUBound = UBound(StringsOut()) + 1
+                ReDim Preserve StringsOut(0 To PropUBound) As String
+                ReDim Preserve CookiesOut(0 To PropUBound) As Long
                 StringsOut(PropUBound) = ProperControlName(ControlEnum)
                 CookiesOut(PropUBound) = PropUBound
             End If
@@ -596,7 +596,7 @@ End Sub
 
 Private Sub IPerPropertyBrowsingVB_GetPredefinedValue(ByRef Handled As Boolean, ByVal DispId As Long, ByVal Cookie As Long, ByRef Value As Variant)
 If DispId = DispIdBuddyControl Then
-    If Cookie < UBound(BuddyControlArray()) Then Value = BuddyControlArray(Cookie)
+    If Cookie <= UBound(BuddyControlArray()) Then Value = BuddyControlArray(Cookie)
     Handled = True
 End If
 End Sub

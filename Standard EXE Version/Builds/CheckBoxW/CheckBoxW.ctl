@@ -572,8 +572,8 @@ If DispId = DispIdImageList Then
     On Error GoTo 0
     Handled = True
 ElseIf DispId = DispIdValue Then
-    ReDim StringsOut(0 To (2 + 1)) As String
-    ReDim CookiesOut(0 To (2 + 1)) As Long
+    ReDim StringsOut(0 To 2) As String
+    ReDim CookiesOut(0 To 2) As Long
     StringsOut(0) = vbUnchecked & " - Unchecked": CookiesOut(0) = vbUnchecked
     StringsOut(1) = vbChecked & " - Checked": CookiesOut(1) = vbChecked
     StringsOut(2) = vbGrayed & " - Grayed": CookiesOut(2) = vbGrayed
@@ -589,7 +589,7 @@ If DispId = DispIdValue Then
     Value = Cookie
     Handled = True
 ElseIf DispId = DispIdImageList Then
-    If Cookie < UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
+    If Cookie <= UBound(ImageListArray()) Then Value = ImageListArray(Cookie)
     Handled = True
 End If
 End Sub
