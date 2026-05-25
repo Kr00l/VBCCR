@@ -1,6 +1,7 @@
 List of revisions:
 
 25-May-2026
+- Some minor internal improvements.
 - Use of flag DCX_KEEPCLIPRGN in the WM_NCPAINT handler to solve a leak.
   This way the system region (wParam) will not be deleted by GetDCEx().
 
