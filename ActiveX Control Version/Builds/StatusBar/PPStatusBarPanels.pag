@@ -48,7 +48,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3360
       Width           =   1215
    End
-   Begin VB.TextBox TextToolTipText 
+   Begin VBCCR18.TextBoxW TextToolTipText 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
       Height          =   315
@@ -148,7 +148,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3030
       Width           =   1215
    End
-   Begin VB.TextBox TextActualWidth 
+   Begin VBCCR18.TextBoxW TextActualWidth 
       BackColor       =   &H8000000F&
       Height          =   315
       Left            =   4080
@@ -157,7 +157,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   1560
       Width           =   1575
    End
-   Begin VB.TextBox TextMinWidth 
+   Begin VBCCR18.TextBoxW TextMinWidth 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
       Height          =   315
@@ -206,7 +206,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   3000
       Width           =   1575
    End
-   Begin VB.TextBox TextTag 
+   Begin VBCCR18.TextBoxW TextTag 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
       Height          =   315
@@ -215,7 +215,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   1560
       Width           =   1575
    End
-   Begin VB.TextBox TextText 
+   Begin VBCCR18.TextBoxW TextText 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
       Height          =   315
@@ -224,7 +224,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   480
       Width           =   4455
    End
-   Begin VB.TextBox TextKey 
+   Begin VBCCR18.TextBoxW TextKey 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
       Height          =   315
@@ -271,7 +271,7 @@ Begin VB.PropertyPage PPStatusBarPanels
       Top             =   120
       Width           =   300
    End
-   Begin VB.TextBox TextIndex 
+   Begin VBCCR18.TextBoxW TextIndex 
       BackColor       =   &H8000000F&
       Enabled         =   0   'False
       Height          =   315
