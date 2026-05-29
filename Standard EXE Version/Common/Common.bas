@@ -162,6 +162,7 @@ Private Declare PtrSafe Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal 
 Private Declare PtrSafe Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
 Private Declare PtrSafe Function GetActiveWindow Lib "user32" () As LongPtr
 Private Declare PtrSafe Function GetForegroundWindow Lib "user32" () As LongPtr
+Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As LongPtr, ByVal hWndChildAfter As LongPtr, ByVal lpszClass As LongPtr, ByVal lpszWindow As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetFileAttributes Lib "kernel32" Alias "GetFileAttributesW" (ByVal lpFileName As LongPtr) As Long
 Private Declare PtrSafe Function SetFileAttributes Lib "kernel32" Alias "SetFileAttributesW" (ByVal lpFileName As LongPtr, ByVal dwFileAttributes As Long) As Long
 Private Declare PtrSafe Function GetFileAttributesEx Lib "kernel32" Alias "GetFileAttributesExW" (ByVal lpFileName As LongPtr, ByVal fInfoLevelId As Long, ByVal lpFileInformation As LongPtr) As Long
@@ -247,6 +248,7 @@ Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString
 Private Declare Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
 Private Declare Function GetActiveWindow Lib "user32" () As Long
 Private Declare Function GetForegroundWindow Lib "user32" () As Long
+Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function GetFileAttributes Lib "kernel32" Alias "GetFileAttributesW" (ByVal lpFileName As Long) As Long
 Private Declare Function SetFileAttributes Lib "kernel32" Alias "SetFileAttributesW" (ByVal lpFileName As Long, ByVal dwFileAttributes As Long) As Long
 Private Declare Function GetFileAttributesEx Lib "kernel32" Alias "GetFileAttributesExW" (ByVal lpFileName As Long, ByVal fInfoLevelId As Long, ByVal lpFileInformation As Long) As Long
@@ -331,10 +333,15 @@ Dim MSGBOXP As MSGBOXPARAMS
 With MSGBOXP
 .cbSize = LenB(MSGBOXP)
 If (Buttons And vbSystemModal) = 0 Then
-    If Not Screen.ActiveForm Is Nothing Then
-        .hWndOwner = Screen.ActiveForm.hWnd
+    Dim hWnd As LongPtr, hWndMDIClient As LongPtr
+    hWnd = GetActiveWindow()
+    If hWnd <> NULL_PTR Then hWndMDIClient = FindWindowEx(hWnd, NULL_PTR, StrPtr("MDIClient"), NULL_PTR)
+    If hWndMDIClient <> NULL_PTR Then
+        Const WM_MDIGETACTIVE As Long = &H229
+        .hWndOwner = SendMessage(hWndMDIClient, WM_MDIGETACTIVE, 0, ByVal 0&)
+        If .hWndOwner = NULL_PTR Then .hWndOwner = hWndMDIClient
     Else
-        .hWndOwner = GetActiveWindow()
+        .hWndOwner = hWnd
     End If
 Else
     .hWndOwner = GetForegroundWindow()
