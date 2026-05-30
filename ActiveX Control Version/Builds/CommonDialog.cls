@@ -818,6 +818,7 @@ Private Const COLOROKSTRING As String = "commdlg_ColorOK"
 Private Const SETRGBSTRING As String = "commdlg_SetRGBColor"
 Private Const FINDMSGSTRING As String = "commdlg_FindReplace"
 Private Const WM_INITDIALOG As Long = &H110
+Private Const WM_CLOSE As Long = &H10
 Private Const WM_COMMAND As Long = &H111
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_USER As Long = &H400
@@ -921,13 +922,11 @@ End Sub
 Private Sub Class_Terminate()
 If PropDC <> NULL_PTR Then DeleteObject PropDC
 If CommonDialogFRDialogHandle <> NULL_PTR Then
-    If IsWindow(CommonDialogFRDialogHandle) = 0 Then
+    If IsWindow(CommonDialogFR.hWndOwner) = 0 Then
+        ' The owner can no longer receive FR_DIALOGTERM.
         Call ComCtlsCdlFRReleaseHook(CommonDialogFRDialogHandle)
-    Else
-        Const WM_CLOSE As Long = &H10
-        SendMessage CommonDialogFRDialogHandle, WM_CLOSE, 0, ByVal 0&
-        DoEvents
     End If
+    If IsWindow(CommonDialogFRDialogHandle) <> 0 Then SendMessage CommonDialogFRDialogHandle, WM_CLOSE, 0, ByVal 0&
 End If
 End Sub
 
