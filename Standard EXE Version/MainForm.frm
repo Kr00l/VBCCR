@@ -599,7 +599,9 @@ HotKey1.Value(vbCtrlMask + vbAltMask) = vbKeyA
 End Sub
 
 Private Sub Command1_Click()
-RichTextBoxForm.Show vbModal
+With New RichTextBoxForm
+.Show vbModal
+End With
 End Sub
 
 Private Sub Command2_Click()
@@ -615,7 +617,9 @@ End If
 End Sub
 
 Private Sub CommandButtonW1_Click()
-VirtualControlsForm.Show vbModal
+With New VirtualControlsForm
+.Show vbModal
+End With
 End Sub
 
 Private Sub Command3_Click()
@@ -634,7 +638,9 @@ End If
 End Sub
 
 Private Sub Command4_Click()
-PagerForm.Show vbModal
+With New PagerForm
+.Show vbModal
+End With
 End Sub
 
 Private Sub DTPicker1_CalendarGetDayBold(ByVal StartDate As Date, ByVal Count As Long, State() As Boolean)

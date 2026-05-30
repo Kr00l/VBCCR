@@ -1,5 +1,8 @@
 List of revisions:
 
+30-May-2026
+- Class_Terminate edge case fix for ShowFind/ShowReplace dialogs on MDI child forms in the CommonDialog class.
+
 25-May-2026
 - Some minor internal improvements.
 - Use of flag DCX_KEEPCLIPRGN in the WM_NCPAINT handler to solve a leak.
