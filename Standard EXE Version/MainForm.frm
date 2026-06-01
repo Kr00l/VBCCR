@@ -388,7 +388,6 @@ Begin VB.Form MainForm
       _ExtentX        =   4683
       _ExtentY        =   4260
       OLEDropMode     =   1
-      ImageList       =   "ImageList1"
       TabFixedWidth   =   133
       TabMinWidth     =   7
       ShowTips        =   -1  'True
