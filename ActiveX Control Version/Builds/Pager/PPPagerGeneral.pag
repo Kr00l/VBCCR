@@ -142,6 +142,7 @@ Private Const PTR_SIZE As Long = 8
 Private Const NULL_PTR As Long = 0
 Private Const PTR_SIZE As Long = 4
 #End If
+Private Const DISPID_HWND As Long = -515
 Private BuddyControlEnumerated As Boolean
 Private FreezeChanged As Boolean
 
@@ -348,8 +349,18 @@ On Error GoTo 0
 Handle = NULL_PTR
 If ControlIsValid = True Then
     On Error Resume Next
-    Handle = Control.hWndOwner
-    If Err.Number <> 0 Then Handle = Control.hWnd
+    Handle = GetWindowFromObject(Control.Object)
     On Error GoTo 0
+    If Handle = NULL_PTR Then
+        On Error Resume Next
+        Handle = Control.hWndUserControl
+        If Err.Number <> 0 Then Handle = Control.hWnd
+        On Error GoTo 0
+        If Handle = NULL_PTR Then
+            On Error Resume Next
+            Handle = CallByDispId(Control.Object, DISPID_HWND, VbGet Or VbMethod)
+            On Error GoTo 0
+        End If
+    End If
 End If
 End Function
