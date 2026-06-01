@@ -3557,10 +3557,26 @@ Call DestroyToolBar
 Call CreateToolBar
 Call UserControl_Resize
 If ToolBarDesignMode = False Then
-    If Not PropImageListControl Is Nothing Then Set .ImageList = PropImageListControl
-    If Not PropDisabledImageListControl Is Nothing Then Set .DisabledImageList = PropDisabledImageListControl
-    If Not PropHotImageListControl Is Nothing Then Set .HotImageList = PropHotImageListControl
-    If Not PropPressedImageListControl Is Nothing Then Set .PressedImageList = PropPressedImageListControl
+    If ToolBarImageListHandle = NULL_PTR Then
+        If Not PropImageListControl Is Nothing Then Set .ImageList = PropImageListControl
+    Else
+        .ImageList = ToolBarImageListHandle
+    End If
+    If ToolBarDisabledImageListHandle = NULL_PTR Then
+        If Not PropDisabledImageListControl Is Nothing Then Set .DisabledImageList = PropDisabledImageListControl
+    Else
+        .DisabledImageList = ToolBarDisabledImageListHandle
+    End If
+    If ToolBarHotImageListHandle = NULL_PTR Then
+        If Not PropHotImageListControl Is Nothing Then Set .HotImageList = PropHotImageListControl
+    Else
+        .HotImageList = ToolBarHotImageListHandle
+    End If
+    If ToolBarPressedImageListHandle = NULL_PTR Then
+        If Not PropPressedImageListControl Is Nothing Then Set .PressedImageList = PropPressedImageListControl
+    Else
+        .PressedImageList = ToolBarPressedImageListHandle
+    End If
 Else
     If Not PropImageListName = "(None)" Then .ImageList = PropImageListName
     If Not PropDisabledImageListName = "(None)" Then .DisabledImageList = PropDisabledImageListName

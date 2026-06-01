@@ -159,6 +159,7 @@ Private Declare PtrSafe Function LoadCursor Lib "user32" Alias "LoadCursorW" (By
 Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetAncestor Lib "user32" (ByVal hWnd As LongPtr, ByVal gaFlags As Long) As LongPtr
 Private Declare PtrSafe Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As RECT) As Long
 #Else
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
@@ -176,6 +177,7 @@ Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hIns
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
 Private Declare Function GetAncestor Lib "user32" (ByVal hWnd As Long, ByVal gaFlags As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
+Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 #End If
 Private Const ICC_PAGESCROLLER_CLASS As Long = &H1000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
@@ -242,7 +244,7 @@ Private PagerDesignMode As Boolean
 Private PagerHotItemChangePrevFlags As Long
 Private PagerAlignable As Boolean
 Private PagerBuddyControlHandle As LongPtr, PagerBuddyControlPrevParent As LongPtr
-Private PagerBuddyObjectPointer As LongPtr
+Private PagerBuddyObjectPointer As LongPtr, PagerBuddyObjectHandle As LongPtr
 Private DispIdBuddyControl As Long, BuddyControlArray() As String
 Private PropMousePointer As Integer, PropMouseIcon As IPictureDisp
 Private PropMouseTrack As Boolean
@@ -787,11 +789,15 @@ End Property
 Public Property Get BuddyControl() As Variant
 Attribute BuddyControl.VB_Description = "Returns/sets the buddy control."
 If PagerDesignMode = False Then
-    If PropBuddyControlInit = False And PagerBuddyObjectPointer = NULL_PTR Then
-        If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
-        PropBuddyControlInit = True
+    If PagerBuddyObjectHandle = NULL_PTR Then
+        If PropBuddyControlInit = False And PagerBuddyObjectPointer = NULL_PTR Then
+            If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
+            PropBuddyControlInit = True
+        End If
+        Set BuddyControl = PropBuddyControl
+    Else
+        BuddyControl = PagerBuddyObjectHandle
     End If
-    Set BuddyControl = PropBuddyControl
 Else
     BuddyControl = PropBuddyName
 End If
@@ -817,9 +823,10 @@ If PagerDesignMode = False Then
                         PagerBuddyControlHandle = Handle
                         PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
                         PagerBuddyObjectPointer = ObjPtr(Value)
-                        PropBuddyName = ProperControlName(Value)
+                        PagerBuddyObjectHandle = NULL_PTR
                         SetParent Handle, PagerHandle
                         SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
+                        PropBuddyName = ProperControlName(Value)
                     End If
                 Else
                     Err.Raise Number:=35610, Description:="Invalid object"
@@ -842,14 +849,31 @@ If PagerDesignMode = False Then
                                     PagerBuddyControlHandle = Handle
                                     PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
                                     PagerBuddyObjectPointer = ObjPtr(ControlEnum)
-                                    PropBuddyName = Value
+                                    PagerBuddyObjectHandle = NULL_PTR
                                     SetParent Handle, PagerHandle
                                     SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
+                                    PropBuddyName = Value
                                     Exit For
                                 End If
                             End If
                         End If
                     Next ControlEnum
+                Case vbLong, &H14 ' vbLongLong
+                    Handle = Value
+                    Success = CBool(Handle <> NULL_PTR)
+                    If Success = True Then
+                        If PagerBuddyControlHandle <> NULL_PTR Then
+                            SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal 0&
+                            SetParent PagerBuddyControlHandle, PagerBuddyControlPrevParent
+                        End If
+                        PagerBuddyControlHandle = Handle
+                        PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
+                        PagerBuddyObjectPointer = NULL_PTR
+                        PagerBuddyObjectHandle = Handle
+                        SetParent Handle, PagerHandle
+                        SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
+                        PropBuddyName = "(None)"
+                    End If
                 Case Else
                     Err.Raise 13
             End Select
@@ -862,6 +886,7 @@ If PagerDesignMode = False Then
                 PagerBuddyControlPrevParent = NULL_PTR
             End If
             PagerBuddyObjectPointer = NULL_PTR
+            PagerBuddyObjectHandle = NULL_PTR
             PropBuddyName = "(None)"
         End If
     End If
@@ -1061,7 +1086,11 @@ If PagerDesignMode = False Then
     Call DestroyPager
     Call CreatePager
     Call UserControl_Resize
-    If Not PropBuddyControl Is Nothing Then Set Me.BuddyControl = PropBuddyControl
+    If PagerBuddyObjectHandle = NULL_PTR Then
+        If Not PropBuddyControl Is Nothing Then Set Me.BuddyControl = PropBuddyControl
+    Else
+        Me.BuddyControl = PagerBuddyObjectHandle
+    End If
     If Locked = True Then LockWindowUpdate NULL_PTR
     Me.Refresh
 Else
@@ -1281,22 +1310,32 @@ Select Case wMsg
                 Case PGN_CALCSIZE
                     Dim NMPGCS As NMPGCALCSIZE
                     CopyMemory NMPGCS, ByVal lParam, LenB(NMPGCS)
-                    Dim Size As Single
+                    Dim Size As Single, WndRect As RECT
                     With NMPGCS
                     Select Case .dwFlag
                         Case PGF_CALCWIDTH
-                            If Not Me.BuddyControl Is Nothing Then
-                                Size = PropBuddyControl.Width
+                            If PagerBuddyObjectHandle = NULL_PTR Then
+                                If Not PropBuddyControl Is Nothing Then
+                                    Size = PropBuddyControl.Width
+                                Else
+                                    Size = UserControl.ScaleX(.iWidth, vbPixels, vbContainerSize)
+                                End If
                             Else
-                                Size = UserControl.ScaleX(.iWidth, vbPixels, vbContainerSize)
+                                GetWindowRect PagerBuddyObjectHandle, WndRect
+                                Size = UserControl.ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize)
                             End If
                             RaiseEvent CalcSize(Size, 0)
                             .iWidth = CLng(UserControl.ScaleX(Size, vbContainerSize, vbPixels))
                         Case PGF_CALCHEIGHT
-                            If Not Me.BuddyControl Is Nothing Then
-                                Size = PropBuddyControl.Height
+                            If PagerBuddyObjectHandle = NULL_PTR Then
+                                If Not PropBuddyControl Is Nothing Then
+                                    Size = PropBuddyControl.Height
+                                Else
+                                    Size = UserControl.ScaleY(.iHeight, vbPixels, vbContainerSize)
+                                End If
                             Else
-                                Size = UserControl.ScaleY(.iHeight, vbPixels, vbContainerSize)
+                                GetWindowRect PagerBuddyObjectHandle, WndRect
+                                Size = UserControl.ScaleX((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
                             End If
                             RaiseEvent CalcSize(0, Size)
                             .iHeight = CLng(UserControl.ScaleY(Size, vbContainerSize, vbPixels))

@@ -2016,7 +2016,11 @@ Call DestroyTabStrip
 Call CreateTabStrip
 Call UserControl_Resize
 If TabStripDesignMode = False Then
-    If Not PropImageListControl Is Nothing Then Set .ImageList = PropImageListControl
+    If TabStripImageListHandle = NULL_PTR Then
+        If Not PropImageListControl Is Nothing Then Set .ImageList = PropImageListControl
+    Else
+        .ImageList = TabStripImageListHandle
+    End If
 Else
     If Not PropImageListName = "(None)" Then .ImageList = PropImageListName
 End If

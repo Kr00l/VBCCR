@@ -1349,8 +1349,8 @@ If FontComboDesignMode = False Then
                     On Error GoTo 0
                     If Success = True Then
                         FontComboBuddyControlHandle = Handle
-                        SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
                         FontComboBuddyObjectPointer = ObjPtr(Value)
+                        SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
                         PropBuddyName = ProperControlName(Value)
                     End If
                 Else
@@ -1371,8 +1371,8 @@ If FontComboDesignMode = False Then
                                 Success = CBool(Err.Number = 0 And Handle <> NULL_PTR And FontComboBuddyShadowObjectPointer = NULL_PTR)
                                 If Success = True Then
                                     FontComboBuddyControlHandle = Handle
-                                    SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
                                     FontComboBuddyObjectPointer = ObjPtr(ControlEnum)
+                                    SendMessage FontComboBuddyControlHandle, UM_SETBUDDY, 0, ByVal ObjPtr(ShadowFontCombo)
                                     PropBuddyName = Value
                                     Exit For
                                 End If
