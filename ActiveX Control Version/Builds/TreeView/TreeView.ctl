@@ -1695,21 +1695,22 @@ If TreeViewHandle <> NULL_PTR Then
             dwStyle = dwStyle Or TVS_HASLINES Or TVS_HASBUTTONS
     End Select
     SetWindowLong TreeViewHandle, GWL_STYLE, dwStyle
-    If SendMessage(TreeViewHandle, TVM_GETIMAGELIST, TVSIL_NORMAL, ByVal 0&) <> 0 Then
-        Select Case PropStyle
-            Case TvwStyleTextOnly, TvwStylePlusMinusText, TvwStyleTreeLinesText, TvwStyleTreeLinesPlusMinusText
-                SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
-        End Select
-    Else
-        Select Case PropStyle
-            Case TvwStylePictureText, TvwStylePlusMinusPictureText, TvwStyleTreeLinesPictureText, TvwStyleTreeLinesPlusMinusPictureText
-                If Not PropImageListControl Is Nothing Then
-                    SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal CLng(PropImageListControl.hImageList)
-                ElseIf Not PropImageListName = "(None)" Then
-                    Me.ImageList = PropImageListName
+    Select Case PropStyle
+        Case TvwStylePictureText, TvwStylePlusMinusPictureText, TvwStyleTreeLinesPictureText, TvwStyleTreeLinesPlusMinusPictureText
+            If SendMessage(TreeViewHandle, TVM_GETIMAGELIST, TVSIL_NORMAL, ByVal 0&) = 0 Then
+                If TreeViewImageListHandle = NULL_PTR Then
+                    If Not PropImageListControl Is Nothing Then
+                        Set Me.ImageList = PropImageListControl
+                    ElseIf Not PropImageListName = "(None)" Then
+                        Me.ImageList = PropImageListName
+                    End If
+                Else
+                    SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal TreeViewImageListHandle
                 End If
-        End Select
-    End If
+            End If
+        Case Else
+            If SendMessage(TreeViewHandle, TVM_GETIMAGELIST, TVSIL_NORMAL, ByVal 0&) <> 0 Then SendMessage TreeViewHandle, TVM_SETIMAGELIST, TVSIL_NORMAL, ByVal 0&
+    End Select
 End If
 UserControl.PropertyChanged "Style"
 End Property
