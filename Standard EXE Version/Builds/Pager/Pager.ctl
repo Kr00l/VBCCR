@@ -179,9 +179,11 @@ Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As
 #End If
 Private Const ICC_PAGESCROLLER_CLASS As Long = &H1000
 Private Const RDW_UPDATENOW As Long = &H100, RDW_INVALIDATE As Long = &H1, RDW_ERASE As Long = &H4, RDW_ALLCHILDREN As Long = &H80
+Private Const DISPID_HWND As Long = -515
 Private Const GWL_STYLE As Long = (-16)
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_CLIPCHILDREN As Long = &H2000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const GA_PARENT As Long = 1
@@ -193,6 +195,10 @@ Private Const WM_RBUTTONDOWN As Long = &H204
 Private Const WM_RBUTTONUP As Long = &H205
 Private Const WM_MOUSEMOVE As Long = &H200
 Private Const WM_MOUSELEAVE As Long = &H2A3
+Private Const WM_DESTROY As Long = &H2
+Private Const WM_NCDESTROY As Long = &H82
+Private Const WM_ERASEBKGND As Long = &H14
+Private Const WM_PAINT As Long = &HF
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
 Private Const PGM_FIRST As Long = &H1400
@@ -244,7 +250,6 @@ Private PropRightToLeft As Boolean
 Private PropRightToLeftLayout As Boolean
 Private PropRightToLeftMode As CCRightToLeftModeConstants
 Private PropBuddyName As String, PropBuddyControlInit As Boolean
-Private PropBackColor As OLE_COLOR
 Private PropOLEDragDropScroll As Boolean
 Private PropOrientation As PgrOrientationConstants
 Private PropBorderWidth As Long
@@ -321,7 +326,6 @@ On Error Resume Next
 If UserControl.ParentControls.Count = 0 Then PagerAlignable = False Else PagerAlignable = True
 PagerDesignMode = Not Ambient.UserMode
 On Error GoTo 0
-PropBackColor = vbButtonFace
 PropOLEDragDropScroll = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -344,7 +348,7 @@ If UserControl.ParentControls.Count = 0 Then PagerAlignable = False Else PagerAl
 PagerDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
-PropBackColor = .ReadProperty("BackColor", vbButtonFace)
+Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
 PropOLEDragDropScroll = .ReadProperty("OLEDragDropScroll", True)
@@ -369,7 +373,7 @@ End Sub
 
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
-.WriteProperty "BackColor", PropBackColor, vbButtonFace
+.WriteProperty "BackColor", Me.BackColor, vbButtonFace
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
 .WriteProperty "OLEDragDropScroll", PropOLEDragDropScroll, True
@@ -635,12 +639,12 @@ End Property
 Public Property Get BackColor() As OLE_COLOR
 Attribute BackColor.VB_Description = "Returns/sets the background color used to display text and graphics in an object."
 Attribute BackColor.VB_UserMemId = -501
-BackColor = PropBackColor
+BackColor = UserControl.BackColor
 End Property
 
 Public Property Let BackColor(ByVal Value As OLE_COLOR)
-PropBackColor = Value
-If PagerHandle <> NULL_PTR Then SendMessage PagerHandle, PGM_SETBKCOLOR, 0, ByVal WinColor(PropBackColor)
+UserControl.BackColor = Value
+If PagerHandle <> NULL_PTR Then SendMessage PagerHandle, PGM_SETBKCOLOR, 0, ByVal WinColor(Me.BackColor)
 UserControl.PropertyChanged "BackColor"
 End Property
 
@@ -812,10 +816,10 @@ If PagerDesignMode = False Then
                         End If
                         PagerBuddyControlHandle = Handle
                         PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
-                        SetParent Handle, PagerHandle
-                        SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
                         PagerBuddyObjectPointer = ObjPtr(Value)
                         PropBuddyName = ProperControlName(Value)
+                        SetParent Handle, PagerHandle
+                        SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
                     End If
                 Else
                     Err.Raise Number:=35610, Description:="Invalid object"
@@ -837,10 +841,10 @@ If PagerDesignMode = False Then
                                     End If
                                     PagerBuddyControlHandle = Handle
                                     PagerBuddyControlPrevParent = GetAncestor(Handle, GA_PARENT)
-                                    SetParent Handle, PagerHandle
-                                    SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
                                     PagerBuddyObjectPointer = ObjPtr(ControlEnum)
                                     PropBuddyName = Value
+                                    SetParent Handle, PagerHandle
+                                    SendMessage PagerHandle, PGM_SETCHILD, 0, ByVal Handle
                                     Exit For
                                 End If
                             End If
@@ -1019,7 +1023,7 @@ End Property
 Private Sub CreatePager()
 If PagerHandle <> NULL_PTR Then Exit Sub
 Dim dwStyle As Long, dwExStyle As Long
-dwStyle = WS_CHILD Or WS_VISIBLE
+dwStyle = WS_CHILD Or WS_VISIBLE Or WS_CLIPCHILDREN
 If PropRightToLeft = True And PropRightToLeftLayout = True Then dwExStyle = dwExStyle Or WS_EX_LAYOUTRTL
 If PropOLEDragDropScroll = True Then dwStyle = dwStyle Or PGS_DRAGNDROP
 Select Case PropOrientation
@@ -1032,13 +1036,15 @@ If PropAutoScroll = True Then dwStyle = dwStyle Or PGS_AUTOSCROLL
 PagerHandle = CreateWindowEx(dwExStyle, StrPtr("SysPager"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If PagerHandle <> NULL_PTR Then
     SendMessage PagerHandle, PGM_FORWARDMOUSE, 1, ByVal 0&
+    SendMessage PagerHandle, PGM_SETBKCOLOR, 0, ByVal WinColor(Me.BackColor)
     SendMessage PagerHandle, PGM_SETBORDER, 0, ByVal PropBorderWidth
     If Not PropButtonSize = -1 Then SendMessage PagerHandle, PGM_SETBUTTONSIZE, 0, ByVal PropButtonSize
 End If
-Me.BackColor = PropBackColor
 If PagerDesignMode = False Then
     If PagerHandle <> NULL_PTR Then Call ComCtlsSetSubclass(PagerHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+Else
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
 End If
 End Sub
 
@@ -1145,9 +1151,19 @@ On Error GoTo 0
 Handle = NULL_PTR
 If ControlIsValid = True Then
     On Error Resume Next
-    Handle = Control.hWndUserControl
-    If Err.Number <> 0 Then Handle = Control.hWnd
+    Handle = GetWindowFromObject(Control.Object)
     On Error GoTo 0
+    If Handle = NULL_PTR Then
+        On Error Resume Next
+        Handle = Control.hWndUserControl
+        If Err.Number <> 0 Then Handle = Control.hWnd
+        On Error GoTo 0
+        If Handle = NULL_PTR Then
+            On Error Resume Next
+            Handle = CallByDispId(Control.Object, DISPID_HWND, VbGet Or VbMethod)
+            On Error GoTo 0
+        End If
+    End If
 End If
 End Function
 
@@ -1165,6 +1181,8 @@ Select Case dwRefData
         ISubclass_Message = WindowProcControl(hWnd, wMsg, wParam, lParam)
     Case 2
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+    Case 3
+        ISubclass_Message = WindowProcUserControlDesignMode(hWnd, wMsg, wParam, lParam)
 End Select
 End Function
 
@@ -1233,6 +1251,10 @@ End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
+    Case WM_ERASEBKGND
+        SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
+        WindowProcUserControl = 1
+        Exit Function
     Case WM_NOTIFY
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
@@ -1299,4 +1321,17 @@ Select Case wMsg
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+End Function
+
+Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Select Case wMsg
+    Case WM_ERASEBKGND
+        WindowProcUserControlDesignMode = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+        Exit Function
+End Select
+WindowProcUserControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_DESTROY, WM_NCDESTROY
+        Call ComCtlsRemoveSubclass(hWnd)
+End Select
 End Function
