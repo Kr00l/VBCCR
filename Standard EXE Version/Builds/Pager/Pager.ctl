@@ -1069,7 +1069,7 @@ If PagerDesignMode = False Then
     If PagerHandle <> NULL_PTR Then Call ComCtlsSetSubclass(PagerHandle, Me, 1)
     Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
 Else
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
+    If PagerHandle <> NULL_PTR Then Call ComCtlsSetSubclass(PagerHandle, Me, 3)
 End If
 End Sub
 
