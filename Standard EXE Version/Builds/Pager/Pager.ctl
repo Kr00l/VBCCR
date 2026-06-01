@@ -1211,7 +1211,7 @@ Select Case dwRefData
     Case 2
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
     Case 3
-        ISubclass_Message = WindowProcUserControlDesignMode(hWnd, wMsg, wParam, lParam)
+        ISubclass_Message = WindowProcControlDesignMode(hWnd, wMsg, wParam, lParam)
 End Select
 End Function
 
@@ -1231,6 +1231,10 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_ERASEBKGND
+        SendMessage UserControl.hWnd, WM_PAINT, wParam, ByVal 0&
+        WindowProcControl = 1
+        Exit Function
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -1280,10 +1284,6 @@ End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
-    Case WM_ERASEBKGND
-        SendMessage hWnd, WM_PAINT, wParam, ByVal 0&
-        WindowProcUserControl = 1
-        Exit Function
     Case WM_NOTIFY
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
@@ -1362,13 +1362,13 @@ End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
-Private Function WindowProcUserControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Private Function WindowProcControlDesignMode(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Select Case wMsg
     Case WM_ERASEBKGND
-        WindowProcUserControlDesignMode = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
+        WindowProcControlDesignMode = WindowProcControl(hWnd, wMsg, wParam, lParam)
         Exit Function
 End Select
-WindowProcUserControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+WindowProcControlDesignMode = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
     Case WM_DESTROY, WM_NCDESTROY
         Call ComCtlsRemoveSubclass(hWnd)
