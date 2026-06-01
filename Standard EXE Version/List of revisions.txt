@@ -1,5 +1,10 @@
 List of revisions:
 
+01-Jun-2026
+- Included style WS_CLIPCHILDREN to the Pager control to avoid flicker.
+- Bugfix in the BackColor property in the Pager control.
+  The control forwards its own WM_ERASEBKGND to its parent and that is now handled properly.
+
 30-May-2026
 - Class_Terminate edge case fix for ShowFind/ShowReplace dialogs on MDI child forms in the CommonDialog class.
 
