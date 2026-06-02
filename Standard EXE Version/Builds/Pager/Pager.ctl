@@ -146,6 +146,7 @@ Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation 
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
+Private Declare PtrSafe Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
@@ -164,6 +165,7 @@ Private Declare PtrSafe Function GetWindowRect Lib "user32" (ByVal hWnd As LongP
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
@@ -203,6 +205,8 @@ Private Const WM_ERASEBKGND As Long = &H14
 Private Const WM_PAINT As Long = &HF
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_SETCURSOR As Long = &H20, HTCLIENT As Long = 1
+Private Const WM_USER As Long = &H400
+Private Const UM_SYNCOBJECTSIZE As Long = (WM_USER + 1000)
 Private Const PGM_FIRST As Long = &H1400
 Private Const PGM_SETCHILD As Long = (PGM_FIRST + 1)
 Private Const PGM_RECALCSIZE As Long = (PGM_FIRST + 2)
@@ -1235,6 +1239,20 @@ Select Case wMsg
         SendMessage UserControl.hWnd, WM_PAINT, wParam, ByVal 0&
         WindowProcControl = 1
         Exit Function
+    Case UM_SYNCOBJECTSIZE
+        If PagerBuddyObjectHandle = NULL_PTR Then
+            If Not PropBuddyControl Is Nothing Then
+                Dim WndRect As RECT
+                GetWindowRect PagerBuddyControlHandle, WndRect
+                If (WndRect.Bottom - WndRect.Top) <> CLng(UserControl.ScaleY(PropBuddyControl.Height, vbContainerSize, vbPixels)) Or (WndRect.Right - WndRect.Left) <> CLng(UserControl.ScaleX(PropBuddyControl.Width, vbContainerSize, vbPixels)) Then
+                    On Error Resume Next
+                    PropBuddyControl.Move PropBuddyControl.Left, PropBuddyControl.Top, UserControl.ScaleX(((WndRect.Right - WndRect.Left) + 1), vbPixels, vbContainerSize), UserControl.ScaleY(((WndRect.Bottom - WndRect.Top) + 1), vbPixels, vbContainerSize)
+                    PropBuddyControl.Move PropBuddyControl.Left, PropBuddyControl.Top, UserControl.ScaleX((WndRect.Right - WndRect.Left), vbPixels, vbContainerSize), UserControl.ScaleY((WndRect.Bottom - WndRect.Top), vbPixels, vbContainerSize)
+                    On Error GoTo 0
+                End If
+            End If
+        End If
+        Exit Function
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 Select Case wMsg
@@ -1340,6 +1358,9 @@ Select Case wMsg
                             RaiseEvent CalcSize(0, Size)
                             .iHeight = CLng(UserControl.ScaleY(Size, vbContainerSize, vbPixels))
                     End Select
+                    If PagerBuddyObjectHandle = NULL_PTR Then
+                        If Not PropBuddyControl Is Nothing Then PostMessage PagerHandle, UM_SYNCOBJECTSIZE, 0, ByVal 0&
+                    End If
                     End With
                     CopyMemory ByVal lParam, NMPGCS, LenB(NMPGCS)
                 Case PGN_HOTITEMCHANGE

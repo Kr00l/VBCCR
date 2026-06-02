@@ -3602,7 +3602,9 @@ Select Case wMsg
                             Set Band = PtrToObj(RBBI.lParam)
                             If Not Band.Child Is Nothing Then
                                 With Band.Child
+                                On Error Resume Next
                                 .Move UserControl.ScaleX(NMRBCS.RCChild.Left, vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top, vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
+                                On Error GoTo 0
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)
@@ -3743,7 +3745,9 @@ Select Case wMsg
                                     .Bottom = .Bottom - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
                                     End With
                                 End If
+                                On Error Resume Next
                                 .Move UserControl.ScaleX(NMRBCS.RCChild.Left + (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2), vbPixels, vbTwips), UserControl.ScaleY(NMRBCS.RCChild.Top + (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) \ 2), vbPixels, vbTwips), UserControl.ScaleX((NMRBCS.RCChild.Right - NMRBCS.RCChild.Left), vbPixels, vbTwips), UserControl.ScaleY((NMRBCS.RCChild.Bottom - NMRBCS.RCChild.Top), vbPixels, vbTwips)
+                                On Error GoTo 0
                                 Dim CY As Long
                                 If (GetWindowLong(CoolBarHandle, GWL_STYLE) And CCS_VERT) = 0 Then
                                     CY = UserControl.ScaleY(.Height, vbTwips, vbPixels)
