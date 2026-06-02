@@ -42,16 +42,21 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+Private CalcWidth As Single, CalcHeight As Single
 
 Private Sub Form_Load()
 Call SetupVisualStylesFixes(Me)
 Set ToolBar1.ImageList = MainForm.ImageList1
-Dim Width As Single, Height As Single
-ToolBar1.GetIdealSize Width, Height
-ToolBar1.Width = Width
-ToolBar1.Height = Height
+ToolBar1.GetIdealSize CalcWidth, CalcHeight
+ToolBar1.Width = CalcWidth
+ToolBar1.Height = CalcHeight
 Pager1.Height = ToolBar1.Height + (Pager1.BorderWidth * 2)
 Me.Height = (Me.Height - Me.ScaleHeight) + Pager1.Height
+End Sub
+
+Private Sub Pager1_CalcSize(Width As Single, Height As Single)
+Width = CalcWidth
+Height = CalcHeight
 End Sub
 
 Private Sub Pager1_Scroll(ByVal Shift As Integer, ByVal Direction As PgrDirectionConstants, ByVal X As Single, ByVal Y As Single, Delta As Single, ByVal ClientLeft As Single, ByVal ClientTop As Single, ByVal ClientRight As Single, ByVal ClientBottom As Single)
