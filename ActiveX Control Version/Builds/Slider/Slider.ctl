@@ -242,7 +242,6 @@ Private Const WS_CHILD As Long = &H40000000
 Private Const WS_EX_LAYOUTRTL As Long = &H400000
 Private Const SW_HIDE As Long = &H0
 Private Const WM_NOTIFY As Long = &H4E
-Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_VSCROLL As Long = &H115
 Private Const WM_HSCROLL As Long = &H114
 Private Const WM_SETFOCUS As Long = &H7
@@ -303,6 +302,9 @@ Private Const TBM_GETTOOLTIPS As Long = (WM_USER + 30)
 Private Const TBM_SETTIPSIDE As Long = (WM_USER + 31)
 Private Const TBM_SETBUDDY As Long = (WM_USER + 32)
 Private Const TBM_GETBUDDY As Long = (WM_USER + 33)
+Private Const CCM_FIRST As Long = &H2000
+Private Const CCM_SETUNICODEFORMAT As Long = (CCM_FIRST + 5)
+Private Const TBM_SETUNICODEFORMAT As Long = CCM_SETUNICODEFORMAT
 Private Const TBS_AUTOTICKS As Long = &H1
 Private Const TBS_VERT As Long = &H2
 Private Const TBS_HORZ As Long = &H0
@@ -1468,13 +1470,9 @@ If PropShowTip = True Then dwStyle = dwStyle Or TBS_TOOLTIPS
 If PropSelectRange = True Then dwStyle = dwStyle Or TBS_ENABLESELRANGE
 If PropHideThumb = True Then dwStyle = dwStyle Or TBS_NOTHUMB
 If PropReversed = True Then dwStyle = dwStyle Or TBS_REVERSED Or TBS_DOWNISLEFT
-If SliderDesignMode = False Then
-    ' The WM_NOTIFYFORMAT notification must be handled, which will be sent on control creation.
-    ' Thus it is necessary to subclass the parent before the control is created.
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
-End If
 SliderHandle = CreateWindowEx(dwExStyle, StrPtr("msctls_trackbar32"), NULL_PTR, dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, NULL_PTR, App.hInstance, ByVal NULL_PTR)
 If SliderHandle <> NULL_PTR Then
+    SendMessage SliderHandle, TBM_SETUNICODEFORMAT, 1, ByVal 0&
     SliderToolTipHandle = SendMessage(SliderHandle, TBM_GETTOOLTIPS, 0, ByVal 0&)
     If SliderToolTipHandle <> NULL_PTR Then Call ComCtlsInitToolTip(SliderToolTipHandle)
     SendMessage SliderHandle, TBM_SETRANGEMIN, 0, ByVal PropMin
@@ -1490,6 +1488,7 @@ Me.TipSide = PropTipSide
 If PropSelectRange = True Then Me.SelStart = PropSelStart
 If SliderDesignMode = False Then
     If SliderHandle <> NULL_PTR Then Call ComCtlsSetSubclass(SliderHandle, Me, 1)
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
     
     #If ImplementPreTranslateMsg = True Then
     
@@ -1988,14 +1987,6 @@ Select Case wMsg
                     End If
                     End With
             End Select
-        End If
-    Case WM_NOTIFYFORMAT
-        Const NF_QUERY As Long = 3
-        If lParam = NF_QUERY Then
-            Const NFR_UNICODE As Long = 2
-            Const NFR_ANSI As Long = 1
-            WindowProcUserControl = NFR_UNICODE
-            Exit Function
         End If
 End Select
 WindowProcUserControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
