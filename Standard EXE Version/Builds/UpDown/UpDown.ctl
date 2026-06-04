@@ -402,11 +402,11 @@ Call ComCtlsReleaseShellMod
 End Sub
 
 Private Sub TimerBuddyControl_Timer()
-If PropBuddyControlInit = False Then
-    Me.BuddyControl = PropBuddyName
-    PropBuddyControlInit = True
-End If
 TimerBuddyControl.Enabled = False
+If PropBuddyControlInit = False Then
+    PropBuddyControlInit = True
+    If Not PropBuddyName = "(None)" Then Me.BuddyControl = PropBuddyName
+End If
 End Sub
 
 Public Property Get ControlsEnum() As VBRUN.ParentControls

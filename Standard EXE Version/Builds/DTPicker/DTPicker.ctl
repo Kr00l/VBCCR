@@ -718,8 +718,8 @@ Call ComCtlsReleaseShellMod
 End Sub
 
 Private Sub TimerCustomFormat_Timer()
-If DTPickerHandle <> NULL_PTR Then SendMessage DTPickerHandle, DTM_SETFORMAT, 0, ByVal StrPtr(PropCustomFormat)
 TimerCustomFormat.Enabled = False
+If DTPickerHandle <> NULL_PTR Then SendMessage DTPickerHandle, DTM_SETFORMAT, 0, ByVal StrPtr(PropCustomFormat)
 End Sub
 
 Public Property Get Name() As String

@@ -1308,23 +1308,23 @@ Call ComCtlsReleaseShellMod
 End Sub
 
 Private Sub TimerImageList_Timer()
+TimerImageList.Enabled = False
 If PropImageListInit = False Then
-    If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
     PropImageListInit = True
+    If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
 End If
 If PropDisabledImageListInit = False Then
-    If Not PropDisabledImageListName = "(None)" Then Me.DisabledImageList = PropDisabledImageListName
     PropDisabledImageListInit = True
+    If Not PropDisabledImageListName = "(None)" Then Me.DisabledImageList = PropDisabledImageListName
 End If
 If PropHotImageListInit = False Then
-    If Not PropHotImageListName = "(None)" Then Me.HotImageList = PropHotImageListName
     PropHotImageListInit = True
+    If Not PropHotImageListName = "(None)" Then Me.HotImageList = PropHotImageListName
 End If
 If PropPressedImageListInit = False Then
-    If Not PropPressedImageListName = "(None)" Then Me.PressedImageList = PropPressedImageListName
     PropPressedImageListInit = True
+    If Not PropPressedImageListName = "(None)" Then Me.PressedImageList = PropPressedImageListName
 End If
-TimerImageList.Enabled = False
 End Sub
 
 Public Property Get ControlsEnum() As VBRUN.ParentControls
