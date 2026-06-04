@@ -1025,14 +1025,15 @@ Call ComCtlsReleaseShellMod
 End Sub
 
 Private Sub TimerImageList_Timer()
-If PropImageListInit = False Then
-    If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
-    PropImageListInit = True
-End If
 TimerImageList.Enabled = False
+If PropImageListInit = False Then
+    PropImageListInit = True
+    If Not PropImageListName = "(None)" Then Me.ImageList = PropImageListName
+End If
 End Sub
 
 Private Sub TimerInitChildren_Timer()
+TimerInitChildren.Enabled = False
 Dim Count As Long
 Count = Me.Bands.Count
 If Count > 0 Then
@@ -1063,7 +1064,6 @@ If Count > 0 Then
         Call UserControl_Resize
     End If
 End If
-TimerInitChildren.Enabled = False
 End Sub
 
 Public Property Get ControlsEnum() As VBRUN.ParentControls
