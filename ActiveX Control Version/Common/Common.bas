@@ -334,6 +334,7 @@ With MSGBOXP
 If (Buttons And vbSystemModal) = 0 Then
     If (Buttons And MB_TASKMODAL) = 0 Then
         .hWndOwner = GetActiveWindow()
+        If .hWndOwner = NULL_PTR Then Buttons = Buttons Or MB_TASKMODAL
     Else
         .hWndOwner = NULL_PTR
     End If
@@ -1218,8 +1219,13 @@ Public Function KeyPressed(ByVal KeyCode As KeyCodeConstants) As Boolean
 KeyPressed = CBool((GetAsyncKeyState(KeyCode) And &H8000&) = &H8000&)
 End Function
 
+#If TWINBASIC Then
+Public Function InIDE() As Boolean
+InIDE = App.IsInIDE()
+#Else
 Public Function InIDE(Optional ByRef B As Boolean = True) As Boolean
 If B = True Then Debug.Assert Not InIDE(InIDE) Else B = True
+#End If
 End Function
 
 #If VBA7 Then
