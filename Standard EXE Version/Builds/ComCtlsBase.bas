@@ -221,7 +221,7 @@ Private Declare PtrSafe Function VirtualProtect Lib "kernel32" (ByVal lpAddress 
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
 Private Declare PtrSafe Function GetSysColor Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare PtrSafe Function ImageList_DrawEx Lib "comctl32" (ByVal hImageList As LongPtr, ByVal ImgIndex As Long, ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal DX As Long, ByVal DY As Long, ByVal rgbBk As Long, ByVal rgbFg As Long, ByVal fStyle As Long) As Long
-Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
+Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPtr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
