@@ -453,7 +453,7 @@ Private Declare PtrSafe Function EndPage Lib "gdi32" (ByVal hDC As LongPtr) As L
 Private Declare PtrSafe Function RegisterClipboardFormat Lib "user32" Alias "RegisterClipboardFormatW" (ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function SHCreateDataObject Lib "shell32" (ByVal pIDLFolder As LongPtr, ByVal cIDL As Long, ByVal apIDL As LongPtr, ByRef pDataInner As Any, ByRef riid As Any, ByRef ppDataObject As OLEGuids.IDataObject) As Long
 Private Declare PtrSafe Function SHCreateFileDataObject Lib "shell32" Alias "#740" (ByVal pIDLFolder As LongPtr, ByVal cIDL As Long, ByVal apIDL As LongPtr, ByRef pDataInner As Any, ByRef ppDataObject As OLEGuids.IDataObject) As Long
-Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPTr
+Private Declare PtrSafe Function LoadLibrary Lib "kernel32" Alias "LoadLibraryW" (ByVal lpLibFileName As LongPtr) As LongPtr
 Private Declare PtrSafe Function FreeLibrary Lib "kernel32" (ByVal hLibModule As LongPtr) As Long
 Private Declare PtrSafe Function GetProcAddress Lib "kernel32" (ByVal hModule As LongPtr, ByVal lpProcName As Any) As LongPtr
 Private Declare PtrSafe Function DragDetect Lib "user32" (ByVal hWnd As LongPtr, ByVal XY As Currency) As Long
