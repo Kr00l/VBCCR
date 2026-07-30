@@ -4348,26 +4348,19 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 1 Then
             Dim DimensionCount As Integer
             CopyMemory DimensionCount, ByVal Ptr, 2
             If DimensionCount = 1 Then
-                Dim Arr() As Long, Count As Long, i As Long
-                For i = LBound(ArgList) To UBound(ArgList)
-                    Select Case VarType(ArgList(i))
-                        Case vbLong, vbInteger, vbByte
-                            If ArgList(i) > 0 Then
-                                ReDim Preserve Arr(0 To Count) As Long
-                                Arr(Count) = ArgList(i)
-                                Count = Count + 1
-                            End If
-                        Case vbDouble, vbSingle
-                            If CLng(ArgList(i)) > 0 Then
-                                ReDim Preserve Arr(0 To Count) As Long
-                                Arr(Count) = CLng(ArgList(i))
-                                Count = Count + 1
-                            End If
-                    End Select
-                Next i
-                If Count > 0 Then
-                    .cColumns = Count
-                    .puColumns = VarPtr(Arr(0))
+                Dim LBoundArgList As Long, UBoundArgList As Long
+                LBoundArgList = LBound(ArgList)
+                UBoundArgList = UBound(ArgList)
+                If (UBoundArgList - LBoundArgList) > -1 Then
+                    If (UBoundArgList - LBoundArgList) > 19 Then UBoundArgList = LBoundArgList + 19
+                    Dim LngArr() As Long, i As Long
+                    ReDim LngArr(LBoundArgList To UBoundArgList) As Long
+                    For i = LBoundArgList To UBoundArgList
+                        LngArr(i) = ArgList(i)
+                        If LngArr(i) < 1 Then Err.Raise 381
+                    Next i
+                    .cColumns = (UBoundArgList - LBoundArgList) + 1
+                    .puColumns = VarPtr(LngArr(LBoundArgList))
                 Else
                     .cColumns = 0
                     .puColumns = NULL_PTR
@@ -7039,6 +7032,9 @@ End Property
 
 Public Property Let ColumnOrder(ByVal ArgList As Variant)
 If ListViewHandle <> NULL_PTR Then
+    Dim Count As Long
+    Count = Me.ColumnHeaders.Count
+    Dim LngArr() As Long, i As Long
     If IsArray(ArgList) Then
         Dim Ptr As LongPtr
         CopyMemory Ptr, ByVal UnsignedAdd(VarPtr(ArgList), 8), PTR_SIZE
@@ -7046,25 +7042,26 @@ If ListViewHandle <> NULL_PTR Then
             Dim DimensionCount As Integer
             CopyMemory DimensionCount, ByVal Ptr, 2
             If DimensionCount = 1 Then
-                Dim Arr() As Long, Count As Long, i As Long
-                For i = LBound(ArgList) To UBound(ArgList)
-                    Select Case VarType(ArgList(i))
-                        Case vbLong, vbInteger, vbByte
-                            If ArgList(i) >= 0 Then
-                                ReDim Preserve Arr(0 To Count) As Long
-                                Arr(Count) = ArgList(i)
-                                Count = Count + 1
-                            End If
-                        Case vbDouble, vbSingle
-                            If CLng(ArgList(i)) >= 0 Then
-                                ReDim Preserve Arr(0 To Count) As Long
-                                Arr(Count) = CLng(ArgList(i))
-                                Count = Count + 1
-                            End If
-                    End Select
-                Next i
-                If Count > 0 Then
-                    If SendMessage(ListViewHandle, LVM_SETCOLUMNORDERARRAY, Count, ByVal VarPtr(Arr(0))) = 0 Then Err.Raise 5
+                Dim LBoundArgList As Long, UBoundArgList As Long
+                LBoundArgList = LBound(ArgList)
+                UBoundArgList = UBound(ArgList)
+                If (UBoundArgList - LBoundArgList) > -1 Then
+                    ReDim LngArr(LBoundArgList To UBoundArgList) As Long
+                    For i = LBoundArgList To UBoundArgList
+                        If VarType(ArgList(i)) = vbString Then
+                            LngArr(i) = Me.ColumnHeaders(ArgList(i)).Index - 1
+                        Else
+                            LngArr(i) = ArgList(i)
+                            If LngArr(i) < 0 Or LngArr(i) > (Count - 1) Then Err.Raise 381
+                        End If
+                    Next i
+                    If SendMessage(ListViewHandle, LVM_SETCOLUMNORDERARRAY, (UBoundArgList - LBoundArgList) + 1, ByVal VarPtr(LngArr(LBoundArgList))) = 0 Then Err.Raise 5
+                Else
+                    If Count > 0 Then
+                        ReDim LngArr(0 To (Count - 1)) As Long
+                        For i = 0 To (Count - 1): LngArr(i) = i: Next i
+                        SendMessage ListViewHandle, LVM_SETCOLUMNORDERARRAY, Count, ByVal VarPtr(LngArr(0))
+                    End If
                 End If
             Else
                 Err.Raise Number:=5, Description:="Array must be single dimensioned"
@@ -7072,8 +7069,14 @@ If ListViewHandle <> NULL_PTR Then
         Else
             Err.Raise Number:=91, Description:="Array is not allocated"
         End If
+    ElseIf IsEmpty(ArgList) Then
+        If Count > 0 Then
+            ReDim LngArr(0 To (Count - 1)) As Long
+            For i = 0 To (Count - 1): LngArr(i) = i: Next i
+            SendMessage ListViewHandle, LVM_SETCOLUMNORDERARRAY, Count, ByVal VarPtr(LngArr(0))
+        End If
     Else
-        If Not IsEmpty(ArgList) Then Err.Raise 380
+        Err.Raise 380
     End If
 End If
 End Property
