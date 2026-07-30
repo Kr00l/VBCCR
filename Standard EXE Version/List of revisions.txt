@@ -1,5 +1,14 @@
 List of revisions:
 
+30-Jul-2026
+- Reworked the ColumnOrder property in the ListView.
+  When assigning Empty it will restore the default column order.
+  Also the array items can be keys (strings) which are mapped then to the zero-based index.
+  It throws now error 381 when an array item is invalid which went silent previously.
+- Reworked the TileViewIndices property of LvwItem in the ListView control.
+  It reads now a maximum of 20 array items. (Limit of the TileViewLines property)
+  It throws now error 381 when an array item is invalid which went silent previously.
+
 01-Jun-2026
 - Included style WS_CLIPCHILDREN to the Pager control to avoid flicker.
 - Bugfix in the BackColor property in the Pager control.
