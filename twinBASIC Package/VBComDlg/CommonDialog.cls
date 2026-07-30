@@ -897,22 +897,10 @@ Dim LocaleMeasure As Long
 GetLocaleInfo LOCALE_USER_DEFAULT, LOCALE_IMEASURE Or LOCALE_RETURN_NUMBER, VarPtr(LocaleMeasure), 2
 CommonDialogDMFieldsExclusion = DM_ORIENTATION Or DM_PAPERSIZE Or DM_DEFAULTSOURCE Or DM_PRINTQUALITY Or DM_COLOR Or DM_DUPLEX
 PropMaxFileSize = MAX_PATH
-PropCustomColors(0) = &HFFFFFF
-PropCustomColors(1) = &HEFEFEF
-PropCustomColors(2) = &HDFDFDF
-PropCustomColors(3) = &HCFCFCF
-PropCustomColors(4) = &HBFBFBF
-PropCustomColors(5) = &HAFAFAF
-PropCustomColors(6) = &H9F9F9F
-PropCustomColors(7) = &H8F8F8F
-PropCustomColors(8) = &H7F7F7F
-PropCustomColors(9) = &H6F6F6F
-PropCustomColors(10) = &H5F5F5F
-PropCustomColors(11) = &H4F4F4F
-PropCustomColors(12) = &H3F3F3F
-PropCustomColors(13) = &H2F2F2F
-PropCustomColors(14) = &H1F1F1F
-PropCustomColors(15) = &HF0F0F
+PropCustomColors(0) = &HFFFFFF: PropCustomColors(1) = &HEFEFEF: PropCustomColors(2) = &HDFDFDF: PropCustomColors(3) = &HCFCFCF
+PropCustomColors(4) = &HBFBFBF: PropCustomColors(5) = &HAFAFAF: PropCustomColors(6) = &H9F9F9F: PropCustomColors(7) = &H8F8F8F
+PropCustomColors(8) = &H7F7F7F: PropCustomColors(9) = &H6F6F6F: PropCustomColors(10) = &H5F5F5F: PropCustomColors(11) = &H4F4F4F
+PropCustomColors(12) = &H3F3F3F: PropCustomColors(13) = &H2F2F2F: PropCustomColors(14) = &H1F1F1F: PropCustomColors(15) = &HF0F0F
 PropFontSize = 8
 PropFontWeight = FW_NORMAL
 PropOrientation = CdlPRORPortrait
@@ -1101,15 +1089,13 @@ If IsArray(ArgList) Then
         Dim DimensionCount As Integer
         CopyMemory DimensionCount, ByVal Ptr, 2
         If DimensionCount = 1 Then
-            Dim LBoundArgList As Long, Count As Long, i As Long
+            Dim LBoundArgList As Long, UBoundArgList As Long
             LBoundArgList = LBound(ArgList)
-            For i = LBoundArgList To UBound(ArgList)
-                Count = Count + 1
-                Select Case VarType(ArgList(i))
-                    Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                        PropCustomColors(i + (0 - LBoundArgList)) = WinColor(ArgList(i))
-                End Select
-                If Count >= 16 Then Exit For
+            UBoundArgList = UBound(ArgList)
+            If (UBoundArgList - LBoundArgList) > 15 Then UBoundArgList = LBoundArgList + 15
+            Dim i As Long
+            For i = LBoundArgList To UBoundArgList
+                PropCustomColors(i - LBoundArgList) = WinColor(ArgList(i))
             Next i
         Else
             Err.Raise Number:=5, Description:="Array must be single dimensioned"
@@ -1117,8 +1103,13 @@ If IsArray(ArgList) Then
     Else
         Err.Raise Number:=91, Description:="Array is not allocated"
     End If
+ElseIf IsEmpty(ArgList) Then
+    PropCustomColors(0) = &HFFFFFF: PropCustomColors(1) = &HEFEFEF: PropCustomColors(2) = &HDFDFDF: PropCustomColors(3) = &HCFCFCF
+    PropCustomColors(4) = &HBFBFBF: PropCustomColors(5) = &HAFAFAF: PropCustomColors(6) = &H9F9F9F: PropCustomColors(7) = &H8F8F8F
+    PropCustomColors(8) = &H7F7F7F: PropCustomColors(9) = &H6F6F6F: PropCustomColors(10) = &H5F5F5F: PropCustomColors(11) = &H4F4F4F
+    PropCustomColors(12) = &H3F3F3F: PropCustomColors(13) = &H2F2F2F: PropCustomColors(14) = &H1F1F1F: PropCustomColors(15) = &HF0F0F
 Else
-    If Not IsEmpty(ArgList) Then Err.Raise 380
+    Err.Raise 380
 End If
 End Property
 
