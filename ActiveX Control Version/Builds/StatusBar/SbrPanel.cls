@@ -142,6 +142,15 @@ Public Property Let DTFormat(ByVal Value As SbrPanelDTFormatConstants)
 ShadowStatusBar.FPanelDTFormat(PropIndex) = Value
 End Property
 
+Public Property Get TextIndent() As Single
+Attribute TextIndent.VB_Description = "Returns/sets the text indent of the panel."
+TextIndent = ShadowStatusBar.FPanelTextIndent(PropIndex)
+End Property
+
+Public Property Let TextIndent(ByVal Value As Single)
+ShadowStatusBar.FPanelTextIndent(PropIndex) = Value
+End Property
+
 Public Property Get ForeColor() As OLE_COLOR
 Attribute ForeColor.VB_Description = "Returns/sets the foreground color used to display text and graphics in an object."
 ForeColor = ShadowStatusBar.FPanelForeColor(PropIndex)
@@ -171,6 +180,15 @@ End Property
 
 Public Property Set Picture(ByVal Value As IPictureDisp)
 Set ShadowStatusBar.FPanelPicture(PropIndex) = Value
+End Property
+
+Public Property Get PictureIndent() As Single
+Attribute PictureIndent.VB_Description = "Returns/sets the picture indent of the panel."
+PictureIndent = ShadowStatusBar.FPanelPictureIndent(PropIndex)
+End Property
+
+Public Property Let PictureIndent(ByVal Value As Single)
+ShadowStatusBar.FPanelPictureIndent(PropIndex) = Value
 End Property
 
 Public Property Get Enabled() As Boolean

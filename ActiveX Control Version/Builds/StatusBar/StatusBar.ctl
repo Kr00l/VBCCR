@@ -374,9 +374,11 @@ Bevel As SbrPanelBevelConstants
 AutoSize As SbrPanelAutoSizeConstants
 Alignment As SbrPanelAlignmentConstants
 DTFormat As SbrPanelDTFormatConstants
+TextIndent As Long
 ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
+PictureIndent As Long
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
@@ -392,10 +394,12 @@ Bevel As SbrPanelBevelConstants
 AutoSize As SbrPanelAutoSizeConstants
 Alignment As SbrPanelAlignmentConstants
 DTFormat As SbrPanelDTFormatConstants
+TextIndent As Long
 ForeColor As OLE_COLOR
 MinWidth As Long
 Picture As IPictureDisp
 PictureRenderFlag As Integer
+PictureIndent As Long
 Enabled As Boolean
 Visible As Boolean
 Bold As Boolean
@@ -548,9 +552,11 @@ If InitPanelsCount > 0 Then
         InitPanels(i).AutoSize = .ReadProperty("InitPanelsAutoSize" & CStr(i), SbrPanelAutoSizeNone)
         InitPanels(i).Alignment = .ReadProperty("InitPanelsAlignment" & CStr(i), SbrPanelAlignmentLeft)
         InitPanels(i).DTFormat = .ReadProperty("InitPanelsDTFormat" & CStr(i), SbrPanelDTFormatShort)
+        InitPanels(i).TextIndent = (.ReadProperty("InitPanelsTextIndent" & CStr(i), 0) * PixelsPerDIP_X())
         InitPanels(i).ForeColor = .ReadProperty("InitPanelsForeColor" & CStr(i), vbButtonText)
         InitPanels(i).MinWidth = (.ReadProperty("InitPanelsMinWidth" & CStr(i), 96) * PixelsPerDIP_X())
         Set InitPanels(i).Picture = .ReadProperty("InitPanelsPicture" & CStr(i), Nothing)
+        InitPanels(i).PictureIndent = (.ReadProperty("InitPanelsPictureIndent" & CStr(i), 0) * PixelsPerDIP_X())
         InitPanels(i).Enabled = .ReadProperty("InitPanelsEnabled" & CStr(i), True)
         InitPanels(i).Visible = .ReadProperty("InitPanelsVisible" & CStr(i), True)
         InitPanels(i).Bold = .ReadProperty("InitPanelsBold" & CStr(i), False)
@@ -585,9 +591,11 @@ If InitPanelsCount > 0 And StatusBarHandle <> NULL_PTR Then
         PropShadowPanels(i).AutoSize = InitPanels(i).AutoSize
         PropShadowPanels(i).Alignment = InitPanels(i).Alignment
         PropShadowPanels(i).DTFormat = InitPanels(i).DTFormat
+        PropShadowPanels(i).TextIndent = InitPanels(i).TextIndent
         PropShadowPanels(i).ForeColor = InitPanels(i).ForeColor
         PropShadowPanels(i).MinWidth = InitPanels(i).MinWidth
         Set PropShadowPanels(i).Picture = InitPanels(i).Picture
+        PropShadowPanels(i).PictureIndent = InitPanels(i).PictureIndent
         PropShadowPanels(i).Enabled = InitPanels(i).Enabled
         PropShadowPanels(i).Visible = InitPanels(i).Visible
         PropShadowPanels(i).Bold = InitPanels(i).Bold
@@ -634,9 +642,11 @@ If Count > 0 Then
         .WriteProperty "InitPanelsAutoSize" & CStr(i), Me.Panels(i).AutoSize, SbrPanelAutoSizeNone
         .WriteProperty "InitPanelsAlignment" & CStr(i), Me.Panels(i).Alignment, SbrPanelAlignmentLeft
         .WriteProperty "InitPanelsDTFormat" & CStr(i), Me.Panels(i).DTFormat, SbrPanelDTFormatShort
+        .WriteProperty "InitPanelsTextIndent" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).TextIndent, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 0
         .WriteProperty "InitPanelsForeColor" & CStr(i), Me.Panels(i).ForeColor, vbButtonFace
         .WriteProperty "InitPanelsMinWidth" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).MinWidth, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 96
         .WriteProperty "InitPanelsPicture" & CStr(i), PropShadowPanels(i).Picture, Nothing
+        .WriteProperty "InitPanelsPictureIndent" & CStr(i), (CLng(UserControl.ScaleX(Me.Panels(i).PictureIndent, vbContainerSize, vbPixels)) / PixelsPerDIP_X()), 0
         .WriteProperty "InitPanelsEnabled" & CStr(i), Me.Panels(i).Enabled, True
         .WriteProperty "InitPanelsVisible" & CStr(i), Me.Panels(i).Visible, True
         .WriteProperty "InitPanelsBold" & CStr(i), Me.Panels(i).Bold, False
@@ -1325,8 +1335,10 @@ End Select
 .AutoSize = SbrPanelAutoSizeNone
 .Alignment = SbrPanelAlignmentLeft
 .DTFormat = SbrPanelDTFormatShort
+.TextIndent = 0
 .ForeColor = vbButtonText
 Set .Picture = Nothing
+.PictureIndent = 0
 .Enabled = True
 .Visible = True
 .Bold = False
@@ -1505,6 +1517,25 @@ If StatusBarHandle <> NULL_PTR Then
 End If
 End Property
 
+Friend Property Get FPanelTextIndent(ByVal Index As Long) As Single
+If StatusBarHandle <> NULL_PTR Then FPanelTextIndent = UserControl.ScaleX(PropShadowPanels(Index).TextIndent, vbPixels, vbContainerSize)
+End Property
+
+Friend Property Let FPanelTextIndent(ByVal Index As Long, ByVal Value As Single)
+If Value < 0 Then Err.Raise 380
+If StatusBarHandle <> NULL_PTR Then
+    PropShadowPanels(Index).TextIndent = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
+    End If
+End If
+End Property
+
 Friend Property Get FPanelForeColor(ByVal Index As Long) As OLE_COLOR
 If StatusBarHandle <> NULL_PTR Then FPanelForeColor = PropShadowPanels(Index).ForeColor
 End Property
@@ -1545,6 +1576,25 @@ If StatusBarHandle <> NULL_PTR Then
     Set PropShadowPanels(Index).Picture = Value
     PropShadowPanels(Index).PictureRenderFlag = 0
     Call SetMinHeight
+    Dim RC As RECT
+    Call GetPanelRect(Index, RC)
+    InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
+    UpdateWindow StatusBarHandle
+    If PropShadowPanels(Index).AutoSize = SbrPanelAutoSizeContent Then
+        Call SetParts
+        If PropShowTips = True Then Call UpdateToolTipRects
+    End If
+End If
+End Property
+
+Friend Property Get FPanelPictureIndent(ByVal Index As Long) As Single
+If StatusBarHandle <> NULL_PTR Then FPanelPictureIndent = UserControl.ScaleX(PropShadowPanels(Index).PictureIndent, vbPixels, vbContainerSize)
+End Property
+
+Friend Property Let FPanelPictureIndent(ByVal Index As Long, ByVal Value As Single)
+If Value < 0 Then Err.Raise 380
+If StatusBarHandle <> NULL_PTR Then
+    PropShadowPanels(Index).PictureIndent = CLng(UserControl.ScaleX(Value, vbContainerSize, vbPixels))
     Dim RC As RECT
     Call GetPanelRect(Index, RC)
     InvalidateRect StatusBarHandle, ByVal VarPtr(RC), 1
@@ -1880,47 +1930,59 @@ If StatusBarHandle <> NULL_PTR Then
     RC.Top = RC.Top + ((RC.Bottom - RC.Top) \ 2) - (Size.CY \ 2)
     Select Case .Alignment
         Case SbrPanelAlignmentLeft
-            RC.Left = RC.Left + 1
+            RC.Left = RC.Left + 1 + .TextIndent
             If PictureWidth > 0 And PictureHeight > 0 Then
-                If .PictureOnRight = False Then RC.Left = RC.Left + (PictureWidth + 4)
+                If .PictureOnRight = False Then RC.Left = RC.Left + (PictureWidth + 4) + .PictureIndent
             End If
         Case SbrPanelAlignmentCenter
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = False Then
-                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4))) \ 2)
+                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX - (PictureWidth + 4)) + .PictureIndent) \ 2)
                 Else
-                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX + (PictureWidth + 4))) \ 2)
+                    RC.Left = RC.Left + (((RC.Right - RC.Left) - (Size.CX + (PictureWidth + 4)) - .PictureIndent) \ 2)
                 End If
             Else
                 RC.Left = RC.Left + (((RC.Right - RC.Left) - Size.CX) \ 2)
             End If
         Case SbrPanelAlignmentRight
-            RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
+            RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1 - .TextIndent
             If PictureWidth > 0 And PictureHeight > 0 Then
-                If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4)
+                If .PictureOnRight = True Then RC.Left = RC.Left - (PictureWidth + 4) - .PictureIndent
             End If
         Case SbrPanelAlignmentLeftRight
             If PictureWidth > 0 And PictureHeight > 0 Then
                 If .PictureOnRight = False Then
-                    PictureLeft = RC.Left + 1
-                    RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1
+                    PictureLeft = RC.Left + 1 + .PictureIndent
+                    RC.Left = RC.Left + ((RC.Right - RC.Left) - Size.CX) - 1 - .TextIndent
                     If RC.Left < (PictureLeft + (PictureWidth + 4)) Then PictureLeft = RC.Left - (PictureWidth + 4)
                 Else
-                    PictureLeft = RC.Left + ((RC.Right - RC.Left) - PictureWidth) - 1
-                    RC.Left = RC.Left + 1
+                    PictureLeft = RC.Left + ((RC.Right - RC.Left) - PictureWidth) - 1 - .PictureIndent
+                    RC.Left = RC.Left + 1 + .TextIndent
                     If (RC.Left + (Size.CX + 4)) > PictureLeft Then PictureLeft = RC.Left + (Size.CX + 4)
                 End If
             Else
-                RC.Left = RC.Left + 1
+                RC.Left = RC.Left + 1 + .TextIndent
             End If
     End Select
     If PictureWidth > 0 And PictureHeight > 0 Then
         Select Case .Alignment
-            Case SbrPanelAlignmentLeft, SbrPanelAlignmentCenter, SbrPanelAlignmentRight
+            Case SbrPanelAlignmentLeft
                 If .PictureOnRight = False Then
-                    PictureLeft = RC.Left - (PictureWidth + 4)
+                    PictureLeft = RC.Left - (PictureWidth + 4) - .TextIndent
                 Else
-                    PictureLeft = RC.Left + (Size.CX + 4)
+                    PictureLeft = RC.Left + (Size.CX + 4) + .PictureIndent
+                End If
+            Case SbrPanelAlignmentCenter
+                If .PictureOnRight = False Then
+                    PictureLeft = RC.Left - (PictureWidth + 4) - .PictureIndent
+                Else
+                    PictureLeft = RC.Left + (Size.CX + 4) + .PictureIndent
+                End If
+            Case SbrPanelAlignmentRight
+                If .PictureOnRight = False Then
+                    PictureLeft = RC.Left - (PictureWidth + 4) - .PictureIndent
+                Else
+                    PictureLeft = RC.Left + (Size.CX + 4) + .TextIndent
                 End If
             Case SbrPanelAlignmentLeftRight
                 ' Void
