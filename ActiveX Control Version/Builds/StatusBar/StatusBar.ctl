@@ -6,6 +6,7 @@ Begin VB.UserControl StatusBar
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2400
+   ControlContainer=   -1  'True
    DrawStyle       =   5  'Transparent
    HasDC           =   0   'False
    PropertyPages   =   "StatusBar.ctx":0000
@@ -150,12 +151,18 @@ Attribute Click.VB_UserMemId = -600
 Public Event DblClick()
 Attribute DblClick.VB_Description = "Occurs when you press and release a mouse button and then press and release it again over an object."
 Attribute DblClick.VB_UserMemId = -601
+Public Event Resize()
+Attribute Resize.VB_Description = "Occurs when a form is first displayed or the size of an object changes."
 Public Event StyleChange()
 Attribute StyleChange.VB_Description = "Occurs when the style changes."
 Public Event PanelClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
 Attribute PanelClick.VB_Description = "Occurs when a user presses and then releases a mouse button over any of the panels."
 Public Event PanelDblClick(ByVal Panel As SbrPanel, ByVal Button As Integer)
 Attribute PanelDblClick.VB_Description = "Occurs when a user presses and then releases a mouse button twice over any of the panels."
+Public Event PanelMouseEnter(ByVal Panel As SbrPanel)
+Attribute PanelMouseEnter.VB_Description = "Occurs when the user moves the mouse into a panel."
+Public Event PanelMouseLeave(ByVal Panel As SbrPanel)
+Attribute PanelMouseLeave.VB_Description = "Occurs when the user moves the mouse out of a panel."
 Public Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 Attribute MouseDown.VB_Description = "Occurs when the user presses the mouse button while an object has the focus."
 Attribute MouseDown.VB_UserMemId = -605
@@ -417,12 +424,13 @@ Private WithEvents StatusBarParentFormEvents As VB.Form
 Attribute StatusBarParentFormEvents.VB_VarHelpID = -1
 Private StatusBarFontHandle As LongPtr, StatusBarBoldFontHandle As LongPtr
 Private StatusBarIsClick As Boolean
-Private StatusBarMouseOver As Boolean
+Private StatusBarMouseOver As Boolean, StatusBarMouseOverIndex As Long
 Private StatusBarDesignMode As Boolean
 Private StatusBarDoubleBufferEraseBkgDC As LongPtr
 Private StatusBarAlignable As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Private PropPanels As SbrPanels
 Private PropShadowPanelsCount As Long
 Private PropShadowPanels() As ShadowPanelStruct
@@ -475,6 +483,7 @@ StatusBarDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 If StatusBarAlignable = True Then Extender.Align = vbAlignBottom
 Set PropFont = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 PropMousePointer = 0: Set PropMouseIcon = Nothing
 PropMouseTrack = False
@@ -516,6 +525,7 @@ StatusBarDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -610,6 +620,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -696,6 +707,7 @@ End Sub
 
 Private Sub UserControl_Resize()
 Static LastHeight As Single, LastWidth As Single, LastAlign As Integer
+Static PrevHeight As Long, PrevWidth As Long
 Static InProc As Boolean
 If InProc = True Then Exit Sub
 InProc = True
@@ -720,15 +732,22 @@ LastHeight = .Height
 LastWidth = .Width
 LastAlign = Align
 End With
+With UserControl
 If DPICorrectionFactor() <> 1 Then Call SyncObjectRectsToContainer(Me)
 Call SetMinHeight
 If StatusBarHandle <> NULL_PTR Then
-    MoveWindow StatusBarHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 0
+    MoveWindow StatusBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 0
     InvalidateRect StatusBarHandle, ByVal NULL_PTR, 1
 End If
 Call SetParts
 If PropShowTips = True Then Call UpdateToolTipRects
 InProc = False
+If PrevHeight <> .ScaleHeight Or PrevWidth <> .ScaleWidth Then
+    PrevHeight = .ScaleHeight
+    PrevWidth = .ScaleWidth
+    RaiseEvent Resize
+End If
+End With
 End Sub
 
 Private Sub UserControl_Terminate()
@@ -1000,10 +1019,10 @@ Dim TempFont As StdFont
 Set PropFont = NewFont
 OldFontHandle = StatusBarFontHandle
 OldBoldFontHandle = StatusBarBoldFontHandle
-StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
+StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
-StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont)
+StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont, PropFontQuality)
 If StatusBarHandle <> NULL_PTR Then SendMessage StatusBarHandle, WM_SETFONT, StatusBarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 If OldBoldFontHandle <> NULL_PTR Then DeleteObject OldBoldFontHandle
@@ -1016,16 +1035,32 @@ Dim OldFontHandle As LongPtr, OldBoldFontHandle As LongPtr
 Dim TempFont As StdFont
 OldFontHandle = StatusBarFontHandle
 OldBoldFontHandle = StatusBarBoldFontHandle
-StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont)
+StatusBarFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
-StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont)
+StatusBarBoldFontHandle = CreateGDIFontFromOLEFont(TempFont, PropFontQuality)
 If StatusBarHandle <> NULL_PTR Then SendMessage StatusBarHandle, WM_SETFONT, StatusBarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 If OldBoldFontHandle <> NULL_PTR Then DeleteObject OldBoldFontHandle
 Call SetMinHeight
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
@@ -1784,6 +1819,11 @@ UserControl.Refresh
 RedrawWindow UserControl.hWnd, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
 End Sub
 
+Public Property Get ContainedControls() As VBRUN.ContainedControls
+Attribute ContainedControls.VB_Description = "Returns a collection that allows access to the controls contained within the control that were added to the control by the developer who uses the control."
+Set ContainedControls = UserControl.ContainedControls
+End Property
+
 Public Function IncludesSizeGrip() As Boolean
 Attribute IncludesSizeGrip.VB_Description = "Returns a value indicating if the control includes a size grip at the right end."
 If StatusBarHandle <> NULL_PTR Then IncludesSizeGrip = CBool((GetWindowLong(StatusBarHandle, GWL_STYLE) And SBARS_SIZEGRIP) = SBARS_SIZEGRIP)
@@ -2118,20 +2158,27 @@ End Sub
 
 Private Function GetGoodWidth(ByVal Index As Long) As Long
 If StatusBarHandle <> NULL_PTR Then
-    If PropShadowPanels(Index).Visible = True Then
-        GetGoodWidth = PropShadowPanels(Index).MinWidth
-        Select Case PropShadowPanels(Index).AutoSize
+    With PropShadowPanels(Index)
+    If .Visible = True Then
+        GetGoodWidth = .MinWidth
+        Select Case .AutoSize
             Case SbrPanelAutoSizeNone
-                If PropShadowPanels(Index).FixedWidth > -1 Then GetGoodWidth = PropShadowPanels(Index).FixedWidth
+                If .FixedWidth > -1 Then GetGoodWidth = .FixedWidth
             Case SbrPanelAutoSizeContent
                 Dim Width As Long
                 Width = GetTextWidth(Index) + 4 ' Left and right edge
-                If Not PropShadowPanels(Index).Picture Is Nothing Then
-                    If PropShadowPanels(Index).Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(PropShadowPanels(Index).Picture.Width) + 4
+                If .Alignment <> SbrPanelAlignmentCenter Then
+                    ' The text indent will have no effect when the alignment is centered.
+                    ' The picture indent can be used to increase the distance between text and picture in that case.
+                    Width = Width + .TextIndent
+                End If
+                If Not .Picture Is Nothing Then
+                    If .Picture.Handle <> NULL_PTR Then Width = Width + CHimetricToPixel_X(.Picture.Width) + .PictureIndent + 4
                 End If
                 If Width > GetGoodWidth Then GetGoodWidth = Width
         End Select
     End If
+    End With
 End If
 End Function
 
@@ -2361,10 +2408,32 @@ Select Case wMsg
                 RaiseEvent MouseDown(vbRightButton, GetShiftStateFromParam(wParam), X, Y)
                 StatusBarIsClick = True
             Case WM_MOUSEMOVE
+                Dim Index As Long
+                If PropMouseTrack = True Then
+                    Dim P As POINTAPI, RC As RECT, i As Long
+                    P.X = Get_X_lParam(lParam)
+                    P.Y = Get_Y_lParam(lParam)
+                    For i = 1 To PropShadowPanelsCount
+                        Call GetPanelRect(i, RC)
+                        If PtInRect(RC, P.X, P.Y) <> 0 Then
+                            Index = i
+                            Exit For
+                        End If
+                    Next i
+                End If
                 If StatusBarMouseOver = False And PropMouseTrack = True Then
                     StatusBarMouseOver = True
                     RaiseEvent MouseEnter
+                    StatusBarMouseOverIndex = Index
+                    If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseEnter(Me.Panels(StatusBarMouseOverIndex))
                     Call ComCtlsRequestMouseLeave(hWnd)
+                End If
+                If StatusBarMouseOver = True And PropMouseTrack = True Then
+                    If StatusBarMouseOverIndex <> Index Then
+                        If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseLeave(Me.Panels(StatusBarMouseOverIndex))
+                        StatusBarMouseOverIndex = Index
+                        If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseEnter(Me.Panels(StatusBarMouseOverIndex))
+                    End If
                 End If
                 RaiseEvent MouseMove(GetMouseStateFromParam(wParam), GetShiftStateFromParam(wParam), X, Y)
             Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
@@ -2384,6 +2453,7 @@ Select Case wMsg
     Case WM_MOUSELEAVE
         If StatusBarMouseOver = True Then
             StatusBarMouseOver = False
+            If StatusBarMouseOverIndex > 0 Then RaiseEvent PanelMouseLeave(Me.Panels(StatusBarMouseOverIndex))
             RaiseEvent MouseLeave
         End If
 End Select

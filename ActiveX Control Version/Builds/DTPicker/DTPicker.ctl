@@ -139,6 +139,7 @@ Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
 Private WithEvents PropCalendarFont As StdFont
 Attribute PropCalendarFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -536,6 +537,7 @@ DTPickerDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 Set PropCalendarFont = Ambient.Font
+PropFontQuality = CCFontQualityDefault
 PropVisualStyles = True
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0: Set PropMouseIcon = Nothing
@@ -576,6 +578,7 @@ On Error GoTo 0
 With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 Set PropCalendarFont = .ReadProperty("CalendarFont", Nothing)
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
 PropVisualStyles = .ReadProperty("VisualStyles", True)
 Me.Enabled = .ReadProperty("Enabled", True)
 Me.OLEDropMode = .ReadProperty("OLEDropMode", vbOLEDropNone)
@@ -615,6 +618,7 @@ Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
 .WriteProperty "CalendarFont", IIf(OLEFontIsEqual(PropCalendarFont, Ambient.Font) = False, PropCalendarFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "VisualStyles", PropVisualStyles, True
 .WriteProperty "Enabled", Me.Enabled, True
 .WriteProperty "OLEDropMode", Me.OLEDropMode, vbOLEDropNone
@@ -891,6 +895,25 @@ Attribute hWndCalendar.VB_Description = "Returns a handle to a control."
 If DTPickerHandle <> NULL_PTR Then hWndCalendar = SendMessage(DTPickerHandle, DTM_GETMONTHCAL, 0, ByVal 0&)
 End Property
 
+#If VBA7 Then
+Public Property Get hWndUpDown() As LongPtr
+Attribute hWndUpDown.VB_Description = "Returns a handle to a control."
+#Else
+Public Property Get hWndUpDown() As Long
+Attribute hWndUpDown.VB_Description = "Returns a handle to a control."
+#End If
+If DTPickerHandle <> NULL_PTR Then
+    If ComCtlsSupportLevel() >= 2 Then
+        Dim DTPI As DATETIMEPICKERINFO
+        DTPI.cbSize = LenB(DTPI)
+        SendMessage DTPickerHandle, DTM_GETDATETIMEPICKERINFO, 0, ByVal VarPtr(DTPI)
+        hWndUpDown = DTPI.hWndUD
+    Else
+        hWndUpDown = FindWindowEx(DTPickerHandle, NULL_PTR, StrPtr("msctls_updown32"), NULL_PTR)
+    End If
+End If
+End Property
+
 Public Property Get Font() As StdFont
 Attribute Font.VB_Description = "Returns a Font object."
 Attribute Font.VB_UserMemId = -512
@@ -906,7 +929,7 @@ If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As LongPtr
 Set PropFont = NewFont
 OldFontHandle = DTPickerFontHandle
-DTPickerFontHandle = CreateGDIFontFromOLEFont(PropFont)
+DTPickerFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 If DTPickerHandle <> NULL_PTR Then SendMessage DTPickerHandle, WM_SETFONT, DTPickerFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -915,7 +938,7 @@ End Property
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As LongPtr
 OldFontHandle = DTPickerFontHandle
-DTPickerFontHandle = CreateGDIFontFromOLEFont(PropFont)
+DTPickerFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 If DTPickerHandle <> NULL_PTR Then SendMessage DTPickerHandle, WM_SETFONT, DTPickerFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -935,7 +958,7 @@ If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As LongPtr
 Set PropCalendarFont = NewFont
 OldFontHandle = DTPickerCalendarFontHandle
-DTPickerCalendarFontHandle = CreateGDIFontFromOLEFont(PropCalendarFont)
+DTPickerCalendarFontHandle = CreateGDIFontFromOLEFont(PropCalendarFont, PropFontQuality)
 If DTPickerHandle <> NULL_PTR Then SendMessage DTPickerHandle, DTM_SETMCFONT, DTPickerCalendarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "CalendarFont"
@@ -944,11 +967,27 @@ End Property
 Private Sub PropCalendarFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As LongPtr
 OldFontHandle = DTPickerCalendarFontHandle
-DTPickerCalendarFontHandle = CreateGDIFontFromOLEFont(PropCalendarFont)
+DTPickerCalendarFontHandle = CreateGDIFontFromOLEFont(PropCalendarFont, PropFontQuality)
 If DTPickerHandle <> NULL_PTR Then SendMessage DTPickerHandle, DTM_SETMCFONT, DTPickerCalendarFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "CalendarFont"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get VisualStyles() As Boolean
 Attribute VisualStyles.VB_Description = "Returns/sets a value that determines whether the visual styles are enabled or not. Requires comctl32.dll version 6.0 or higher."
@@ -1963,7 +2002,7 @@ End Function
 Private Sub SetVisualStylesUpDown()
 If DTPickerHandle <> NULL_PTR Then
     Dim UpDownHandle As LongPtr
-    UpDownHandle = FindWindowEx(DTPickerHandle, NULL_PTR, StrPtr("msctls_updown32"), NULL_PTR)
+    UpDownHandle = Me.hWndUpDown
     If UpDownHandle <> NULL_PTR And EnabledVisualStyles() = True Then
         If PropVisualStyles = True Then
             ActivateVisualStyles UpDownHandle
