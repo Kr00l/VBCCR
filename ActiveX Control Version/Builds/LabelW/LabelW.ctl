@@ -183,6 +183,7 @@ Private Const BF_BOTTOM As Long = &H8
 Private Const BF_RECT As Long = (BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM)
 Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IOleInPlaceObjectWindowlessVB
+Private LabelFontHandle As LongPtr
 Private LabelAutoSizeFlag As Boolean
 Private LabelDisplayedCaption As String
 Private LabelPaintFrozen As Boolean
@@ -191,6 +192,7 @@ Private LabelOverrideSetCursor As Boolean
 Private LabelDesignMode As Boolean
 Private WithEvents PropFont As StdFont
 Attribute PropFont.VB_VarHelpID = -1
+Private PropFontQuality As CCFontQualityConstants
 Private PropMousePointer As Integer
 Private PropMouseTrack As Boolean
 Private PropRightToLeft As Boolean
@@ -241,6 +243,7 @@ LabelDesignMode = Not Ambient.UserMode
 On Error GoTo 0
 Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
+PropFontQuality = CCFontQualityDefault
 Me.OLEDropMode = vbOLEDropNone
 PropMousePointer = 0
 PropMouseTrack = False
@@ -267,6 +270,8 @@ With PropBag
 Set PropFont = .ReadProperty("Font", Nothing)
 If PropFont Is Nothing Then Set PropFont = Ambient.Font
 Set UserControl.Font = PropFont
+PropFontQuality = .ReadProperty("FontQuality", CCFontQualityDefault)
+If PropFontQuality <> CCFontQualityDefault Then LabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
 Me.Appearance = .ReadProperty("Appearance", CCAppearance3D)
 Me.BackColor = .ReadProperty("BackColor", vbButtonFace)
 Me.ForeColor = .ReadProperty("ForeColor", vbButtonText)
@@ -301,6 +306,7 @@ End Sub
 Private Sub UserControl_WriteProperties(PropBag As PropertyBag)
 With PropBag
 .WriteProperty "Font", IIf(OLEFontIsEqual(PropFont, Ambient.Font) = False, PropFont, Nothing), Nothing
+.WriteProperty "FontQuality", PropFontQuality, CCFontQualityDefault
 .WriteProperty "Appearance", Me.Appearance, CCAppearance3D
 .WriteProperty "BackColor", Me.BackColor, vbButtonFace
 .WriteProperty "ForeColor", Me.ForeColor, vbButtonText
@@ -349,6 +355,8 @@ Select Case PropBorderStyle
         BorderHeight = GetSystemMetrics(SM_CYDLGFRAME)
         DrawEdge .hDC, RC, BDR_RAISEDOUTER Or BDR_RAISEDINNER, BF_RECT
 End Select
+Dim hFontOld As LongPtr
+If LabelFontHandle <> NULL_PTR Then hFontOld = SelectObject(.hDC, LabelFontHandle)
 If .Enabled = False Then SetTextColor .hDC, WinColor(vbGrayText)
 DrawFlags = DT_NOCLIP
 Select Case PropAlignment
@@ -426,6 +434,7 @@ If Not PropCaption = vbNullString Then
 Else
     LabelDisplayedCaption = vbNullString
 End If
+If hFontOld <> NULL_PTR Then SelectObject .hDC, hFontOld
 End With
 End Sub
 
@@ -503,6 +512,10 @@ Private Sub UserControl_Terminate()
 If LabelOverrideSetCursor = True Then
     Call RemoveVTableHandling(Me, VTableInterfaceInPlaceObjectWindowless)
     LabelOverrideSetCursor = False
+End If
+If LabelFontHandle <> NULL_PTR Then
+    DeleteObject LabelFontHandle
+    LabelFontHandle = NULL_PTR
 End If
 Call ComCtlsReleaseShellMod
 End Sub
@@ -663,19 +676,53 @@ End Property
 
 Public Property Set Font(ByVal NewFont As StdFont)
 If NewFont Is Nothing Then Set NewFont = Ambient.Font
+Dim OldFontHandle As LongPtr
 Set PropFont = NewFont
+If PropFontQuality <> CCFontQualityDefault Then
+    OldFontHandle = LabelFontHandle
+    LabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
+ElseIf LabelFontHandle <> NULL_PTR Then
+    DeleteObject LabelFontHandle
+    LabelFontHandle = NULL_PTR
+End If
 Set UserControl.Font = PropFont
 LabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
+If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Property
 
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
+Dim OldFontHandle As LongPtr
+If PropFontQuality <> CCFontQualityDefault Then
+    OldFontHandle = LabelFontHandle
+    LabelFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
+ElseIf LabelFontHandle <> NULL_PTR Then
+    DeleteObject LabelFontHandle
+    LabelFontHandle = NULL_PTR
+End If
 Set UserControl.Font = PropFont
 LabelAutoSizeFlag = PropAutoSize
 Call RedrawLabel
+If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
+
+Public Property Get FontQuality() As CCFontQualityConstants
+Attribute FontQuality.VB_Description = "Returns/sets the font quality."
+FontQuality = PropFontQuality
+End Property
+
+Public Property Let FontQuality(ByVal Value As CCFontQualityConstants)
+Select Case Value
+    Case CCFontQualityDefault, CCFontQualityDraft, CCFontQualityProof, CCFontQualityNonAntiAliased, CCFontQualityAntiAliased, CCFontQualityClearType, CCFontQualityClearTypeNatural
+        PropFontQuality = Value
+    Case Else
+        Err.Raise 380
+End Select
+Set Me.Font = PropFont
+UserControl.PropertyChanged "FontQuality"
+End Property
 
 Public Property Get Appearance() As CCAppearanceConstants
 Attribute Appearance.VB_Description = "Returns/sets a value that determines whether an object is painted two-dimensional or with 3-D effects."
@@ -1126,22 +1173,23 @@ Select Case PropVerticalAlignment
         If .Extender.Top <> (OldBottom - .Extender.Height) Then .Extender.Top = (OldBottom - .Extender.Height)
 End Select
 LabelPaintFrozen = False
-.Refresh
 End With
 End Sub
 
 Private Sub RedrawLabel()
-If LabelAutoSizeFlag = False Then
-    UserControl.Refresh
-Else
+If LabelAutoSizeFlag = True Then
     Dim hDCScreen As LongPtr, hDC As LongPtr
     hDCScreen = GetDC(NULL_PTR)
     If hDCScreen <> NULL_PTR Then
         hDC = CreateCompatibleDC(hDCScreen)
         If hDC <> NULL_PTR Then
             Dim Font As IFont, hFontOld As LongPtr
-            Set Font = PropFont
-            If Not Font Is Nothing Then hFontOld = SelectObject(hDC, Font.hFont)
+            If LabelFontHandle = NULL_PTR Then
+                Set Font = PropFont
+                If Not Font Is Nothing Then hFontOld = SelectObject(hDC, Font.hFont)
+            Else
+                hFontOld = SelectObject(hDC, LabelFontHandle)
+            End If
             Call DoAutoSize(hDC)
             If hFontOld <> NULL_PTR Then SelectObject hDC, hFontOld
             Set Font = Nothing
@@ -1151,4 +1199,5 @@ Else
     End If
     LabelAutoSizeFlag = False
 End If
+UserControl.Refresh
 End Sub
