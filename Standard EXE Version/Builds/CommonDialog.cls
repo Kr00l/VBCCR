@@ -730,6 +730,8 @@ Private Declare PtrSafe Function ChooseFont Lib "comdlg32" Alias "ChooseFontW" (
 Private Declare PtrSafe Function WinHelp Lib "user32" Alias "WinHelpW" (ByVal hWnd As LongPtr, ByVal lpHelpFile As LongPtr, ByVal wCommand As Long, ByVal dwData As LongPtr) As Long
 Private Declare PtrSafe Function GetActiveWindow Lib "user32" () As LongPtr
 Private Declare PtrSafe Function GetDesktopWindow Lib "user32" () As LongPtr
+Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
+Private Declare PtrSafe Function DestroyWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As LongPtr, ByVal hWndChildAfter As LongPtr, ByVal lpszClass As LongPtr, ByVal lpszWindow As LongPtr) As LongPtr
 Private Declare PtrSafe Function IsWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -775,6 +777,8 @@ Private Declare Function ChooseFont Lib "comdlg32" Alias "ChooseFontW" (ByRef lp
 Private Declare Function WinHelp Lib "user32" Alias "WinHelpW" (ByVal hWnd As Long, ByVal lpHelpFile As Long, ByVal wCommand As Long, ByVal dwData As Long) As Long
 Private Declare Function GetActiveWindow Lib "user32" () As Long
 Private Declare Function GetDesktopWindow Lib "user32" () As Long
+Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
+Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExW" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClass As Long, ByVal lpszWindow As Long) As Long
 Private Declare Function IsWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
@@ -839,6 +843,7 @@ Private CommonDialogSetRGBMsg As Long
 Private CommonDialogFindMsg As Long
 Private CommonDialogFR As FINDREPLACE
 Private CommonDialogFRDialogHandle As LongPtr
+Private CommonDialogFRFallbackOwner As LongPtr
 Private CommonDialogFRBufferFindWhat As String
 Private CommonDialogFRBufferReplaceWith As String
 Private CommonDialogDMFieldsExclusion As Long
@@ -2595,6 +2600,13 @@ LSet CommonDialogFR = FR
 With CommonDialogFR
 .lStructSize = LenB(CommonDialogFR)
 .hWndOwner = GetOwnerWindow()
+If .hWndOwner = NULL_PTR Then
+    ' According to MSDN:
+    ' This member must be a valid window handle; it cannot be NULL.
+    ' The FindText function will return CDERR_DIALOGFAILURE when this member was NULL.
+    CommonDialogFRFallbackOwner = CreateWindowEx(0, StrPtr("Static"), NULL_PTR, 0, 0, 0, 0, 0, NULL_PTR, NULL_PTR, App.hInstance, ByVal NULL_PTR)
+    .hWndOwner = CommonDialogFRFallbackOwner
+End If
 If PropHookEvents = False Then
     .Flags = PropFlags
 Else
@@ -2646,6 +2658,13 @@ LSet CommonDialogFR = FR
 With CommonDialogFR
 .lStructSize = LenB(CommonDialogFR)
 .hWndOwner = GetOwnerWindow()
+If .hWndOwner = NULL_PTR Then
+    ' According to MSDN:
+    ' This member must be a valid window handle; it cannot be NULL.
+    ' The ReplaceText function will return CDERR_DIALOGFAILURE when this member was NULL.
+    CommonDialogFRFallbackOwner = CreateWindowEx(0, StrPtr("Static"), NULL_PTR, 0, 0, 0, 0, 0, NULL_PTR, NULL_PTR, App.hInstance, ByVal NULL_PTR)
+    .hWndOwner = CommonDialogFRFallbackOwner
+End If
 If PropHookEvents = False Then
     .Flags = PropFlags
 Else
@@ -2739,6 +2758,10 @@ If wMsg = CommonDialogFindMsg And CommonDialogFindMsg <> 0 Then
             Call ComCtlsRemoveSubclass(hWnd, FINDMSGSTRING & "_" & CStr(dwRefData) & "_" & CStr(CommonDialogFRDialogHandle))
             Call ComCtlsCdlFRReleaseHook(CommonDialogFRDialogHandle)
             CommonDialogFRDialogHandle = NULL_PTR
+            If CommonDialogFRFallbackOwner <> NULL_PTR Then
+                DestroyWindow CommonDialogFRFallbackOwner
+                CommonDialogFRFallbackOwner = NULL_PTR
+            End If
             Exit Function
         Else
             If (FR.Flags And FR_ENABLEHOOK) = 0 Then
