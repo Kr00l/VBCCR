@@ -2634,6 +2634,10 @@ If CommonDialogFRDialogHandle <> NULL_PTR Then
     ShowFind = .lCustData
     End With
 Else
+    If CommonDialogFRFallbackOwner <> NULL_PTR Then
+        DestroyWindow CommonDialogFRFallbackOwner
+        CommonDialogFRFallbackOwner = NULL_PTR
+    End If
     Dim ErrVal As Long
     ErrVal = CommDlgExtendedError()
     Select Case ErrVal
@@ -2696,6 +2700,10 @@ If CommonDialogFRDialogHandle <> NULL_PTR Then
     ShowReplace = .lCustData
     End With
 Else
+    If CommonDialogFRFallbackOwner <> NULL_PTR Then
+        DestroyWindow CommonDialogFRFallbackOwner
+        CommonDialogFRFallbackOwner = NULL_PTR
+    End If
     Dim ErrVal As Long
     ErrVal = CommDlgExtendedError()
     Select Case ErrVal
