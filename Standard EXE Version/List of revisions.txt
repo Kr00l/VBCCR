@@ -1,5 +1,9 @@
 List of revisions:
 
+07-Aug-2026
+- ShowFind/ShowReplace can create now a fallback hidden top-level window handle in the CommonDialog class.
+  This avoids CDERR_DIALOGFAILURE in case the GetOwnerWindow function returned NULL.
+
 30-Jul-2026
 - Reworked the ColumnOrder property in the ListView.
   When assigning Empty it will restore the default column order.
