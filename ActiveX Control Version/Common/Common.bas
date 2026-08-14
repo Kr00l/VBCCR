@@ -380,6 +380,7 @@ If Not IsMissing(ResIcon) Then
     If VarType(ResIcon) = vbString Then .lpszIcon = StrPtr(ResIcon) Else .lpszIcon = LoWord(ResIcon)
 End If
 If (Buttons And vbMsgBoxHelpButton) <> 0 And Not HelpFile = vbNullString Then
+    If Not PropHelpFile = vbNullString Then Err.Raise 5
     PropHelpFile = HelpFile
     .dwContextHelpID = Context
     .lpfnMsgBoxCallback = ProcPtr(AddressOf MsgBoxCallback)
