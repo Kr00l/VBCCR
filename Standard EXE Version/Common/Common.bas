@@ -34,7 +34,7 @@ PT As Currency
 End Type
 Private Type HELPDATA
 ID As Long
-FileName As String
+HelpFile As String
 Context As Long
 WinHelpHandle As LongPtr
 HtmlHelpCookie As Long
@@ -393,7 +393,7 @@ If (Buttons And vbMsgBoxHelpButton) <> 0 And Not HelpFile = vbNullString Then
     .lpfnMsgBoxCallback = ProcPtr(AddressOf MsgBoxCallback)
     ReDim Preserve MsgBoxHelpData(0 To MsgBoxHelpDataCount) As HELPDATA
     MsgBoxHelpData(MsgBoxHelpDataCount).ID = CLng(.dwContextHelpID)
-    MsgBoxHelpData(MsgBoxHelpDataCount).FileName = HelpFile
+    MsgBoxHelpData(MsgBoxHelpDataCount).HelpFile = HelpFile
     MsgBoxHelpData(MsgBoxHelpDataCount).Context = Context
     MsgBoxHelpDataCount = MsgBoxHelpDataCount + 1
 End If
@@ -432,18 +432,18 @@ Const HELPINFO_WINDOW As Long = &H1
 With pHelpInfo
 If .ContextType = HELPINFO_WINDOW Then
     Dim Index As Long
-    For Index = 0 To MsgBoxHelpDataCount - 1
+    For Index = 0 To (MsgBoxHelpDataCount - 1)
         If MsgBoxHelpData(Index).ID = .dwContextID Then Exit For
     Next Index
     If Index < MsgBoxHelpDataCount Then
-        If Not MsgBoxHelpData(Index).FileName = vbNullString Then
+        If Not MsgBoxHelpData(Index).HelpFile = vbNullString Then
             Dim Success As Boolean
-            If LCase$(Right$(MsgBoxHelpData(Index).FileName, 4)) = ".hlp" Then
+            If LCase$(Right$(MsgBoxHelpData(Index).HelpFile, 4)) = ".hlp" Then
                 Const HELP_INDEX As Long = &H3, HELP_CONTEXT As Long = &H1
                 If MsgBoxHelpData(Index).Context = 0 Then
-                    Success = CBool(WinHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).FileName), HELP_INDEX, 0) <> 0)
+                    Success = CBool(WinHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).HelpFile), HELP_INDEX, 0) <> 0)
                 Else
-                    Success = CBool(WinHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).FileName), HELP_CONTEXT, MsgBoxHelpData(Index).Context) <> 0)
+                    Success = CBool(WinHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).HelpFile), HELP_CONTEXT, MsgBoxHelpData(Index).Context) <> 0)
                 End If
                 MsgBoxHelpData(Index).WinHelpHandle = .hItemHandle
             Else
@@ -451,9 +451,9 @@ If .ContextType = HELPINFO_WINDOW Then
                 If MsgBoxHelpData(Index).HtmlHelpCookie = 0 Then HtmlHelp NULL_PTR, NULL_PTR, HH_INITIALIZE, VarPtr(MsgBoxHelpData(Index).HtmlHelpCookie)
                 Const HH_DISPLAY_TOPIC As Long = &H0, HH_HELP_CONTEXT As Long = &HF
                 If MsgBoxHelpData(Index).Context = 0 Then
-                    Success = CBool(HtmlHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).FileName), HH_DISPLAY_TOPIC, 0) <> 0)
+                    Success = CBool(HtmlHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).HelpFile), HH_DISPLAY_TOPIC, 0) <> 0)
                 Else
-                    Success = CBool(HtmlHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).FileName), HH_HELP_CONTEXT, MsgBoxHelpData(Index).Context) <> 0)
+                    Success = CBool(HtmlHelp(.hItemHandle, StrPtr(MsgBoxHelpData(Index).HelpFile), HH_HELP_CONTEXT, MsgBoxHelpData(Index).Context) <> 0)
                 End If
             End If
             If Success = False Then MessageBox .hItemHandle, StrPtr("Unable to display help"), NULL_PTR, vbCritical + vbOKOnly
