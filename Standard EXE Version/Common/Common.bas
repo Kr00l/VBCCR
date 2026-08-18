@@ -392,7 +392,7 @@ If (Buttons And vbMsgBoxHelpButton) <> 0 And Not HelpFile = vbNullString Then
     .dwContextHelpID = NextHelpID
     .lpfnMsgBoxCallback = ProcPtr(AddressOf MsgBoxCallback)
     ReDim Preserve MsgBoxHelpData(0 To MsgBoxHelpDataCount) As HELPDATA
-    MsgBoxHelpData(MsgBoxHelpDataCount).ID = CLng(.dwContextHelpID)
+    MsgBoxHelpData(MsgBoxHelpDataCount).ID = NextHelpID
     MsgBoxHelpData(MsgBoxHelpDataCount).HelpFile = HelpFile
     MsgBoxHelpData(MsgBoxHelpDataCount).Context = Context
     MsgBoxHelpDataCount = MsgBoxHelpDataCount + 1
