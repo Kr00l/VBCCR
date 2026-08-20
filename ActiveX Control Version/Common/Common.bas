@@ -565,11 +565,7 @@ Else
         End If
         If dwMask = 0 Then
             Dir = Left$(FD.lpszFileName(), InStr(FD.lpszFileName(), vbNullChar) - 1)
-            If FD.dwFileAttributes And vbDirectory Then
-                If Dir <> "." And Dir <> ".." Then Exit Do ' Exclude self and relative path aliases
-            Else
-                Exit Do
-            End If
+            Exit Do ' Accept any matching entry (including "." and "..")
         End If
         If FindNextFile(hFindFile, FD) = 0 Then
             FindClose hFindFile
