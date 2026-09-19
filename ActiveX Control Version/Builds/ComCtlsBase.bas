@@ -89,6 +89,9 @@ Private Declare PtrSafe Function UnhookWindowsHookEx Lib "user32" (ByVal hHook A
 Private Declare PtrSafe Function CallNextHookEx Lib "user32" (ByVal hHook As LongPtr, ByVal nCode As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Private Declare PtrSafe Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As LongPtr
 Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As LongPtr
+Private Declare PtrSafe Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As LongPtr, ByVal lParam As LongPtr) As Long
+Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
+Private Declare PtrSafe Function IsWindowEnabled Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function ImmIsIME Lib "imm32" (ByVal hKL As LongPtr) As Long
 Private Declare PtrSafe Function ImmCreateContext Lib "imm32" () As LongPtr
 Private Declare PtrSafe Function ImmDestroyContext Lib "imm32" (ByVal hIMC As LongPtr) As Long
@@ -148,6 +151,9 @@ Private Declare Function UnhookWindowsHookEx Lib "user32" (ByVal hHook As Long) 
 Private Declare Function CallNextHookEx Lib "user32" (ByVal hHook As Long, ByVal nCode As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function GetKeyboardLayout Lib "user32" (ByVal dwThreadID As Long) As Long
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
+Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
+Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
+Private Declare Function IsWindowEnabled Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function ImmIsIME Lib "imm32" (ByVal hKL As Long) As Long
 Private Declare Function ImmCreateContext Lib "imm32" () As Long
 Private Declare Function ImmDestroyContext Lib "imm32" (ByVal hIMC As Long) As Long
@@ -211,6 +217,8 @@ Private ComCtlsSubclassProcPtr As LongPtr
 #If (VBA7 = 0) Then
 Private ComCtlsSubclassW2K As Integer
 #End If
+Private ComCtlsDisabledThreadWindowsCount As Long
+Private ComCtlsDisabledThreadWindows() As LongPtr
 Private MCIWndRefCount As Long
 Private ImcGetSysColorPtr As LongPtr, ImcGetSysColorRGBBackColor As Long, ImcGetSysColorRGBForeColor As Long, ImcGetSysColorHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcGetSysColorOrig(0 To (API_HOOK_SIZE - 1)) As Byte
 Private ImcImageListDrawPtr As LongPtr, ImcImageListDrawHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcImageListDrawOrig(0 To (API_HOOK_SIZE - 1)) As Byte
@@ -767,6 +775,30 @@ If Err.Number = 0 Then
 Else
     ComCtlsSubclassProc = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End If
+End Function
+
+Public Sub ComCtlsTaskModal()
+' Disable all enabled top-level thread windows, just like MB_TASKMODAL.
+If ComCtlsDisabledThreadWindowsCount = 0 Then
+    EnumThreadWindows App.ThreadID, AddressOf ComCtlsTaskModalEnumThreadWndProc, 0
+Else
+    Dim i As Long
+    For i = 0 To ComCtlsDisabledThreadWindowsCount - 1
+        EnableWindow ComCtlsDisabledThreadWindows(i), 1
+    Next i
+    ComCtlsDisabledThreadWindowsCount = 0
+    Erase ComCtlsDisabledThreadWindows()
+End If
+End Sub
+
+Private Function ComCtlsTaskModalEnumThreadWndProc(ByVal hWnd As LongPtr, ByVal lParam As LongPtr) As Long
+If IsWindowEnabled(hWnd) <> 0 Then
+    EnableWindow hWnd, 0
+    ReDim Preserve ComCtlsDisabledThreadWindows(0 To ComCtlsDisabledThreadWindowsCount) ' As LongPtr
+    ComCtlsDisabledThreadWindows(ComCtlsDisabledThreadWindowsCount) = hWnd
+    ComCtlsDisabledThreadWindowsCount = ComCtlsDisabledThreadWindowsCount + 1
+End If
+ComCtlsTaskModalEnumThreadWndProc = 1
 End Function
 
 Public Sub ComCtlsImlListImageIndex(ByVal Control As Object, ByVal ImageList As Variant, ByVal KeyOrIndex As Variant, ByRef ImageIndex As Long)
