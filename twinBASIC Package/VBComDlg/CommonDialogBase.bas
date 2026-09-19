@@ -43,6 +43,9 @@ Private Declare PtrSafe Function UnhookWindowsHookEx Lib "user32" (ByVal hHook A
 Private Declare PtrSafe Function CallNextHookEx Lib "user32" (ByVal hHook As LongPtr, ByVal nCode As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As LongPtr
 Private Declare PtrSafe Function IsDialogMessage Lib "user32" Alias "IsDialogMessageW" (ByVal hDlg As LongPtr, ByRef lpMsg As TMSG) As Long
+Private Declare PtrSafe Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As LongPtr, ByVal lParam As LongPtr) As Long
+Private Declare PtrSafe Function EnableWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal fEnable As Long) As Long
+Private Declare PtrSafe Function IsWindowEnabled Lib "user32" (ByVal hWnd As LongPtr) As Long
 Private Declare PtrSafe Function SetProp Lib "user32" Alias "SetPropW" (ByVal hWnd As LongPtr, ByVal lpString As LongPtr, ByVal hData As LongPtr) As Long
 Private Declare PtrSafe Function GetProp Lib "user32" Alias "GetPropW" (ByVal hWnd As LongPtr, ByVal lpString As LongPtr) As LongPtr
 Private Declare PtrSafe Function RemoveProp Lib "user32" Alias "RemovePropW" (ByVal hWnd As LongPtr, ByVal lpString As LongPtr) As LongPtr
@@ -57,6 +60,9 @@ Private Declare Function UnhookWindowsHookEx Lib "user32" (ByVal hHook As Long) 
 Private Declare Function CallNextHookEx Lib "user32" (ByVal hHook As Long, ByVal nCode As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As Long
 Private Declare Function IsDialogMessage Lib "user32" Alias "IsDialogMessageW" (ByVal hDlg As Long, ByRef lpMsg As TMSG) As Long
+Private Declare Function EnumThreadWindows Lib "user32" (ByVal dwThreadID As Long, ByVal lpfn As Long, ByVal lParam As Long) As Long
+Private Declare Function EnableWindow Lib "user32" (ByVal hWnd As Long, ByVal fEnable As Long) As Long
+Private Declare Function IsWindowEnabled Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function SetProp Lib "user32" Alias "SetPropW" (ByVal hWnd As Long, ByVal lpString As Long, ByVal hData As Long) As Long
 Private Declare Function GetProp Lib "user32" Alias "GetPropW" (ByVal hWnd As Long, ByVal lpString As Long) As Long
 Private Declare Function RemoveProp Lib "user32" Alias "RemovePropW" (ByVal hWnd As Long, ByVal lpString As Long) As Long
@@ -73,6 +79,8 @@ Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private CdlSubclassProcPtr As LongPtr
+Private CdlDisabledThreadWindowsCount As Long
+Private CdlDisabledThreadWindows() As LongPtr
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
@@ -113,6 +121,30 @@ If GetProp(hWnd, StrPtr(Name & "SubclassInit")) = 1 Then
     RemoveProp hWnd, StrPtr(Name & "SubclassInit")
 End If
 End Sub
+
+Public Sub CdlTaskModal()
+' Disable all enabled top-level thread windows, just like MB_TASKMODAL.
+If CdlDisabledThreadWindowsCount = 0 Then
+    EnumThreadWindows App.ThreadID, AddressOf CdlTaskModalEnumThreadWndProc, 0
+Else
+    Dim i As Long
+    For i = 0 To CdlDisabledThreadWindowsCount - 1
+        EnableWindow CdlDisabledThreadWindows(i), 1
+    Next i
+    CdlDisabledThreadWindowsCount = 0
+    Erase CdlDisabledThreadWindows()
+End If
+End Sub
+
+Private Function CdlTaskModalEnumThreadWndProc(ByVal hWnd As LongPtr, ByVal lParam As LongPtr) As Long
+If IsWindowEnabled(hWnd) <> 0 Then
+    EnableWindow hWnd, 0
+    ReDim Preserve CdlDisabledThreadWindows(0 To CdlDisabledThreadWindowsCount) ' As LongPtr
+    CdlDisabledThreadWindows(CdlDisabledThreadWindowsCount) = hWnd
+    CdlDisabledThreadWindowsCount = CdlDisabledThreadWindowsCount + 1
+End If
+CdlTaskModalEnumThreadWndProc = 1
+End Function
 
 #If VBA7 Then
 Public Function CdlSubclassProc(ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, ByVal uIdSubclass As LongPtr, ByVal dwRefData As LongPtr) As LongPtr
@@ -568,3 +600,5 @@ CopyMemory TempObj, ObjectPointer, PTR_SIZE
 Set PtrToObj = TempObj
 CopyMemory TempObj, NULL_PTR, PTR_SIZE
 End Function
+
+
