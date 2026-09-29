@@ -172,6 +172,7 @@ End Type
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Sub GetSystemTime Lib "kernel32" (ByRef lpSystemTime As SYSTEMTIME)
 Private Declare PtrSafe Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As LongPtr
+Private Declare PtrSafe Function EmptyByteArray Lib "oleaut32" Alias "SafeArrayCreateVector" (Optional ByVal VT As Long = vbByte, Optional ByVal Lower As Long = 0, Optional ByVal Count As Long = 0) As Byte()
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As LongPtr
 Private Declare PtrSafe Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
@@ -260,6 +261,7 @@ Private Declare PtrSafe Function HtmlHelp Lib "hhctrl.ocx" Alias "HtmlHelpW" (By
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Sub GetSystemTime Lib "kernel32" (ByRef lpSystemTime As SYSTEMTIME)
 Private Declare Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As Long
+Private Declare Function EmptyByteArray Lib "oleaut32" Alias "SafeArrayCreateVector" (Optional ByVal VT As Long = vbByte, Optional ByVal Lower As Long = 0, Optional ByVal Count As Long = 0) As Byte()
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
@@ -1452,6 +1454,8 @@ If Size > 0 Then
     ReDim Buffer(0 To Size - 1) As Byte
     WideCharToMultiByte CP_UTF8, 0, Pointer, Length, VarPtr(Buffer(0)), Size, NULL_PTR, NULL_PTR
     UTF16_To_UTF8 = Buffer()
+Else
+    UTF16_To_UTF8 = EmptyByteArray()
 End If
 End Function
 
