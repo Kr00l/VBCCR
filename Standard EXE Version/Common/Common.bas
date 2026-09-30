@@ -172,7 +172,6 @@ End Type
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare PtrSafe Sub GetSystemTime Lib "kernel32" (ByRef lpSystemTime As SYSTEMTIME)
 Private Declare PtrSafe Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As LongPtr
-Private Declare PtrSafe Function EmptyByteArray Lib "oleaut32" Alias "SafeArrayCreateVector" (Optional ByVal VT As Long = vbByte, Optional ByVal Lower As Long = 0, Optional ByVal Count As Long = 0) As Byte()
 Private Declare PtrSafe Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As LongPtr) As Long
 Private Declare PtrSafe Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As LongPtr
 Private Declare PtrSafe Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
@@ -261,7 +260,6 @@ Private Declare PtrSafe Function HtmlHelp Lib "hhctrl.ocx" Alias "HtmlHelpW" (By
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Sub GetSystemTime Lib "kernel32" (ByRef lpSystemTime As SYSTEMTIME)
 Private Declare Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (ByRef Var() As Any) As Long
-Private Declare Function EmptyByteArray Lib "oleaut32" Alias "SafeArrayCreateVector" (Optional ByVal VT As Long = vbByte, Optional ByVal Lower As Long = 0, Optional ByVal Count As Long = 0) As Byte()
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenW" (ByVal lpString As Long) As Long
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyW" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
 Private Declare Function MessageBoxIndirect Lib "user32" Alias "MessageBoxIndirectW" (ByRef lpMsgBoxParams As MSGBOXPARAMS) As Long
@@ -1445,18 +1443,18 @@ End Function
 
 Public Function UTF16_To_UTF8(ByRef Source As String) As Byte()
 Const CP_UTF8 As Long = 65001
-Dim Length As Long, Pointer As LongPtr, Size As Long
+Dim Ptr As LongPtr, Length As Long, Size As Long
+Ptr = StrPtr(Source)
 Length = Len(Source)
-Pointer = StrPtr(Source)
-Size = WideCharToMultiByte(CP_UTF8, 0, Pointer, Length, NULL_PTR, 0, NULL_PTR, NULL_PTR)
+If Ptr <> NULL_PTR And Length > 0 Then Size = WideCharToMultiByte(CP_UTF8, 0, Ptr, Length, NULL_PTR, 0, NULL_PTR, NULL_PTR)
+Dim B() As Byte
 If Size > 0 Then
-    Dim Buffer() As Byte
-    ReDim Buffer(0 To Size - 1) As Byte
-    WideCharToMultiByte CP_UTF8, 0, Pointer, Length, VarPtr(Buffer(0)), Size, NULL_PTR, NULL_PTR
-    UTF16_To_UTF8 = Buffer()
+    ReDim B(0 To (Size - 1)) As Byte
+    WideCharToMultiByte CP_UTF8, 0, Ptr, Length, VarPtr(B(0)), Size, NULL_PTR, NULL_PTR
 Else
-    UTF16_To_UTF8 = EmptyByteArray()
+    B() = vbNullString
 End If
+UTF16_To_UTF8 = B()
 End Function
 
 Public Function UTF8_To_UTF16(ByRef Source() As Byte) As String
@@ -1465,12 +1463,12 @@ Const CP_UTF8 As Long = 65001
 Dim Size As Long
 Size = UBound(Source) - LBound(Source) + 1
 If Size > 0 Then
-    Dim Pointer As LongPtr, Length As Long
-    Pointer = VarPtr(Source(LBound(Source)))
-    Length = MultiByteToWideChar(CP_UTF8, 0, Pointer, Size, NULL_PTR, 0)
+    Dim Ptr As LongPtr, Length As Long
+    Ptr = VarPtr(Source(LBound(Source)))
+    Length = MultiByteToWideChar(CP_UTF8, 0, Ptr, Size, NULL_PTR, 0)
     If Length > 0 Then
         UTF8_To_UTF16 = Space$(Length)
-        MultiByteToWideChar CP_UTF8, 0, Pointer, Size, StrPtr(UTF8_To_UTF16), Length
+        MultiByteToWideChar CP_UTF8, 0, Ptr, Size, StrPtr(UTF8_To_UTF16), Length
     End If
 End If
 End Function
