@@ -71,6 +71,7 @@ Private Declare Function CallWindowProc Lib "user32" Alias "CallWindowProcW" (By
 Private Declare Function DefWindowProc Lib "user32" Alias "DefWindowProcW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 #End If
 Private Const WM_CREATE As Long = &H1
+Private Const ERROR_CLASS_ALREADY_EXISTS As Long = 1410
 Private Const GWLP_WNDPROC As Long = (-4)
 Private Const GWL_STYLE As Long = (-16)
 Private Const GCLP_WNDPROC As Long = (-24)
@@ -93,6 +94,12 @@ If VcbClassAtom = 0 And VcbRefCount = 0 Then
     .lpszClassName = StrPtr(ClassName)
     End With
     VcbClassAtom = RegisterClassEx(WCEX)
+    If VcbClassAtom = 0 Then
+        If Err.LastDllError = ERROR_CLASS_ALREADY_EXISTS Then
+            UnregisterClass StrPtr(ClassName), App.hInstance
+            VcbClassAtom = RegisterClassEx(WCEX)
+        End If
+    End If
 End If
 VcbRefCount = VcbRefCount + 1
 End Sub
