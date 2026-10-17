@@ -1,5 +1,13 @@
 List of revisions:
 
+17-Oct-2026
+- Improved class registrations in VirtualComboBase.bas to re-register in case the class was already registered.
+  This is particular only a Std-EXE version issue (hatched UserControl) but does not harm to have in general.
+
+19-Sep-2026
+- Task-modality now set when the GetOwnerWindow function returned NULL in the CommonDialog class.
+  Except of course for the non-modal ShowFind/ShowReplace.
+
 07-Aug-2026
 - ShowFind/ShowReplace can create now a fallback hidden top-level window handle in the CommonDialog class.
   This avoids CDERR_DIALOGFAILURE in case the GetOwnerWindow function returned NULL.
