@@ -721,7 +721,7 @@ Public Event ReplaceAll()
 Attribute ReplaceAll.VB_Description = "Occurs when the user clicked the replace all button in a replace dialog box."
 #If VBA7 Then
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32" (ByVal hMem As LongPtr)
-Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As LongPtr)
 Private Declare PtrSafe Function CommDlgExtendedError Lib "comdlg32" () As Long
 Private Declare PtrSafe Function GetOpenFileName Lib "comdlg32" Alias "GetOpenFileNameW" (ByRef lpOpenFileName As OPENFILENAME) As Long
 Private Declare PtrSafe Function GetSaveFileName Lib "comdlg32" Alias "GetSaveFileNameW" (ByRef lpOpenFileName As OPENFILENAME) As Long
