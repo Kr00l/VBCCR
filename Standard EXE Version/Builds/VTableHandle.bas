@@ -43,9 +43,9 @@ Public Const CTRLINFO_EATS_RETURN As Long = 1
 Public Const CTRLINFO_EATS_ESCAPE As Long = 2
 #If VBA7 Then
 Private Declare PtrSafe Sub CoTaskMemFree Lib "ole32" (ByVal hMem As LongPtr)
-Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As LongPtr)
 Private Declare PtrSafe Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long)
-Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As Long) As LongPtr
+Private Declare PtrSafe Function CoTaskMemAlloc Lib "ole32" (ByVal cBytes As LongPtr) As LongPtr
 Private Declare PtrSafe Function SysAllocString Lib "oleaut32" (ByVal lpString As LongPtr) As LongPtr
 Private Declare PtrSafe Function DispCallFunc Lib "oleaut32" (ByVal lpvInstance As LongPtr, ByVal oVft As LongPtr, ByVal CallConv As Long, ByVal vtReturn As Integer, ByVal cActuals As Long, ByVal prgvt As LongPtr, ByVal prgpvarg As LongPtr, ByRef pvargResult As Variant) As Long
 Private Declare PtrSafe Function VariantCopy Lib "oleaut32" (ByRef pvargDest As Any, ByRef pvargSrc As Any) As Long
