@@ -163,7 +163,7 @@ Attribute PowerSuspend.VB_Description = "Occurs immediately before the system go
 Public Event ThemeChanged()
 Attribute ThemeChanged.VB_Description = "Occurs on activation of a theme, the deactivation of a theme, or a transition from one theme to another. Requires Windows XP (or above)."
 #If VBA7 Then
-Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As LongPtr)
 Private Declare PtrSafe Function RegisterDeviceNotification Lib "user32" Alias "RegisterDeviceNotificationW" (ByVal hRecipient As LongPtr, ByRef NotificationFilter As Any, ByVal Flags As Long) As LongPtr
 Private Declare PtrSafe Function UnregisterDeviceNotification Lib "user32" (ByVal hDevNotify As LongPtr) As Long
 Private Declare PtrSafe Function GetSystemPowerStatus Lib "kernel32" (ByRef lpSystemPowerStatus As SYSTEM_POWER_STATUS) As Long
