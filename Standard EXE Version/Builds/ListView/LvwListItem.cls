@@ -415,24 +415,19 @@ End With
 End Sub
 
 Friend Function FListSubItemsItem(ByVal Index As Variant) As Long
-Select Case VarType(Index)
-    Case vbLong, vbInteger, vbByte
-        FListSubItemsItem = Index
-    Case vbString
-        Dim i As Long
-        For i = 1 To PropShadowListSubItemsCount
-            If Not PropShadowListSubItems(i).Key = vbNullString Then
-                If StrComp(PropShadowListSubItems(i).Key, Index, vbTextCompare) = 0 Then
-                    FListSubItemsItem = i
-                    Exit For
-                End If
+If VarType(Index) = vbString Then
+    Dim i As Long
+    For i = 1 To PropShadowListSubItemsCount
+        If Not PropShadowListSubItems(i).Key = vbNullString Then
+            If StrComp(PropShadowListSubItems(i).Key, Index, vbTextCompare) = 0 Then
+                FListSubItemsItem = i
+                Exit For
             End If
-        Next i
-    Case vbDouble, vbSingle
-        FListSubItemsItem = CLng(Index)
-    Case Else
-        Err.Raise 13
-End Select
+        End If
+    Next i
+Else
+    FListSubItemsItem = Index
+End If
 End Function
 
 Friend Function FListSubItemsCount() As Long
