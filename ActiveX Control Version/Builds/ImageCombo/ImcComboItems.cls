@@ -29,8 +29,10 @@ Ptr As LongPtr
 ShadowObjPtr As LongPtr
 End Type
 #If VBA7 Then
+Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As LongPtr)
 Private Declare PtrSafe Function PutMem4 Lib "msvbvm60.dll" (ByVal Addr As LongPtr, ByVal Value As Long) As Long
 #Else
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function PutMem4 Lib "msvbvm60.dll" (ByVal Addr As Long, ByVal Value As Long) As Long
 #End If
 Private ShadowObjectPointer As LongPtr
@@ -104,14 +106,18 @@ Else
 End If
 If Index = 0 Then Index = PropComboItem.Count
 ReDim Preserve PropIndexPtrArr(1 To PropComboItem.Count) As TINDEXPTR
-Dim i As Long
 If Index < PropComboItem.Count Then
-    For i = PropComboItem.Count To Index + 1 Step -1
-        LSet PropIndexPtrArr(i) = PropIndexPtrArr(i - 1)
-    Next i
+    Dim Length As LongPtr
+    #If VBA7 Then
+    Length = CLngPtr(PropComboItem.Count - Index) * LenB(PropIndexPtrArr(Index))
+    #Else
+    Length = (PropComboItem.Count - Index) * LenB(PropIndexPtrArr(Index))
+    #End If
+    CopyMemory PropIndexPtrArr(Index + 1), PropIndexPtrArr(Index), Length
 End If
 PropIndexPtrArr(Index).Ptr = IndexPtr
 PropIndexPtrArr(Index).ShadowObjPtr = ObjPtr(NewComboItem)
+Dim i As Long
 For i = Index To PropComboItem.Count
     PutMem4 PropIndexPtrArr(i).Ptr, i
 Next i
@@ -122,26 +128,17 @@ End Function
 Public Property Get Item(ByVal Index As Variant) As ImcComboItem
 Attribute Item.VB_Description = "Returns a combo item given its index or key."
 Attribute Item.VB_UserMemId = 0
-Select Case VarType(Index)
-    Case vbLong, vbInteger, vbByte
-        If Index > 0 And Index <= PropComboItem.Count Then
-            Set Item = PtrToObj(PropIndexPtrArr(Index).ShadowObjPtr)
-        Else
-            Err.Raise 9
-        End If
-    Case vbString
-        Set Item = PropComboItem(Index)
-    Case vbDouble, vbSingle
-        Dim IndexLong As Long
-        IndexLong = CLng(Index)
-        If IndexLong > 0 And IndexLong <= PropComboItem.Count Then
-            Set Item = PtrToObj(PropIndexPtrArr(IndexLong).ShadowObjPtr)
-        Else
-            Err.Raise 9
-        End If
-    Case Else
-        Err.Raise 13
-End Select
+If VarType(Index) = vbString Then
+    Set Item = PropComboItem(Index)
+Else
+    Dim IndexLong As Long
+    IndexLong = Index
+    If IndexLong > 0 And IndexLong <= PropComboItem.Count Then
+        Set Item = PtrToObj(PropIndexPtrArr(IndexLong).ShadowObjPtr)
+    Else
+        Err.Raise 9
+    End If
+End If
 End Property
 
 Public Function Exists(ByVal Index As Variant) As Boolean
@@ -167,29 +164,30 @@ End Sub
 Public Sub Remove(ByVal Index As Variant)
 Attribute Remove.VB_Description = "Removes a combo item from the collection."
 Dim IndexLong As Long
-Select Case VarType(Index)
-    Case vbLong, vbInteger, vbByte
-        IndexLong = Index
-    Case vbString
-        IndexLong = PropComboItem(Index).Index
-    Case vbDouble, vbSingle
-        IndexLong = CLng(Index)
-    Case Else
-        Err.Raise 13
-End Select
+If VarType(Index) = vbString Then
+    IndexLong = PropComboItem(Index).Index
+Else
+    IndexLong = Index
+End If
 If IndexLong > 0 And IndexLong <= PropComboItem.Count Then
     ShadowImageCombo.FComboItemsRemove IndexLong
     PropComboItem.Remove Index
-    Dim i As Long
-    For i = IndexLong To PropComboItem.Count
-        LSet PropIndexPtrArr(i) = PropIndexPtrArr(i + 1)
-    Next i
+    If IndexLong <= PropComboItem.Count Then
+        Dim Length As LongPtr
+        #If VBA7 Then
+        Length = CLngPtr(PropComboItem.Count - IndexLong + 1) * LenB(PropIndexPtrArr(IndexLong))
+        #Else
+        Length = (PropComboItem.Count - IndexLong + 1) * LenB(PropIndexPtrArr(IndexLong))
+        #End If
+        CopyMemory PropIndexPtrArr(IndexLong), PropIndexPtrArr(IndexLong + 1), Length
+    End If
     If PropComboItem.Count > 0 Then
         ReDim Preserve PropIndexPtrArr(1 To PropComboItem.Count) As TINDEXPTR
     Else
         Erase PropIndexPtrArr()
     End If
-    For i = 1 To PropComboItem.Count
+    Dim i As Long
+    For i = IndexLong To PropComboItem.Count
         PutMem4 PropIndexPtrArr(i).Ptr, i
     Next i
 Else
