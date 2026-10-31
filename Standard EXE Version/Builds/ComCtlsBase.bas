@@ -911,40 +911,34 @@ ComCtlsTaskModalEnumThreadWndProc = 1
 End Function
 
 Public Sub ComCtlsImlListImageIndex(ByVal Control As Object, ByVal ImageList As Variant, ByVal KeyOrIndex As Variant, ByRef ImageIndex As Long)
-Dim LngValue As Long
-Select Case VarType(KeyOrIndex)
-    Case vbLong, vbInteger, vbByte
-        LngValue = KeyOrIndex
-    Case vbString
-        Dim ImageListControl As Object
-        If IsObject(ImageList) Then
-            Set ImageListControl = ImageList
-        ElseIf VarType(ImageList) = vbString Then
-            Dim ControlEnum As Object, CompareName As String
-            For Each ControlEnum In Control.ControlsEnum
-                If TypeName(ControlEnum) = "ImageList" Then
-                    CompareName = ProperControlName(ControlEnum)
-                    If CompareName = ImageList And Not CompareName = vbNullString Then
-                        Set ImageListControl = ControlEnum
-                        Exit For
-                    End If
+Dim IndexLong As Long
+If VarType(KeyOrIndex) = vbString Then
+    Dim ImageListControl As Object
+    If IsObject(ImageList) Then
+        Set ImageListControl = ImageList
+    ElseIf VarType(ImageList) = vbString Then
+        Dim ControlEnum As Object, CompareName As String
+        For Each ControlEnum In Control.ControlsEnum
+            If TypeName(ControlEnum) = "ImageList" Then
+                CompareName = ProperControlName(ControlEnum)
+                If CompareName = ImageList And Not CompareName = vbNullString Then
+                    Set ImageListControl = ControlEnum
+                    Exit For
                 End If
-            Next ControlEnum
-        End If
-        If Not ImageListControl Is Nothing Then
-            On Error Resume Next
-            LngValue = ImageListControl.ListImages(KeyOrIndex).Index
-            On Error GoTo 0
-        End If
-        If LngValue = 0 Then Err.Raise Number:=35601, Description:="Element not found"
-    Case vbDouble, vbSingle
-        LngValue = CLng(KeyOrIndex)
-    Case vbEmpty
-    Case Else
-        Err.Raise 13
-End Select
-If LngValue < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
-ImageIndex = LngValue
+            End If
+        Next ControlEnum
+    End If
+    If Not ImageListControl Is Nothing Then
+        On Error Resume Next
+        IndexLong = ImageListControl.ListImages(KeyOrIndex).Index
+        On Error GoTo 0
+    End If
+    If IndexLong = 0 Then Err.Raise Number:=35601, Description:="Element not found"
+Else
+    IndexLong = KeyOrIndex
+End If
+If IndexLong < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
+ImageIndex = IndexLong
 End Sub
 
 Public Sub ComCtlsMCIWndRegisterClass()
