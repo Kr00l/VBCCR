@@ -1315,11 +1315,11 @@ GetMouseState = GetMouseState Or (-vbMiddleButton * KeyPressed(vbMiddleButton))
 End Function
 
 Public Function KeyToggled(ByVal KeyCode As KeyCodeConstants) As Boolean
-KeyToggled = CBool(LoByte(GetKeyState(KeyCode)) = 1)
+KeyToggled = CBool((GetKeyState(KeyCode) And 1) <> 0)
 End Function
  
 Public Function KeyPressed(ByVal KeyCode As KeyCodeConstants) As Boolean
-KeyPressed = CBool((GetAsyncKeyState(KeyCode) And &H8000&) = &H8000&)
+KeyPressed = CBool((GetAsyncKeyState(KeyCode) And &H8000&) <> 0)
 End Function
 
 #If TWINBASIC Then
