@@ -192,7 +192,6 @@ Attribute OLEStartDrag.VB_Description = "Occurs when an OLE drag/drop operation 
 Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As LongPtr)
 Private Declare PtrSafe Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare PtrSafe Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As LongPtr, ByVal nIndex As Long) As Long
-Private Declare PtrSafe Function GetKeyboardState Lib "user32" (ByRef pbKeyState As Byte) As Long
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByRef lParam As Any) As LongPtr
 Private Declare PtrSafe Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByRef lpParam As Any) As LongPtr
 Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal nCmdShow As Long) As Long
@@ -231,7 +230,6 @@ Private Declare PtrSafe Function SetCursor Lib "user32" (ByVal hCursor As LongPt
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
-Private Declare Function GetKeyboardState Lib "user32" (ByRef pbKeyState As Byte) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
@@ -1846,7 +1844,6 @@ End If
 End Function
 
 Private Sub GetDisplayText(ByVal Index As Long, ByRef Text As String, ByRef Enabled As Boolean)
-Static KeyState(0 To 255) As Byte
 Text = vbNullString
 Select Case PropShadowPanels(Index).Style
     Case SbrPanelStyleText
@@ -1854,20 +1851,16 @@ Select Case PropShadowPanels(Index).Style
         Enabled = PropShadowPanels(Index).Enabled
     Case SbrPanelStyleCaps
         Text = "CAPS"
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyCapital))
+        Enabled = KeyToggled(vbKeyCapital)
     Case SbrPanelStyleNum
         Text = "NUM"
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyNumlock))
+        Enabled = KeyToggled(vbKeyNumlock)
     Case SbrPanelStyleIns
         Text = "INS"
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyInsert))
+        Enabled = KeyToggled(vbKeyInsert)
     Case SbrPanelStyleScrl
         Text = "SCRL"
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyScrollLock))
+        Enabled = KeyToggled(vbKeyScrollLock)
     Case SbrPanelStyleTime
         Select Case PropShadowPanels(Index).DTFormat
             Case SbrPanelDTFormatShort
@@ -1899,33 +1892,27 @@ Select Case PropShadowPanels(Index).Style
     Case SbrPanelStyleKana
         Text = "KANA"
         Const vbKeyKana As Long = &H15
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyKana))
+        Enabled = KeyToggled(vbKeyKana)
     Case SbrPanelStyleHangul
         Text = "HANGUL"
         Const vbKeyHangul As Long = &H15
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyHangul))
+        Enabled = KeyToggled(vbKeyHangul)
     Case SbrPanelStyleJunja
         Text = "JUNJA"
         Const vbKeyJunja As Long = &H17
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyJunja))
+        Enabled = KeyToggled(vbKeyJunja)
     Case SbrPanelStyleFinal
         Text = "FINAL"
         Const vbKeyFinal As Long = &H18
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyFinal))
+        Enabled = KeyPressed(vbKeyFinal)
     Case SbrPanelStyleKanji
         Text = "KANJI"
         Const vbKeyKanji As Long = &H19
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyKanji))
+        Enabled = KeyPressed(vbKeyKanji)
     Case SbrPanelStyleHanja
         Text = "HANJA"
         Const vbKeyHanja As Long = &H19
-        GetKeyboardState KeyState(0)
-        Enabled = CBool(KeyState(vbKeyHanja))
+        Enabled = KeyPressed(vbKeyHanja)
     Case SbrPanelStyleDateTime
         Select Case PropShadowPanels(Index).DTFormat
             Case SbrPanelDTFormatShort
