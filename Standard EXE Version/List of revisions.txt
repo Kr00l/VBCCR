@@ -1,5 +1,8 @@
 List of revisions:
 
+07-Nov-2026
+- ReplaceAll event was not firing in the ShowReplace function of the CommonDialog class.
+
 17-Oct-2026
 - Improved class registrations in VirtualComboBase.bas to re-register in case the class was already registered.
   This is particular only a Std-EXE version issue (hatched UserControl) but does not harm to have in general.
