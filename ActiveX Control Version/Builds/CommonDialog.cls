@@ -2826,7 +2826,7 @@ If wMsg = CommonDialogFindMsg And CommonDialogFindMsg <> 0 Then
                     RaiseEvent FindNext
                 Case CBool((FR.Flags And CdlFRReplace) = CdlFRReplace)
                     RaiseEvent Replace
-                Case CBool((FR.Flags And CdlFRReplaceAll) = CdlFRFindNext)
+                Case CBool((FR.Flags And CdlFRReplaceAll) = CdlFRReplaceAll)
                     RaiseEvent ReplaceAll
             End Select
             If GetFocus() <> hWndFocus And hWndFocus <> NULL_PTR Then SetFocusAPI hWndFocus
