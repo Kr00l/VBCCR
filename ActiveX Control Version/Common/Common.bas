@@ -464,11 +464,6 @@ End With
 End Sub
 
 ' (VB-Overwrite)
-Public Sub SendKeys(ByRef Text As String, Optional ByRef Wait As Boolean)
-CreateObject("WScript.Shell").SendKeys Text, Wait
-End Sub
-
-' (VB-Overwrite)
 Public Function GetAttr(ByVal PathName As String) As VbFileAttribute
 Const INVALID_FILE_ATTRIBUTES As Long = (-1)
 Const FILE_ATTRIBUTE_NORMAL As Long = &H80
