@@ -2595,6 +2595,7 @@ If TreeViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
     With TVI_V61
     .TVI.Mask = TVIF_HANDLE Or TVIF_STATEEX
     .TVI.hItem = Handle
+    SendMessage TreeViewHandle, TVM_GETITEM, 0, ByVal VarPtr(TVI_V61)
     If Value = True Then
         If (.uStateEx And TVIS_EX_DISABLED) = TVIS_EX_DISABLED Then .uStateEx = .uStateEx And Not TVIS_EX_DISABLED
     Else
@@ -2833,7 +2834,7 @@ If TreeViewHandle <> NULL_PTR Then
         Temp = PropPathSeparator & Me.FNodeText(hItem) & Temp
         hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem)
     Loop
-    If Not Temp = vbNullString Then If Left$(Temp, 1) = PropPathSeparator Then Temp = Mid(Temp, 2, Len(Temp) - 1)
+    If Not Temp = vbNullString Then If Left$(Temp, Len(PropPathSeparator)) = PropPathSeparator Then Temp = Mid$(Temp, Len(PropPathSeparator) + 1)
     FNodeFullPath = Temp
 End If
 End Property
@@ -3492,21 +3493,15 @@ If TreeViewHandle <> NULL_PTR And hItem <> NULL_PTR Then
         GetSelectRangeStep = hStep
         Exit Function
     End If
-    hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem)
-    If hStep = NULL_PTR Then Exit Function
-    hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hStep)
-    If hStep <> NULL_PTR Then
-        GetSelectRangeStep = hStep
-    Else
-        Dim hParent As LongPtr
-        hParent = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem)
-        While hParent <> NULL_PTR
-            hStep = hParent
-            hParent = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hParent)
-        Wend
-        hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hStep)
-        If hStep <> NULL_PTR Then GetSelectRangeStep = hStep
-    End If
+    Do
+        hItem = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PARENT, ByVal hItem)
+        If hItem = NULL_PTR Then Exit Do
+        hStep = SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXT, ByVal hItem)
+        If hStep <> NULL_PTR Then
+            GetSelectRangeStep = hStep
+            Exit Do
+        End If
+    Loop
 End If
 End Function
 
