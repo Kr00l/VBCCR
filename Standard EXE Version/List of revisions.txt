@@ -1,5 +1,8 @@
 List of revisions:
 
+12-Nov-2026
+- Bug in TreeView multi-selection range traversal that could skip items when moving between branches at different hierarchy levels.
+
 07-Nov-2026
 - ReplaceAll event was not firing in the ShowReplace function of the CommonDialog class.
 
