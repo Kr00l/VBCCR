@@ -4498,7 +4498,7 @@ If ListViewHandle <> NULL_PTR Then
     RC.Left = LVIR_BOUNDS
     RC.Top = SubItemIndex
     SendMessage ListViewHandle, LVM_GETSUBITEMRECT, Index - 1, ByVal VarPtr(RC)
-    FListSubItemTop = UserControl.ScaleX(RC.Top, vbPixels, vbContainerPosition)
+    FListSubItemTop = UserControl.ScaleY(RC.Top, vbPixels, vbContainerPosition)
 End If
 End Property
 
@@ -6609,7 +6609,7 @@ End Function
 
 Public Function GhostedIndices() As Collection
 Attribute GhostedIndices.VB_Description = "Returns a reference to a collection containing the indexes to the ghosted items."
-Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
+If PropVirtualMode = True Then Err.Raise Number:=91, Description:="This functionality is disabled when virtual mode is on."
 Set GhostedIndices = New Collection
 If ListViewHandle <> NULL_PTR Then
     Dim iItem As Long
@@ -6839,7 +6839,7 @@ End Sub
 
 Public Sub Scroll(ByVal X As Single, ByVal Y As Single)
 Attribute Scroll.VB_Description = "Scrolls the content. When the list view is in 'report' view, the X and Y arguments will be rounded up to the nearest number that form a whole line increment."
-If ListViewHandle <> NULL_PTR Then SendMessage ListViewHandle, LVM_SCROLL, CLng(UserControl.ScaleX(X, vbContainerSize, vbPixels)), ByVal CLng(UserControl.ScaleX(Y, vbContainerSize, vbPixels))
+If ListViewHandle <> NULL_PTR Then SendMessage ListViewHandle, LVM_SCROLL, CLng(UserControl.ScaleX(X, vbContainerSize, vbPixels)), ByVal CLng(UserControl.ScaleY(Y, vbContainerSize, vbPixels))
 End Sub
 
 Public Sub ResetEmptyMarkup()
@@ -6940,7 +6940,7 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
             Set InsertMark = New LvwListItem
             InsertMark.FInit ObjPtr(Me), .iItem + 1, vbNullString, NULL_PTR, vbNullString, 0, 0, 0, 0
         End If
-        After = CBool((CDbl(.dwFlags) - CDbl(vbDropEffectScroll)) = LVIM_AFTER)
+        After = CBool((.dwFlags And LVIM_AFTER) = LVIM_AFTER)
     End If
     End With
 End If
@@ -7022,6 +7022,7 @@ If ListViewHandle <> NULL_PTR And ComCtlsSupportLevel() >= 2 Then
             Dim LVG As LVGROUP
             With LVG
             .cbSize = LenB(LVG)
+            .Mask = LVGF_GROUPID
             SendMessage ListViewHandle, LVM_GETGROUPINFOBYINDEX, Index, ByVal VarPtr(LVG)
             .Mask = LVGF_STATE
             .StateMask = LVGS_FOCUSED
