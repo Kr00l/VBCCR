@@ -996,6 +996,7 @@ Private Const HDM_SETITEMW As Long = (HDM_FIRST + 12)
 Private Const HDM_SETITEM As Long = HDM_SETITEMW
 Private Const HDM_LAYOUT As Long = (HDM_FIRST + 5)
 Private Const HDM_HITTEST As Long = (HDM_FIRST + 6)
+Private Const HDM_GETITEMRECT As Long = (HDM_FIRST + 7)
 Private Const HDM_SETIMAGELIST As Long = (HDM_FIRST + 8)
 Private Const HDM_GETIMAGELIST As Long = (HDM_FIRST + 9)
 Private Const HDM_ORDERTOINDEX As Long = (HDM_FIRST + 15)
@@ -5093,11 +5094,11 @@ End Property
 
 Friend Property Get FColumnHeaderLeft(ByVal Index As Long) As Single
 If ListViewHandle <> NULL_PTR Then
-    Dim i As Long
-    For i = 1 To Index
-        If i = Index Then Exit For
-        FColumnHeaderLeft = FColumnHeaderLeft + Me.FColumnHeaderWidth(i)
-    Next i
+    If ListViewHeaderHandle = NULL_PTR Then ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> NULL_PTR Then
+        Dim RC As RECT
+        If SendMessage(ListViewHeaderHandle, HDM_GETITEMRECT, Index - 1, ByVal VarPtr(RC)) <> 0 Then FColumnHeaderLeft = UserControl.ScaleX(RC.Left, vbPixels, vbContainerPosition)
+    End If
 End If
 End Property
 

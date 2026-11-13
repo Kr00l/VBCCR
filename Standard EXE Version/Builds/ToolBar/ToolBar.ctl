@@ -712,7 +712,7 @@ Implements OLEGuids.IObjectSafety
 Implements OLEGuids.IPerPropertyBrowsingVB
 Private Type InitButtonMenuStruct
 Key As String
-Tag As String
+Tag As Variant
 Text As String
 Enabled As Boolean
 Visible As Boolean
@@ -722,7 +722,7 @@ Picture As IPictureDisp
 End Type
 Private Type InitButtonStruct
 Key As String
-Tag As String
+Tag As Variant
 Caption As String
 Style As TbrButtonStyleConstants
 Image As Variant
@@ -3391,7 +3391,7 @@ Friend Property Get FButtonHeight(ByVal ID As Long) As Single
 If ToolBarHandle <> NULL_PTR And IsButtonAvailable(ID) = True Then
     Dim RC As RECT
     SendMessage ToolBarHandle, TB_GETITEMRECT, SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&), ByVal VarPtr(RC)
-    FButtonHeight = UserControl.ScaleX((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
+    FButtonHeight = UserControl.ScaleY((RC.Bottom - RC.Top), vbPixels, vbContainerSize)
 End If
 End Property
 
@@ -3407,7 +3407,7 @@ Friend Property Get FButtonTop(ByVal ID As Long) As Single
 If ToolBarHandle <> NULL_PTR And IsButtonAvailable(ID) = True Then
     Dim RC As RECT
     SendMessage ToolBarHandle, TB_GETITEMRECT, SendMessage(ToolBarHandle, TB_COMMANDTOINDEX, ID, ByVal 0&), ByVal VarPtr(RC)
-    FButtonTop = UserControl.ScaleX(RC.Top, vbPixels, vbContainerSize)
+    FButtonTop = UserControl.ScaleY(RC.Top, vbPixels, vbContainerSize)
 End If
 End Property
 
@@ -3517,7 +3517,11 @@ If ReInitButtonsCount > 0 Then
     For i = 1 To ReInitButtonsCount
         With .Buttons(i)
         ReInitButtons(i).Key = .Key
-        ReInitButtons(i).Tag = .Tag
+        If IsObject(.Tag) Then
+            Set ReInitButtons(i).Tag = .Tag
+        Else
+            ReInitButtons(i).Tag = .Tag
+        End If
         ReInitButtons(i).Caption = .Caption
         ReInitButtons(i).Style = .Style
         ReInitButtons(i).Image = .Image
@@ -3529,6 +3533,7 @@ If ReInitButtonsCount > 0 Then
         ReInitButtons(i).Enabled = .Enabled
         ReInitButtons(i).Visible = .Visible
         ReInitButtons(i).MixedState = .MixedState
+        ReInitButtons(i).HighLighted = .HighLighted
         ReInitButtons(i).NoImage = .NoImage
         ReInitButtons(i).NoPrefix = .NoPrefix
         ReInitButtons(i).AutoSize = .AutoSize
@@ -3539,7 +3544,11 @@ If ReInitButtonsCount > 0 Then
             For ii = 1 To ReInitButtons(i).ButtonMenusCount
                 With .ButtonMenus(ii)
                 ReInitButtons(i).ButtonMenus(ii).Key = .Key
-                ReInitButtons(i).ButtonMenus(ii).Tag = .Tag
+                If IsObject(.Tag) Then
+                    Set ReInitButtons(i).ButtonMenus(ii).Tag = .Tag
+                Else
+                    ReInitButtons(i).ButtonMenus(ii).Tag = .Tag
+                End If
                 ReInitButtons(i).ButtonMenus(ii).Text = .Text
                 ReInitButtons(i).ButtonMenus(ii).Enabled = .Enabled
                 ReInitButtons(i).ButtonMenus(ii).Visible = .Visible
@@ -3587,7 +3596,11 @@ If ReInitButtonsCount > 0 Then
     For i = 1 To ReInitButtonsCount
         With .Buttons.Add(i, ReInitButtons(i).Key, ReInitButtons(i).Caption, ReInitButtons(i).Style, ReInitButtons(i).ImageIndex)
         .FInit Me, ReInitButtons(i).Key, ReInitButtons(i).Caption, ReInitButtons(i).Image, ReInitButtons(i).ImageIndex
-        .Tag = ReInitButtons(i).Tag
+        If IsObject(ReInitButtons(i).Tag) Then
+            Set .Tag = ReInitButtons(i).Tag
+        Else
+            .Tag = ReInitButtons(i).Tag
+        End If
         .ToolTipText = ReInitButtons(i).ToolTipText
         .Description = ReInitButtons(i).Description
         If ReInitButtons(i).Value = TbrButtonValuePressed Then .Value = TbrButtonValuePressed
@@ -3595,6 +3608,7 @@ If ReInitButtonsCount > 0 Then
         If ReInitButtons(i).Enabled = False Then .Enabled = False
         If ReInitButtons(i).Visible = False Then .Visible = False
         If ReInitButtons(i).MixedState = True Then .MixedState = True
+        If ReInitButtons(i).HighLighted = True Then .HighLighted = True
         If ReInitButtons(i).NoImage = True Then .NoImage = True
         If ReInitButtons(i).NoPrefix = True Then .NoPrefix = True
         If ReInitButtons(i).AutoSize = True Then .AutoSize = True
@@ -3602,6 +3616,11 @@ If ReInitButtonsCount > 0 Then
         If ReInitButtons(i).ButtonMenusCount > 0 Then
             For ii = 1 To ReInitButtons(i).ButtonMenusCount
                 With .ButtonMenus.Add(ii, ReInitButtons(i).ButtonMenus(ii).Key, ReInitButtons(i).ButtonMenus(ii).Text)
+                If IsObject(ReInitButtons(i).ButtonMenus(ii).Tag) Then
+                    Set .Tag = ReInitButtons(i).ButtonMenus(ii).Tag
+                Else
+                    .Tag = ReInitButtons(i).ButtonMenus(ii).Tag
+                End If
                 If ReInitButtons(i).ButtonMenus(ii).Enabled = False Then .Enabled = False
                 If ReInitButtons(i).ButtonMenus(ii).Visible = False Then .Visible = False
                 If ReInitButtons(i).ButtonMenus(ii).Checked = True Then .Checked = True
@@ -3955,7 +3974,7 @@ End Property
 Public Property Get ImageWidth() As Single
 Attribute ImageWidth.VB_Description = "Returns/sets the width of the images."
 Attribute ImageWidth.VB_MemberFlags = "400"
-ImageWidth = UserControl.ScaleY(LoWord(ToolBarImageSize), vbPixels, vbContainerSize)
+ImageWidth = UserControl.ScaleX(LoWord(ToolBarImageSize), vbPixels, vbContainerSize)
 End Property
 
 Public Property Let ImageWidth(ByVal Value As Single)

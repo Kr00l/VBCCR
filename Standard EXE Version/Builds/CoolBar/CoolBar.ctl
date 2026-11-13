@@ -563,7 +563,7 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private Type InitBandStruct
 Caption As String
 Key As String
-Tag As String
+Tag As Variant
 ChildName As String
 Style As CbrBandStyleConstants
 Image As Variant
