@@ -1,6 +1,7 @@
 List of revisions:
 
-12-Nov-2026
+13-Nov-2026
+- Bugfix in the Left property of a ColumnHeader in the ListView. (Visual order)
 - Bug in TreeView multi-selection range traversal that could skip items when moving between branches at different hierarchy levels.
 
 07-Nov-2026
