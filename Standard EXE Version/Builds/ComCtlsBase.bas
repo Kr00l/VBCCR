@@ -1355,10 +1355,14 @@ If VarPtr(pvObj) = NULL_PTR Then
     IPDCB_QueryInterface = E_POINTER
     Exit Function
 End If
+pvObj = NULL_PTR
+' IID_IUnknown = {00000000-0000-0000-C000-000000000046}
 ' IID_IPrintDialogCallback = {5852A2C3-6530-11D1-B6A3-0000F8757BF9}
-If IID.Data1 = &H5852A2C3 And IID.Data2 = &H6530 And IID.Data3 = &H11D1 Then
-    If IID.Data4(0) = &HB6 And IID.Data4(1) = &HA3 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
-    And IID.Data4(4) = &HF8 And IID.Data4(5) = &H75 And IID.Data4(6) = &H7B And IID.Data4(7) = &HF9 Then
+If (IID.Data1 = &H0 And IID.Data2 = &H0 And IID.Data3 = &H0) Or (IID.Data1 = &H5852A2C3 And IID.Data2 = &H6530 And IID.Data3 = &H11D1) Then
+    If (IID.Data1 = &H0 And IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
+    And IID.Data4(4) = &H0 And IID.Data4(5) = &H0 And IID.Data4(6) = &H0 And IID.Data4(7) = &H46) Or _
+    (IID.Data1 = &H5852A2C3 And IID.Data4(0) = &HB6 And IID.Data4(1) = &HA3 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
+    And IID.Data4(4) = &HF8 And IID.Data4(5) = &H75 And IID.Data4(6) = &H7B And IID.Data4(7) = &HF9) Then
         pvObj = Ptr
         IPDCB_AddRef Ptr
         IPDCB_QueryInterface = S_OK

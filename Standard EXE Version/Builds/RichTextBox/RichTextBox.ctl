@@ -3120,8 +3120,8 @@ If RichTextBoxHandle <> NULL_PTR Then
     Select Case VarType(Value)
         Case vbString
             Dim Length As Long, FontB() As Byte
-            If Len(Value) > LF_FACESIZE Then
-                Length = LF_FACESIZE * 2
+            If Len(Value) >= LF_FACESIZE Then
+                Length = (LF_FACESIZE - 1) * 2
             Else
                 Length = LenB(Value)
             End If

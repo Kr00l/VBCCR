@@ -2777,50 +2777,50 @@ End If
 End Property
 
 #If VBA7 Then
-Friend Property Get FNodeFirstVisibleSibling(ByVal Handle As LongPtr) As TvwNode
+Friend Property Get FNodeFirstVisible(ByVal Handle As LongPtr) As TvwNode
 #Else
-Friend Property Get FNodeFirstVisibleSibling(ByVal Handle As Long) As TvwNode
+Friend Property Get FNodeFirstVisible(ByVal Handle As Long) As TvwNode
 #End If
 If TreeViewHandle <> NULL_PTR Then
     Dim Ptr As LongPtr
     Ptr = GetItemPtr(SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_FIRSTVISIBLE, ByVal Handle))
-    If Ptr <> NULL_PTR Then Set FNodeFirstVisibleSibling = PtrToObj(Ptr)
+    If Ptr <> NULL_PTR Then Set FNodeFirstVisible = PtrToObj(Ptr)
 End If
 End Property
 
 #If VBA7 Then
-Friend Property Get FNodeLastVisibleSibling(ByVal Handle As LongPtr) As TvwNode
+Friend Property Get FNodeLastVisible(ByVal Handle As LongPtr) As TvwNode
 #Else
-Friend Property Get FNodeLastVisibleSibling(ByVal Handle As Long) As TvwNode
+Friend Property Get FNodeLastVisible(ByVal Handle As Long) As TvwNode
 #End If
 If TreeViewHandle <> NULL_PTR Then
     Dim Ptr As LongPtr
     Ptr = GetItemPtr(SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_LASTVISIBLE, ByVal Handle))
-    If Ptr <> NULL_PTR Then Set FNodeLastVisibleSibling = PtrToObj(Ptr)
+    If Ptr <> NULL_PTR Then Set FNodeLastVisible = PtrToObj(Ptr)
 End If
 End Property
 
 #If VBA7 Then
-Friend Property Get FNodeNextVisibleSibling(ByVal Handle As LongPtr) As TvwNode
+Friend Property Get FNodeNextVisible(ByVal Handle As LongPtr) As TvwNode
 #Else
-Friend Property Get FNodeNextVisibleSibling(ByVal Handle As Long) As TvwNode
+Friend Property Get FNodeNextVisible(ByVal Handle As Long) As TvwNode
 #End If
 If TreeViewHandle <> NULL_PTR Then
     Dim Ptr As LongPtr
     Ptr = GetItemPtr(SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_NEXTVISIBLE, ByVal Handle))
-    If Ptr <> NULL_PTR Then Set FNodeNextVisibleSibling = PtrToObj(Ptr)
+    If Ptr <> NULL_PTR Then Set FNodeNextVisible = PtrToObj(Ptr)
 End If
 End Property
 
 #If VBA7 Then
-Friend Property Get FNodePreviousVisibleSibling(ByVal Handle As LongPtr) As TvwNode
+Friend Property Get FNodePreviousVisible(ByVal Handle As LongPtr) As TvwNode
 #Else
-Friend Property Get FNodePreviousVisibleSibling(ByVal Handle As Long) As TvwNode
+Friend Property Get FNodePreviousVisible(ByVal Handle As Long) As TvwNode
 #End If
 If TreeViewHandle <> NULL_PTR Then
     Dim Ptr As LongPtr
     Ptr = GetItemPtr(SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_PREVIOUSVISIBLE, ByVal Handle))
-    If Ptr <> NULL_PTR Then Set FNodePreviousVisibleSibling = PtrToObj(Ptr)
+    If Ptr <> NULL_PTR Then Set FNodePreviousVisible = PtrToObj(Ptr)
 End If
 End Property
 
