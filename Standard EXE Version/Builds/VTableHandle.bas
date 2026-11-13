@@ -320,6 +320,7 @@ If VarPtr(pvObj) = NULL_PTR Then
     IOleIPAO_QueryInterface = E_POINTER
     Exit Function
 End If
+pvObj = NULL_PTR
 ' IID_IOleInPlaceActiveObject = {00000117-0000-0000-C000-000000000046}
 If IID.Data1 = &H117 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
     If IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
@@ -575,11 +576,11 @@ If VarPtr(pCaStringsOut) = NULL_PTR Or VarPtr(pCaCookiesOut) = NULL_PTR Then
 End If
 On Error GoTo CATCH_EXCEPTION
 Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB, Handled As Boolean
-ReDim StringsOutArray(0) As String
-ReDim CookiesOutArray(0) As Long
+Erase StringsOutArray()
+Erase CookiesOutArray()
 Set ShadowIPerPropertyBrowsingVB = PtrToObj(VarPtr(This))
 ShadowIPerPropertyBrowsingVB.GetPredefinedStrings Handled, DispId, StringsOutArray(), CookiesOutArray()
-If Handled = False Or UBound(StringsOutArray()) = 0 Then
+If Handled = False Then
     IPPB_GetPredefinedStrings = Original_IPPB_GetPredefinedStrings(This, DispId, pCaStringsOut, pCaCookiesOut)
 Else
     Dim cElems As Long, pElems As LongPtr, nElemCount As Long
@@ -589,7 +590,7 @@ Else
     pElems = CoTaskMemAlloc(cElems * PTR_SIZE)
     pCaStringsOut.cElems = cElems
     pCaStringsOut.pElems = pElems
-    For nElemCount = 0 To cElems - 1
+    For nElemCount = 0 To (cElems - 1)
         Buffer = StringsOutArray(nElemCount) & vbNullChar
         lpString = CoTaskMemAlloc(LenB(Buffer))
         CopyMemory ByVal lpString, ByVal StrPtr(Buffer), LenB(Buffer)
@@ -598,7 +599,7 @@ Else
     pElems = CoTaskMemAlloc(cElems * 4)
     pCaCookiesOut.cElems = cElems
     pCaCookiesOut.pElems = pElems
-    For nElemCount = 0 To cElems - 1
+    For nElemCount = 0 To (cElems - 1)
         CopyMemory ByVal UnsignedAdd(pElems, nElemCount * 4), CookiesOutArray(nElemCount), 4
     Next nElemCount
     IPPB_GetPredefinedStrings = S_OK
@@ -786,8 +787,10 @@ If VarPtr(pvObj) = NULL_PTR Then
     IEnumVARIANT_QueryInterface = E_POINTER
     Exit Function
 End If
+pvObj = NULL_PTR
+' IID_IUnknown = {00000000-0000-0000-C000-000000000046}
 ' IID_IEnumVARIANT = {00020404-0000-0000-C000-000000000046}
-If IID.Data1 = &H20404 And IID.Data2 = &H0 And IID.Data3 = &H0 Then
+If (IID.Data1 = &H0 Or IID.Data1 = &H20404) And IID.Data2 = &H0 And IID.Data3 = &H0 Then
     If IID.Data4(0) = &HC0 And IID.Data4(1) = &H0 And IID.Data4(2) = &H0 And IID.Data4(3) = &H0 _
     And IID.Data4(4) = &H0 And IID.Data4(5) = &H0 And IID.Data4(6) = &H0 And IID.Data4(7) = &H46 Then
         pvObj = VarPtr(This)
