@@ -412,39 +412,39 @@ Public Property Set LastSibling(ByVal Value As TvwNode)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
-Public Property Get FirstVisibleSibling() As TvwNode
-Attribute FirstVisibleSibling.VB_Description = "Returns a reference to the first visible node in a hierarchy level."
-Set FirstVisibleSibling = ShadowTreeView.FNodeFirstVisibleSibling(PropHandle)
+Public Property Get FirstVisible() As TvwNode
+Attribute FirstVisible.VB_Description = "Returns a reference to the first visible node."
+Set FirstVisible = ShadowTreeView.FNodeFirstVisible(PropHandle)
 End Property
 
-Public Property Set FirstVisibleSibling(ByVal Value As TvwNode)
+Public Property Set FirstVisible(ByVal Value As TvwNode)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
-Public Property Get LastVisibleSibling() As TvwNode
-Attribute LastVisibleSibling.VB_Description = "Returns a reference to the last visible node in a hierarchy level."
-Set LastVisibleSibling = ShadowTreeView.FNodeLastVisibleSibling(PropHandle)
+Public Property Get LastVisible() As TvwNode
+Attribute LastVisible.VB_Description = "Returns a reference to the last visible node."
+Set LastVisible = ShadowTreeView.FNodeLastVisible(PropHandle)
 End Property
 
-Public Property Set LastVisibleSibling(ByVal Value As TvwNode)
+Public Property Set LastVisible(ByVal Value As TvwNode)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
-Public Property Get NextVisibleSibling() As TvwNode
-Attribute NextVisibleSibling.VB_Description = "Returns a reference to the next visible node in a hierarchy level."
-Set NextVisibleSibling = ShadowTreeView.FNodeNextVisibleSibling(PropHandle)
+Public Property Get NextVisible() As TvwNode
+Attribute NextVisible.VB_Description = "Returns a reference to the next visible node."
+Set NextVisible = ShadowTreeView.FNodeNextVisible(PropHandle)
 End Property
 
-Public Property Set NextVisibleSibling(ByVal Value As TvwNode)
+Public Property Set NextVisible(ByVal Value As TvwNode)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
-Public Property Get PreviousVisibleSibling() As TvwNode
-Attribute PreviousVisibleSibling.VB_Description = "Returns a reference to the previous visible node in a hierarchy level."
-Set PreviousVisibleSibling = ShadowTreeView.FNodePreviousVisibleSibling(PropHandle)
+Public Property Get PreviousVisible() As TvwNode
+Attribute PreviousVisible.VB_Description = "Returns a reference to the previous visible node."
+Set PreviousVisible = ShadowTreeView.FNodePreviousVisible(PropHandle)
 End Property
 
-Public Property Set PreviousVisibleSibling(ByVal Value As TvwNode)
+Public Property Set PreviousVisible(ByVal Value As TvwNode)
 Err.Raise Number:=383, Description:="Property is read-only"
 End Property
 
