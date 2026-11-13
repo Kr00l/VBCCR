@@ -414,7 +414,7 @@ Implements OLEGuids.IPerPropertyBrowsingVB
 Private Type InitTabStruct
 Caption As String
 Key As String
-Tag As String
+Tag As Variant
 ToolTipText As String
 Image As Variant
 ImageIndex As Long
@@ -703,10 +703,10 @@ If InitTabsCount > 0 Then
     ReDim InitTabs(1 To InitTabsCount) As InitTabStruct
     Dim VarValue As Variant
     For i = 1 To InitTabsCount
-        InitTabs(i).Caption = .ReadProperty("InitTabsCaption" & CStr(i), vbNullString)
-        InitTabs(i).Key = .ReadProperty("InitTabsKey" & CStr(i), vbNullString)
-        InitTabs(i).Tag = .ReadProperty("InitTabsTag" & CStr(i), vbNullString)
-        InitTabs(i).ToolTipText = .ReadProperty("InitTabsToolTipText" & CStr(i), vbNullString)
+        InitTabs(i).Caption = VarToStr(.ReadProperty("InitTabsCaption" & CStr(i), vbNullString))
+        InitTabs(i).Key = VarToStr(.ReadProperty("InitTabsKey" & CStr(i), vbNullString))
+        InitTabs(i).Tag = VarToStr(.ReadProperty("InitTabsTag" & CStr(i), vbNullString))
+        InitTabs(i).ToolTipText = VarToStr(.ReadProperty("InitTabsToolTipText" & CStr(i), vbNullString))
         VarValue = .ReadProperty("InitTabsImage" & CStr(i), 0)
         If VarType(VarValue) = (vbArray + vbByte) Then
             InitTabs(i).Image = VarToStr(VarValue)
@@ -2002,7 +2002,11 @@ If ReInitTabsCount > 0 Then
         With .Tabs(i)
         ReInitTabs(i).Caption = .Caption
         ReInitTabs(i).Key = .Key
-        ReInitTabs(i).Tag = .Tag
+        If IsObject(.Tag) Then
+            Set ReInitTabs(i).Tag = .Tag
+        Else
+            ReInitTabs(i).Tag = .Tag
+        End If
         ReInitTabs(i).ToolTipText = .ToolTipText
         ReInitTabs(i).Image = .Image
         ReInitTabs(i).ImageIndex = .ImageIndex
@@ -2028,7 +2032,11 @@ If ReInitTabsCount > 0 Then
     For i = 1 To ReInitTabsCount
         With .Tabs.Add(i, ReInitTabs(i).Key, ReInitTabs(i).Caption, ReInitTabs(i).ImageIndex)
         .FInit Me, ReInitTabs(i).Key, ReInitTabs(i).Image, ReInitTabs(i).ImageIndex
-        .Tag = ReInitTabs(i).Tag
+        If IsObject(ReInitTabs(i).Tag) Then
+            Set .Tag = ReInitTabs(i).Tag
+        Else
+            .Tag = ReInitTabs(i).Tag
+        End If
         .ToolTipText = ReInitTabs(i).ToolTipText
         End With
     Next i

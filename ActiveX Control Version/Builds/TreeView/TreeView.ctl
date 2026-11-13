@@ -2013,6 +2013,7 @@ Select Case Value
         Err.Raise 380
 End Select
 If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
+UserControl.PropertyChanged "SortOrder"
 End Property
 
 Public Property Get SortType() As TvwSortTypeConstants
@@ -2028,6 +2029,7 @@ Select Case Value
         Err.Raise 380
 End Select
 If PropSorted = True And TreeViewDesignMode = False Then Call SortNodes(TVI_ROOT, PropSortType)
+UserControl.PropertyChanged "SortType"
 End Property
 
 Public Property Get InsertMarkColor() As OLE_COLOR

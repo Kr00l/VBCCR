@@ -372,7 +372,7 @@ Implements OLEGuids.IObjectSafety
 Private Type InitPanelStruct
 Text As String
 Key As String
-Tag As String
+Tag As Variant
 ToolTipText As String
 Style As SbrPanelStyleConstants
 Bevel As SbrPanelBevelConstants
