@@ -7044,8 +7044,11 @@ If ListViewHandle <> NULL_PTR Then
     If Count > 0 Then
         Dim ArgList() As Long
         ReDim ArgList(0 To (Count - 1)) As Long
-        SendMessage ListViewHandle, LVM_GETCOLUMNORDERARRAY, Count, ByVal VarPtr(ArgList(0))
-        ColumnOrder = ArgList()
+        If SendMessage(ListViewHandle, LVM_GETCOLUMNORDERARRAY, Count, ByVal VarPtr(ArgList(0))) <> 0 Then
+            ColumnOrder = ArgList()
+        Else
+            ColumnOrder = Empty
+        End If
     Else
         ColumnOrder = Empty
     End If
@@ -7570,14 +7573,18 @@ If ListViewHeaderHandle <> NULL_PTR Then
         Dim RC As RECT
         GetClientRect hWndFilterEdit, RC
         MapWindowPoints hWndFilterEdit, ListViewHeaderHandle, RC, 2
-        Dim LVC As LVCOLUMN, i As Long, CX As Long
-        LVC.Mask = LVCF_WIDTH
-        For i = 1 To Count
-            SendMessage ListViewHandle, LVM_GETCOLUMN, i - 1, ByVal VarPtr(LVC)
-            CX = CX + LVC.CX
-            If CX >= RC.Left Then Exit For
-        Next i
-        GetFilterEditIndex = i
+        Dim Order() As Long
+        ReDim Order(0 To (Count - 1)) As Long
+        If SendMessage(ListViewHandle, LVM_GETCOLUMNORDERARRAY, Count, ByVal VarPtr(Order(0))) <> 0 Then
+            Dim LVC As LVCOLUMN, i As Long, CX As Long
+            LVC.Mask = LVCF_WIDTH
+            For i = 0 To (Count - 1)
+                SendMessage ListViewHandle, LVM_GETCOLUMN, Order(i), ByVal VarPtr(LVC)
+                CX = CX + LVC.CX
+                If CX >= RC.Left Then Exit For
+            Next i
+            If i <= (Count - 1) Then GetFilterEditIndex = Order(i) + 1
+        End If
     End If
 End If
 End Function
