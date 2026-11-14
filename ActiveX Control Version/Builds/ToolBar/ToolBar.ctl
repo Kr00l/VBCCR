@@ -3304,7 +3304,7 @@ If ToolBarHandle <> NULL_PTR Then
         Dim i As Long
         For i = 1 To ToolBarCustomizeButtonsCount
             With ToolBarCustomizeButtons(i)
-            If .TBB.IDCommand = ID Then FButtonCustomWidth = .CX
+            If .TBB.IDCommand = ID Then FButtonCustomWidth = UserControl.ScaleX(.CX, vbPixels, vbContainerSize)
             End With
         Next i
     End If
