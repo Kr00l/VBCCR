@@ -1195,7 +1195,7 @@ Select Case Value
             Err.Raise 380
         End If
 End Select
-If PropMaxDate < PropValue Then PropValue = PropMinDate
+If PropMaxDate < PropValue Then PropValue = PropMaxDate
 If MonthViewHandle <> NULL_PTR Then
     Dim ST(0 To 1) As SYSTEMTIME
     ST(0).wYear = VBA.Year(PropMinDate)
