@@ -630,22 +630,20 @@ End If
 End Sub
 
 Public Sub ComCtlsIPPBSetPredefinedStringsImageList(ByRef StringsOut() As String, ByRef CookiesOut() As Long, ByRef ControlsEnum As VBRUN.ParentControls, ByRef ImageListArray() As String)
+ReDim StringsOut(0) As String
+ReDim CookiesOut(0) As Long
+StringsOut(0) = "(None)"
+CookiesOut(0) = 0
 Dim ControlEnum As Object, PropUBound As Long
-PropUBound = UBound(StringsOut())
-ReDim Preserve StringsOut(0 To PropUBound) As String
-ReDim Preserve CookiesOut(0 To PropUBound) As Long
-StringsOut(PropUBound) = "(None)"
-CookiesOut(PropUBound) = PropUBound
 For Each ControlEnum In ControlsEnum
     If TypeName(ControlEnum) = "ImageList" Then
-        PropUBound = UBound(StringsOut()) + 1
+        PropUBound = PropUBound + 1
         ReDim Preserve StringsOut(0 To PropUBound) As String
         ReDim Preserve CookiesOut(0 To PropUBound) As Long
         StringsOut(PropUBound) = ProperControlName(ControlEnum)
         CookiesOut(PropUBound) = PropUBound
     End If
 Next ControlEnum
-PropUBound = UBound(StringsOut())
 ReDim ImageListArray(0 To PropUBound) As String
 Dim i As Long
 For i = 0 To PropUBound

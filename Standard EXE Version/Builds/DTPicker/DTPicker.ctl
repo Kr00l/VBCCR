@@ -1372,7 +1372,7 @@ If DTPickerHandle <> NULL_PTR Then
     ST(0).wYear = VBA.Year(PropMinDate)
     ST(0).wMonth = VBA.Month(PropMinDate)
     ST(0).wDay = VBA.Day(PropMinDate)
-    ST(0).wDayOfWeek = VBA.Weekday(PropMinDate)
+    ST(0).wDayOfWeek = VBA.Weekday(PropMinDate) - 1
     ST(0).wHour = VBA.Hour(PropMinDate)
     ST(0).wMinute = VBA.Minute(PropMinDate)
     ST(0).wSecond = VBA.Second(PropMinDate)
@@ -1380,7 +1380,7 @@ If DTPickerHandle <> NULL_PTR Then
     ST(1).wYear = VBA.Year(PropMaxDate)
     ST(1).wMonth = VBA.Month(PropMaxDate)
     ST(1).wDay = VBA.Day(PropMaxDate)
-    ST(1).wDayOfWeek = VBA.Weekday(PropMaxDate)
+    ST(1).wDayOfWeek = VBA.Weekday(PropMaxDate) - 1
     ST(1).wHour = VBA.Hour(PropMaxDate)
     ST(1).wMinute = VBA.Minute(PropMaxDate)
     ST(1).wSecond = VBA.Second(PropMaxDate)
@@ -1431,7 +1431,7 @@ If DTPickerHandle <> NULL_PTR Then
     ST(0).wYear = VBA.Year(PropMinDate)
     ST(0).wMonth = VBA.Month(PropMinDate)
     ST(0).wDay = VBA.Day(PropMinDate)
-    ST(0).wDayOfWeek = VBA.Weekday(PropMinDate)
+    ST(0).wDayOfWeek = VBA.Weekday(PropMinDate) - 1
     ST(0).wHour = VBA.Hour(PropMinDate)
     ST(0).wMinute = VBA.Minute(PropMinDate)
     ST(0).wSecond = VBA.Second(PropMinDate)
@@ -1439,7 +1439,7 @@ If DTPickerHandle <> NULL_PTR Then
     ST(1).wYear = VBA.Year(PropMaxDate)
     ST(1).wMonth = VBA.Month(PropMaxDate)
     ST(1).wDay = VBA.Day(PropMaxDate)
-    ST(1).wDayOfWeek = VBA.Weekday(PropMaxDate)
+    ST(1).wDayOfWeek = VBA.Weekday(PropMaxDate) - 1
     ST(1).wHour = VBA.Hour(PropMaxDate)
     ST(1).wMinute = VBA.Minute(PropMaxDate)
     ST(1).wSecond = VBA.Second(PropMaxDate)
@@ -1513,7 +1513,7 @@ If DTPickerHandle <> NULL_PTR Then
     .wYear = VBA.Year(PropValue)
     .wMonth = VBA.Month(PropValue)
     .wDay = VBA.Day(PropValue)
-    .wDayOfWeek = VBA.Weekday(PropValue)
+    .wDayOfWeek = VBA.Weekday(PropValue) - 1
     .wHour = VBA.Hour(PropValue)
     .wMinute = VBA.Minute(PropValue)
     .wSecond = VBA.Second(PropValue)
@@ -1935,6 +1935,8 @@ If DTPickerHandle <> NULL_PTR Then
     Else
         Err.Raise 94
     End If
+Else
+    DayOfWeek = VBA.Weekday(PropValue) - 1
 End If
 End Property
 
@@ -2324,7 +2326,7 @@ Select Case wMsg
                     .wYear = VBA.Year(NewValue)
                     .wMonth = VBA.Month(NewValue)
                     .wDay = VBA.Day(NewValue)
-                    .wDayOfWeek = VBA.Weekday(NewValue)
+                    .wDayOfWeek = VBA.Weekday(NewValue) - 1
                     .wHour = 0
                     .wMinute = 0
                     .wSecond = 0
@@ -2645,7 +2647,7 @@ Select Case wMsg
                             .wYear = VBA.Year(CallbackDate)
                             .wMonth = VBA.Month(CallbackDate)
                             .wDay = VBA.Day(CallbackDate)
-                            .wDayOfWeek = VBA.Weekday(CallbackDate)
+                            .wDayOfWeek = VBA.Weekday(CallbackDate) - 1
                             .wHour = VBA.Hour(CallbackDate)
                             .wMinute = VBA.Minute(CallbackDate)
                             .wSecond = VBA.Second(CallbackDate)
@@ -2724,7 +2726,7 @@ Select Case wMsg
                             .wYear = VBA.Year(ParseDate)
                             .wMonth = VBA.Month(ParseDate)
                             .wDay = VBA.Day(ParseDate)
-                            .wDayOfWeek = VBA.Weekday(ParseDate)
+                            .wDayOfWeek = VBA.Weekday(ParseDate) - 1
                             .wHour = VBA.Hour(ParseDate)
                             .wMinute = VBA.Minute(ParseDate)
                             .wSecond = VBA.Second(ParseDate)

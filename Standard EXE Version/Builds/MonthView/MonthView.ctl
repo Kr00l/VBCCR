@@ -1248,7 +1248,7 @@ If MonthViewHandle <> NULL_PTR Then
         .wYear = VBA.Year(PropValue)
         .wMonth = VBA.Month(PropValue)
         .wDay = VBA.Day(PropValue)
-        .wDayOfWeek = VBA.Weekday(PropValue)
+        .wDayOfWeek = VBA.Weekday(PropValue) - 1
         .wHour = 0
         .wMinute = 0
         .wSecond = 0
@@ -1261,7 +1261,7 @@ If MonthViewHandle <> NULL_PTR Then
         .wYear = VBA.Year(PropValue)
         .wMonth = VBA.Month(PropValue)
         .wDay = VBA.Day(PropValue)
-        .wDayOfWeek = VBA.Weekday(PropValue)
+        .wDayOfWeek = VBA.Weekday(PropValue) - 1
         .wHour = 0
         .wMinute = 0
         .wSecond = 0
@@ -1826,6 +1826,8 @@ If PropMultiSelect = True Then
         Dim ST(0 To 1) As SYSTEMTIME
         SendMessage MonthViewHandle, MCM_GETSELRANGE, 0, ByVal VarPtr(ST(0))
         SelStart = DateSerial(ST(0).wYear, ST(0).wMonth, ST(0).wDay)
+    Else
+        SelStart = PropValue
     End If
 Else
     SelStart = Me.Value
@@ -1844,6 +1846,8 @@ If PropMultiSelect = True Then
         Dim ST(0 To 1) As SYSTEMTIME
         SendMessage MonthViewHandle, MCM_GETSELRANGE, 0, ByVal VarPtr(ST(0))
         SelEnd = DateSerial(ST(1).wYear, ST(1).wMonth, ST(1).wDay)
+    Else
+        SelEnd = PropValue
     End If
 Else
     SelEnd = Me.Value
@@ -1869,7 +1873,7 @@ If Fix(StartDate) >= Me.MinDate And Fix(StartDate) <= Me.MaxDate And Fix(EndDate
                     .wYear = VBA.Year(StartDate)
                     .wMonth = VBA.Month(StartDate)
                     .wDay = VBA.Day(StartDate)
-                    .wDayOfWeek = VBA.Weekday(StartDate)
+                    .wDayOfWeek = VBA.Weekday(StartDate) - 1
                     .wHour = 0
                     .wMinute = 0
                     .wSecond = 0
@@ -1879,7 +1883,7 @@ If Fix(StartDate) >= Me.MinDate And Fix(StartDate) <= Me.MaxDate And Fix(EndDate
                     .wYear = VBA.Year(EndDate)
                     .wMonth = VBA.Month(EndDate)
                     .wDay = VBA.Day(EndDate)
-                    .wDayOfWeek = VBA.Weekday(EndDate)
+                    .wDayOfWeek = VBA.Weekday(EndDate) - 1
                     .wHour = 0
                     .wMinute = 0
                     .wSecond = 0
@@ -1925,6 +1929,8 @@ If MonthViewHandle <> NULL_PTR Then
         SendMessage MonthViewHandle, MCM_GETSELRANGE, 0, ByVal VarPtr(ST2(0))
         DayOfWeek = ST2(0).wDayOfWeek
     End If
+Else
+    DayOfWeek = VBA.Weekday(PropValue) - 1
 End If
 End Property
 
@@ -2012,8 +2018,13 @@ Attribute Today.VB_Description = "Returns/sets the date specified as 'today'."
 Attribute Today.VB_MemberFlags = "400"
 If MonthViewHandle <> NULL_PTR Then
     Dim ST As SYSTEMTIME
-    SendMessage MonthViewHandle, MCM_GETTODAY, 0, ByVal VarPtr(ST)
-    Today = DateSerial(ST.wYear, ST.wMonth, ST.wDay)
+    If SendMessage(MonthViewHandle, MCM_GETTODAY, 0, ByVal VarPtr(ST)) <> 0 Then
+        Today = DateSerial(ST.wYear, ST.wMonth, ST.wDay)
+    Else
+        Today = VBA.Date
+    End If
+Else
+    Today = VBA.Date
 End If
 End Property
 
@@ -2031,7 +2042,7 @@ If IsDate(Value) Then
         .wYear = VBA.Year(Value)
         .wMonth = VBA.Month(Value)
         .wDay = VBA.Day(Value)
-        .wDayOfWeek = VBA.Weekday(Value)
+        .wDayOfWeek = VBA.Weekday(Value) - 1
         .wHour = 0
         .wMinute = 0
         .wSecond = 0

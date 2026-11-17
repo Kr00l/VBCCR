@@ -2604,7 +2604,7 @@ If CoolBarHandle <> NULL_PTR Then
         If Value = True Then
             If Not (.fStyle And RBBS_CHILDEDGE) = RBBS_CHILDEDGE Then .fStyle = .fStyle Or RBBS_CHILDEDGE
         Else
-            If (.fStyle And RBBS_CHILDEDGE) = RBBS_CHILDEDGE Then .fStyle = .fStyle Or RBBS_CHILDEDGE
+            If (.fStyle And RBBS_CHILDEDGE) = RBBS_CHILDEDGE Then .fStyle = .fStyle And Not RBBS_CHILDEDGE
         End If
         SendMessage CoolBarHandle, RB_SETBANDINFO, Index, ByVal VarPtr(RBBI)
         End With
@@ -3740,9 +3740,9 @@ Select Case wMsg
                                     MapWindowPoints CoolBarHandle, UserControl.hWnd, NMRBCS.RCChild, 2
                                     With NMRBCS.RCChild
                                     .Left = .Left - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
-                                    .Top = .Top - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
+                                    .Top = .Top - (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) \ 2)
                                     .Right = .Right - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
-                                    .Bottom = .Bottom - (((WndRect.Right - WndRect.Left) - (ClientRect.Right - ClientRect.Left)) \ 2)
+                                    .Bottom = .Bottom - (((WndRect.Bottom - WndRect.Top) - (ClientRect.Bottom - ClientRect.Top)) \ 2)
                                     End With
                                 End If
                                 On Error Resume Next
