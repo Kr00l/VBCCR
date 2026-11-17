@@ -1044,7 +1044,7 @@ Dim UT As SYSTEMTIME, LT As SYSTEMTIME
 UT.wYear = VBA.Year(UTCDate)
 UT.wMonth = VBA.Month(UTCDate)
 UT.wDay = VBA.Day(UTCDate)
-UT.wDayOfWeek = VBA.Weekday(UTCDate)
+UT.wDayOfWeek = VBA.Weekday(UTCDate) - 1
 UT.wHour = VBA.Hour(UTCDate)
 UT.wMinute = VBA.Minute(UTCDate)
 UT.wSecond = VBA.Second(UTCDate)
@@ -1061,7 +1061,7 @@ Dim LT As SYSTEMTIME, UT As SYSTEMTIME
 LT.wYear = VBA.Year(LocalDate)
 LT.wMonth = VBA.Month(LocalDate)
 LT.wDay = VBA.Day(LocalDate)
-LT.wDayOfWeek = VBA.Weekday(LocalDate)
+LT.wDayOfWeek = VBA.Weekday(LocalDate) - 1
 LT.wHour = VBA.Hour(LocalDate)
 LT.wMinute = VBA.Minute(LocalDate)
 LT.wSecond = VBA.Second(LocalDate)
