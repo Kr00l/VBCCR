@@ -1351,7 +1351,11 @@ If VListBoxHandle <> NULL_PTR Then
         End If
     Else
         Changed = CBool(SendMessage(VListBoxHandle, LB_GETCARETINDEX, 0, ByVal 0&) <> Value)
-        If SendMessage(VListBoxHandle, LB_SETCARETINDEX, Value, ByVal 0&) = LB_ERR Then Err.Raise 380
+        If Not Value = -1 Then
+            If SendMessage(VListBoxHandle, LB_SETCARETINDEX, Value, ByVal 0&) = LB_ERR Then Err.Raise 380
+        Else
+            ' Valid no-op.
+        End If
     End If
     If Changed = True Then RaiseEvent Click
 End If
