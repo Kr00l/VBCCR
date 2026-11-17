@@ -1316,7 +1316,7 @@ If SliderHandle <> NULL_PTR Then
         SendMessage SliderHandle, TBM_SETSELEND, 1, ByVal (PropSelStart + PropSelLength)
         PropSelLength = CLng(SendMessage(SliderHandle, TBM_GETSELEND, 0, ByVal 0&)) - CLng(SendMessage(SliderHandle, TBM_GETSELSTART, 0, ByVal 0&))
     Else
-        SendMessage SliderHandle, TBM_SETPOS, 1, ByVal PropSelStart
+        Me.Value = PropSelStart
     End If
 End If
 UserControl.PropertyChanged "SelStart"
@@ -1552,6 +1552,10 @@ End Sub
 
 Public Sub ClearSel()
 Attribute ClearSel.VB_Description = "Clears the current selection range."
+If PropSelectRange = True Then
+    PropSelStart = Me.Value
+    PropSelLength = 0
+End If
 If SliderHandle <> NULL_PTR Then SendMessage SliderHandle, TBM_CLEARSEL, 1, ByVal 0&
 End Sub
 

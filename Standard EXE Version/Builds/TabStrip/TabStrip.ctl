@@ -562,7 +562,7 @@ If TabStripHandle <> NULL_PTR And wMsg = WM_SYSKEYDOWN Then
             Accel = AccelCharCode(Me.FTabCaption(i))
             If Accel <> 0 Then
                 If (VkKeyScan(Accel) And &HFF&) = (wParam And &HFF&) Then
-                    If i <> (SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) - 1) Then Me.FTabSelected(i) = True
+                    If i <> (SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) + 1) Then Me.FTabSelected(i) = True
                     Handled = True
                     Exit For
                 End If

@@ -927,7 +927,7 @@ End Property
 
 Public Property Get Max() As Long
 Attribute Max.VB_Description = "Returns/sets the maximum position."
-If ProgressBarHandle = NULL_PTR Then
+If ProgressBarHandle <> NULL_PTR Then
     Max = CLng(SendMessage(ProgressBarHandle, PBM_GETRANGE, 0, ByVal 0&))
 Else
     Max = PropRange.Max
@@ -1325,9 +1325,9 @@ If ProgressBarHandle <> NULL_PTR Then
                     TaskBarState = TBPF_PAUSED
             End Select
             #If Win64 Then
-            VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, CLngLng(PropValue), CLngLng(Me.Max - Me.Min)
+            VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, CLngLng(PropValue - Me.Min), CLngLng(Me.Max - Me.Min)
             #Else
-            VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, PropValue, 0&, CLng(Me.Max - Me.Min), 0&
+            VTableCall vbEmpty, ObjPtr(ProgressBarITaskBarList3), VTableIndexITaskBarList3SetProgressValue, hWnd, CLng(PropValue - Me.Min), 0&, CLng(Me.Max - Me.Min), 0&
             #End If
         Else
             If PropMarqueeAnimation = True Then
