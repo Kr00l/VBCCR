@@ -1625,7 +1625,11 @@ If ListBoxHandle <> NULL_PTR Then
         End If
     Else
         Changed = CBool(SendMessage(ListBoxHandle, LB_GETCARETINDEX, 0, ByVal 0&) <> Value)
-        If SendMessage(ListBoxHandle, LB_SETCARETINDEX, Value, ByVal 0&) = LB_ERR Then Err.Raise 380
+        If Not Value = -1 Then
+            If SendMessage(ListBoxHandle, LB_SETCARETINDEX, Value, ByVal 0&) = LB_ERR Then Err.Raise 380
+        Else
+            ' Valid no-op.
+        End If
     End If
     If Changed = True Then RaiseEvent Click
 End If
@@ -2788,9 +2792,9 @@ Select Case wMsg
                             If DIS.ItemID <= (ListBoxItemCheckedCount - 1) Then
                                 If ListBoxOptionIndex = DIS.ItemID Then
                                     If Not (DIS.ItemState And ODS_DISABLED) = ODS_DISABLED Then
-                                        CheckState = CBS_CHECKEDNORMAL
+                                        CheckState = RBS_CHECKEDNORMAL
                                     Else
-                                        CheckState = CBS_CHECKEDDISABLED
+                                        CheckState = RBS_CHECKEDDISABLED
                                     End If
                                 End If
                             End If

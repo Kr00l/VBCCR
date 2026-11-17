@@ -693,7 +693,7 @@ Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As LongPtr
 OldFontHandle = SpinBoxFontHandle
 SpinBoxFontHandle = CreateGDIFontFromOLEFont(PropFont, PropFontQuality)
-If SpinBoxUpDownHandle <> NULL_PTR Then SendMessage SpinBoxUpDownHandle, WM_SETFONT, SpinBoxFontHandle, ByVal 1&
+If SpinBoxEditHandle <> NULL_PTR Then SendMessage SpinBoxEditHandle, WM_SETFONT, SpinBoxFontHandle, ByVal 1&
 If OldFontHandle <> NULL_PTR Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
 End Sub
@@ -1287,22 +1287,22 @@ If SpinBoxUpDownHandle <> NULL_PTR Then
             CopyMemory DimensionCount(0), ByVal Ptr(0), 2
             CopyMemory DimensionCount(1), ByVal Ptr(1), 2
             If DimensionCount(0) = 1 And DimensionCount(1) = 1 Then
-                If LBound(Delays) = LBound(Increments) And UBound(Delays) = UBound(Increments) Then
-                    Dim AccelArr() As UDACCEL, Count As Long, i As Long
-                    For i = LBound(Delays) To UBound(Delays)
-                        Select Case VarType(Delays(i))
-                            Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                                ReDim Preserve AccelArr(0 To Count) As UDACCEL
-                                AccelArr(Count).nSec = CLng(Delays(i))
-                                Select Case VarType(Increments(i))
-                                    Case vbLong, vbInteger, vbByte, vbDouble, vbSingle
-                                        AccelArr(Count).nInc = CLng(Increments(i))
-                                End Select
-                                Count = Count + 1
-                        End Select
-                    Next i
-                    If Count > 0 Then
-                        SendMessage SpinBoxUpDownHandle, UDM_SETACCEL, Count, ByVal VarPtr(AccelArr(0))
+                Dim LBoundDelays As Long, UBoundDelays As Long
+                LBoundDelays = LBound(Delays)
+                UBoundDelays = UBound(Delays)
+                If LBoundDelays = LBound(Increments) And UBoundDelays = UBound(Increments) Then
+                    If (UBoundDelays - LBoundDelays) > -1 Then
+                        Dim AccelArr() As UDACCEL, i As Long
+                        ReDim AccelArr(LBoundDelays To UBoundDelays) As UDACCEL
+                        For i = LBoundDelays To UBoundDelays
+                            AccelArr(i).nSec = Delays(i)
+                            AccelArr(i).nInc = Increments(i)
+                            If AccelArr(i).nSec < 0 Then Err.Raise 381
+                            If i > LBoundDelays Then
+                                If AccelArr(i).nSec < AccelArr(i - 1).nSec Then Err.Raise 381
+                            End If
+                        Next i
+                        SendMessage SpinBoxUpDownHandle, UDM_SETACCEL, (UBoundDelays - LBoundDelays) + 1, ByVal VarPtr(AccelArr(LBoundDelays))
                     Else
                         Me.Increment = PropIncrement
                     End If

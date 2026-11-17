@@ -1785,18 +1785,18 @@ End If
 End Property
 
 Friend Property Get FComboItemSelected(ByVal Index As Long) As Boolean
-If ImageComboHandle <> NULL_PTR Then FComboItemSelected = CBool(SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&) = Index - 1)
+If ImageComboHandle <> NULL_PTR Then FComboItemSelected = CBool(SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&) = (Index - 1))
 End Property
 
 Friend Property Let FComboItemSelected(ByVal Index As Long, ByVal Value As Boolean)
 If ImageComboHandle <> NULL_PTR Then
     Dim Changed As Boolean
-    Changed = CBool(SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&) <> (Index - 1))
+    Changed = CBool(Me.FComboItemSelected(Index) <> Value)
     If Value = True Then
         SendMessage ImageComboHandle, CB_SETCURSEL, Index - 1, ByVal 0&
         If PropStyle = ImcStyleDropDownCombo Then Me.Text = Me.ComboItems(Index).Text
     Else
-        If SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&) = Index - 1 Then SendMessage ImageComboHandle, CB_SETCURSEL, -1, ByVal 0&
+        If SendMessage(ImageComboHandle, CB_GETCURSEL, 0, ByVal 0&) = (Index - 1) Then SendMessage ImageComboHandle, CB_SETCURSEL, -1, ByVal 0&
     End If
     SetWindowPos ImageComboHandle, NULL_PTR, 0, 0, 0, 0, SWP_NOSIZE Or SWP_NOMOVE Or SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_NOOWNERZORDER
     If Changed = True Then RaiseEvent Click
@@ -1956,6 +1956,7 @@ DestroyWindow ImageComboHandle
 ImageComboHandle = NULL_PTR
 ImageComboComboHandle = NULL_PTR
 ImageComboEditHandle = NULL_PTR
+ImageComboListHandle = NULL_PTR
 If ImageComboFontHandle <> NULL_PTR Then
     DeleteObject ImageComboFontHandle
     ImageComboFontHandle = NULL_PTR
@@ -2213,7 +2214,11 @@ If ImageComboHandle <> NULL_PTR Then
     Else
         ItemHeight = CLng(SendMessage(ImageComboHandle, CB_GETITEMHEIGHT, 0, ByVal 0&))
         hImageList = SendMessage(ImageComboHandle, CBEM_GETIMAGELIST, 0, ByVal 0&)
-        If hImageList <> NULL_PTR Then ImageList_GetIconSize hImageList, 0, ImageHeight
+        If hImageList <> NULL_PTR Then
+            ImageList_GetIconSize hImageList, 0, ImageHeight
+        Else
+            ImageHeight = 0
+        End If
     End If
     If ImageHeight > ItemHeight Then Height = (ImageHeight * Count) Else Height = (ItemHeight * Count)
     If PropStyle <> ImcStyleSimpleCombo Then
