@@ -1,5 +1,12 @@
 List of revisions:
 
+17-Nov-2026
+- Error now raised in the SetAcceleration method in the SpinBox control when entries are not specified in ascending delay order.
+- Bugfix in the ChildEdge property of a Band in the CoolBar control.
+- Bug when Min <> 0 and ShowInTaskBar = True in the ProgressBar control.
+- Fixed ListIndex = -1 handling for multi-select ListBoxW/VListBox to match VB6 behavior. (valid no-op that still raises the click event)
+- Some minor internal improvements.
+
 13-Nov-2026
 - Renamings in TvwNode: FirstVisibleSibling -> FirstVisible, LastVisibleSibling -> LastVisible, NextVisibleSibling -> NextVisible and PreviousVisibleSibling -> PreviousVisible.
 - Bugfix in the Left property of a ColumnHeader in the ListView. (Visual order)
