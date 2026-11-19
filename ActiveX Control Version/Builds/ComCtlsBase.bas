@@ -217,8 +217,6 @@ Private ComCtlsSubclassProcPtr As LongPtr
 #If (VBA7 = 0) Then
 Private ComCtlsSubclassW2K As Integer
 #End If
-Private ComCtlsDisabledThreadWindowsCount As Long
-Private ComCtlsDisabledThreadWindows() As LongPtr
 Private MCIWndRefCount As Long
 Private ImcGetSysColorPtr As LongPtr, ImcGetSysColorRGBBackColor As Long, ImcGetSysColorRGBForeColor As Long, ImcGetSysColorHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcGetSysColorOrig(0 To (API_HOOK_SIZE - 1)) As Byte
 Private ImcImageListDrawPtr As LongPtr, ImcImageListDrawHook(0 To (API_HOOK_SIZE - 1)) As Byte, ImcImageListDrawOrig(0 To (API_HOOK_SIZE - 1)) As Byte
@@ -775,26 +773,28 @@ Else
 End If
 End Function
 
-Public Sub ComCtlsTaskModal()
+Public Sub ComCtlsTaskModal(ByRef DisabledThreadWindows As Collection)
 ' Disable all enabled top-level thread windows, just like MB_TASKMODAL.
-If ComCtlsDisabledThreadWindowsCount = 0 Then
-    EnumThreadWindows App.ThreadID, AddressOf ComCtlsTaskModalEnumThreadWndProc, 0
+If DisabledThreadWindows Is Nothing Then
+    Set DisabledThreadWindows = New Collection
+    EnumThreadWindows App.ThreadID, AddressOf ComCtlsTaskModalEnumThreadWndProc, ObjPtr(DisabledThreadWindows)
 Else
-    Dim i As Long
-    For i = 0 To ComCtlsDisabledThreadWindowsCount - 1
-        EnableWindow ComCtlsDisabledThreadWindows(i), 1
-    Next i
-    ComCtlsDisabledThreadWindowsCount = 0
-    Erase ComCtlsDisabledThreadWindows()
+    Dim Item As Variant
+    For Each Item In DisabledThreadWindows
+        EnableWindow Item, 1
+    Next Item
+    Set DisabledThreadWindows = Nothing
 End If
 End Sub
 
 Private Function ComCtlsTaskModalEnumThreadWndProc(ByVal hWnd As LongPtr, ByVal lParam As LongPtr) As Long
+If lParam = NULL_PTR Then Exit Function
 If IsWindowEnabled(hWnd) <> 0 Then
     EnableWindow hWnd, 0
-    ReDim Preserve ComCtlsDisabledThreadWindows(0 To ComCtlsDisabledThreadWindowsCount) ' As LongPtr
-    ComCtlsDisabledThreadWindows(ComCtlsDisabledThreadWindowsCount) = hWnd
-    ComCtlsDisabledThreadWindowsCount = ComCtlsDisabledThreadWindowsCount + 1
+    Dim DisabledThreadWindows As Collection
+    CopyMemory DisabledThreadWindows, lParam, PTR_SIZE
+    DisabledThreadWindows.Add hWnd
+    CopyMemory DisabledThreadWindows, NULL_PTR, PTR_SIZE
 End If
 ComCtlsTaskModalEnumThreadWndProc = 1
 End Function

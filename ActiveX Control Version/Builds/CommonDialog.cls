@@ -1576,7 +1576,7 @@ Dim OFN As OPENFILENAME
 With OFN
 .lStructSize = LenB(OFN)
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 .hInstance = App.hInstance
 Filter = ProperFilter(PropFilter)
@@ -1602,7 +1602,7 @@ Else
 End If
 End With
 Dim RetVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If (OFN.Flags And CdlOFNHelpButton) = CdlOFNHelpButton And OFN.hWndOwner <> NULL_PTR Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(OFN.hWndOwner, Me, 1, HELPMSGSTRING & "_1")
@@ -1611,7 +1611,7 @@ If (OFN.Flags And CdlOFNHelpButton) = CdlOFNHelpButton And OFN.hWndOwner <> NULL
 Else
     RetVal = GetOpenFileName(OFN)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If RetVal <> 0 Then
     If (OFN.Flags And (OFN_ENABLEHOOK Or OFN_ENABLESIZING)) = 0 Then
         PropFlags = OFN.Flags
@@ -1656,7 +1656,7 @@ Dim OFN As OPENFILENAME
 With OFN
 .lStructSize = LenB(OFN)
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 .hInstance = App.hInstance
 Filter = ProperFilter(PropFilter)
@@ -1684,7 +1684,7 @@ If PropDefaultExt = vbNullString Then DefaultExt = vbNullChar Else DefaultExt = 
 .lpstrDefExt = StrPtr(DefaultExt)
 End With
 Dim RetVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If (OFN.Flags And CdlOFNHelpButton) = CdlOFNHelpButton And OFN.hWndOwner <> NULL_PTR Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(OFN.hWndOwner, Me, 2, HELPMSGSTRING & "_2")
@@ -1693,7 +1693,7 @@ If (OFN.Flags And CdlOFNHelpButton) = CdlOFNHelpButton And OFN.hWndOwner <> NULL
 Else
     RetVal = GetSaveFileName(OFN)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If RetVal <> 0 Then
     If (OFN.Flags And (OFN_ENABLEHOOK Or OFN_ENABLESIZING)) = 0 Then
         PropFlags = OFN.Flags
@@ -1754,7 +1754,7 @@ Dim CHCLR As TCHOOSECOLOR
 With CHCLR
 .lStructSize = LenB(CHCLR)
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 .hInstance = App.hInstance
 .RGBResult = WinColor(PropColor)
@@ -1770,7 +1770,7 @@ End If
 .lpCustColors = VarPtr(PropCustomColors(0))
 End With
 Dim RetVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If (CHCLR.Flags And CdlCCHelpButton) = CdlCCHelpButton And CHCLR.hWndOwner <> NULL_PTR Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(CHCLR.hWndOwner, Me, 3, HELPMSGSTRING & "_3")
@@ -1779,7 +1779,7 @@ If (CHCLR.Flags And CdlCCHelpButton) = CdlCCHelpButton And CHCLR.hWndOwner <> NU
 Else
     RetVal = ChooseColor(CHCLR)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If RetVal <> 0 Then
     If (CHCLR.Flags And CC_ENABLEHOOK) = 0 Then
         PropFlags = CHCLR.Flags
@@ -1817,7 +1817,7 @@ End With
 With CHFONT
 .lStructSize = LenB(CHFONT)
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 .lpLogFont = VarPtr(LF)
 If PropHookEvents = False Then
@@ -1834,7 +1834,7 @@ End If
 .nSizeMax = PropMax
 End With
 Dim RetVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If (CHFONT.Flags And CdlCFHelpButton) = CdlCFHelpButton And CHFONT.hWndOwner <> NULL_PTR Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(CHFONT.hWndOwner, Me, 4, HELPMSGSTRING & "_4")
@@ -1843,7 +1843,7 @@ If (CHFONT.Flags And CdlCFHelpButton) = CdlCFHelpButton And CHFONT.hWndOwner <> 
 Else
     RetVal = ChooseFont(CHFONT)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If RetVal <> 0 Then
     With CHFONT
     If (.Flags And CF_ENABLEHOOK) = 0 Then
@@ -1892,7 +1892,7 @@ With PDLG
 .lStructSize = Len(PDLG) ' LenB() is not applicable due to padding bytes.
 #End If
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 If PropHookEvents = False Then
     .Flags = PropFlags
@@ -2001,7 +2001,7 @@ If (PDLG.Flags And CdlPDReturnDefault) = 0 Then
     End If
 End If
 Dim RetVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If (PDLG.Flags And CdlPDHelpButton) = CdlPDHelpButton And PDLG.hWndOwner <> NULL_PTR Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(PDLG.hWndOwner, Me, 5, HELPMSGSTRING & "_5")
@@ -2010,7 +2010,7 @@ If (PDLG.Flags And CdlPDHelpButton) = CdlPDHelpButton And PDLG.hWndOwner <> NULL
 Else
     RetVal = PrintDialog(PDLG)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If RetVal <> 0 Then
     If PDLG.hDevMode <> NULL_PTR Then
         lpDevMode = GlobalLock(PDLG.hDevMode)
@@ -2121,7 +2121,7 @@ Dim lpDevMode As LongPtr, lpDevNames As LongPtr, Buffer As String
 With PDLGEX
 .lStructSize = LenB(PDLGEX)
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then
     ' According to MSDN:
     ' This member must be a valid window handle; it cannot be NULL.
@@ -2225,14 +2225,14 @@ If (PDLGEX.Flags And CdlPDReturnDefault) = 0 Then
     End If
 End If
 Dim ErrVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If PropHookEvents = False Then
     ErrVal = PrintDialogEx(PDLGEX)
 Else
     PDLGEX.lpCallback = ComCtlsCdlPDEXCallbackPtr(Me)
     ErrVal = PrintDialogEx(PDLGEX)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If ErrVal = S_OK Then
     If PDLGEX.dwResultAction <> CdlPDResultCancel Or (PDLGEX.Flags And CdlPDReturnDefault) <> 0 Then
         If PDLGEX.hDevMode <> NULL_PTR Then
@@ -2337,7 +2337,7 @@ Dim lpDevMode As LongPtr, lpDevNames As LongPtr, Buffer As String
 With PSDLG
 .lStructSize = LenB(PSDLG)
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 If PropHookEvents = False Then
     .Flags = PropFlags
@@ -2418,7 +2418,7 @@ If (PSDLG.Flags And CdlPSDReturnDefault) = 0 Then
     End If
 End If
 Dim RetVal As Long
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If (PSDLG.Flags And CdlPSDHelpButton) = CdlPSDHelpButton And PSDLG.hWndOwner <> NULL_PTR Then
     If CommonDialogHelpMsg = 0 Then CommonDialogHelpMsg = RegisterWindowMessage(StrPtr(HELPMSGSTRING))
     Call ComCtlsSetSubclass(PSDLG.hWndOwner, Me, 7, HELPMSGSTRING & "_7")
@@ -2427,7 +2427,7 @@ If (PSDLG.Flags And CdlPSDHelpButton) = CdlPSDHelpButton And PSDLG.hWndOwner <> 
 Else
     RetVal = PageSetupDialog(PSDLG)
 End If
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If RetVal <> 0 Then
     If PSDLG.hDevMode <> NULL_PTR Then
         lpDevMode = GlobalLock(PSDLG.hDevMode)
@@ -2552,7 +2552,7 @@ Attribute ShowFolderBrowser.VB_Description = "Displays the folder browser dialog
 Dim BIF As BROWSEINFO, IDList As LongPtr
 With BIF
 .hWndOwner = GetOwnerWindow()
-Dim TaskModal As Boolean
+Dim TaskModal As Boolean, DisabledThreadWindows As Collection
 If .hWndOwner = NULL_PTR Then TaskModal = True
 Select Case VarType(PropRootFolder)
     Case vbEmpty
@@ -2590,9 +2590,9 @@ End Select
 Dim This As ISubclass
 Set This = Me
 .lParam = ObjPtr(This)
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 IDList = SHBrowseForFolder(BIF)
-If TaskModal = True Then Call ComCtlsTaskModal
+If TaskModal = True Then Call ComCtlsTaskModal(DisabledThreadWindows)
 If .pIDLRoot <> NULL_PTR Then CoTaskMemFree .pIDLRoot
 End With
 If IDList <> NULL_PTR Then
