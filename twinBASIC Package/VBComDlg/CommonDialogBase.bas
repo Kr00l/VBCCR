@@ -79,8 +79,6 @@ Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private CdlSubclassProcPtr As LongPtr
-Private CdlDisabledThreadWindowsCount As Long
-Private CdlDisabledThreadWindows() As LongPtr
 Private CdlPDEXVTableIPDCB(0 To 5) As LongPtr
 Private CdlFRHookHandle As LongPtr
 Private CdlFRDialogHandle() As LongPtr, CdlFRDialogCount As Long
@@ -122,26 +120,28 @@ If GetProp(hWnd, StrPtr(Name & "SubclassInit")) = 1 Then
 End If
 End Sub
 
-Public Sub CdlTaskModal()
+Public Sub CdlTaskModal(ByRef DisabledThreadWindows As Collection)
 ' Disable all enabled top-level thread windows, just like MB_TASKMODAL.
-If CdlDisabledThreadWindowsCount = 0 Then
-    EnumThreadWindows App.ThreadID, AddressOf CdlTaskModalEnumThreadWndProc, 0
+If DisabledThreadWindows Is Nothing Then
+    Set DisabledThreadWindows = New Collection
+    EnumThreadWindows App.ThreadID, AddressOf CdlTaskModalEnumThreadWndProc, ObjPtr(DisabledThreadWindows)
 Else
-    Dim i As Long
-    For i = 0 To CdlDisabledThreadWindowsCount - 1
-        EnableWindow CdlDisabledThreadWindows(i), 1
-    Next i
-    CdlDisabledThreadWindowsCount = 0
-    Erase CdlDisabledThreadWindows()
+    Dim Item As Variant
+    For Each Item In DisabledThreadWindows
+        EnableWindow Item, 1
+    Next Item
+    Set DisabledThreadWindows = Nothing
 End If
 End Sub
 
 Private Function CdlTaskModalEnumThreadWndProc(ByVal hWnd As LongPtr, ByVal lParam As LongPtr) As Long
+If lParam = NULL_PTR Then Exit Function
 If IsWindowEnabled(hWnd) <> 0 Then
     EnableWindow hWnd, 0
-    ReDim Preserve CdlDisabledThreadWindows(0 To CdlDisabledThreadWindowsCount) ' As LongPtr
-    CdlDisabledThreadWindows(CdlDisabledThreadWindowsCount) = hWnd
-    CdlDisabledThreadWindowsCount = CdlDisabledThreadWindowsCount + 1
+    Dim DisabledThreadWindows As Collection
+    CopyMemory DisabledThreadWindows, lParam, PTR_SIZE
+    DisabledThreadWindows.Add hWnd
+    CopyMemory DisabledThreadWindows, NULL_PTR, PTR_SIZE
 End If
 CdlTaskModalEnumThreadWndProc = 1
 End Function
