@@ -1856,9 +1856,11 @@ End Property
 Public Property Get PasswordChar() As String
 Attribute PasswordChar.VB_Description = "Returns/sets a value that determines whether characters typed by a user or placeholder characters are displayed in a control."
 If RichTextBoxHandle <> NULL_PTR Then
-    PasswordChar = ChrW(CLng(SendMessage(RichTextBoxHandle, EM_GETPASSWORDCHAR, 0, ByVal 0&)))
+    Dim CharCode As Long
+    CharCode = CLng(SendMessage(RichTextBoxHandle, EM_GETPASSWORDCHAR, 0, ByVal 0&))
+    If CharCode = 0 Then PasswordChar = vbNullString Else PasswordChar = ChrW(CharCode)
 Else
-    PasswordChar = ChrW(PropPasswordChar)
+    If PropPasswordChar = 0 Then PasswordChar = vbNullString Else PasswordChar = ChrW(PropPasswordChar)
 End If
 End Property
 
