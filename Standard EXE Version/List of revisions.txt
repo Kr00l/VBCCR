@@ -1,5 +1,8 @@
 List of revisions:
 
+20-Nov-2026
+- Bugfix when changing MultiSelect and ListCount is 0 in the ListBoxW/VListBox control.
+
 19-Nov-2026
 - Internal ComCtlsTaskModal now re-entrant safe.
 
