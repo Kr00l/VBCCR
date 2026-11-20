@@ -1653,6 +1653,7 @@ If VirtualComboDesignMode = False Then
     Call UserControl_Resize
     If VirtualComboHandle <> NULL_PTR Then
         SendMessage VirtualComboHandle, CB_SETITEMHEIGHT, 0, ByVal ItemHeight
+        .ListCount = Count
         .ListIndex = ListIndex
         .TopIndex = TopIndex
         If PropStyle <> VcbStyleDropDownList Then .Text = Text
