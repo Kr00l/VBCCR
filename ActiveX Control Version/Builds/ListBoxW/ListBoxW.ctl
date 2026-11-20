@@ -1846,7 +1846,11 @@ If ListBoxDesignMode = False Then
             Next i
             SendMessage ListBoxHandle, WM_SETREDRAW, 1, ByVal 0&
         End If
-        .ListIndex = ListIndex
+        If PropMultiSelect = vbMultiSelectNone Then
+            .ListIndex = ListIndex
+        Else
+            If Count > 0 Then .ListIndex = ListIndex
+        End If
         .TopIndex = TopIndex
     End If
     ListBoxNewIndex = NewIndex
