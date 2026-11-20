@@ -213,16 +213,15 @@ End Sub
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
 If DispId = DispIdBuddyControl Then
     On Error GoTo CATCH_EXCEPTION
+    ReDim StringsOut(0) As String
+    ReDim CookiesOut(0) As Long
+    StringsOut(0) = "(None)"
+    CookiesOut(0) = 0
     Dim ControlEnum As Object, PropUBound As Long
-    PropUBound = UBound(StringsOut())
-    ReDim Preserve StringsOut(0 To PropUBound) As String
-    ReDim Preserve CookiesOut(0 To PropUBound) As Long
-    StringsOut(PropUBound) = "(None)"
-    CookiesOut(PropUBound) = PropUBound
     For Each ControlEnum In UserControl.ParentControls
         If ControlIsValid(ControlEnum) = True Then
             If ControlEnum.Container Is Extender.Container Then
-                PropUBound = UBound(StringsOut()) + 1
+                PropUBound = PropUBound + 1
                 ReDim Preserve StringsOut(0 To PropUBound) As String
                 ReDim Preserve CookiesOut(0 To PropUBound) As Long
                 StringsOut(PropUBound) = ProperControlName(ControlEnum)
@@ -230,7 +229,6 @@ If DispId = DispIdBuddyControl Then
             End If
         End If
     Next ControlEnum
-    PropUBound = UBound(StringsOut())
     ReDim BuddyControlArray(0 To PropUBound) As String
     Dim i As Long
     For i = 0 To PropUBound
@@ -1105,6 +1103,54 @@ Attribute Refresh.VB_Description = "Forces a complete repaint of a object."
 Attribute Refresh.VB_UserMemId = -550
 UserControl.Refresh
 RedrawWindow UserControl.hWnd, NULL_PTR, NULL_PTR, RDW_UPDATENOW Or RDW_INVALIDATE Or RDW_ERASE Or RDW_ALLCHILDREN
+End Sub
+
+Public Sub SetAcceleration(ByVal Delays As Variant, ByVal Increments As Variant)
+Attribute SetAcceleration.VB_Description = "Method to set an acceleration. The delays array specify the amount of time to elapse (in seconds) before the position change increment specified in the increments array is used."
+If UpDownHandle <> NULL_PTR Then
+    If IsArray(Delays) And IsArray(Increments) Then
+        Dim Ptr(0 To 1) As LongPtr
+        CopyMemory Ptr(0), ByVal UnsignedAdd(VarPtr(Delays), 8), PTR_SIZE
+        CopyMemory Ptr(1), ByVal UnsignedAdd(VarPtr(Increments), 8), PTR_SIZE
+        If Ptr(0) <> NULL_PTR And Ptr(1) <> NULL_PTR Then
+            Dim DimensionCount(0 To 1) As Integer
+            CopyMemory DimensionCount(0), ByVal Ptr(0), 2
+            CopyMemory DimensionCount(1), ByVal Ptr(1), 2
+            If DimensionCount(0) = 1 And DimensionCount(1) = 1 Then
+                Dim LBoundDelays As Long, UBoundDelays As Long
+                LBoundDelays = LBound(Delays)
+                UBoundDelays = UBound(Delays)
+                If LBoundDelays = LBound(Increments) And UBoundDelays = UBound(Increments) Then
+                    If (UBoundDelays - LBoundDelays) > -1 Then
+                        Dim AccelArr() As UDACCEL, i As Long
+                        ReDim AccelArr(LBoundDelays To UBoundDelays) As UDACCEL
+                        For i = LBoundDelays To UBoundDelays
+                            AccelArr(i).nSec = Delays(i)
+                            AccelArr(i).nInc = Increments(i)
+                            If AccelArr(i).nSec < 0 Then Err.Raise 381
+                            If i > LBoundDelays Then
+                                If AccelArr(i).nSec < AccelArr(i - 1).nSec Then Err.Raise 381
+                            End If
+                        Next i
+                        SendMessage UpDownHandle, UDM_SETACCEL, (UBoundDelays - LBoundDelays) + 1, ByVal VarPtr(AccelArr(LBoundDelays))
+                    Else
+                        Me.Increment = PropIncrement
+                    End If
+                Else
+                    Err.Raise Number:=5, Description:="Array boundaries are not equal"
+                End If
+            Else
+                Err.Raise Number:=5, Description:="Array must be single dimensioned"
+            End If
+        Else
+            Err.Raise Number:=91, Description:="Array is not allocated"
+        End If
+    ElseIf IsEmpty(Delays) Then
+        Me.Increment = PropIncrement
+    Else
+        Err.Raise 380
+    End If
+End If
 End Sub
 
 Public Sub SyncFromBuddy()

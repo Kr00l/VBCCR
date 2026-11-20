@@ -1443,7 +1443,7 @@ Else
         End If
     End If
 End If
-If dwStyle = 0 Then dwStyle = GetWindowLong(OptionButtonHandle, GWL_STYLE)
+If dwStyle = 0 And OptionButtonHandle <> NULL_PTR Then dwStyle = GetWindowLong(OptionButtonHandle, GWL_STYLE)
 OptionButtonPictureRenderFlag = 0
 If (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then Me.Refresh
 UserControl.PropertyChanged "Picture"

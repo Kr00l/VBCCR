@@ -281,16 +281,15 @@ End Sub
 Private Sub IPerPropertyBrowsingVB_GetPredefinedStrings(ByRef Handled As Boolean, ByVal DispId As Long, ByRef StringsOut() As String, ByRef CookiesOut() As Long)
 If DispId = DispIdBuddyControl Then
     On Error GoTo CATCH_EXCEPTION
+    ReDim StringsOut(0) As String
+    ReDim CookiesOut(0) As Long
+    StringsOut(0) = "(None)"
+    CookiesOut(0) = 0
     Dim ControlEnum As Object, PropUBound As Long, Handle As LongPtr
-    PropUBound = UBound(StringsOut())
-    ReDim Preserve StringsOut(0 To PropUBound) As String
-    ReDim Preserve CookiesOut(0 To PropUBound) As Long
-    StringsOut(PropUBound) = "(None)"
-    CookiesOut(PropUBound) = PropUBound
     For Each ControlEnum In UserControl.ParentControls
         If ControlIsValid(ControlEnum, Handle) = True Then
             If Handle <> NULL_PTR Then
-                PropUBound = UBound(StringsOut()) + 1
+                PropUBound = PropUBound + 1
                 ReDim Preserve StringsOut(0 To PropUBound) As String
                 ReDim Preserve CookiesOut(0 To PropUBound) As Long
                 StringsOut(PropUBound) = ProperControlName(ControlEnum)
@@ -298,7 +297,6 @@ If DispId = DispIdBuddyControl Then
             End If
         End If
     Next ControlEnum
-    PropUBound = UBound(StringsOut())
     ReDim BuddyControlArray(0 To PropUBound) As String
     Dim i As Long
     For i = 0 To PropUBound
