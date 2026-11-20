@@ -1596,7 +1596,7 @@ Else
         End If
     End If
 End If
-If dwStyle = 0 Then dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
+If dwStyle = 0 And CommandButtonHandle <> NULL_PTR Then dwStyle = GetWindowLong(CommandButtonHandle, GWL_STYLE)
 CommandButtonPictureRenderFlag = 0
 If (dwStyle And BS_OWNERDRAW) = BS_OWNERDRAW Then Me.Refresh
 UserControl.PropertyChanged "Picture"
