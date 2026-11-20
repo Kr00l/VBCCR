@@ -125,7 +125,8 @@ Private Type NET_ADDRESS_INFO_IPV4
 Format As Integer
 sin_family As Integer
 sin_port As Integer
-sin_addr As Long
+sin_addrHi As Integer ' big-endian
+sin_addrLo As Integer
 sin_zero(0 To (8 - 1)) As Byte
 End Type
 Private Type NET_ADDRESS_INFO_IPV6
@@ -1398,9 +1399,11 @@ End Property
 Public Property Get PasswordChar() As String
 Attribute PasswordChar.VB_Description = "Returns/sets a value that determines whether characters typed by a user or placeholder characters are displayed in a control."
 If TextBoxHandle <> NULL_PTR Then
-    PasswordChar = ChrW(CLng(SendMessage(TextBoxHandle, EM_GETPASSWORDCHAR, 0, ByVal 0&)))
+    Dim CharCode As Long
+    CharCode = CLng(SendMessage(TextBoxHandle, EM_GETPASSWORDCHAR, 0, ByVal 0&))
+    If CharCode = 0 Then PasswordChar = vbNullString Else PasswordChar = ChrW(CharCode)
 Else
-    PasswordChar = ChrW(PropPasswordChar)
+    If PropPasswordChar = 0 Then PasswordChar = vbNullString Else PasswordChar = ChrW(PropPasswordChar)
 End If
 End Property
 
@@ -2068,7 +2071,7 @@ If TextBoxHandle <> NULL_PTR And PropNetAddressValidator = True Then
                         Dim NETADDRINFO_IPV4 As NET_ADDRESS_INFO_IPV4
                         CopyMemory ByVal VarPtr(NETADDRINFO_IPV4), NETADDRINFO_UNSPECIFIED.Data(0), LenB(NETADDRINFO_IPV4)
                         With NETADDRINFO_IPV4
-                        TextBoxNetAddressString = HiByte(HiWord(.sin_addr)) & "." & LoByte(HiWord(.sin_addr)) & "." & HiByte(LoWord(.sin_addr)) & "." & LoByte(LoWord(.sin_addr))
+                        TextBoxNetAddressString = LoByte(.sin_addrHi) & "." & HiByte(.sin_addrHi) & "." & LoByte(.sin_addrLo) & "." & HiByte(.sin_addrLo)
                         End With
                     Case NET_ADDRESS_IPV6
                         Dim NETADDRINFO_IPV6 As NET_ADDRESS_INFO_IPV6, Buffer As String, Temp As String, i As Long
