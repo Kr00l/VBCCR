@@ -2,6 +2,8 @@ List of revisions:
 
 20-Nov-2026
 - Included the SetAcceleration method in the UpDown control. (like in the SpinBox control)
+- PasswordChar now returns vbNullString instead of ChrW(0) in the TextBoxW/RichtTextBox control. (like MS controls)
+- Bugfix in the NET_ADDRESS_INFO_IPV4 type declaration in the TextBoxW control.
 - Bugfix when changing MultiSelect and ListCount is 0 in the ListBoxW/VListBox control.
 
 19-Nov-2026
