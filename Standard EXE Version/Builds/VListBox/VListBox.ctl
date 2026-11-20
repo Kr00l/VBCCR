@@ -1431,10 +1431,12 @@ If VListBoxDesignMode = False Then
         ItemHeight = CLng(SendMessage(VListBoxHandle, LB_GETITEMHEIGHT, 0, ByVal 0&))
         Count = CLng(SendMessage(VListBoxHandle, LB_GETCOUNT, 0, ByVal 0&))
         If Count > 0 Then
-            ReDim ItemSelArr(0 To (Count - 1)) As Long
-            For i = 0 To (Count - 1)
-                If PropMultiSelect <> vbMultiSelectNone Then ItemSelArr(i) = CLng(SendMessage(VListBoxHandle, LB_GETSEL, i, ByVal 0&))
-            Next i
+            If PropMultiSelect <> vbMultiSelectNone Then
+                ReDim ItemSelArr(0 To (Count - 1)) As Long
+                For i = 0 To (Count - 1)
+                    ItemSelArr(i) = CLng(SendMessage(VListBoxHandle, LB_GETSEL, i, ByVal 0&))
+                Next i
+            End If
         End If
         ListIndex = .ListIndex
         TopIndex = .TopIndex
@@ -1447,13 +1449,19 @@ If VListBoxDesignMode = False Then
     If VListBoxHandle <> NULL_PTR Then
         SendMessage VListBoxHandle, LB_SETITEMHEIGHT, 0, ByVal ItemHeight
         If Count > 0 Then
-            SendMessage VListBoxHandle, WM_SETREDRAW, 0, ByVal 0&
-            For i = 0 To (Count - 1)
-                If PropMultiSelect <> vbMultiSelectNone Then SendMessage VListBoxHandle, LB_SETSEL, ItemSelArr(i), ByVal i
-            Next i
-            SendMessage VListBoxHandle, WM_SETREDRAW, 1, ByVal 0&
+            If PropMultiSelect <> vbMultiSelectNone Then
+                SendMessage VListBoxHandle, WM_SETREDRAW, 0, ByVal 0&
+                For i = 0 To (Count - 1)
+                    SendMessage VListBoxHandle, LB_SETSEL, ItemSelArr(i), ByVal i
+                Next i
+                SendMessage VListBoxHandle, WM_SETREDRAW, 1, ByVal 0&
+            End If
         End If
-        .ListIndex = ListIndex
+        If PropMultiSelect = vbMultiSelectNone Then
+            .ListIndex = ListIndex
+        Else
+            If Count > 0 Then .ListIndex = ListIndex
+        End If
         .TopIndex = TopIndex
     End If
     VListBoxInsertMark = InsertMark
