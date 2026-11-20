@@ -70,7 +70,7 @@ Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
 Private VTableIPAO(0 To 9) As LongPtr, VTableIPAOData As VTableIPAODataStruct
 Private VTableControl(0 To 6) As LongPtr, OriginalVTableControl As LongPtr
-Private VTablePPB(0 To 6) As LongPtr, OriginalVTablePPB As LongPtr, StringsOutArray() As String, CookiesOutArray() As Long
+Private VTablePPB(0 To 6) As LongPtr, OriginalVTablePPB As LongPtr
 Private VTableInPlaceObjectWindowless(0 To 10) As LongPtr, OriginalVTableInPlaceObjectWindowless As LongPtr
 Private VTableEnumVARIANT(0 To 6) As LongPtr
 
@@ -575,9 +575,7 @@ If VarPtr(pCaStringsOut) = NULL_PTR Or VarPtr(pCaCookiesOut) = NULL_PTR Then
     Exit Function
 End If
 On Error GoTo CATCH_EXCEPTION
-Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB, Handled As Boolean
-Erase StringsOutArray()
-Erase CookiesOutArray()
+Dim ShadowIPerPropertyBrowsingVB As OLEGuids.IPerPropertyBrowsingVB, Handled As Boolean, StringsOutArray() As String, CookiesOutArray() As Long
 Set ShadowIPerPropertyBrowsingVB = PtrToObj(VarPtr(This))
 ShadowIPerPropertyBrowsingVB.GetPredefinedStrings Handled, DispId, StringsOutArray(), CookiesOutArray()
 If Handled = False Then
