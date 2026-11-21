@@ -3598,18 +3598,21 @@ Public Function GetLine(ByVal LineNumber As Long) As String
 Attribute GetLine.VB_Description = "Retrieves the text of the specified line. A value of 0 indicates that the text of the current line number (the line that contains the caret) will be retrieved."
 If LineNumber < 0 Then Err.Raise 380
 If RichTextBoxHandle <> NULL_PTR Then
-    Dim FirstCharPos As Long, Length As Long
-    FirstCharPos = CLng(SendMessage(RichTextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&))
-    If FirstCharPos > -1 Then
+    Dim Result As LongPtr
+    Result = SendMessage(RichTextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&)
+    If Result >= 0 And Result <= &H7FFFFFFF Then
+        Dim FirstCharPos As Long, Length As Long
+        FirstCharPos = CLng(Result)
         Length = CLng(SendMessage(RichTextBoxHandle, EM_LINELENGTH, FirstCharPos, ByVal 0&))
         If Length > 0 Then
             Dim Buffer As String
             Buffer = ChrW(Length) & String$(Length - 1, vbNullChar)
             If LineNumber > 0 Then
-                If SendMessage(RichTextBoxHandle, EM_GETLINE, LineNumber - 1, ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+                Result = SendMessage(RichTextBoxHandle, EM_GETLINE, LineNumber - 1, ByVal StrPtr(Buffer))
             Else
-                If SendMessage(RichTextBoxHandle, EM_GETLINE, SendMessage(RichTextBoxHandle, EM_EXLINEFROMCHAR, 0, ByVal FirstCharPos), ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+                Result = SendMessage(RichTextBoxHandle, EM_GETLINE, SendMessage(RichTextBoxHandle, EM_EXLINEFROMCHAR, 0, ByVal FirstCharPos), ByVal StrPtr(Buffer))
             End If
+            If Result > 0 Then GetLine = Left$(Buffer, CLng(Result))
         End If
     Else
         Err.Raise 380
@@ -3626,7 +3629,9 @@ Public Sub ScrollToLine(ByVal LineNumber As Long)
 Attribute ScrollToLine.VB_Description = "Scrolls to ensure the specified line is visible."
 If LineNumber < 0 Then Err.Raise 380
 If RichTextBoxHandle <> NULL_PTR Then
-    If SendMessage(RichTextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&) > -1 Then
+    Dim Result As LongPtr
+    Result = SendMessage(RichTextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&)
+    If Result >= 0 And Result <= &H7FFFFFFF Then
         Dim LineIndex As Long
         LineIndex = CLng(SendMessage(RichTextBoxHandle, EM_GETFIRSTVISIBLELINE, 0, ByVal 0&))
         SendMessage RichTextBoxHandle, EM_LINESCROLL, 0, ByVal CLng((LineNumber - 1) - LineIndex)

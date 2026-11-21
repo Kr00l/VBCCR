@@ -1927,18 +1927,21 @@ Public Function GetLine(ByVal LineNumber As Long) As String
 Attribute GetLine.VB_Description = "Retrieves the text of the specified line. A value of 0 indicates that the text of the current line number (the line that contains the caret) will be retrieved."
 If LineNumber < 0 Then Err.Raise 380
 If TextBoxHandle <> NULL_PTR Then
-    Dim FirstCharPos As Long, Length As Long
-    FirstCharPos = CLng(SendMessage(TextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&))
-    If FirstCharPos > -1 Then
+    Dim Result As LongPtr
+    Result = SendMessage(TextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&)
+    If Result >= 0 And Result <= &H7FFFFFFF Then
+        Dim FirstCharPos As Long, Length As Long
+        FirstCharPos = CLng(Result)
         Length = CLng(SendMessage(TextBoxHandle, EM_LINELENGTH, FirstCharPos, ByVal 0&))
         If Length > 0 Then
             Dim Buffer As String
             Buffer = ChrW(Length) & String$(Length - 1, vbNullChar)
             If LineNumber > 0 Then
-                If SendMessage(TextBoxHandle, EM_GETLINE, LineNumber - 1, ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+                Result = SendMessage(TextBoxHandle, EM_GETLINE, LineNumber - 1, ByVal StrPtr(Buffer))
             Else
-                If SendMessage(TextBoxHandle, EM_GETLINE, SendMessage(TextBoxHandle, EM_LINEFROMCHAR, FirstCharPos, ByVal 0&), ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+                Result = SendMessage(TextBoxHandle, EM_GETLINE, SendMessage(TextBoxHandle, EM_LINEFROMCHAR, FirstCharPos, ByVal 0&), ByVal StrPtr(Buffer))
             End If
+            If Result > 0 Then GetLine = Left$(Buffer, CLng(Result))
         End If
     Else
         Err.Raise 380
@@ -1955,7 +1958,9 @@ Public Sub ScrollToLine(ByVal LineNumber As Long)
 Attribute ScrollToLine.VB_Description = "Scrolls to ensure the specified line is visible."
 If LineNumber < 0 Then Err.Raise 380
 If TextBoxHandle <> NULL_PTR Then
-    If SendMessage(TextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&) > -1 Then
+    Dim Result As LongPtr
+    Result = SendMessage(TextBoxHandle, EM_LINEINDEX, LineNumber - 1, ByVal 0&)
+    If Result >= 0 And Result <= &H7FFFFFFF Then
         Dim LineIndex As Long
         LineIndex = CLng(SendMessage(TextBoxHandle, EM_GETFIRSTVISIBLELINE, 0, ByVal 0&))
         SendMessage TextBoxHandle, EM_LINESCROLL, 0, ByVal CLng((LineNumber - 1) - LineIndex)
@@ -2298,9 +2303,11 @@ Select Case wMsg
         If PropAllowOverType = True And PropOverTypeMode = True Then
             If wParam >= 32 Then ' 0 to 31 are non-printable
                 If Me.SelLength = 0 Then
-                    Dim FirstCharPos As Long, Length As Long
-                    FirstCharPos = CLng(SendMessage(TextBoxHandle, EM_LINEINDEX, -1, ByVal 0&))
-                    If FirstCharPos > -1 Then
+                    Dim Result As LongPtr
+                    Result = SendMessage(TextBoxHandle, EM_LINEINDEX, -1, ByVal 0&)
+                    If Result >= 0 And Result <= &H7FFFFFFF Then
+                        Dim FirstCharPos As Long, Length As Long
+                        FirstCharPos = CLng(Result)
                         Length = CLng(SendMessage(TextBoxHandle, EM_LINELENGTH, FirstCharPos, ByVal 0&))
                         If Length > 0 Then
                             If Me.SelStart < (FirstCharPos + Length) Then
