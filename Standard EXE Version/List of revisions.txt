@@ -1,5 +1,8 @@
 List of revisions:
 
+21-Nov-2026
+- Bugfix EM_LINEINDEX overflow 64-bit bug (&HFFFFFFFF^) in the TextBoxW/RichTextBox control.
+
 20-Nov-2026
 - Included the SetAcceleration method in the UpDown control. (like in the SpinBox control)
 - PasswordChar now returns vbNullString instead of ChrW(0) in the TextBoxW/RichtTextBox control. (like MS controls)
