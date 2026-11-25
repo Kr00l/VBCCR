@@ -2534,20 +2534,24 @@ If TreeViewHandle <> NULL_PTR Then
         If Cancel = False Then
             If Value = True Then
                 If SendMessage(TreeViewHandle, TVM_EXPAND, TVE_EXPAND, ByVal Handle) = 0 Then
-                    ' Node has no child items. Get expanded once child is added.
-                    If (.State And TVIS_EXPANDED) = 0 Then
-                        .State = .State Or TVIS_EXPANDED
-                        SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
-                        Cancel = True
+                    If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CHILD, ByVal Handle) = 0 Then
+                        ' Node has no child items. Get expanded once child is added.
+                        If (.State And TVIS_EXPANDED) = 0 Then
+                            .State = .State Or TVIS_EXPANDED
+                            SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+                            Cancel = True
+                        End If
                     End If
                 End If
             Else
                 If SendMessage(TreeViewHandle, TVM_EXPAND, TVE_COLLAPSE, ByVal Handle) = 0 Then
-                    ' Node has no child items. Reset expanded state.
-                    If (.State And TVIS_EXPANDED) = TVIS_EXPANDED Then
-                        .State = .State And Not TVIS_EXPANDED
-                        SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
-                        Cancel = True
+                    If SendMessage(TreeViewHandle, TVM_GETNEXTITEM, TVGN_CHILD, ByVal Handle) = 0 Then
+                        ' Node has no child items. Reset expanded state.
+                        If (.State And TVIS_EXPANDED) = TVIS_EXPANDED Then
+                            .State = .State And Not TVIS_EXPANDED
+                            SendMessage TreeViewHandle, TVM_SETITEM, 0, ByVal VarPtr(TVI)
+                            Cancel = True
+                        End If
                     End If
                 End If
             End If
