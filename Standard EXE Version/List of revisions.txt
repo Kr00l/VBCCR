@@ -1,5 +1,9 @@
 List of revisions:
 
+25-Nov-2026
+- Bugfix on the Expanded property of a TvwNode in the TreeView control.
+  Expanded set to True on a node with children that has never been open, and whose BeforeExpand handler sets Cancel, is told the node is open.
+
 21-Nov-2026
 - Bugfix EM_LINEINDEX overflow 64-bit bug (&HFFFFFFFF^) in the TextBoxW/RichTextBox control.
 
