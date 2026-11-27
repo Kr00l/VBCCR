@@ -135,8 +135,8 @@ library OLEGuids
 	]
 	interface IOleInPlaceObject : IOleWindow
 	{
-		HRESULT InPlaceDeactivate();
-		HRESULT UIDeactivate();
+		LONG InPlaceDeactivate();
+		LONG UIDeactivate();
 		HRESULT SetObjectRects([in] LONG lprcPosRect, [in] LONG lprcClipRect);
 		HRESULT ReactivateAndUndo();
 	};
