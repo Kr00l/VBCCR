@@ -61,6 +61,7 @@ Private Declare Function VariantCopy Lib "oleaut32" (ByRef pvargDest As Any, ByR
 Private Declare Function CLSIDFromString Lib "ole32" (ByVal lpszProgID As Long, ByRef pCLSID As Any) As Long
 #End If
 Private Const CC_STDCALL As Long = 4
+Private Const E_UNEXPECTED As Long = &H8000FFFF
 Private Const E_OUTOFMEMORY As Long = &H8007000E
 Private Const E_INVALIDARG As Long = &H80070057
 Private Const E_NOTIMPL As Long = &H80004001
@@ -68,7 +69,7 @@ Private Const E_NOINTERFACE As Long = &H80004002
 Private Const E_POINTER As Long = &H80004003
 Private Const S_FALSE As Long = &H1
 Private Const S_OK As Long = &H0
-Private VTableIPAO(0 To 9) As LongPtr, VTableIPAOData As VTableIPAODataStruct
+Private VTableIPAO(0 To 9) As LongPtr, VTableIPAOData As VTableIPAODataStruct, VTableInPlaceObject(0 To 8) As LongPtr, OriginalVTableInPlaceObject As LongPtr
 Private VTableControl(0 To 6) As LongPtr, OriginalVTableControl As LongPtr
 Private VTablePPB(0 To 6) As LongPtr, OriginalVTablePPB As LongPtr
 Private VTableInPlaceObjectWindowless(0 To 10) As LongPtr, OriginalVTableInPlaceObjectWindowless As LongPtr
@@ -79,6 +80,7 @@ Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
         If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
             VTableIPAOData.RefCount = VTableIPAOData.RefCount + 1
+            Call ReplaceInPlaceObject(This)
             SetVTableHandling = True
         End If
     Case VTableInterfaceControl
@@ -104,6 +106,7 @@ Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
         If VTableHandlingSupported(This, VTableInterfaceInPlaceActiveObject) = True Then
             VTableIPAOData.RefCount = VTableIPAOData.RefCount - 1
+            Call RestoreInPlaceObject(This)
             RemoveVTableHandling = True
         End If
     Case VTableInterfaceControl
@@ -130,9 +133,11 @@ Select Case OLEInterface
     Case VTableInterfaceInPlaceActiveObject
         Dim ShadowIOleIPAO As OLEGuids.IOleInPlaceActiveObject
         Dim ShadowIOleInPlaceActiveObjectVB As OLEGuids.IOleInPlaceActiveObjectVB
+        Dim ShadowIOleInPlaceObject As OLEGuids.IOleInPlaceObject
         Set ShadowIOleIPAO = This
         Set ShadowIOleInPlaceActiveObjectVB = This
-        VTableHandlingSupported = Not CBool(ShadowIOleIPAO Is Nothing Or ShadowIOleInPlaceActiveObjectVB Is Nothing)
+        Set ShadowIOleInPlaceObject = This
+        VTableHandlingSupported = Not CBool(ShadowIOleIPAO Is Nothing Or ShadowIOleInPlaceActiveObjectVB Is Nothing Or ShadowIOleInPlaceObject Is Nothing)
     Case VTableInterfaceControl
         Dim ShadowIOleControl As OLEGuids.IOleControl
         Dim ShadowIOleControlVB As OLEGuids.IOleControlVB
@@ -381,6 +386,45 @@ End Function
 
 Private Function IOleIPAO_EnableModeless(ByRef This As VTableIPAODataStruct, ByVal Enable As Long) As Long
 IOleIPAO_EnableModeless = This.OriginalIOleIPAO.EnableModeless(Enable)
+End Function
+
+Private Sub ReplaceInPlaceObject(ByVal This As OLEGuids.IOleInPlaceObject)
+If OriginalVTableInPlaceObject = NULL_PTR Then CopyMemory OriginalVTableInPlaceObject, ByVal ObjPtr(This), PTR_SIZE
+If OriginalVTableInPlaceObject <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), ByVal VarPtr(GetVTableInPlaceObject()), PTR_SIZE
+End Sub
+
+Private Sub RestoreInPlaceObject(ByVal This As OLEGuids.IOleInPlaceObject)
+If OriginalVTableInPlaceObject <> NULL_PTR Then CopyMemory ByVal ObjPtr(This), OriginalVTableInPlaceObject, PTR_SIZE
+End Sub
+
+Private Function GetVTableInPlaceObject() As LongPtr
+If VTableInPlaceObject(0) = NULL_PTR Then
+    If OriginalVTableInPlaceObject <> NULL_PTR Then CopyMemory VTableInPlaceObject(0), ByVal OriginalVTableInPlaceObject, 9 * PTR_SIZE
+    VTableInPlaceObject(6) = ProcPtr(AddressOf InPlaceObject_UIDeactivate)
+End If
+GetVTableInPlaceObject = VarPtr(VTableInPlaceObject(0))
+End Function
+
+Private Function InPlaceObject_UIDeactivate(ByRef This As LongPtr) As Long
+If OriginalVTableInPlaceObject = NULL_PTR Then
+    InPlaceObject_UIDeactivate = E_UNEXPECTED
+    Exit Function
+End If
+InPlaceObject_UIDeactivate = Original_InPlaceObject_UIDeactivate(This)
+If InPlaceObject_UIDeactivate = S_OK Then Call DeActivateIPAO
+End Function
+
+Private Function Original_InPlaceObject_UIDeactivate(ByRef This As LongPtr) As Long
+If OriginalVTableInPlaceObject <> NULL_PTR Then
+    Dim ShadowIOleInPlaceObject As OLEGuids.IOleInPlaceObject
+    This = OriginalVTableInPlaceObject
+    CopyMemory ShadowIOleInPlaceObject, VarPtr(This), PTR_SIZE
+    Original_InPlaceObject_UIDeactivate = ShadowIOleInPlaceObject.UIDeactivate()
+    CopyMemory ShadowIOleInPlaceObject, NULL_PTR, PTR_SIZE
+    This = GetVTableInPlaceObject()
+Else
+    Original_InPlaceObject_UIDeactivate = E_UNEXPECTED
+End If
 End Function
 
 Private Sub ReplaceIOleControl(ByVal This As OLEGuids.IOleControl)
